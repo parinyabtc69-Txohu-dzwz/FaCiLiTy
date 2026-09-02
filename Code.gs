@@ -125,7 +125,7 @@ function doPost(e) {
           const file = folder.createFile(blob);
           repFileUrl = file.getUrl();
         }
-        sheetRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", repFileUrl, "", "", ""]);
+        sheetRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", repFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
         break;
 
       // ── ยืมโสตฯ ─────────────────────────────────────────────

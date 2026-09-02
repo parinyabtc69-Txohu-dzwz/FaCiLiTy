@@ -227,18 +227,10 @@ const ResourceHubCore = {
       const contact = $('contact') ? $('contact').value.trim() : '';
       const incidentDate = $('incident_date') ? $('incident_date').value : '';
 
-      let extraInfo = [];
+      let formattedIncidentDate = incidentDate;
       if (incidentDate) {
         const d = new Date(incidentDate);
-        extraInfo.push(`วันที่พบปัญหา: ${d.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}`);
-      }
-      if (urgency) extraInfo.push(`ความเร่งด่วน: ${urgency}`);
-      if (dept) extraInfo.push(`แผนก: ${dept}`);
-      if (loc) extraInfo.push(`สถานที่: ${loc}`);
-      if (contact) extraInfo.push(`ติดต่อ: ${contact}`);
-      
-      if (extraInfo.length > 0) {
-        detail = `[ ${extraInfo.join(' | ')} ]\nรายละเอียด: ${detail}`;
+        formattedIncidentDate = d.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
       }
 
       const btn = $('btnSubmitRepair');
@@ -247,7 +239,7 @@ const ResourceHubCore = {
       try {
         const file = await readFile($('file').files[0]);
         if (file) file.folderId = REPAIR_DRIVE_FOLDER_ID;
-        await ResourceHubCore.api.post({ action: 'submit_repair', subject, detail, reporter, file, folderId: REPAIR_DRIVE_FOLDER_ID });
+        await ResourceHubCore.api.post({ action: 'submit_repair', subject, detail, reporter, file, folderId: REPAIR_DRIVE_FOLDER_ID, urgency, dept, loc, incidentDate: formattedIncidentDate, contact });
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเรื่องแจ้งซ่อม</span>');
         await alertBox('success', 'สำเร็จ', 'ส่งเรื่องแจ้งซ่อมเรียบร้อยแล้ว', { timer: 2000, showConfirmButton: false });
         $('repairForm').reset();
@@ -1317,10 +1309,27 @@ window.renderRepairTable = function () {
             <span class="text-[10px] text-blue-500 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity block"><i class="fa-solid fa-expand mr-1"></i> ดูรายละเอียด</span>
           </button>`;
 
+    let urgencyTag = '';
+    const newUrgency = (r[11] || '').trim();
+    const detailStr = r[2] || '';
+    
+    if (newUrgency === 'ด่วน' || detailStr.includes('ความเร่งด่วน: ด่วน')) {
+      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-rose-500 animate-pulse"></i> ด่วน</span></div>';
+    } else if (newUrgency === 'ตามคิว' || detailStr.includes('ความเร่งด่วน: ตามคิว')) {
+      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-blue-500"></i> ตามคิว</span></div>';
+    } else if (newUrgency === 'ไม่รีบ' || detailStr.includes('ความเร่งด่วน: ไม่รีบ')) {
+      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-emerald-500"></i> ไม่รีบ</span></div>';
+    }
+
     return `<tr class="border-b ${rowBg} transition-colors">
             <td class="p-4 text-center">${starIcon}</td>
             <td class="p-4 text-slate-500">${r[0]}</td>
-            <td class="p-4">${statusTagClass(r[4])}</td>
+            <td class="p-4 align-top">
+              <div class="flex flex-col items-start">
+                ${statusTagClass(r[4])}
+                ${urgencyTag}
+              </div>
+            </td>
             <td class="p-4">${topicText}</td>
             <td class="p-4">${detailBtn}</td>
             <td class="p-4 font-semibold text-slate-700">${r[3]}</td>
