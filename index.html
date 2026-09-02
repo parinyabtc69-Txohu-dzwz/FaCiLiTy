@@ -252,13 +252,6 @@
               class="ml-auto bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
           </button>
 
-          <button onclick="openLocationQRModal()" id="gnav-qr-generator"
-            class="gmail-nav-item w-full hidden items-center px-4 py-2.5 rounded-r-full text-slate-700 hover:bg-slate-200/60 transition-colors text-sm font-normal">
-            <div class="flex items-center gap-4">
-              <i class="fa-solid fa-qrcode w-5 text-center text-indigo-600"></i> สร้าง QR Code สถานที่
-            </div>
-          </button>
-
           <button onclick="nav('page-user-manage')" id="gnav-user-manage"
             class="gmail-nav-item w-full hidden items-center gap-4 px-4 py-2.5 rounded-r-full text-slate-700 hover:bg-slate-200/60 transition-colors text-sm font-normal">
             <i class="fa-solid fa-users-gear w-5 text-center text-purple-600"></i> จัดการผู้ใช้
@@ -1654,21 +1647,6 @@
               dropdown.classList.add('hidden');
             }
           });
-          
-          // ตรวจสอบพารามิเตอร์ loc จาก URL สำหรับ QR Code สแกนแจ้งซ่อม
-          const urlParams = new URLSearchParams(window.location.search);
-          const locParam = urlParams.get('loc');
-          if (locParam) {
-            nav('page-repair-form');
-            if ($('repair_location')) {
-              $('repair_location').value = locParam;
-              // Highlight ช่องสถานที่เพื่อให้ผู้ใช้ทราบว่ากรอกให้อัตโนมัติ
-              $('repair_location').classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50');
-              setTimeout(() => {
-                $('repair_location').classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50');
-              }, 3000);
-            }
-          }
         });
 
         // === auth.js ===
@@ -1806,7 +1784,6 @@
             if (avManageNav) { avManageNav.classList.remove('hidden'); avManageNav.classList.add('flex'); }
             if (masterDataNav) { masterDataNav.classList.remove('hidden'); masterDataNav.classList.add('flex'); }
             if ($('gnav-bug-manage')) { $('gnav-bug-manage').classList.remove('hidden'); $('gnav-bug-manage').classList.add('flex'); }
-            if ($('gnav-qr-generator')) { $('gnav-qr-generator').classList.remove('hidden'); $('gnav-qr-generator').classList.add('flex'); }
             if ($('gnav-user-manage')) { $('gnav-user-manage').classList.remove('hidden'); $('gnav-user-manage').classList.add('flex'); }
             if (docNav) { docNav.classList.remove('hidden'); docNav.classList.add('flex'); }
             if (homeCardDocument) { homeCardDocument.classList.remove('hidden'); homeCardDocument.classList.add('flex'); }
@@ -1833,7 +1810,6 @@
             if (avManageNav) avManageNav.classList.add('hidden');
             if (masterDataNav) masterDataNav.classList.add('hidden');
             if ($('gnav-bug-manage')) $('gnav-bug-manage').classList.add('hidden');
-            if ($('gnav-qr-generator')) $('gnav-qr-generator').classList.add('hidden');
             if ($('gnav-user-manage')) $('gnav-user-manage').classList.add('hidden');
             if (docNav) docNav.classList.add('hidden');
             if (homeCardDocument) homeCardDocument.classList.add('hidden');
@@ -1874,7 +1850,6 @@
               if (avManageNav) { avManageNav.classList.remove('hidden'); avManageNav.classList.add('flex'); }
               if (masterDataNav) { masterDataNav.classList.remove('hidden'); masterDataNav.classList.add('flex'); }
               if ($('gnav-bug-manage')) { $('gnav-bug-manage').classList.remove('hidden'); $('gnav-bug-manage').classList.add('flex'); }
-              if ($('gnav-qr-generator')) { $('gnav-qr-generator').classList.remove('hidden'); $('gnav-qr-generator').classList.add('flex'); }
               if ($('gnav-user-manage')) { $('gnav-user-manage').classList.remove('hidden'); $('gnav-user-manage').classList.add('flex'); }
               if (docNav) { docNav.classList.remove('hidden'); docNav.classList.add('flex'); }
               if (homeCardDocument) { homeCardDocument.classList.remove('hidden'); homeCardDocument.classList.add('flex'); }
@@ -1911,7 +1886,6 @@
             if (avManageNav) avManageNav.classList.add('hidden');
             if (masterDataNav) masterDataNav.classList.add('hidden');
             if ($('gnav-bug-manage')) $('gnav-bug-manage').classList.add('hidden');
-            if ($('gnav-qr-generator')) $('gnav-qr-generator').classList.add('hidden');
             if ($('gnav-user-manage')) $('gnav-user-manage').classList.add('hidden');
             if (teacherProfileNav) teacherProfileNav.classList.add('hidden');
             if (teacherAVProfileNav) teacherAVProfileNav.classList.add('hidden');
@@ -2368,62 +2342,6 @@
           renderDocTable(filtered);
         }
 
-        async function openLocationQRModal() {
-          const { value: v } = await Swal.fire({
-            title: '<span style="font-size:1.1rem;font-weight:700"><i class="fa-solid fa-qrcode" style="color:#4f46e5;margin-right:8px"></i>สร้าง QR Code แจ้งซ่อมประจำสถานที่</span>',
-            html: `
-          <div class="text-left space-y-3 mt-2" style="font-family:'Prompt',sans-serif">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อสถานที่ / ห้อง <span class="text-red-500">*</span></label>
-              <input id="swl-qr-loc" class="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 text-sm" placeholder="เช่น อาคาร 3 ห้อง 302">
-            </div>
-            <div id="qr-result-container" class="hidden flex flex-col items-center justify-center mt-4 p-4 border border-dashed border-slate-300 rounded-xl bg-slate-50">
-              <p class="text-xs text-slate-500 mb-2">สแกนเพื่อแจ้งซ่อม: <span id="qr-loc-display" class="font-bold text-slate-700"></span></p>
-              <img id="qr-image" class="w-48 h-48 rounded-lg shadow-sm" src="" alt="QR Code">
-              <p class="text-[10px] text-slate-400 mt-3 text-center"><i class="fa-solid fa-download"></i> คลิกขวาที่รูปเพื่อ Save Image <br> หรือลากรูปไปไว้ที่ Desktop</p>
-            </div>
-          </div>`,
-            showCancelButton: true,
-            confirmButtonText: '<i class="fa-solid fa-wand-magic-sparkles"></i> สร้าง QR Code',
-            cancelButtonText: 'ปิด',
-            confirmButtonColor: '#4f46e5',
-            cancelButtonColor: '#94a3b8',
-            showLoaderOnConfirm: false,
-            allowOutsideClick: false,
-            preConfirm: () => {
-              const loc = document.getElementById('swl-qr-loc').value.trim();
-              if (!loc) {
-                Swal.showValidationMessage('กรุณาระบุชื่อสถานที่');
-                return false;
-              }
-              return { loc };
-            }
-          });
-
-          if (v && v.loc) {
-            let currentUrl = window.location.href;
-            if (currentUrl.includes('?')) currentUrl = currentUrl.split('?')[0];
-            if (currentUrl.includes('#')) currentUrl = currentUrl.split('#')[0];
-            
-            const qrUrl = currentUrl + '?loc=' + encodeURIComponent(v.loc);
-            const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrUrl);
-            
-            Swal.fire({
-              title: '<span style="font-size:1.1rem;font-weight:700" class="text-emerald-600">สร้าง QR Code สำเร็จ!</span>',
-              html: `
-              <div class="flex flex-col items-center justify-center p-4">
-                <p class="text-sm text-slate-700 font-bold mb-3">${sanitizeHtml(v.loc)}</p>
-                <div class="bg-white p-2 rounded-xl shadow-sm border border-slate-200">
-                  <img src="${qrApiUrl}" class="w-56 h-56" alt="QR Code">
-                </div>
-                <p class="text-xs text-slate-500 mt-4"><i class="fa-solid fa-download"></i> คลิกขวาที่ภาพและเลือก "Save image as..." เพื่อนำไปปริ้นท์ใช้งาน</p>
-              </div>
-              `,
-              confirmButtonText: 'ตกลง',
-              confirmButtonColor: '#265D5A'
-            });
-          }
-        }
 
         async function openDocUploadModal() {
           const { value: v } = await Swal.fire({
