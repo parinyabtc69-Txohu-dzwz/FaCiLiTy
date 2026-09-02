@@ -2397,6 +2397,29 @@
         }
 
         // === Repair Admin UI Enhancements ===
+        window.previewImage = function(url) {
+          if (!url || url === '-') return;
+          let viewUrl = url;
+          const fileIdMatch = url.match(/[-\w]{25,}/);
+          if (fileIdMatch) {
+            viewUrl = `https://drive.google.com/thumbnail?id=${fileIdMatch[0]}&sz=w1200`;
+          }
+          Swal.fire({
+            imageUrl: viewUrl,
+            imageAlt: 'Image preview',
+            width: 'auto',
+            padding: 0,
+            showConfirmButton: false,
+            showCloseButton: true,
+            background: 'transparent',
+            backdrop: `rgba(0,0,0,0.8)`,
+            customClass: {
+              popup: 'rounded-xl overflow-hidden',
+              image: 'max-h-[85vh] object-contain m-0 rounded-xl'
+            }
+          });
+        };
+
         window.renderRepairTable = function () {
           const rawData = window.allRepairTasks || [];
           const listWithIndex = rawData.map((r, idx) => ({ r, originalIndex: idx }));
@@ -2447,7 +2470,10 @@
               : '<span class="text-amber-400 drop-shadow-sm"><i class="fa-solid fa-star text-lg animate-bounce"></i></span>';
 
             const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60 font-medium';
-            const img = r[5] && r[5] !== '-' ? `<a href="${r[5]}" target="_blank" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</a>` : '-';
+            let img = '-';
+            if (r[5] && r[5] !== '-') {
+              img = `<button onclick="previewImage('${r[5]}')" class="text-blue-500 underline hover:text-blue-700 font-medium transition-colors"><i class="fa-solid fa-image"></i> ดูรูป</button>`;
+            }
             const topicText = `<span class="font-bold text-slate-800">${r[1]}</span>`;
             const detailBtn = `<button onclick="viewRepairDetails(${originalIndex})" class="text-left w-full max-w-[200px] sm:max-w-xs md:max-w-sm text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 bg-slate-50 border border-slate-200 rounded-lg p-2.5 transition-all group" title="คลิกเพื่อดูรายละเอียด">
             <span class="line-clamp-2 leading-relaxed whitespace-normal">${r[2]}</span>
@@ -2509,7 +2535,10 @@
           const detail = row[2] || '-';
           const fixDetail = row[6] || 'ยังไม่มีการบันทึกการแก้ปัญหา';
           const tech = row[7] || '-';
-          const proofImg = (row[8] && row[8] !== '-') ? `<a href="${row[8]}" target="_blank" class="block mt-3 bg-emerald-50 text-emerald-700 text-center py-2 rounded-lg border border-emerald-200 hover:bg-emerald-100 font-semibold"><i class="fa-solid fa-image"></i> ดูรูปภาพผลการซ่อม</a>` : '';
+          let proofImg = '';
+          if (row[8] && row[8] !== '-') {
+            proofImg = `<button onclick="previewImage('${row[8]}')" class="w-full mt-3 bg-emerald-50 text-emerald-700 text-center py-2 rounded-lg border border-emerald-200 hover:bg-emerald-100 font-semibold transition-colors"><i class="fa-solid fa-image"></i> ดูรูปภาพผลการซ่อม</button>`;
+          }
 
           const cost = (row[9] && row[9] !== '-') ? row[9] : null;
           const receiptUrl = (row[10] && row[10] !== '-') ? row[10] : null;

@@ -123,6 +123,7 @@ function doPost(e) {
           const folder = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_REPORT);
           const blob = Utilities.newBlob(Utilities.base64Decode(data.file.data), data.file.type, data.file.name);
           const file = folder.createFile(blob);
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
           repFileUrl = file.getUrl();
         }
         sheetRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", repFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
@@ -161,6 +162,7 @@ function doPost(e) {
           const folder = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_PROOF);
           const blob = Utilities.newBlob(Utilities.base64Decode(data.file.data), data.file.type, data.file.name);
           const file = folder.createFile(blob);
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
           proofFileUrl = file.getUrl();
         }
         
@@ -169,6 +171,7 @@ function doPost(e) {
           const folder = getOrCreateSubFolder(CONFIG.FOLDER_RECEIPTS);
           const blob = Utilities.newBlob(Utilities.base64Decode(data.receiptFile.data), data.receiptFile.type, data.receiptFile.name);
           const file = folder.createFile(blob);
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
           receiptUrl = file.getUrl();
         }
         
