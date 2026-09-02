@@ -127,12 +127,38 @@ function doPost(e) {
           repFileUrl = file.getUrl();
         }
         sheetRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", repFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
+        
+        const repBody = `
+          <div style="font-family: sans-serif; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <h2 style="color: #4f46e5; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">แจ้งซ่อมใหม่: ${data.subject}</h2>
+            <p><strong>ผู้แจ้ง:</strong> ${data.reporter}</p>
+            <p><strong>สถานที่:</strong> ${data.loc || '-'}</p>
+            <p><strong>รายละเอียด:</strong> ${data.detail}</p>
+            <p><strong>ความเร่งด่วน:</strong> ${data.urgency || '-'}</p>
+            <p><strong>วันที่เกิดเหตุ:</strong> ${data.incidentDate || '-'}</p>
+            <p><strong>ช่องทางติดต่อ:</strong> ${data.contact || '-'}</p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">กรุณาเข้าสู่ระบบเพื่อดูรายละเอียดและรับงานซ่อม</p>
+          </div>
+        `;
+        sendEmailNotification(`🔔 แจ้งซ่อมใหม่: ${data.subject}`, repBody);
         break;
 
       // ── ยืมโสตฯ ─────────────────────────────────────────────
       case 'submit_av':
         const sheetAvReq = db.getSheetByName(CONFIG.AV_SHEET_NAME);
         sheetAvReq.appendRow([timestamp, data.borrower, data.equipment, data.useDate, data.location, "รอยืนยันการยืม", "-", data.signature]);
+        
+        const avBody = `
+          <div style="font-family: sans-serif; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <h2 style="color: #0d9488; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">ขอยืมอุปกรณ์โสตฯ: ${data.borrower}</h2>
+            <p><strong>ผู้ยืม:</strong> ${data.borrower}</p>
+            <p><strong>อุปกรณ์ที่ต้องการ:</strong> ${data.equipment}</p>
+            <p><strong>วันที่ใช้งาน:</strong> ${data.useDate}</p>
+            <p><strong>สถานที่:</strong> ${data.location}</p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">กรุณาเข้าสู่ระบบเพื่อพิจารณาอนุมัติการยืม</p>
+          </div>
+        `;
+        sendEmailNotification(`📢 ขอยืมอุปกรณ์โสตฯ: ${data.borrower}`, avBody);
         break;
 
       // ── แจ้งบั๊ก ─────────────────────────────────────────────
@@ -454,5 +480,44 @@ function handleGoogleLogin(credential) {
       status: 'error', 
       message: 'การตรวจสอบสิทธิ์ล้มเหลว: ' + err.toString() 
     })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ============================================================
+// Notification Helpers
+// ============================================================
+function sendEmailNotification(subject, bodyHtml) {
+  try {
+    const db = getDB();
+    const sheet = db.getSheetByName('Users');
+    if (!sheet) return;
+    
+    const data = sheet.getDataRange().getValues();
+    let adminEmails = [];
+    
+    // Column 0 = Email, Column 2 = Role
+    for (let i = 1; i < data.length; i++) {
+      const email = data[i][0];
+      const role = data[i][2];
+      
+      if (role === 'Admin' || role === 'Staff' || role === 'Technician') {
+        if (email && email.includes('@')) {
+          adminEmails.push(email);
+        }
+      }
+    }
+    
+    // Remove duplicates
+    adminEmails = [...new Set(adminEmails)];
+    
+    if (adminEmails.length > 0) {
+      MailApp.sendEmail({
+        to: adminEmails.join(','),
+        subject: subject,
+        htmlBody: bodyHtml
+      });
+    }
+  } catch(e) {
+    Logger.log("Email error: " + e.message);
   }
 }
