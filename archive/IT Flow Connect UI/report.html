@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="th" data-tsd-source="/src/routes/__root.tsx:127:5">
+  <head data-tsd-source="/src/routes/__root.tsx:128:7">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&amp;display=swap"
+      data-precedence="default"
+    />
+    <title>แจ้งปัญหาอาคารสถานที่ | Facility TaskFlow</title>
+    <meta name="author" content="Facility TaskFlow" />
+    <meta name="theme-color" content="#0b1830" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Facility TaskFlow" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="description"
+      content="กรอกแบบฟอร์มสั้น ๆ เพื่อแจ้งปัญหาอาคารสถานที่ พร้อมแนบรูป และรับเลขที่งานสำหรับติดตามสถานะ"
+    />
+    <meta property="og:title" content="แจ้งปัญหาอาคารสถานที่ | Facility TaskFlow" />
+    <meta property="og:description" content="แจ้งปัญหาอาคารสถานที่ ผ่านมือถือได้ทันที ไม่ต้องสมัครสมาชิก" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="modulepreload" href="/@id/virtual:tanstack-start-dev-client-entry" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-tsd-source="/src/routes/__root.tsx:131:7">
+    <!--$-->
+    <div
+      class="flex min-h-screen flex-col bg-background"
+      data-tsd-source="/src/routes/report.tsx:253:5"
+    >
+      <header class="border-b bg-card" data-tsd-source="/src/routes/report.tsx:254:7">
+        <div
+          class="mx-auto flex max-w-xl items-center justify-between px-4 py-3"
+          data-tsd-source="/src/routes/report.tsx:255:9"
+        >
+          <a
+            data-tsd-source="/src/routes/report.tsx:256:11"
+            href="index.html"
+            class="flex items-center gap-2"
+            ><div
+              class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+              data-tsd-source="/src/routes/report.tsx:257:13"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-wrench h-4 w-4"
+                aria-hidden="true"
+                data-tsd-source="/src/routes/report.tsx:258:15"
+              >
+                <path
+                  d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
+                ></path>
+              </svg>
+            </div>
+            <span class="font-bold" data-tsd-source="/src/routes/report.tsx:260:13"
+              >Facility TaskFlow</span
+            ></a
+          ><a
+            data-tsd-source="/src/routes/report.tsx:262:11"
+            href="track.html"
+            class="text-sm font-medium text-primary"
+            >ติดตามงาน</a
+          >
+        </div>
+      </header>
+      <main
+        class="mx-auto w-full max-w-xl flex-1 px-4 py-6"
+        data-tsd-source="/src/routes/report.tsx:268:7"
+      >
+        <h1 class="text-2xl font-bold" data-tsd-source="/src/routes/report.tsx:334:13">
+          แจ้งปัญหาอาคารสถานที่
+        </h1>
+        <p
+          class="mt-1 text-sm text-muted-foreground"
+          data-tsd-source="/src/routes/report.tsx:335:13"
+        >
+          กรอกข้อมูลสั้น ๆ ไม่กี่ช่อง เจ้าหน้าที่จะได้รับแจ้งทันที
+        </p>
+        <form class="mt-5 space-y-5" data-tsd-source="/src/routes/report.tsx:357:13">
+          <div data-tsd-source="/src/routes/report.tsx:358:15">
+            <label
+              class="mb-1.5 block text-base font-medium"
+              data-tsd-source="/src/routes/report.tsx:359:17"
+              >ชื่อผู้แจ้ง *</label
+            ><input
+              class="field py-3 text-base"
+              placeholder="เช่น สมชาย ใจดี"
+              maxlength="100"
+              required=""
+              data-tsd-source="/src/routes/report.tsx:360:17"
+              value=""
+            />
+          </div>
+          <div data-tsd-source="/src/routes/report.tsx:370:15">
+            <label
+              class="mb-1.5 block text-base font-medium"
+              data-tsd-source="/src/routes/report.tsx:371:17"
+              >หน่วยงาน / แผนก</label
+            ><input
+              class="field py-3 text-base"
+              placeholder="ถ้ามี"
+              maxlength="100"
+              data-tsd-source="/src/routes/report.tsx:372:17"
+              value=""
+            />
+          </div>
+          <div data-tsd-source="/src/routes/report.tsx:381:15">
+            <label
+              class="mb-1.5 block text-base font-medium"
+              data-tsd-source="/src/routes/report.tsx:382:17"
+              >สถานที่ / ห้อง</label
+            ><input
+              class="field py-3 text-base"
+              placeholder="เช่น ห้อง 202"
+              maxlength="120"
+              data-tsd-source="/src/routes/report.tsx:383:17"
+              value=""
+            />
+          </div>
+          <div data-tsd-source="/src/routes/report.tsx:397:15">
+            <label
+              class="mb-1.5 block text-base font-medium"
+              data-tsd-source="/src/routes/report.tsx:398:17"
+              >ปัญหาเรื่องอะไร *</label
+            ><select class="field py-3 text-base" data-tsd-source="/src/routes/report.tsx:399:17">
+              <option value="air_conditioner">แอร์ / ระบบปรับอากาศ</option>
+              <option value="plumbing">ระบบประปา / ท่อน้ำ</option>
+              <option value="electrical">ระบบไฟฟ้า / ปลั๊กไฟ</option>
+              <option value="structural">งานโครงสร้าง / ผนัง / เพดาน</option>
+              <option value="lighting">หลอดไฟ / โคมไฟ</option>
+              <option value="glass">กระจก / หน้าต่าง</option>
+              <option value="fan">พัดลม / พัดลมดูดอากาศ</option>
+              <option value="other">อื่น ๆ</option>
+            </select>
+          </div>
+          <div data-tsd-source="/src/routes/report.tsx:412:15">
+            <label
+              class="mb-1.5 block text-base font-medium"
+              data-tsd-source="/src/routes/report.tsx:413:17"
+              >ความเร่งด่วน *</label
+            >
+            <div class="grid gap-2 sm:grid-cols-3" data-tsd-source="/src/routes/report.tsx:414:17">
+              <button
+                type="button"
+                aria-pressed="false"
+                class="rounded-xl border p-3 text-left transition-colors hover:bg-muted"
+                data-tsd-source="/src/routes/report.tsx:418:23"
+              >
+                <span
+                  class="block text-base font-semibold"
+                  data-tsd-source="/src/routes/report.tsx:429:25"
+                  >🔴<!-- -->
+                  <!-- -->ด่วน</span
+                ><span
+                  class="mt-0.5 block text-xs text-muted-foreground"
+                  data-tsd-source="/src/routes/report.tsx:432:25"
+                  >มีผลกระทบต่อการใช้งาน ต้องการให้ตรวจสอบโดยเร็ว</span
+                ></button
+              ><button
+                type="button"
+                aria-pressed="true"
+                class="rounded-xl border p-3 text-left transition-colors border-primary bg-primary/10 ring-2 ring-primary/40"
+                data-tsd-source="/src/routes/report.tsx:418:23"
+              >
+                <span
+                  class="block text-base font-semibold"
+                  data-tsd-source="/src/routes/report.tsx:429:25"
+                  >🔵<!-- -->
+                  <!-- -->ตามคิว</span
+                ><span
+                  class="mt-0.5 block text-xs text-muted-foreground"
+                  data-tsd-source="/src/routes/report.tsx:432:25"
+                  >งานทั่วไป ดำเนินการตามลำดับคิว</span
+                ></button
+              ><button
+                type="button"
+                aria-pressed="false"
+                class="rounded-xl border p-3 text-left transition-colors hover:bg-muted"
+                data-tsd-source="/src/routes/report.tsx:418:23"
+              >
+                <span
+                  class="block text-base font-semibold"
+                  data-tsd-source="/src/routes/report.tsx:429:25"
+                  >🟢<!-- -->
+                  <!-- -->ไม่รีบ</span
+                ><span
+                  class="mt-0.5 block text-xs text-muted-foreground"
+                  data-tsd-source="/src/routes/report.tsx:432:25"
+                  >สามารถดำเนินการภายหลังได้</span
+                >
+              </button>
+            </div>
+          </div>
+          <div data-tsd-source="/src/routes/report.tsx:441:15">
+            <label
+              class="mb-1.5 block text-base font-medium"
+              data-tsd-source="/src/routes/report.tsx:442:17"
+              >รายละเอียดปัญหา *</label
+            ><textarea
+              class="field min-h-32 py-3 text-base"
+              placeholder="เล่าสั้น ๆ ว่าเกิดอะไรขึ้น เช่น เปิดเครื่องไม่ติด"
+              maxlength="1500"
+              required=""
+              data-tsd-source="/src/routes/report.tsx:443:17"
+            ></textarea>
+          </div>
+          <div data-tsd-source="/src/routes/report.tsx:453:15">
+            <label
+              class="mb-1.5 block text-base font-medium"
+              data-tsd-source="/src/routes/report.tsx:454:17"
+              >รูปภาพประกอบ (ถ้ามี, สูงสุด
+              <!-- -->3<!-- -->
+              รูป)</label
+            ><label
+              class="btn-outline w-full cursor-pointer rounded-xl py-4 text-base"
+              data-tsd-source="/src/routes/report.tsx:457:17"
+              ><svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-camera h-5 w-5"
+                aria-hidden="true"
+                data-tsd-source="/src/routes/report.tsx:458:19"
+              >
+                <path
+                  d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"
+                ></path>
+                <circle cx="12" cy="13" r="3"></circle></svg
+              >เลือกรูปจากคลังรูป / ถ่ายรูปใหม่<input
+                type="file"
+                accept="image/*"
+                multiple=""
+                class="hidden"
+                data-tsd-source="/src/routes/report.tsx:460:19"
+            /></label>
+            <p
+              class="mt-1.5 text-xs text-muted-foreground"
+              data-tsd-source="/src/routes/report.tsx:471:17"
+            >
+              รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 4 MB ต่อรูป
+            </p>
+          </div>
+          <div data-tsd-source="/src/routes/report.tsx:500:15">
+            <label
+              for="contact"
+              class="mb-1.5 block text-base font-medium"
+              data-tsd-source="/src/routes/report.tsx:501:17"
+              >เบอร์โทรศัพท์ หรืออีเมลสำหรับติดต่อกลับ</label
+            ><input
+              id="contact"
+              class="field py-3 text-base"
+              placeholder="เช่น 081-234-5678 หรือ name@example.com"
+              inputmode="text"
+              autocomplete="tel"
+              aria-invalid="false"
+              aria-describedby="contact-hint"
+              maxlength="100"
+              data-tsd-source="/src/routes/report.tsx:504:17"
+              value=""
+            />
+            <p
+              id="contact-hint"
+              class="mt-1.5 text-sm text-muted-foreground"
+              data-tsd-source="/src/routes/report.tsx:516:17"
+            >
+              ไม่บังคับ — กรอกไว้เพื่อให้เจ้าหน้าที่ติดต่อกลับได้
+            </p>
+          </div>
+          <div
+            aria-hidden="true"
+            class="absolute left-[-9999px] h-0 w-0 overflow-hidden"
+            data-tsd-source="/src/routes/report.tsx:535:15"
+          >
+            <label for="website" data-tsd-source="/src/routes/report.tsx:536:17">Website</label
+            ><input
+              id="website"
+              type="text"
+              tabindex="-1"
+              autocomplete="off"
+              data-tsd-source="/src/routes/report.tsx:537:17"
+              name="website"
+              value=""
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn-primary w-full rounded-xl py-5 text-lg font-semibold"
+            data-tsd-source="/src/routes/report.tsx:557:15"
+          >
+            ส่งแจ้งปัญหา
+          </button>
+        </form>
+      </main>
+    </div>
+    <!--/$-->
+    <section
+      aria-label="Notifications alt+T"
+      tabindex="-1"
+      aria-live="polite"
+      aria-relevant="additions text"
+      aria-atomic="false"
+    ></section>
+  </body>
+</html>

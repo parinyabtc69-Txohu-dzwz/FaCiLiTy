@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th" data-tsd-source="/src/routes/__root.tsx:127:5">
+  <head data-tsd-source="/src/routes/__root.tsx:128:7">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&amp;display=swap"
+      data-precedence="default"
+    />
+    <title>ติดตามงานด้วยเลขที่งาน | Facility TaskFlow</title>
+    <meta name="author" content="Facility TaskFlow" />
+    <meta name="theme-color" content="#0b1830" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Facility TaskFlow" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="description"
+      content="กรอกเลขที่งานเพื่อดูสถานะการซ่อม/แก้ไขปัญหา IT ล่าสุด โดยไม่ต้องเข้าสู่ระบบ"
+    />
+    <meta property="og:title" content="ติดตามงาน | Facility TaskFlow" />
+    <meta property="og:description" content="ตรวจสอบสถานะงานแจ้งซ่อมอาคารสถานที่ ด้วยเลขที่งาน" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="modulepreload" href="/@id/virtual:tanstack-start-dev-client-entry" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-tsd-source="/src/routes/__root.tsx:131:7">
+    <!--$-->
+    <div
+      class="flex min-h-screen flex-col bg-background"
+      data-tsd-source="/src/routes/track.tsx:231:5"
+    >
+      <header class="border-b bg-card" data-tsd-source="/src/routes/track.tsx:232:7">
+        <div
+          class="mx-auto flex max-w-xl items-center justify-between px-4 py-3"
+          data-tsd-source="/src/routes/track.tsx:233:9"
+        >
+          <a
+            data-tsd-source="/src/routes/track.tsx:234:11"
+            href="index.html"
+            class="flex items-center gap-2"
+            ><div
+              class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+              data-tsd-source="/src/routes/track.tsx:235:13"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-wrench h-4 w-4"
+                aria-hidden="true"
+                data-tsd-source="/src/routes/track.tsx:236:15"
+              >
+                <path
+                  d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
+                ></path>
+              </svg>
+            </div>
+            <span class="font-bold" data-tsd-source="/src/routes/track.tsx:238:13"
+              >Facility TaskFlow</span
+            ></a
+          ><a
+            data-tsd-source="/src/routes/track.tsx:240:11"
+            href="report.html"
+            class="text-sm font-medium text-primary"
+            >แจ้งปัญหา</a
+          >
+        </div>
+      </header>
+      <main
+        class="mx-auto w-full max-w-xl flex-1 px-4 py-6"
+        data-tsd-source="/src/routes/track.tsx:246:7"
+      >
+        <h1 class="text-2xl font-bold" data-tsd-source="/src/routes/track.tsx:251:13">ติดตามงาน</h1>
+        <p
+          class="mt-1 text-sm text-muted-foreground"
+          data-tsd-source="/src/routes/track.tsx:252:13"
+        >
+          กรอกเลขที่งานที่ได้รับตอนแจ้งปัญหา เช่น 123
+        </p>
+        <form class="mt-5 flex gap-2" data-tsd-source="/src/routes/track.tsx:256:13">
+          <input
+            class="field py-4 text-center text-lg font-semibold"
+            inputmode="numeric"
+            placeholder="เลขที่งาน"
+            data-tsd-source="/src/routes/track.tsx:263:15"
+            value=""
+          /><button
+            class="btn-primary shrink-0 rounded-xl px-6 py-4"
+            data-tsd-source="/src/routes/track.tsx:270:15"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-search h-5 w-5"
+              aria-hidden="true"
+              data-tsd-source="/src/routes/track.tsx:274:19"
+            >
+              <path d="m21 21-4.34-4.34"></path>
+              <circle cx="11" cy="11" r="8"></circle></svg
+            >ค้นหา
+          </button>
+        </form>
+      </main>
+    </div>
+    <!--/$-->
+    <section
+      aria-label="Notifications alt+T"
+      tabindex="-1"
+      aria-live="polite"
+      aria-relevant="additions text"
+      aria-atomic="false"
+    ></section>
+  </body>
+</html>

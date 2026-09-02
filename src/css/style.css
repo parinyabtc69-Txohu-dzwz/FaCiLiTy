@@ -1,0 +1,79 @@
+﻿    :root {
+      /* ===== Brand Palette (Primary Colors for Online) ===== */
+      --brand-primary: #265D5A;
+      /* Dark Teal #265D5A — สีหลัก */
+      --brand-primary-dk: #1a3f3d;
+      /* Darker Teal — hover */
+      --brand-mint: #B0EDE6;
+      /* Light Mint #B0EDE6 — bg/accent */
+      --brand-mint-lt: #ddf7f4;
+      /* Lighter Mint — subtle bg */
+      --brand-coral: #FF5F5F;
+      /* Coral Red #FF5F5F — highlight */
+      --brand-coral-dk: #8F1C26;
+      /* Dark Maroon #8F1C26 — hover */
+      /* ===== Legacy aliases (mapped to brand) ===== */
+      --bg: #edfaf8;
+      /* พื้นหลังแอป — mint-tinted */
+      --blue: #265D5A;
+      /* → brand teal */
+      --amber: #FF5F5F;
+      /* → brand coral */
+      --green: #265D5A;
+      /* → brand teal */
+      --red: #FF5F5F;
+      /* → brand coral */
+    }
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      margin: 0;
+      color: #1f2f2d
+    }
+
+    .swal2-popup {
+      font-family: 'Prompt', sans-serif !important
+    }
+
+    .page-section {
+      display: none
+    }
+
+    .page-section.active {
+      display: block;
+      animation: fadeIn .25s ease-in-out
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* ===== Sidebar active nav item — Brand Teal ===== */
+    .gmail-nav-item.active {
+      background: #B0EDE6;
+      color: #265D5A;
+      font-weight: 500;
+    }
+
+    .gmail-nav-item.active i {
+      color: #265D5A;
+    }
+
+    /* ===== Global focus ring override ===== */
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px #265D5A55;
+      border-color: #265D5A !important;
+    }

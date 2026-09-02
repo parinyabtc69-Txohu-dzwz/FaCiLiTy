@@ -1,0 +1,35 @@
+      <div id="page-auth" class="page-section active max-w-md mx-auto py-10">
+        <div class="bg-white w-full rounded-3xl shadow-sm p-8 border border-slate-200 text-center">
+          <div class="w-16 h-16 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">
+            <i class="fa-solid fa-chalkboard-user"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-800 mb-2" id="auth-title">ยินดีต้อนรับสู่ FaCiLiTy</h2>
+          <p class="text-sm text-slate-500 mb-8" id="auth-subtitle">ระบบจัดการทรัพยากรภายในโรงเรียน</p>
+
+          <!-- Google Sign-In Button -->
+          <div id="g_id_onload"
+               data-client_id="309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com"
+               data-context="signin"
+               data-ux_mode="popup"
+               data-callback="handleCredentialResponse"
+               data-auto_prompt="false">
+          </div>
+          
+          <div class="g_id_signin flex justify-center w-full"
+               data-type="standard"
+               data-shape="rectangular"
+               data-theme="outline"
+               data-text="signin_with"
+               data-size="large"
+               data-logo_alignment="left"
+               data-width="300">
+          </div>
+
+          <div class="mt-8 text-center flex flex-col gap-2">
+            <p class="text-xs text-slate-400">
+              <i class="fa-solid fa-shield-halved mr-1"></i>
+              เข้าสู่ระบบอย่างปลอดภัยด้วย Google OAuth
+            </p>
+          </div>
+        </div>
+      </div>

@@ -1,0 +1,179 @@
+﻿      <div id="page-dashboard" class="page-section">
+        <div class="max-w-7xl mx-auto space-y-6">
+
+          <!-- Header Bar -->
+          <div
+            class="bg-gradient-to-r from-[#265D5A] to-[#1a3f3d] text-white p-6 md:p-8 rounded-3xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <div class="text-xs uppercase tracking-widest text-[#B0EDE6] font-semibold mb-1">ระบบมอนิเตอร์ภาพรวม</div>
+              <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+                <i class="fa-solid fa-chart-pie text-[#B0EDE6]"></i>
+                <span>มอนิเตอร์ภาพรวมทรัพยากร</span>
+              </h1>
+              <p class="text-[#B0EDE6] text-sm mt-1">สรุปภาพรวมงานซ่อมบำรุงอาคารและงานโสตทัศนูปกรณ์แบบ Real-time</p>
+            </div>
+            <div class="flex gap-3">
+              <button onclick="loadDashboard()"
+                class="bg-white text-[#265D5A] px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm hover:bg-[#B0EDE6]">
+                <i class="fa-solid fa-rotate"></i> <span>รีเฟรชข้อมูล</span>
+              </button>
+              <button onclick="nav('page-home')"
+                class="bg-[#265D5A]/40 hover:bg-[#265D5A]/60 text-white px-5 py-2.5 rounded-xl font-bold flex gap-2 transition-colors border border-white/20 items-center">
+                <i class="fa-solid fa-house"></i> <span>หน้าหลัก</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ส่วนที่ 1: การ์ดยอดรวมระบบทั้งหมด (Unified System KPIs) -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+            <div class="bg-white p-5 md:p-6 rounded-3xl border border-[#B0EDE6] relative overflow-hidden shadow-sm">
+              <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">งานทั้งหมดในระบบ</div>
+              <div class="text-3xl md:text-4xl font-extrabold text-slate-800" id="dash-total-all">0</div>
+              <div class="text-xs text-slate-400 mt-1">อาคาร + โสตทัศนูปกรณ์</div>
+              <i class="fa-solid fa-layer-group absolute right-4 bottom-4 text-4xl md:text-5xl text-[#265D5A]/10"></i>
+            </div>
+            <div class="bg-white p-5 md:p-6 rounded-3xl border border-amber-200 relative overflow-hidden shadow-sm">
+              <div class="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-1">รอดำเนินการ</div>
+              <div class="text-3xl md:text-4xl font-extrabold text-amber-500" id="dash-pending-all">0</div>
+              <div class="text-xs text-amber-400 mt-1">รอรับเรื่อง / รอยืนยัน</div>
+              <i class="fa-solid fa-clock absolute right-4 bottom-4 text-4xl md:text-5xl text-amber-400/10"></i>
+            </div>
+            <div class="bg-white p-5 md:p-6 rounded-3xl border border-[#B0EDE6] relative overflow-hidden shadow-sm">
+              <div class="text-xs font-semibold text-[#265D5A] uppercase tracking-wider mb-1">กำลังดำเนินการ</div>
+              <div class="text-3xl md:text-4xl font-extrabold text-[#265D5A]" id="dash-progress-all">0</div>
+              <div class="text-xs text-[#265D5A]/70 mt-1">กำลังซ่อม / กำลังใช้งาน</div>
+              <i
+                class="fa-solid fa-screwdriver-wrench absolute right-4 bottom-4 text-4xl md:text-5xl text-[#265D5A]/10"></i>
+            </div>
+            <div class="bg-white p-5 md:p-6 rounded-3xl border border-emerald-200 relative overflow-hidden shadow-sm">
+              <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1">เสร็จสิ้นเรียบร้อย</div>
+              <div class="text-3xl md:text-4xl font-extrabold text-emerald-600" id="dash-completed-all">0</div>
+              <div class="text-xs text-emerald-500 mt-1">ซ่อมเสร็จ / คืนของครบ</div>
+              <i
+                class="fa-solid fa-circle-check absolute right-4 bottom-4 text-4xl md:text-5xl text-emerald-500/10"></i>
+            </div>
+          </div>
+
+          <!-- ส่วนที่ 2: สถิติแยกหมวดหมู่งาน 2 ฝั่ง (อาคาร vs โสตฯ) -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+            <!-- ฝั่งซ้าย: งานซ่อมบำรุงอาคาร -->
+            <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm">
+              <div class="flex items-center justify-between border-b border-[#B0EDE6] pb-3">
+                <h2 class="text-base font-bold text-[#265D5A] flex items-center gap-2">
+                  <i class="fa-solid fa-building"></i> <span>งานซ่อมบำรุงอาคาร</span>
+                </h2>
+                <button onclick="nav('page-technician')"
+                  class="text-xs text-[#265D5A] hover:text-[#1a3f3d] font-semibold flex items-center gap-1">
+                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-[#edfaf8] p-4 rounded-2xl border border-[#B0EDE6] text-center">
+                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="b-total">0</div>
+                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
+                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="b-pending">0</div>
+                  <div class="text-[11px] text-amber-500">รอซ่อม</div>
+                </div>
+                <div class="bg-[#edfaf8] p-4 rounded-2xl border border-[#B0EDE6] text-center">
+                  <div class="text-2xl font-bold text-[#265D5A] mb-0.5" id="b-progress">0</div>
+                  <div class="text-[11px] text-[#265D5A]">กำลังซ่อม</div>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
+                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="b-completed">0</div>
+                  <div class="text-[11px] text-emerald-600">ซ่อมเสร็จ</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ฝั่งขวา: งานยืม-คืนโสตทัศนูปกรณ์ -->
+            <div class="bg-white p-6 rounded-3xl border border-[#FF5F5F]/20 space-y-4 shadow-sm">
+              <div class="flex items-center justify-between border-b border-[#FF5F5F]/20 pb-3">
+                <h2 class="text-base font-bold text-[#FF5F5F] flex items-center gap-2">
+                  <i class="fa-solid fa-microphone-lines"></i> <span>การยืม-คืนโสตทัศนูปกรณ์</span>
+                </h2>
+                <button onclick="nav('page-av-manage')"
+                  class="text-xs text-[#FF5F5F] hover:text-[#8F1C26] font-semibold flex items-center gap-1">
+                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-rose-50 p-4 rounded-2xl border border-[#FF5F5F]/20 text-center">
+                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="av-total">0</div>
+                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
+                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="av-pending">0</div>
+                  <div class="text-[11px] text-amber-500">รอยืนยัน</div>
+                </div>
+                <div class="bg-rose-50 p-4 rounded-2xl border border-[#FF5F5F]/20 text-center">
+                  <div class="text-2xl font-bold text-[#FF5F5F] mb-0.5" id="av-active">0</div>
+                  <div class="text-[11px] text-[#FF5F5F]">ใช้งานอยู่</div>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
+                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="av-completed">0</div>
+                  <div class="text-[11px] text-emerald-600">คืนเรียบร้อย</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ส่วนที่ 3: สัดส่วนงาน (Analytics) -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+            <!-- แถบสัดส่วนประเภทงาน -->
+            <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm">
+              <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-chart-column text-[#265D5A]"></i> <span>สัดส่วนและอัตราความสำเร็จ</span>
+              </h3>
+              <div class="space-y-4 pt-1">
+                <div>
+                  <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
+                    <span>งานซ่อมอาคาร (<span id="ratio-building-count">0</span>)</span>
+                    <span id="ratio-building-pct" class="text-[#265D5A] font-bold">50%</span>
+                  </div>
+                  <div class="h-2.5 bg-[#B0EDE6]/40 rounded-full overflow-hidden">
+                    <div id="ratio-building-bar" class="h-full bg-[#265D5A] rounded-full transition-all duration-500"
+                      style="width: 50%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
+                    <span>งานบริการโสตฯ (<span id="ratio-av-count">0</span>)</span>
+                    <span id="ratio-av-pct" class="text-[#FF5F5F] font-bold">50%</span>
+                  </div>
+                  <div class="h-2.5 bg-[#FF5F5F]/10 rounded-full overflow-hidden">
+                    <div id="ratio-av-bar" class="h-full bg-[#FF5F5F] rounded-full transition-all duration-500"
+                      style="width: 50%"></div>
+                  </div>
+                </div>
+                <div class="pt-2 border-t border-[#B0EDE6]">
+                  <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
+                    <span>อัตรางานที่เสร็จสิ้นทั้งหมด (Overall Completion Rate)</span>
+                    <span id="overall-progress-text" class="text-emerald-600 font-bold">0%</span>
+                  </div>
+                  <div class="h-2.5 bg-emerald-100 rounded-full overflow-hidden">
+                    <div id="overall-progress-bar"
+                      class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- กราฟสถิติ (Chart.js) -->
+            <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm flex flex-col">
+              <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-[#265D5A]"></i> <span>สัดส่วนสถานะงานทั้งหมด</span>
+              </h3>
+              <div class="flex-1 min-h-[200px] flex items-center justify-center relative">
+                <canvas id="dashboardChart"></canvas>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>

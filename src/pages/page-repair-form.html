@@ -1,0 +1,104 @@
+      <div id="page-repair-form" class="page-section">
+        <div class="flex items-center justify-center min-h-[70vh] py-6">
+          <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
+            <button onclick="nav('page-home')"
+              class="text-[#265D5A] font-bold mb-4 hover:text-[#1a3f3d] transition-colors text-sm inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+            </button>
+            <div class="text-center mb-6">
+              <div
+                class="w-14 h-14 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+              </div>
+              <h2 class="text-2xl font-bold text-slate-800">แจ้งปัญหาอาคารสถานที่</h2>
+              <p class="text-xs text-slate-500 mt-1">กรอกข้อมูลสั้น ๆ เจ้าหน้าที่จะได้รับแจ้งและเข้าดำเนินการทันที</p>
+            </div>
+            <form id="repairForm" class="space-y-4" onsubmit="event.preventDefault(); submitRepair();">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-rose-500">*</span></label>
+                <input type="text" id="reporter" placeholder="เช่น สมชาย ใจดี"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm font-medium"
+                  required>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
+                  <input type="text" id="department" placeholder="ถ้ามี เช่น ฝ่ายวิชาการ"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ / ห้อง</label>
+                  <input type="text" id="repair_location" placeholder="เช่น ห้อง 202, อาคาร 3"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ปัญหาเรื่องอะไร <span class="text-rose-500">*</span></label>
+                <select id="subject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm font-medium" required>
+                  <option value="แอร์ / ระบบปรับอากาศ">แอร์ / ระบบปรับอากาศ</option>
+                  <option value="ระบบประปา / ท่อน้ำ">ระบบประปา / ท่อน้ำ</option>
+                  <option value="ระบบไฟฟ้า / ปลั๊กไฟ">ระบบไฟฟ้า / ปลั๊กไฟ</option>
+                  <option value="งานโครงสร้าง / ผนัง / เพดาน">งานโครงสร้าง / ผนัง / เพดาน</option>
+                  <option value="หลอดไฟ / โคมไฟ">หลอดไฟ / โคมไฟ</option>
+                  <option value="กระจก / หน้าต่าง">กระจก / หน้าต่าง</option>
+                  <option value="พัดลม / พัดลมดูดอากาศ">พัดลม / พัดลมดูดอากาศ</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ความเร่งด่วน <span class="text-rose-500">*</span></label>
+                <div class="grid grid-cols-3 gap-2">
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50 has-[:checked]:text-rose-700">
+                    <input type="radio" name="urgency" value="ด่วน" class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🔴 ด่วน</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">กระทบการใช้งาน</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-[#265D5A] has-[:checked]:bg-[#B0EDE6]/30 has-[:checked]:text-[#265D5A]">
+                    <input type="radio" name="urgency" value="ตามคิว" checked class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🔵 ตามคิว</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">งานทั่วไป</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50 has-[:checked]:text-emerald-700">
+                    <input type="radio" name="urgency" value="ไม่รีบ" class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🟢 ไม่รีบ</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">ดำเนินการภายหลัง</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่/เวลาที่พบปัญหา <span class="text-slate-400 font-normal">(ถ้าจำได้)</span></label>
+                  <input type="datetime-local" id="incident_date"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดปัญหา <span class="text-rose-500">*</span></label>
+                <textarea id="detail" rows="3" placeholder="บอกรายละเอียดเพิ่มเติม เช่น อาการที่พบ หรือจุดสังเกต"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm" required></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อกลับ</label>
+                <input type="text" id="contact" placeholder="เช่น 081-234-5678 หรือ LINE ID"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">รูปภาพประกอบ (ถ้ามี)</label>
+                <input type="file" id="file" accept="image/*" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#B0EDE6] file:text-[#265D5A] hover:file:bg-[#265D5A] hover:file:text-white file:transition-colors">
+              </div>
+
+              <button type="button" onclick="submitRepair()" id="btnSubmitRepair"
+                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
+                <i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหา</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>

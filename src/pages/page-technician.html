@@ -1,0 +1,55 @@
+﻿      <div id="page-technician" class="page-section">
+        <div class="max-w-7xl mx-auto">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-toolbox text-blue-600"></i>
+                จัดการงานซ่อม</h1>
+              <p class="text-xs text-slate-500 mt-1">งานที่ยังไม่เสร็จจะถูกดันขึ้นด้านบน (ติดดาว ⭐ และป้ายสีแดง)
+                เรียงตามเวลาเก่าไปใหม่ งานที่เสร็จแล้วจะติดป้ายสีฟ้าและดันลงด้านล่าง</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
+                <input type="text" oninput="window.currentRepairSearch = this.value; window.renderRepairTable();"
+                  class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
+                  placeholder="ค้นหาจากรายละเอียดปัญหา...">
+              </div>
+              <button onclick="loadBuildingTasks()"
+                class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
+                  class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
+              <button onclick="exportTableToCSV('taskBody', 'รายงานงานซ่อม.csv')"
+                class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold text-emerald-700 hover:bg-emerald-100 shadow-sm transition-colors hidden sm:block"><i
+                  class="fa-solid fa-file-csv mr-1"></i> ส่งออก CSV</button>
+            </div>
+          </div>
+          
+          <div class="flex gap-2 border-b border-slate-200 mb-4 overflow-x-auto" id="repairAdminTabs">
+            <button class="px-4 py-2 font-bold text-blue-600 border-b-2 border-blue-600 whitespace-nowrap" onclick="filterRepairTab('all', this)">ทั้งหมด</button>
+            <button class="px-4 py-2 font-semibold text-slate-500 hover:text-slate-700 whitespace-nowrap" onclick="filterRepairTab('pending', this)">รอดำเนินการ</button>
+            <button class="px-4 py-2 font-semibold text-slate-500 hover:text-slate-700 whitespace-nowrap" onclick="filterRepairTab('progress', this)">กำลังดำเนินการ</button>
+            <button class="px-4 py-2 font-semibold text-slate-500 hover:text-slate-700 whitespace-nowrap" onclick="filterRepairTab('done', this)">เสร็จสิ้น</button>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+              <thead class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                <tr>
+                  <th class="p-4 w-12 text-center">⭐</th>
+                  <th class="p-4">เวลาแจ้ง</th>
+                  <th class="p-4">สถานะ</th>
+                  <th class="p-4">หัวข้อปัญหา</th>
+                  <th class="p-4">รายละเอียด</th>
+                  <th class="p-4">ผู้แจ้ง</th>
+                  <th class="p-4">รูปภาพ</th>
+                  <th class="p-4 text-center">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="taskBody">
+                <tr>
+                  <td colspan="8" class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>

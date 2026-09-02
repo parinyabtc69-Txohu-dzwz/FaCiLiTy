@@ -1,0 +1,79 @@
+﻿      <div id="page-home" class="page-section max-w-4xl mx-auto py-4">
+        <div class="text-center mb-8">
+          <div
+            class="w-20 h-20 bg-[#B0EDE6] text-[#265D5A] rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 shadow-sm border border-[#265D5A]/20">
+            <i class="fa-solid fa-building"></i>
+          </div>
+          <h1 class="text-3xl font-semibold text-slate-800 mb-2">ระบบบริการทรัพยากร</h1>
+          <p class="text-sm text-slate-500 font-light">เลือกบริการหรือหน่วยงานที่คุณต้องการติดต่อ</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="homeMenuGrid">
+          <button onclick="nav('page-repair-form')"
+            class="btn-card card-building flex items-center p-5 border border-[#B0EDE6] rounded-2xl bg-white hover:bg-[#E0F7F4] hover:border-[#265D5A]/30 transition-all text-left group shadow-sm">
+            <div
+              class="icon-wrapper w-12 h-12 rounded-xl bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-wrench"></i>
+            </div>
+            <div class="flex-grow">
+              <span class="block text-base font-medium text-slate-800">แจ้งซ่อม / แจ้งปัญหาอาคาร</span>
+              <span class="block text-xs text-slate-500 font-light">แจ้งซ่อมไฟฟ้า ประปา แอร์ หรือโครงสร้างอาคาร</span>
+            </div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-[#1a3f3d]">›</div>
+          </button>
+
+          <button onclick="nav('page-av-form')"
+            class="btn-card card-av flex items-center p-5 border border-[#B0EDE6] rounded-2xl bg-white hover:bg-[#E0F7F4] hover:border-[#265D5A]/30 transition-all text-left group shadow-sm">
+            <div
+              class="icon-wrapper w-12 h-12 rounded-xl bg-[#FF5F5F]/10 text-[#FF5F5F] flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-microphone-lines"></i>
+            </div>
+            <div class="flex-grow">
+              <span class="block text-base font-medium text-slate-800">ยืม-คืน / จัดเตรียมไมค์-โสตฯ</span>
+              <span class="block text-xs text-slate-500 font-light">ขอใช้เสียง โปรเจกเตอร์ หรือเตรียมห้องประชุม</span>
+            </div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-[#FF5F5F]">›</div>
+          </button>
+
+          <button id="home-card-teacher-profile" onclick="nav('page-teacher-profile')"
+            class="btn-card hidden items-center p-5 border border-slate-200 rounded-2xl bg-white hover:bg-emerald-50/50 hover:border-emerald-200 transition-all text-left group shadow-sm">
+            <div
+              class="icon-wrapper w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div class="flex-grow">
+              <span class="block text-base font-medium text-slate-800">ประวัติแจ้งซ่อมอาคาร</span>
+              <span class="block text-xs text-slate-500 font-light">ติดตามสถานะงานซ่อมอาคารที่คุณได้ส่งเรื่องไว้</span>
+            </div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-emerald-600">›</div>
+          </button>
+
+          <button id="home-card-teacher-av-profile" onclick="nav('page-teacher-av-profile')"
+            class="btn-card hidden items-center p-5 border border-slate-200 rounded-2xl bg-white hover:bg-amber-50/50 hover:border-amber-200 transition-all text-left group shadow-sm">
+            <div
+              class="icon-wrapper w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div class="flex-grow">
+              <span class="block text-base font-medium text-slate-800">ประวัติยืมอุปกรณ์โสตฯ</span>
+              <span class="block text-xs text-slate-500 font-light">ติดตามสถานะการขอยืมและคืนอุปกรณ์โสตทัศนูปกรณ์</span>
+            </div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-amber-600">›</div>
+          </button>
+
+          <button id="home-card-dash" onclick="nav('page-dashboard')"
+            class="btn-card hidden items-center p-5 border border-slate-200 rounded-2xl bg-white hover:bg-sky-50/50 hover:border-sky-200 transition-all text-left group shadow-sm col-span-1 md:col-span-2">
+            <div
+              class="icon-wrapper w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <div class="flex-grow">
+              <span class="block text-base font-medium text-slate-800">มอนิเตอร์ภาพรวมทรัพยากร</span>
+              <span class="block text-xs text-slate-500 font-light">ดูสถิติภาพรวมงานซ่อมอาคารและงานบริการโสตฯ แบบ
+                Real-time</span>
+            </div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-sky-600">›</div>
+          </button>
+
+        </div>
+      </div>

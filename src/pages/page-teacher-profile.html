@@ -1,0 +1,47 @@
+﻿      <div id="page-teacher-profile" class="page-section">
+        <div class="max-w-6xl mx-auto">
+          <div
+            class="bg-gradient-to-r from-[#265D5A] to-[#1a3f3d] text-white p-6 md:p-8 rounded-3xl shadow-sm mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <div class="text-xs uppercase tracking-widest text-[#B0EDE6] font-semibold mb-1">ระบบสมาชิกครูผู้สอน
+              </div>
+              <h1 class="text-3xl font-bold" id="profile-teacher-name">ยินดีต้อนรับ, คุณครู</h1>
+              <p class="text-[#B0EDE6] text-sm mt-1">ตรวจสอบประวัติการแจ้งซ่อม และติดตามสถานะความคืบหน้าแบบ Real-time
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="nav('page-repair-form')"
+                class="bg-white text-[#265D5A] px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#B0EDE6] transition-colors"><i
+                  class="fa-solid fa-wrench mr-1"></i> แจ้งซ่อมใหม่</button>
+              <button onclick="handleGlobalLogout()"
+                class="bg-[#1a3f3d] text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#0c2422] transition-colors"><i
+                  class="fa-solid fa-right-from-bracket mr-1"></i> ออกจากระบบ</button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-sm p-6 border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i
+                class="fa-solid fa-clock-rotate-left text-[#265D5A]"></i> ประวัติและสถานะเรื่องแจ้งซ่อมอาคารของคุณครู
+            </h2>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-slate-50 text-slate-700 rounded-xl">
+                  <tr>
+                    <th class="p-4 rounded-l-xl">เวลาแจ้ง</th>
+                    <th class="p-4">หัวข้อปัญหา</th>
+                    <th class="p-4">รายละเอียด</th>
+                    <th class="p-4">รูปภาพปัญหา</th>
+                    <th class="p-4">สถานะปัจจุบัน</th>
+                    <th class="p-4 rounded-r-xl">ช่างผู้ดูแล / ผลการซ่อม</th>
+                  </tr>
+                </thead>
+                <tbody id="teacherTaskBody">
+                  <tr>
+                    <td colspan="6" class="p-8 text-center text-slate-500">กำลังโหลดข้อมูลประวัติของคุณครู...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>

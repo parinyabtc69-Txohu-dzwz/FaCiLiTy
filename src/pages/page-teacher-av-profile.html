@@ -1,0 +1,44 @@
+﻿      <div id="page-teacher-av-profile" class="page-section">
+        <div class="max-w-6xl mx-auto">
+          <div
+            class="bg-gradient-to-r from-[#FF5F5F] to-[#8F1C26] text-white p-6 md:p-8 rounded-3xl shadow-sm mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <div class="text-xs uppercase tracking-widest text-white/70 font-semibold mb-1">ระบบสมาชิกครูผู้สอน</div>
+              <h1 class="text-3xl font-bold" id="profile-teacher-av-name">ประวัติการขอยืมอุปกรณ์โสตฯ</h1>
+              <p class="text-white/80 text-sm mt-1">ติดตามสถานะคำขอยืมอุปกรณ์ และประวัติการคืนอุปกรณ์โสตทัศนูปกรณ์</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="nav('page-av-form')"
+                class="bg-white text-[#FF5F5F] px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#FF5F5F]/10 transition-colors"><i
+                  class="fa-solid fa-microphone-lines mr-1"></i> ยืมอุปกรณ์เพิ่ม</button>
+              <button onclick="handleGlobalLogout()"
+                class="bg-[#1a3f3d] text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#0c2422] transition-colors"><i
+                  class="fa-solid fa-right-from-bracket mr-1"></i> ออกจากระบบ</button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-sm p-6 border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i
+                class="fa-solid fa-list-check text-[#FF5F5F]"></i> ประวัติรายการขอยืมอุปกรณ์โสตฯ ของคุณครู</h2>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-slate-50 text-slate-700 rounded-xl">
+                  <tr>
+                    <th class="p-4 rounded-l-xl">วันที่แจ้ง</th>
+                    <th class="p-4">รายการอุปกรณ์</th>
+                    <th class="p-4">วันที่ใช้งาน</th>
+                    <th class="p-4">สถานที่</th>
+                    <th class="p-4">สถานะปัจจุบัน</th>
+                    <th class="p-4 rounded-r-xl">เจ้าหน้าที่ผู้ดูแล</th>
+                  </tr>
+                </thead>
+                <tbody id="teacherAVTaskBody">
+                  <tr>
+                    <td colspan="6" class="p-8 text-center text-slate-500">กำลังโหลดข้อมูลประวัติการยืม...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>

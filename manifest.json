@@ -1,0 +1,35 @@
+{
+  "name": "FaCiLiTy — ระบบบริการทรัพยากร",
+  "short_name": "FaCiLiTy",
+  "description": "ระบบแจ้งซ่อมอาคาร และยืม-คืนโสตทัศนูปกรณ์",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F0FAF9",
+  "theme_color": "#265D5A",
+  "lang": "th",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./img/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./img/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "shortcuts": [
+    {
+      "name": "แจ้งซ่อมอาคาร",
+      "short_name": "แจ้งซ่อม",
+      "description": "แจ้งปัญหาอาคารสถานที่",
+      "url": "./index.html#repair",
+      "icons": [{ "src": "./img/logo.png", "sizes": "192x192" }]
+    }
+  ]
+}

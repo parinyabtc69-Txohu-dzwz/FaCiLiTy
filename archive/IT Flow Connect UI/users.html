@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th" data-tsd-source="/src/routes/__root.tsx:127:5">
+  <head data-tsd-source="/src/routes/__root.tsx:128:7">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&amp;display=swap"
+      data-precedence="default"
+    />
+    <title>Facility TaskFlow — ระบบจัดการงานแจ้งซ่อมอาคารสถานที่</title>
+    <meta
+      name="description"
+      content="ระบบจัดการงาน ช่างอาคาร มอบหมายงาน ติดตามสถานะ แจ้งเตือนอัตโนมัติ พร้อมรายงานและ Export"
+    />
+    <meta name="author" content="Facility TaskFlow" />
+    <meta property="og:title" content="Facility TaskFlow — ระบบจัดการงานแจ้งซ่อมอาคารสถานที่" />
+    <meta
+      property="og:description"
+      content="ระบบจัดการงาน ช่างอาคาร มอบหมายงาน ติดตามสถานะ แจ้งเตือนอัตโนมัติ"
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0b1830" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Facility TaskFlow" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="modulepreload" href="/@id/virtual:tanstack-start-dev-client-entry" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-tsd-source="/src/routes/__root.tsx:131:7">
+    <!--$-->
+    <div class="min-h-screen bg-background" data-tsd-source="/src/components/AppShell.tsx:49:5">
+      <header
+        class="sticky top-0 z-40 border-b bg-card"
+        data-tsd-source="/src/components/AppShell.tsx:50:7"
+      >
+        <div
+          class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3"
+          data-tsd-source="/src/components/AppShell.tsx:51:9"
+        >
+          <div class="flex items-center gap-6" data-tsd-source="/src/components/AppShell.tsx:52:11">
+            <a
+              data-tsd-source="/src/components/AppShell.tsx:53:13"
+              href="dashboard.html"
+              class="flex items-center gap-2"
+              ><div
+                class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+                data-tsd-source="/src/components/AppShell.tsx:54:15"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-wrench h-4 w-4"
+                  aria-hidden="true"
+                  data-tsd-source="/src/components/AppShell.tsx:55:17"
+                >
+                  <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
+                  ></path>
+                </svg>
+              </div>
+              <span class="font-bold" data-tsd-source="/src/components/AppShell.tsx:57:15"
+                >Facility TaskFlow</span
+              ></a
+            >
+            <nav
+              class="hidden items-center gap-1 md:flex"
+              data-tsd-source="/src/components/AppShell.tsx:59:13"
+            >
+              <a
+                data-tsd-source="/src/components/AppShell.tsx:61:17"
+                href="dashboard.html"
+                class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-layout-dashboard h-4 w-4"
+                  aria-hidden="true"
+                  data-tsd-source="/src/components/AppShell.tsx:67:19"
+                >
+                  <rect width="7" height="9" x="3" y="3" rx="1"></rect>
+                  <rect width="7" height="5" x="14" y="3" rx="1"></rect>
+                  <rect width="7" height="9" x="14" y="12" rx="1"></rect>
+                  <rect width="7" height="5" x="3" y="16" rx="1"></rect></svg
+                >แดชบอร์ด</a
+              ><a
+                data-tsd-source="/src/components/AppShell.tsx:61:17"
+                href="tasks.html"
+                class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-clipboard-list h-4 w-4"
+                  aria-hidden="true"
+                  data-tsd-source="/src/components/AppShell.tsx:67:19"
+                >
+                  <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+                  <path
+                    d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+                  ></path>
+                  <path d="M12 11h4"></path>
+                  <path d="M12 16h4"></path>
+                  <path d="M8 11h.01"></path>
+                  <path d="M8 16h.01"></path></svg
+                >งานทั้งหมด</a
+              ><a
+                data-tsd-source="/src/components/AppShell.tsx:61:17"
+                href="/tasks/new"
+                class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-circle-plus h-4 w-4"
+                  aria-hidden="true"
+                  data-tsd-source="/src/components/AppShell.tsx:67:19"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M8 12h8"></path>
+                  <path d="M12 8v8"></path></svg
+                >สร้างงาน</a
+              >
+            </nav>
+          </div>
+          <div class="flex items-center gap-2" data-tsd-source="/src/components/AppShell.tsx:74:11">
+            <div
+              class="hidden text-right sm:block"
+              data-tsd-source="/src/components/AppShell.tsx:76:13"
+            >
+              <p
+                class="text-sm font-medium leading-tight"
+                data-tsd-source="/src/components/AppShell.tsx:77:15"
+              >
+                ...
+              </p>
+              <p
+                class="text-xs text-muted-foreground"
+                data-tsd-source="/src/components/AppShell.tsx:80:15"
+              >
+                ผู้แจ้ง
+              </p>
+            </div>
+            <button
+              class="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="ออกจากระบบ"
+              title="ออกจากระบบ"
+              data-tsd-source="/src/components/AppShell.tsx:82:13"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-log-out h-4 w-4"
+                aria-hidden="true"
+                data-tsd-source="/src/components/AppShell.tsx:88:15"
+              >
+                <path d="m16 17 5-5-5-5"></path>
+                <path d="M21 12H9"></path>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              </svg></button
+            ><button
+              class="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground md:hidden"
+              aria-label="เมนู"
+              data-tsd-source="/src/components/AppShell.tsx:90:13"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-menu h-5 w-5"
+                aria-hidden="true"
+                data-tsd-source="/src/components/AppShell.tsx:95:15"
+              >
+                <path d="M4 5h16"></path>
+                <path d="M4 12h16"></path>
+                <path d="M4 19h16"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+      <main
+        class="mx-auto max-w-7xl px-4 py-6"
+        data-tsd-source="/src/components/AppShell.tsx:118:7"
+      >
+        <h1
+          class="mb-6 text-2xl font-bold"
+          data-tsd-source="/src/routes/_authenticated/users.tsx:97:7"
+        >
+          จัดการผู้ใช้
+        </h1>
+        <div
+          class="card-panel overflow-x-auto"
+          data-tsd-source="/src/routes/_authenticated/users.tsx:104:9"
+        >
+          <table
+            class="w-full text-sm"
+            data-tsd-source="/src/routes/_authenticated/users.tsx:105:11"
+          >
+            <thead data-tsd-source="/src/routes/_authenticated/users.tsx:106:13">
+              <tr
+                class="border-b bg-muted/50 text-left text-xs text-muted-foreground"
+                data-tsd-source="/src/routes/_authenticated/users.tsx:107:15"
+              >
+                <th
+                  class="px-4 py-3 font-medium"
+                  data-tsd-source="/src/routes/_authenticated/users.tsx:108:17"
+                >
+                  ชื่อ
+                </th>
+                <th
+                  class="px-4 py-3 font-medium"
+                  data-tsd-source="/src/routes/_authenticated/users.tsx:109:17"
+                >
+                  อีเมล
+                </th>
+                <th
+                  class="px-4 py-3 font-medium"
+                  data-tsd-source="/src/routes/_authenticated/users.tsx:110:17"
+                >
+                  สมัครเมื่อ
+                </th>
+                <th
+                  class="px-4 py-3 font-medium"
+                  data-tsd-source="/src/routes/_authenticated/users.tsx:111:17"
+                >
+                  บทบาท
+                </th>
+                <th
+                  class="px-4 py-3 text-right font-medium"
+                  data-tsd-source="/src/routes/_authenticated/users.tsx:112:17"
+                >
+                  จัดการ
+                </th>
+              </tr>
+            </thead>
+            <tbody data-tsd-source="/src/routes/_authenticated/users.tsx:116:13"></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+    <!--/$-->
+    <section
+      aria-label="Notifications alt+T"
+      tabindex="-1"
+      aria-live="polite"
+      aria-relevant="additions text"
+      aria-atomic="false"
+    ></section>
+  </body>
+</html>
