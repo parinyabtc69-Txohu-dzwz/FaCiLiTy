@@ -1404,6 +1404,49 @@
                 alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
               }
             },
+            async submitAV() {
+              const borrower = $('borrower').value.trim();
+              const useDate = $('useDate').value;
+              const location = $('av_location').value.trim();
+              const signature = $('signerName').value.trim();
+              
+              if (!borrower || !useDate || !location || !signature) {
+                return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน');
+              }
+
+              let equipmentList = [];
+              const checkboxes = document.querySelectorAll('input[name="equipment"]:checked');
+              checkboxes.forEach(cb => {
+                const qty = cb.parentElement.querySelector('input[type=number]').value;
+                equipmentList.push(`${cb.value} x${qty}`);
+              });
+
+              const otherEquip = $('other_equip').value.trim();
+              if (otherEquip) {
+                const qtyOther = $('qty_other').value;
+                equipmentList.push(`${otherEquip} x${qtyOther}`);
+              }
+
+              if (equipmentList.length === 0) {
+                return alertBox('warning', 'เลือกอุปกรณ์', 'กรุณาเลือกอุปกรณ์อย่างน้อย 1 รายการ');
+              }
+
+              const equipmentStr = equipmentList.join(', ');
+
+              const btn = $('btnSubmitAV');
+              setBusy(btn, true);
+
+              try {
+                await ResourceHubCore.av.submit({ borrower, equipment: equipmentStr, useDate, location, signature });
+                setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ยืนยันการขอยืมอุปกรณ์</span>');
+                await alertBox('success', 'สำเร็จ', 'ส่งเรื่องขอยืมอุปกรณ์เรียบร้อยแล้ว', { timer: 2000, showConfirmButton: false });
+                $('avForm').reset();
+                nav('page-teacher-av-profile');
+              } catch (e) {
+                setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ยืนยันการขอยืมอุปกรณ์</span>');
+                alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+              }
+            },
             async loadAdminTable(type) {
               const isRepair = type === 'repair';
               const tbodyId = isRepair ? 'taskBody' : 'avDataView';
