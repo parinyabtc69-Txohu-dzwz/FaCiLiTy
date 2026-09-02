@@ -176,7 +176,33 @@ function doPost(e) {
       // ── อัพสถานะงานซ่อม ─────────────────────────────────────
       case 'update_task_status':
         const sheetTaskStatus = db.getSheetByName(CONFIG.SHEET_NAME);
-        sheetTaskStatus.getRange(data.rowIndex + 2, 5).setValue(data.status);
+        const statusTargetRow = data.rowIndex + 2;
+        sheetTaskStatus.getRange(statusTargetRow, 5).setValue(data.status);
+        
+        if (data.status === 'เสร็จสิ้น') {
+          const subjectStr = sheetTaskStatus.getRange(statusTargetRow, 2).getValue();
+          const detailStr = sheetTaskStatus.getRange(statusTargetRow, 3).getValue();
+          const reporterNameStr = sheetTaskStatus.getRange(statusTargetRow, 4).getValue();
+          const reporterEmail = getUserEmailByName(reporterNameStr);
+          
+          if (reporterEmail) {
+            const bodyHtml = `
+              <div style="font-family: sans-serif; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                <h2 style="color: #059669; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">✅ งานซ่อมเสร็จสิ้น: ${subjectStr}</h2>
+                <p><strong>รายละเอียดอาการ:</strong> ${detailStr}</p>
+                <p><strong>สถานะปัจจุบัน:</strong> เสร็จสิ้น</p>
+                <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">เข้าสู่ระบบเพื่อดูรายละเอียดเพิ่มเติม</p>
+              </div>
+            `;
+            try {
+              MailApp.sendEmail({
+                to: reporterEmail,
+                subject: `✅ งานซ่อมเสร็จสิ้น: ${subjectStr}`,
+                htmlBody: bodyHtml
+              });
+            } catch (e) { Logger.log(e.message); }
+          }
+        }
         break;
 
       // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
@@ -209,6 +235,31 @@ function doPost(e) {
         const cost = (data.cost && !isNaN(data.cost)) ? Number(data.cost) : 0;
         sheetTaskProof.getRange(targetRow, 10).setValue(cost > 0 ? cost : "-");
         sheetTaskProof.getRange(targetRow, 11).setValue(receiptUrl);
+        
+        // Notify Reporter
+        const proofSubject = sheetTaskProof.getRange(targetRow, 2).getValue();
+        const proofDetail = sheetTaskProof.getRange(targetRow, 3).getValue();
+        const proofReporter = sheetTaskProof.getRange(targetRow, 4).getValue();
+        const proofReporterEmail = getUserEmailByName(proofReporter);
+        
+        if (proofReporterEmail) {
+          const bodyHtml = `
+            <div style="font-family: sans-serif; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+              <h2 style="color: #059669; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">✅ งานซ่อมเสร็จสิ้น: ${proofSubject}</h2>
+              <p><strong>รายละเอียดอาการ:</strong> ${proofDetail}</p>
+              <p><strong>การแก้ไขปัญหา:</strong> ${data.fixDetail}</p>
+              <p><strong>ช่างผู้รับผิดชอบ:</strong> ${data.technician}</p>
+              <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">เข้าสู่ระบบเพื่อดูรายละเอียดเพิ่มเติมหรือหลักฐานการซ่อม</p>
+            </div>
+          `;
+          try {
+            MailApp.sendEmail({
+              to: proofReporterEmail,
+              subject: `✅ งานซ่อมเสร็จสิ้น: ${proofSubject}`,
+              htmlBody: bodyHtml
+            });
+          } catch (e) { Logger.log(e.message); }
+        }
         break;
 
       // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
@@ -521,3 +572,25 @@ function sendEmailNotification(subject, bodyHtml) {
     Logger.log("Email error: " + e.message);
   }
 }
+
+function getUserEmailByName(name) {
+  try {
+    const db = getDB();
+    const sheet = db.getSheetByName('Users');
+    if (!sheet) return null;
+    
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][1] === name) { // Column 1 = Name
+        const email = data[i][0]; // Column 0 = Email
+        if (email && email.includes('@')) {
+          return email;
+        }
+      }
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
