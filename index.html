@@ -129,15 +129,6 @@
       <span class="text-xl font-bold text-white tracking-tight hidden sm:inline">FaCiLiTy</span>
     </div>
 
-    <div class="flex-1 max-w-2xl mx-4">
-      <div
-        class="bg-[#B0EDE6]/40 hover:bg-[#B0EDE6]/60 focus-within:bg-white focus-within:shadow-md transition-all rounded-full flex items-center px-4 py-2.5 border border-[#B0EDE6]/50 focus-within:border-[#265D5A]">
-        <i class="fa-solid fa-magnifying-glass text-[#B0EDE6] mr-3"></i>
-        <input type="text" id="globalSearchInput" oninput="handleGlobalSearch(this.value)"
-          placeholder="ค้นหาเมนู หรือ หัวข้อปัญหา..."
-          class="bg-transparent w-full outline-none text-sm text-white placeholder-[#B0EDE6]/80">
-      </div>
-    </div>
 
     <div class="flex items-center gap-2 relative">
       <button onclick="openBugReportModal('แถบเมนูด้านบน')"
@@ -1871,21 +1862,6 @@
           }
 
           updateNotificationBadges();
-        }
-
-        function handleGlobalSearch(keyword) {
-          const term = keyword.toLowerCase().trim();
-          if (!term) return;
-
-          if (term.includes('ซ่อม')) {
-            nav('page-repair-form');
-          } else if (term.includes('โสต') || term.includes('ยืม')) {
-            nav('page-av-form');
-          } else if (term.includes('มอนิเตอร์') || term.includes('กราฟ') || term.includes('dashboard')) {
-            if (isAdminLoggedIn) nav('page-dashboard');
-          } else if (term.includes('ประวัติ')) {
-            if (currentTeacher) nav('page-teacher-profile');
-          }
         }
 
         function toggleProfileDropdown() {
