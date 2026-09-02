@@ -123,7 +123,7 @@ function doPost(e) {
           const folder = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_REPORT);
           const blob = Utilities.newBlob(Utilities.base64Decode(data.file.data), data.file.type, data.file.name);
           const file = folder.createFile(blob);
-          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
           repFileUrl = file.getUrl();
         }
         sheetRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", repFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
@@ -214,7 +214,7 @@ function doPost(e) {
           const folder = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_PROOF);
           const blob = Utilities.newBlob(Utilities.base64Decode(data.file.data), data.file.type, data.file.name);
           const file = folder.createFile(blob);
-          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
           proofFileUrl = file.getUrl();
         }
         
@@ -223,7 +223,7 @@ function doPost(e) {
           const folder = getOrCreateSubFolder(CONFIG.FOLDER_RECEIPTS);
           const blob = Utilities.newBlob(Utilities.base64Decode(data.receiptFile.data), data.receiptFile.type, data.receiptFile.name);
           const file = folder.createFile(blob);
-          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
           receiptUrl = file.getUrl();
         }
         
@@ -324,7 +324,7 @@ function doPost(e) {
           const folder = getOrCreateSubFolder(CONFIG.FOLDER_DOCUMENTS);
           const blob = Utilities.newBlob(Utilities.base64Decode(data.file.data), data.file.type, data.file.name);
           const file = folder.createFile(blob);
-          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
           addDocFileUrl = file.getUrl();
         }
 
