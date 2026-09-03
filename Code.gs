@@ -23,6 +23,7 @@ const CONFIG = {
   FOLDER_REPAIR_PROOF:  "รูปภาพผลการซ่อม",       // รูปที่ช่างส่งตอนปิดงาน
   FOLDER_DOCUMENTS:     "เอกสารระบบ",             // เอกสารจากระบบจัดการเอกสาร
   FOLDER_RECEIPTS:      "เอกสารใบเสร็จ",          // ใบเสร็จเบิกจ่าย / ใบเสนอราคา
+  LINE_NOTIFY_TOKEN: "ใส่_Token_ที่นี่",           // <-- เปลี่ยนเป็น Token ของคุณ
 };
 
 function getDB() {
@@ -141,6 +142,9 @@ function doPost(e) {
           </div>
         `;
         sendEmailNotification(`🔔 แจ้งซ่อมใหม่: ${data.subject}`, repBody);
+        
+        const lineRepMsg = `\n🔔 แจ้งซ่อมใหม่: ${data.subject}\nผู้แจ้ง: ${data.reporter}\nสถานที่: ${data.loc || '-'}\nรายละเอียด: ${data.detail}`;
+        sendLineNotify(lineRepMsg);
         break;
 
       // ── ยืมโสตฯ ─────────────────────────────────────────────
@@ -159,6 +163,9 @@ function doPost(e) {
           </div>
         `;
         sendEmailNotification(`📢 ขอยืมอุปกรณ์โสตฯ: ${data.borrower}`, avBody);
+        
+        const lineAvMsg = `\n📢 แจ้งยืมอุปกรณ์โสตฯ\nผู้ยืม: ${data.borrower}\nอุปกรณ์ที่ต้องการ: ${data.equipment}\nวันที่ใช้งาน: ${data.useDate}\nสถานที่: ${data.location}`;
+        sendLineNotify(lineAvMsg);
         break;
 
       // ── แจ้งบั๊ก ─────────────────────────────────────────────
@@ -202,6 +209,8 @@ function doPost(e) {
               });
             } catch (e) { Logger.log(e.message); }
           }
+          
+          sendLineNotify(`\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`);
         }
         break;
 
@@ -260,6 +269,8 @@ function doPost(e) {
             });
           } catch (e) { Logger.log(e.message); }
         }
+          
+        sendLineNotify(`\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`);
         break;
 
       // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
@@ -547,11 +558,12 @@ function sendEmailNotification(subject, bodyHtml) {
     let adminEmails = [];
     
     // Column 0 = Email, Column 2 = Role
+    // Column 0 = Email, Column 2 = Role
     for (let i = 1; i < data.length; i++) {
-      const email = data[i][0];
-      const role = data[i][2];
+      const email = (data[i][0] || '').toString().trim();
+      const role = (data[i][2] || '').toString().trim().toLowerCase();
       
-      if (role === 'Admin' || role === 'Staff' || role === 'Technician') {
+      if (role === 'admin' || role === 'staff' || role === 'technician') {
         if (email && email.includes('@')) {
           adminEmails.push(email);
         }
@@ -580,9 +592,12 @@ function getUserEmailByName(name) {
     if (!sheet) return null;
     
     const data = sheet.getDataRange().getValues();
+    const searchName = (name || '').toString().trim().toLowerCase();
+    
     for (let i = 1; i < data.length; i++) {
-      if (data[i][1] === name) { // Column 1 = Name
-        const email = data[i][0]; // Column 0 = Email
+      const sheetName = (data[i][1] || '').toString().trim().toLowerCase();
+      if (sheetName === searchName && sheetName !== '') { // Column 1 = Name
+        const email = (data[i][0] || '').toString().trim(); // Column 0 = Email
         if (email && email.includes('@')) {
           return email;
         }
@@ -591,6 +606,27 @@ function getUserEmailByName(name) {
     return null;
   } catch (e) {
     return null;
+  }
+}
+
+function sendLineNotify(message) {
+  try {
+    if (!CONFIG.LINE_NOTIFY_TOKEN || CONFIG.LINE_NOTIFY_TOKEN === "ใส่_Token_ที่นี่") return;
+    
+    const url = "https://notify-api.line.me/api/notify";
+    const options = {
+      method: "post",
+      headers: {
+        "Authorization": "Bearer " + CONFIG.LINE_NOTIFY_TOKEN
+      },
+      payload: {
+        "message": message
+      },
+      muteHttpExceptions: true
+    };
+    UrlFetchApp.fetch(url, options);
+  } catch (e) {
+    Logger.log("Line Notify Error: " + e.message);
   }
 }
 
