@@ -24,7 +24,7 @@ const CONFIG = {
   FOLDER_DOCUMENTS:     "เอกสารระบบ",             // เอกสารจากระบบจัดการเอกสาร
   FOLDER_RECEIPTS:      "เอกสารใบเสร็จ",          // ใบเสร็จเบิกจ่าย / ใบเสนอราคา
   LINE_CHANNEL_ACCESS_TOKEN: "ใส่_Channel_Access_Token_ที่นี่", // <-- เปลี่ยนเป็น Channel Access Token ของคุณ
-  LINE_TARGET_ID: "ใส่_User_ID_หรือ_Group_ID_ที่นี่",           // <-- เปลี่ยนเป็น User ID หรือ Group ID ของคุณ
+  LINE_TARGET_ID: "U52b153816fe2a10531490fee141fb82b",           // <-- เปลี่ยนเป็น User ID หรือ Group ID ของคุณ
 };
 
 function getDB() {
