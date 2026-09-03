@@ -150,7 +150,14 @@ function doPost(e) {
         sendEmailNotification(`🔔 แจ้งซ่อมใหม่: ${data.subject}`, repBody);
         
         const lineRepMsg = `\n🔔 แจ้งซ่อมใหม่: ${data.subject}\nผู้แจ้ง: ${data.reporter}\nสถานที่: ${data.loc || '-'}\nรายละเอียด: ${data.detail}`;
-        sendLineMessage(lineRepMsg);
+        
+        let repLineTargets = getAdminAndTechLineIds();
+        let reporterLineId = getUserLineIdByName(data.reporter);
+        if (reporterLineId && !repLineTargets.includes(reporterLineId)) {
+          repLineTargets.push(reporterLineId);
+        }
+        sendLineMessage(lineRepMsg, repLineTargets);
+        
         break;
 
       // ── ยืมโสตฯ ─────────────────────────────────────────────
@@ -171,13 +178,29 @@ function doPost(e) {
         sendEmailNotification(`📢 ขอยืมอุปกรณ์โสตฯ: ${data.borrower}`, avBody);
         
         const lineAvMsg = `\n📢 แจ้งยืมอุปกรณ์โสตฯ\nผู้ยืม: ${data.borrower}\nอุปกรณ์ที่ต้องการ: ${data.equipment}\nวันที่ใช้งาน: ${data.useDate}\nสถานที่: ${data.location}`;
-        sendLineMessage(lineAvMsg);
+        
+        let avLineTargets = getAdminAndTechLineIds();
+        let borrowerLineId = getUserLineIdByName(data.borrower);
+        if (borrowerLineId && !avLineTargets.includes(borrowerLineId)) {
+          avLineTargets.push(borrowerLineId);
+        }
+        sendLineMessage(lineAvMsg, avLineTargets);
+        
         break;
 
       // ── แจ้งบั๊ก ─────────────────────────────────────────────
       case 'report_bug':
         const sheetBug = db.getSheetByName(CONFIG.BUG_SHEET_NAME);
         sheetBug.appendRow([timestamp, data.reporter, data.issue, data.page, "รอดำเนินการ"]);
+        
+        const lineBugMsg = `\n🐞 แจ้งปัญหาใหม่ (Bug)\nผู้แจ้ง: ${data.reporter}\nหัวข้อ: ${data.issue}\nหน้าจอ: ${data.page}`;
+        let bugLineTargets = getAdminAndTechLineIds();
+        let bugReporterLineId = getUserLineIdByName(data.reporter);
+        if (bugReporterLineId && !bugLineTargets.includes(bugReporterLineId)) {
+          bugLineTargets.push(bugReporterLineId);
+        }
+        sendLineMessage(lineBugMsg, bugLineTargets);
+        
         break;
 
       // ── เพิ่มเติมรายละเอียดงานซ่อม ──────────────────────────
@@ -217,11 +240,12 @@ function doPost(e) {
             } catch (e) { Logger.log(e.message); }
           }
           
-          if (reporterLineId) {
-            sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`, reporterLineId);
-          } else {
-            sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`);
+          const statusMsg = `\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`;
+          let statusTargets = getAdminAndTechLineIds();
+          if (reporterLineId && !statusTargets.includes(reporterLineId)) {
+            statusTargets.push(reporterLineId);
           }
+          sendLineMessage(statusMsg, statusTargets);
         }
         break;
 
@@ -282,11 +306,12 @@ function doPost(e) {
             } catch (e) { Logger.log(e.message); }
           }
           
-        if (proofReporterLineId) {
-          sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`, proofReporterLineId);
-        } else {
-          sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`);
+        const proofMsg = `\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`;
+        let proofTargets = getAdminAndTechLineIds();
+        if (proofReporterLineId && !proofTargets.includes(proofReporterLineId)) {
+          proofTargets.push(proofReporterLineId);
         }
+        sendLineMessage(proofMsg, proofTargets);
         break;
 
       // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
@@ -622,6 +647,57 @@ function getUserEmailByName(name) {
     return null;
   } catch (e) {
     return null;
+  }
+}
+
+// ค้นหา Line ID ของผู้แจ้งจากชื่อ
+function getUserLineIdByName(name) {
+  try {
+    const db = getDB();
+    const sheet = db.getSheetByName('Users');
+    if (!sheet) return null;
+    
+    const data = sheet.getDataRange().getValues();
+    const searchName = (name || '').toString().trim().toLowerCase();
+    
+    for (let i = 1; i < data.length; i++) {
+      const sheetName = (data[i][1] || '').toString().trim().toLowerCase();
+      if (sheetName === searchName && sheetName !== '') { 
+        const lineId = (data[i][6] || '').toString().trim(); // Column G (6) = LineID
+        if (lineId && (lineId.startsWith('U') || lineId.startsWith('C') || lineId.startsWith('R'))) {
+          return lineId;
+        }
+      }
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ดึง Line ID ของช่างและแอดมินทั้งหมด
+function getAdminAndTechLineIds() {
+  try {
+    const db = getDB();
+    const sheet = db.getSheetByName('Users');
+    if (!sheet) return [];
+    
+    const data = sheet.getDataRange().getValues();
+    let lineIds = [];
+    
+    for (let i = 1; i < data.length; i++) {
+      const role = (data[i][2] || '').toString().trim().toLowerCase();
+      const status = (data[i][3] || '').toString().trim().toLowerCase();
+      if (status === 'approved' && (role === 'admin' || role === 'executive' || role === 'tech' || role === 'technician')) {
+        const lineId = (data[i][6] || '').toString().trim();
+        if (lineId && lineId.startsWith('U')) {
+          lineIds.push(lineId);
+        }
+      }
+    }
+    return [...new Set(lineIds)]; // ตัดค่าซ้ำ
+  } catch (e) {
+    return [];
   }
 }
 
