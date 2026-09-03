@@ -482,16 +482,12 @@ function handleLiffLogin() {
   Swal.fire({ title: 'กำลังตรวจสอบบัญชี LINE...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   liff.getProfile().then(profile => {
     const idToken = liff.getDecodedIDToken();
-    const email = idToken ? idToken.email : null;
+    const email = idToken && idToken.email ? idToken.email : profile.userId + '@line.me';
     const lineId = profile.userId;
     const name = profile.displayName;
     const picture = profile.pictureUrl;
     
-    if (!email) {
-      alertBox('error', 'ข้อผิดพลาด', 'ไม่สามารถดึงอีเมลจากบัญชี LINE ได้ กรุณาอนุญาตให้ระบบเข้าถึงอีเมลของคุณ');
-      liff.logout();
-      return;
-    }
+    
     
     post({ action: 'link_line_account', email: email, lineId: lineId, name: name, picture: picture })
       .then((res) => {
