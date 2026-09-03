@@ -16,7 +16,7 @@ for (const file of cssFiles) {
 htmlTemplate = htmlTemplate.replace('/* INCLUDE_CSS */', cssContent);
 
 // replace JS
-htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_JS -->', '<script>\n' + jsApp + '\n</script>');
+htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_JS -->', jsApp);
 
 // replace components
 const pagesDir = path.join(srcDir, 'pages');
