@@ -13,10 +13,10 @@ let cssContent = '';
 for (const file of cssFiles) {
   cssContent += fs.readFileSync(path.join(srcDir, 'css', file), 'utf8') + '\n';
 }
-htmlTemplate = htmlTemplate.replace('/* INCLUDE_CSS */', cssContent);
+htmlTemplate = htmlTemplate.replace('/* INCLUDE_CSS */', () => cssContent);
 
 // replace JS
-htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_JS -->', jsApp);
+htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_JS -->', () => jsApp);
 
 // replace components
 const pagesDir = path.join(srcDir, 'pages');
@@ -26,7 +26,7 @@ if (fs.existsSync(pagesDir)) {
   for (const pageFile of pageFiles) {
     pagesContent += fs.readFileSync(path.join(pagesDir, pageFile), 'utf8') + '\n';
   }
-  htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_PAGES -->', pagesContent);
+  htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_PAGES -->', () => pagesContent);
 }
 
 fs.writeFileSync(indexHtmlPath, htmlTemplate);
