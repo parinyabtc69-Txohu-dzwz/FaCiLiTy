@@ -452,6 +452,72 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === auth.js ===
+const LIFF_ID = "ใส่_LIFF_ID_ที่นี่"; // <-- เปลี่ยนเป็น LIFF ID ของคุณ
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (LIFF_ID && LIFF_ID !== "ใส่_LIFF_ID_ที่นี่") {
+    liff.init({ liffId: LIFF_ID }).then(() => {
+      if (liff.isLoggedIn()) {
+        handleLiffLogin();
+      }
+    }).catch(err => {
+      console.error('LIFF Initialization failed', err);
+    });
+  }
+});
+
+function loginWithLine() {
+  if (!LIFF_ID || LIFF_ID === "ใส่_LIFF_ID_ที่นี่") {
+    alertBox('error', 'ระบบยังไม่พร้อม', 'ผู้ดูแลระบบยังไม่ได้ตั้งค่า LIFF ID');
+    return;
+  }
+  if (!liff.isLoggedIn()) {
+    liff.login();
+  } else {
+    handleLiffLogin();
+  }
+}
+
+function handleLiffLogin() {
+  Swal.fire({ title: 'กำลังตรวจสอบบัญชี LINE...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  liff.getProfile().then(profile => {
+    const idToken = liff.getDecodedIDToken();
+    const email = idToken ? idToken.email : null;
+    const lineId = profile.userId;
+    
+    if (!email) {
+      alertBox('error', 'ข้อผิดพลาด', 'ไม่สามารถดึงอีเมลจากบัญชี LINE ได้ กรุณาอนุญาตให้ระบบเข้าถึงอีเมลของคุณ');
+      liff.logout();
+      return;
+    }
+    
+    post({ action: 'link_line_account', email: email, lineId: lineId })
+      .then((res) => {
+        currentTeacher = res.name;
+        currentRole = res.role;
+        isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive');
+
+        sessionStorage.setItem('logged_teacher', currentTeacher);
+        sessionStorage.setItem('logged_role', currentRole);
+        if (isAdminLoggedIn) sessionStorage.setItem('logged_admin', 'true');
+        sessionStorage.setItem('session_login_time', Date.now().toString());
+
+        updateSessionUI();
+        alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
+          .then(() => {
+            if (isAdminLoggedIn) nav('page-dashboard');
+            else nav('page-teacher-profile');
+          });
+      })
+      .catch((e) => {
+        alertBox('error', 'เข้าสู่ระบบไม่สำเร็จ', e.message || 'ไม่พบอีเมลในระบบ');
+        liff.logout();
+      });
+  }).catch(err => {
+    alertBox('error', 'ข้อผิดพลาด', err.message);
+  });
+}
+
 function toggleAuthMode() {
   isRegisterMode = !isRegisterMode;
   const reg = isRegisterMode;

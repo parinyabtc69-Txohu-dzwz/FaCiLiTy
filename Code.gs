@@ -25,6 +25,7 @@ const CONFIG = {
   FOLDER_RECEIPTS:      "เอกสารใบเสร็จ",          // ใบเสร็จเบิกจ่าย / ใบเสนอราคา
   LINE_CHANNEL_ACCESS_TOKEN: "/m/tnS6KiDY+44jNQDWM2LOTR2pX0qmiA7RT23sE7rGQjTSTcp3TpNlXJYootWAJCYogsOY/KEW4s3Ex5in2tKeaHTbT3l3f2Ro2ROefSj8tNk8yh6FRkH4ccnNGSr1Lx/O6/+b1cFIm9sLRLa2SQAdB04t89/1O/w1cDnyilFU=", // <-- เปลี่ยนเป็น Channel Access Token ของคุณ
   LINE_TARGET_ID: "U52b153816fe2a10531490fee141fb82b",           // <-- เปลี่ยนเป็น User ID หรือ Group ID ของคุณ
+  LIFF_ID: "ใส่_LIFF_ID_ที่นี่",                                // <-- เปลี่ยนเป็น LIFF ID ของคุณ
 };
 
 function getDB() {
@@ -116,6 +117,10 @@ function doPost(e) {
       // ── ระบบ Login ใหม่ (Google OAuth) ────────────────────────
       case 'google_login':
         return handleGoogleLogin(data.credential);
+        
+      // ── ผูกบัญชี LINE ────────────────────────
+      case 'link_line_account':
+        return handleLinkLineAccount(data.email, data.lineId);
 
       // ── แจ้งซ่อม: เก็บรูปใน "รูปภาพแจ้งซ่อม" ──────────────
       case 'submit_repair':
@@ -192,6 +197,7 @@ function doPost(e) {
           const detailStr = sheetTaskStatus.getRange(statusTargetRow, 3).getValue();
           const reporterNameStr = sheetTaskStatus.getRange(statusTargetRow, 4).getValue();
           const reporterEmail = getUserEmailByName(reporterNameStr);
+          const reporterLineId = getUserLineIdByName(reporterNameStr);
           
           if (reporterEmail) {
             const bodyHtml = `
@@ -211,7 +217,11 @@ function doPost(e) {
             } catch (e) { Logger.log(e.message); }
           }
           
-          sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`);
+          if (reporterLineId) {
+            sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`, reporterLineId);
+          } else {
+            sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`);
+          }
         }
         break;
 
@@ -251,6 +261,7 @@ function doPost(e) {
         const proofDetail = sheetTaskProof.getRange(targetRow, 3).getValue();
         const proofReporter = sheetTaskProof.getRange(targetRow, 4).getValue();
         const proofReporterEmail = getUserEmailByName(proofReporter);
+        const proofReporterLineId = getUserLineIdByName(proofReporter);
         
         if (proofReporterEmail) {
           const bodyHtml = `
@@ -268,10 +279,14 @@ function doPost(e) {
               subject: `✅ งานซ่อมเสร็จสิ้น: ${proofSubject}`,
               htmlBody: bodyHtml
             });
-          } catch (e) { Logger.log(e.message); }
-        }
+            } catch (e) { Logger.log(e.message); }
+          }
           
-        sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`);
+        if (proofReporterLineId) {
+          sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`, proofReporterLineId);
+        } else {
+          sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`);
+        }
         break;
 
       // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
@@ -610,10 +625,72 @@ function getUserEmailByName(name) {
   }
 }
 
-function sendLineMessage(message) {
+function handleLinkLineAccount(email, lineId) {
+  try {
+    const ss = getDB();
+    const sheet = ss.getSheetByName('Users');
+    if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'No Users sheet' })).setMimeType(ContentService.MimeType.JSON);
+    
+    const data = sheet.getDataRange().getValues();
+    let found = false;
+    for (let i = 1; i < data.length; i++) {
+      if ((data[i][0] || '').toString().trim().toLowerCase() === (email || '').trim().toLowerCase()) {
+        const role = data[i][2] || 'Teacher';
+        const status = data[i][3];
+        const name = data[i][1];
+        const picture = data[i][4];
+        
+        if (status === 'approved') {
+          sheet.getRange(i + 1, 7).setValue(lineId); // Column G (7) = LineID
+          found = true;
+          return ContentService.createTextOutput(JSON.stringify({ 
+            status: 'success', 
+            name: name,
+            role: role,
+            picture: picture,
+            email: email,
+            message: 'Linked successfully' 
+          })).setMimeType(ContentService.MimeType.JSON);
+        } else {
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'บัญชีของคุณถูกระงับการใช้งาน' })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Email not found in database' })).setMimeType(ContentService.MimeType.JSON);
+  } catch (e) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: e.message })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getUserLineIdByName(name) {
+  try {
+    const db = getDB();
+    const sheet = db.getSheetByName('Users');
+    if (!sheet) return null;
+    
+    const data = sheet.getDataRange().getValues();
+    const searchName = (name || '').toString().trim().toLowerCase();
+    
+    for (let i = 1; i < data.length; i++) {
+      const sheetName = (data[i][1] || '').toString().trim().toLowerCase();
+      if (sheetName === searchName && sheetName !== '') { // Column 1 = Name
+        const lineId = (data[i][6] || '').toString().trim(); // Column 6 = LineID (index 6)
+        if (lineId) return lineId;
+      }
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function sendLineMessage(message, targetId) {
   try {
     if (!CONFIG.LINE_CHANNEL_ACCESS_TOKEN || CONFIG.LINE_CHANNEL_ACCESS_TOKEN === "ใส่_Channel_Access_Token_ที่นี่") return;
-    if (!CONFIG.LINE_TARGET_ID || CONFIG.LINE_TARGET_ID === "ใส่_User_ID_หรือ_Group_ID_ที่นี่") return;
+    
+    const finalTargetId = targetId || CONFIG.LINE_TARGET_ID;
+    if (!finalTargetId || finalTargetId === "ใส่_User_ID_หรือ_Group_ID_ที่นี่") return;
     
     const url = "https://api.line.me/v2/bot/message/push";
     const options = {
@@ -623,7 +700,7 @@ function sendLineMessage(message) {
         "Authorization": "Bearer " + CONFIG.LINE_CHANNEL_ACCESS_TOKEN
       },
       payload: JSON.stringify({
-        "to": CONFIG.LINE_TARGET_ID,
+        "to": finalTargetId,
         "messages": [
           {
             "type": "text",
