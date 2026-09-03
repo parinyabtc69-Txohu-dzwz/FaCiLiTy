@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === auth.js ===
-const LIFF_ID = "ใส่_LIFF_ID_ที่นี่"; // <-- เปลี่ยนเป็น LIFF ID ของคุณ
+const LIFF_ID = "2011401549-8xNgb1CC"; // <-- เปลี่ยนเป็น LIFF ID ของคุณ
 
 document.addEventListener('DOMContentLoaded', () => {
   if (LIFF_ID && LIFF_ID !== "ใส่_LIFF_ID_ที่นี่") {
