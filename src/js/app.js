@@ -1599,13 +1599,13 @@ window.filterAVTab = function (tabId, btn) {
 let allUsersList = [];
 
 function fetchUsers() {
-  $('user-manage-tbody').innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin text-[#265D5A] text-2xl mb-2"></i><br>กำลังโหลดข้อมูล...</td></tr>';
+  $('user-manage-tbody').innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin text-[#265D5A] text-2xl mb-2"></i><br>กำลังโหลดข้อมูล...</td></tr>';
 
   get('get_users').then(data => {
     allUsersList = data;
     renderUserTable();
   }).catch(e => {
-    $('user-manage-tbody').innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+    $('user-manage-tbody').innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
     console.error(e);
   });
 }
@@ -1614,7 +1614,7 @@ function renderUserTable() {
   const tbody = $('user-manage-tbody');
   tbody.innerHTML = '';
   if (!allUsersList || allUsersList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">ไม่พบข้อมูลผู้ใช้</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">ไม่พบข้อมูลผู้ใช้</td></tr>';
     return;
   }
 
@@ -1648,13 +1648,6 @@ function renderUserTable() {
           <option value="AV" ${role === 'AV' ? 'selected' : ''}>AV (โสตฯ)</option>
           <option value="Admin" ${role === 'Admin' ? 'selected' : ''}>Admin (แอดมิน)</option>
           <option value="Executive" ${role === 'Executive' ? 'selected' : ''}>Executive (ผู้บริหาร)</option>
-        </select>
-      </td>
-      <td class="px-4 py-3">
-        <select class="border border-slate-300 rounded-md text-sm p-1" onchange="updateUserStatus('${email}', '${role}', this.value)">
-          <option value="approved" ${status === 'approved' ? 'selected' : ''}>Approved</option>
-          <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
-          <option value="banned" ${status === 'banned' ? 'selected' : ''}>Banned</option>
         </select>
       </td>
       <td class="px-4 py-3 text-xs">${new Date(lastLogin).toLocaleString('th-TH')}</td>
