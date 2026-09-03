@@ -13,7 +13,7 @@ let cssContent = '';
 for (const file of cssFiles) {
   cssContent += fs.readFileSync(path.join(srcDir, 'css', file), 'utf8') + '\n';
 }
-htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_CSS -->', cssContent);
+htmlTemplate = htmlTemplate.replace('/* INCLUDE_CSS */', cssContent);
 
 // replace JS
 htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_JS -->', '<script>\n' + jsApp + '\n</script>');
