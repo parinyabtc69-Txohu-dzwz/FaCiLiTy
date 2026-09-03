@@ -120,7 +120,7 @@ function doPost(e) {
         
       // ── ผูกบัญชี LINE ────────────────────────
       case 'link_line_account':
-        return handleLinkLineAccount(data.email, data.lineId);
+        return handleLinkLineAccount(data.email, data.lineId, data.name, data.picture);
 
       // ── แจ้งซ่อม: เก็บรูปใน "รูปภาพแจ้งซ่อม" ──────────────
       case 'submit_repair':
@@ -625,39 +625,58 @@ function getUserEmailByName(name) {
   }
 }
 
-function handleLinkLineAccount(email, lineId) {
+function handleLinkLineAccount(email, lineId, name, picture) {
   try {
     const ss = getDB();
-    const sheet = ss.getSheetByName('Users');
-    if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'No Users sheet' })).setMimeType(ContentService.MimeType.JSON);
+    let sheet = ss.getSheetByName('Users');
+    
+    if (!sheet) {
+      sheet = ss.insertSheet('Users');
+      sheet.appendRow(['Email', 'Name', 'Role', 'Status', 'ProfilePicture', 'LastLogin', 'LineID']);
+      sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#f3f4f6');
+      sheet.setFrozenRows(1);
+    }
     
     const data = sheet.getDataRange().getValues();
-    let found = false;
+    const now = new Date();
+    
     for (let i = 1; i < data.length; i++) {
       if ((data[i][0] || '').toString().trim().toLowerCase() === (email || '').trim().toLowerCase()) {
         const role = data[i][2] || 'Teacher';
         const status = data[i][3];
-        const name = data[i][1];
-        const picture = data[i][4];
+        const dbName = data[i][1];
+        const dbPicture = data[i][4];
         
         if (status === 'approved') {
           sheet.getRange(i + 1, 7).setValue(lineId); // Column G (7) = LineID
-          found = true;
+          sheet.getRange(i + 1, 6).setValue(now); // Update LastLogin
           return ContentService.createTextOutput(JSON.stringify({ 
             status: 'success', 
-            name: name,
+            name: dbName || name,
             role: role,
-            picture: picture,
+            picture: dbPicture || picture,
             email: email,
             message: 'Linked successfully' 
           })).setMimeType(ContentService.MimeType.JSON);
+        } else if (status === 'banned') {
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อแอดมิน' })).setMimeType(ContentService.MimeType.JSON);
         } else {
-          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'บัญชีของคุณถูกระงับการใช้งาน' })).setMimeType(ContentService.MimeType.JSON);
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'บัญชีของคุณกำลังรอการอนุมัติจากแอดมิน' })).setMimeType(ContentService.MimeType.JSON);
         }
       }
     }
     
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Email not found in database' })).setMimeType(ContentService.MimeType.JSON);
+    // ไม่พบบัญชี -> ลงทะเบียนใหม่อัตโนมัติเหมือน Google Login
+    sheet.appendRow([email, name || 'LINE User', 'Teacher', 'approved', picture || '', now, lineId]);
+    
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: 'success', 
+      name: name || 'LINE User',
+      role: 'Teacher',
+      picture: picture || '',
+      email: email,
+      message: 'Registered and Linked successfully' 
+    })).setMimeType(ContentService.MimeType.JSON);
   } catch (e) {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: e.message })).setMimeType(ContentService.MimeType.JSON);
   }

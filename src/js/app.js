@@ -484,6 +484,8 @@ function handleLiffLogin() {
     const idToken = liff.getDecodedIDToken();
     const email = idToken ? idToken.email : null;
     const lineId = profile.userId;
+    const name = profile.displayName;
+    const picture = profile.pictureUrl;
     
     if (!email) {
       alertBox('error', 'ข้อผิดพลาด', 'ไม่สามารถดึงอีเมลจากบัญชี LINE ได้ กรุณาอนุญาตให้ระบบเข้าถึงอีเมลของคุณ');
@@ -491,7 +493,7 @@ function handleLiffLogin() {
       return;
     }
     
-    post({ action: 'link_line_account', email: email, lineId: lineId })
+    post({ action: 'link_line_account', email: email, lineId: lineId, name: name, picture: picture })
       .then((res) => {
         currentTeacher = res.name;
         currentRole = res.role;
