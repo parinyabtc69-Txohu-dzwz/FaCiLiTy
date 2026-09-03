@@ -23,7 +23,8 @@ const CONFIG = {
   FOLDER_REPAIR_PROOF:  "รูปภาพผลการซ่อม",       // รูปที่ช่างส่งตอนปิดงาน
   FOLDER_DOCUMENTS:     "เอกสารระบบ",             // เอกสารจากระบบจัดการเอกสาร
   FOLDER_RECEIPTS:      "เอกสารใบเสร็จ",          // ใบเสร็จเบิกจ่าย / ใบเสนอราคา
-  LINE_NOTIFY_TOKEN: "ใส่_Token_ที่นี่",           // <-- เปลี่ยนเป็น Token ของคุณ
+  LINE_CHANNEL_ACCESS_TOKEN: "ใส่_Channel_Access_Token_ที่นี่", // <-- เปลี่ยนเป็น Channel Access Token ของคุณ
+  LINE_TARGET_ID: "ใส่_User_ID_หรือ_Group_ID_ที่นี่",           // <-- เปลี่ยนเป็น User ID หรือ Group ID ของคุณ
 };
 
 function getDB() {
@@ -144,7 +145,7 @@ function doPost(e) {
         sendEmailNotification(`🔔 แจ้งซ่อมใหม่: ${data.subject}`, repBody);
         
         const lineRepMsg = `\n🔔 แจ้งซ่อมใหม่: ${data.subject}\nผู้แจ้ง: ${data.reporter}\nสถานที่: ${data.loc || '-'}\nรายละเอียด: ${data.detail}`;
-        sendLineNotify(lineRepMsg);
+        sendLineMessage(lineRepMsg);
         break;
 
       // ── ยืมโสตฯ ─────────────────────────────────────────────
@@ -165,7 +166,7 @@ function doPost(e) {
         sendEmailNotification(`📢 ขอยืมอุปกรณ์โสตฯ: ${data.borrower}`, avBody);
         
         const lineAvMsg = `\n📢 แจ้งยืมอุปกรณ์โสตฯ\nผู้ยืม: ${data.borrower}\nอุปกรณ์ที่ต้องการ: ${data.equipment}\nวันที่ใช้งาน: ${data.useDate}\nสถานที่: ${data.location}`;
-        sendLineNotify(lineAvMsg);
+        sendLineMessage(lineAvMsg);
         break;
 
       // ── แจ้งบั๊ก ─────────────────────────────────────────────
@@ -210,7 +211,7 @@ function doPost(e) {
             } catch (e) { Logger.log(e.message); }
           }
           
-          sendLineNotify(`\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`);
+          sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`);
         }
         break;
 
@@ -270,7 +271,7 @@ function doPost(e) {
           } catch (e) { Logger.log(e.message); }
         }
           
-        sendLineNotify(`\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`);
+        sendLineMessage(`\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`);
         break;
 
       // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
@@ -609,24 +610,33 @@ function getUserEmailByName(name) {
   }
 }
 
-function sendLineNotify(message) {
+function sendLineMessage(message) {
   try {
-    if (!CONFIG.LINE_NOTIFY_TOKEN || CONFIG.LINE_NOTIFY_TOKEN === "ใส่_Token_ที่นี่") return;
+    if (!CONFIG.LINE_CHANNEL_ACCESS_TOKEN || CONFIG.LINE_CHANNEL_ACCESS_TOKEN === "ใส่_Channel_Access_Token_ที่นี่") return;
+    if (!CONFIG.LINE_TARGET_ID || CONFIG.LINE_TARGET_ID === "ใส่_User_ID_หรือ_Group_ID_ที่นี่") return;
     
-    const url = "https://notify-api.line.me/api/notify";
+    const url = "https://api.line.me/v2/bot/message/push";
     const options = {
       method: "post",
       headers: {
-        "Authorization": "Bearer " + CONFIG.LINE_NOTIFY_TOKEN
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + CONFIG.LINE_CHANNEL_ACCESS_TOKEN
       },
-      payload: {
-        "message": message
-      },
+      payload: JSON.stringify({
+        "to": CONFIG.LINE_TARGET_ID,
+        "messages": [
+          {
+            "type": "text",
+            "text": message
+          }
+        ]
+      }),
       muteHttpExceptions: true
     };
     UrlFetchApp.fetch(url, options);
   } catch (e) {
-    Logger.log("Line Notify Error: " + e.message);
+    Logger.log("Line Messaging API Error: " + e.message);
   }
 }
+
 
