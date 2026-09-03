@@ -165,9 +165,12 @@
   <!-- ================= MAIN LAYOUT ================= -->
   <div class="flex flex-1 overflow-hidden">
 
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="mobile-sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+
     <!-- GMAIL STYLE SIDEBAR -->
     <aside id="app-sidebar"
-      class="w-64 bg-[#edfaf8] p-3 flex flex-col justify-between shrink-0 border-r border-[#B0EDE6] hidden md:flex">
+      class="fixed inset-y-0 left-0 z-50 w-64 bg-[#edfaf8] p-3 flex flex-col justify-between shrink-0 border-r border-[#B0EDE6] transform -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 md:flex">
       <div class="space-y-1">
         <div class="mb-4 pt-1">
           <button onclick="nav('page-repair-form')"
@@ -2784,7 +2787,8 @@ function saveUserChanges(email, role, status) {
       alertBox('error', 'บันทึกไม่สำเร็จ', 'ไม่สามารถอัปเดตข้อมูลผู้ใช้ได้');
     });
 }
-
+\ n f u n c t i o n   t o g g l e M o b i l e S i d e b a r ( )   {   c o n s t   s b   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' a p p - s i d e b a r ' ) ;   c o n s t   b d   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' m o b i l e - s i d e b a r - b a c k d r o p ' ) ;   i f ( s b . c l a s s L i s t . c o n t a i n s ( ' - t r a n s l a t e - x - f u l l ' ) ) {   s b . c l a s s L i s t . r e m o v e ( ' - t r a n s l a t e - x - f u l l ' ) ;   b d . c l a s s L i s t . r e m o v e ( ' h i d d e n ' ) ;   }   e l s e   {   s b . c l a s s L i s t . a d d ( ' - t r a n s l a t e - x - f u l l ' ) ;   b d . c l a s s L i s t . a d d ( ' h i d d e n ' ) ;   }   }  
+ 
       </script>
 
     </main>
@@ -2827,13 +2831,11 @@ function saveUserChanges(email, role, status) {
       <i class="fa-solid fa-user text-lg"></i>
       <span class="text-[10px] font-medium">ฉัน</span>
     </button>
-    <button onclick="nav('page-bug-manage')" id="gnav-bug-manage-mobile"
-      class="gmail-nav-item w-full hidden items-center px-4 py-2.5 rounded-r-full text-slate-700 hover:bg-slate-200/60 transition-colors text-sm font-normal">
-      <div class="flex items-center gap-4">
-        <i class="fa-solid fa-bug w-5 text-center text-rose-500"></i> จัดการบั๊ก/แจ้งปัญหา
-      </div>
-      <span id="badge-bug-mobile"
-        class="ml-auto bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
+    <!-- More Menu (Mobile) -->
+    <button onclick="toggleMobileSidebar()"
+      class="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-[#265D5A] w-16 transition-colors">
+      <i class="fa-solid fa-bars text-lg"></i>
+      <span class="text-[10px] font-medium">เมนูอื่นๆ</span>
     </button>
 
   </nav>
