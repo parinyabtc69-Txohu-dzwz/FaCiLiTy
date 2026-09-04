@@ -1677,5 +1677,15 @@ function saveUserChanges(email, role, status) {
       alertBox('error', 'บันทึกไม่สำเร็จ', 'ไม่สามารถอัปเดตข้อมูลผู้ใช้ได้');
     });
 }
-\ n f u n c t i o n   t o g g l e M o b i l e S i d e b a r ( )   {   c o n s t   s b   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' a p p - s i d e b a r ' ) ;   c o n s t   b d   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' m o b i l e - s i d e b a r - b a c k d r o p ' ) ;   i f ( s b . c l a s s L i s t . c o n t a i n s ( ' - t r a n s l a t e - x - f u l l ' ) ) {   s b . c l a s s L i s t . r e m o v e ( ' - t r a n s l a t e - x - f u l l ' ) ;   b d . c l a s s L i s t . r e m o v e ( ' h i d d e n ' ) ;   }   e l s e   {   s b . c l a s s L i s t . a d d ( ' - t r a n s l a t e - x - f u l l ' ) ;   b d . c l a s s L i s t . a d d ( ' h i d d e n ' ) ;   }   }  
- 
+
+function toggleMobileSidebar() {
+  const sb = document.getElementById('app-sidebar');
+  const bd = document.getElementById('mobile-sidebar-backdrop');
+  if (sb.classList.contains('-translate-x-full')) {
+    sb.classList.remove('-translate-x-full');
+    bd.classList.remove('hidden');
+  } else {
+    sb.classList.add('-translate-x-full');
+    bd.classList.add('hidden');
+  }
+}
