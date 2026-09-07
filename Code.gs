@@ -758,54 +758,76 @@ function handleLinkLineAccount(email, lineId, name, picture) {
   }
 }
 
-function getUserLineIdByName(name) {
-  try {
-    const db = getDB();
-    const sheet = db.getSheetByName('Users');
-    if (!sheet) return null;
-    
-    const data = sheet.getDataRange().getValues();
-    const searchName = (name || '').toString().trim().toLowerCase();
-    
-    for (let i = 1; i < data.length; i++) {
-      const sheetName = (data[i][1] || '').toString().trim().toLowerCase();
-      if (sheetName === searchName && sheetName !== '') { // Column 1 = Name
-        const lineId = (data[i][6] || '').toString().trim(); // Column 6 = LineID (index 6)
-        if (lineId) return lineId;
-      }
-    }
-    return null;
-  } catch (e) {
-    return null;
-  }
-}
-
 function sendLineMessage(message, targetId) {
   try {
-    if (!CONFIG.LINE_CHANNEL_ACCESS_TOKEN || CONFIG.LINE_CHANNEL_ACCESS_TOKEN === "ใส่_Channel_Access_Token_ที่นี่") return;
+    if (!CONFIG.LINE_CHANNEL_ACCESS_TOKEN || CONFIG.LINE_CHANNEL_ACCESS_TOKEN.includes("ใส่_")) return;
     
-    const finalTargetId = targetId || CONFIG.LINE_TARGET_ID;
-    if (!finalTargetId || finalTargetId === "ใส่_User_ID_หรือ_Group_ID_ที่นี่") return;
-    
-    const url = "https://api.line.me/v2/bot/message/push";
-    const options = {
-      method: "post",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + CONFIG.LINE_CHANNEL_ACCESS_TOKEN
-      },
-      payload: JSON.stringify({
-        "to": finalTargetId,
-        "messages": [
-          {
-            "type": "text",
-            "text": message
-          }
-        ]
-      }),
-      muteHttpExceptions: true
+    let rawTargets = [];
+    if (Array.isArray(targetId)) {
+      rawTargets = targetId;
+    } else if (typeof targetId === 'string' && targetId.trim() !== '') {
+      rawTargets = [targetId.trim()];
+    }
+
+    // รวม LINE_TARGET_ID (กลุ่มหลัก) เข้าไปด้วยเสมอหากตั้งค่าไว้
+    if (CONFIG.LINE_TARGET_ID && !CONFIG.LINE_TARGET_ID.includes("ใส่_")) {
+      rawTargets.push(CONFIG.LINE_TARGET_ID.trim());
+    }
+
+    // คัดเฉพาะ ID ที่ไม่ว่างเปล่าและลบค่าซ้ำ
+    const validTargets = [...new Set(rawTargets.filter(id => typeof id === 'string' && id.trim() !== ''))];
+    if (validTargets.length === 0) return;
+
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + CONFIG.LINE_CHANNEL_ACCESS_TOKEN
     };
-    UrlFetchApp.fetch(url, options);
+
+    // แยกประเภท User IDs (U...) กับ Group/Room IDs (C... หรือ R...)
+    const userIds = validTargets.filter(id => id.startsWith('U'));
+    const groupIds = validTargets.filter(id => !id.startsWith('U'));
+
+    // 1. ส่งถึง User IDs (ใช้ multicast ถ้ามีหลายคน หรือ push ถ้ามีคนเดียว)
+    if (userIds.length > 0) {
+      if (userIds.length === 1) {
+        UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+          method: "post",
+          headers: headers,
+          payload: JSON.stringify({
+            "to": userIds[0],
+            "messages": [{ "type": "text", "text": message }]
+          }),
+          muteHttpExceptions: true
+        });
+      } else {
+        for (let i = 0; i < userIds.length; i += 500) {
+          const chunk = userIds.slice(i, i + 500);
+          UrlFetchApp.fetch("https://api.line.me/v2/bot/message/multicast", {
+            method: "post",
+            headers: headers,
+            payload: JSON.stringify({
+              "to": chunk,
+              "messages": [{ "type": "text", "text": message }]
+            }),
+            muteHttpExceptions: true
+          });
+        }
+      }
+    }
+
+    // 2. ส่งถึง Group/Room IDs (ผ่าน push เป็นรายกลุ่ม)
+    for (const gid of groupIds) {
+      UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+        method: "post",
+        headers: headers,
+        payload: JSON.stringify({
+          "to": gid,
+          "messages": [{ "type": "text", "text": message }]
+        }),
+        muteHttpExceptions: true
+      });
+    }
+
   } catch (e) {
     Logger.log("Line Messaging API Error: " + e.message);
   }
