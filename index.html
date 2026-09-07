@@ -1368,6 +1368,51 @@ const ResourceHubCore = {
         alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
       }
     },
+    async submitAV() {
+      const borrower = $('borrower').value.trim();
+      const useDate = $('useDate').value;
+      const loc = $('av_location').value.trim();
+      const signer = $('signerName').value.trim();
+      
+      let equipmentList = [];
+      const checkboxes = document.querySelectorAll('input[name="equipment"]:checked');
+      checkboxes.forEach(cb => {
+        const qty = cb.parentElement.querySelector('input[type=number]').value;
+        equipmentList.push(`${cb.value} (${qty})`);
+      });
+      
+      const otherEq = $('other_equip').value.trim();
+      if (otherEq) {
+        const otherQty = $('qty_other').value;
+        equipmentList.push(`${otherEq} (${otherQty})`);
+      }
+      
+      const equipmentStr = equipmentList.join(', ');
+      
+      if (!borrower || !useDate || !loc || !signer || !equipmentStr) {
+        return alertBox('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลและเลือกอุปกรณ์ให้ครบถ้วน');
+      }
+      
+      const btn = $('btnSubmitAV');
+      setBusy(btn, true);
+      try {
+        await ResourceHubCore.api.post({
+          action: 'submit_av',
+          borrower: borrower,
+          equipment: equipmentStr,
+          useDate: useDate,
+          location: loc,
+          signature: signer
+        });
+        setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ยืนยันการขอยืมอุปกรณ์</span>');
+        await alertBox('success', 'สำเร็จ', 'ส่งเรื่องขอยืมอุปกรณ์เรียบร้อยแล้ว', { timer: 2000, showConfirmButton: false });
+        $('avForm').reset();
+        nav('page-teacher-profile');
+      } catch (e) {
+        setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ยืนยันการขอยืมอุปกรณ์</span>');
+        alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+      }
+    },
     async loadAdminTable(type) {
       const isRepair = type === 'repair';
       const tbodyId = isRepair ? 'taskBody' : 'avDataView';
