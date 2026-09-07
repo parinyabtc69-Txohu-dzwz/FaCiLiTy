@@ -1460,6 +1460,18 @@ const ResourceHubCore = {
     },
     async loadDashboard() {
       try {
+        const loadingHtml = '<i class="fa-solid fa-circle-notch fa-spin text-slate-300/50"></i>';
+        const idsToLoad = [
+          'dash-total-all', 'dash-pending-all', 'dash-progress-all', 'dash-completed-all',
+          'b-total', 'b-pending', 'b-progress', 'b-completed',
+          'av-total', 'av-pending', 'av-active', 'av-completed',
+          'ratio-building-count', 'ratio-av-count', 'ratio-building-pct', 'ratio-av-pct',
+          'overall-progress-text'
+        ];
+        idsToLoad.forEach(id => {
+          if ($(id)) $(id).innerHTML = loadingHtml;
+        });
+        
         const d = await ResourceHubCore.dashboard.legacy();
         const bTotal = Number(d?.building?.total) || 0;
         const bPending = Number(d?.building?.pending) || 0;
@@ -2795,6 +2807,8 @@ function toggleMobileSidebar() {
     bd.classList.add('hidden');
   }
 }
+
+
 
       </script>
 

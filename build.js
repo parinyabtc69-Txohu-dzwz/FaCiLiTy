@@ -5,7 +5,6 @@ const srcDir = path.join(__dirname, 'src');
 const indexHtmlPath = path.join(__dirname, 'index.html');
 
 let htmlTemplate = fs.readFileSync(path.join(srcDir, 'index.html'), 'utf8');
-const jsApp = fs.readFileSync(path.join(srcDir, 'js', 'app.js'), 'utf8');
 
 // replace CSS
 const cssFiles = fs.readdirSync(path.join(srcDir, 'css')).filter(f => f.endsWith('.css'));
@@ -14,8 +13,45 @@ for (const file of cssFiles) {
   cssContent += fs.readFileSync(path.join(srcDir, 'css', file), 'utf8') + '\n';
 }
 htmlTemplate = htmlTemplate.replace('/* INCLUDE_CSS */', () => cssContent);
-
 // replace JS
+const jsModulesDir = path.join(srcDir, 'js', 'modules');
+let jsApp = '';
+
+// Explicit load order to prevent reference errors for global variables
+const loadOrder = [
+  'api.js',
+  'auth.js',
+  'user.js',
+  'repair.js',
+  'av.js',
+  'dashboard.js',
+  'main.js'
+];
+
+if (fs.existsSync(jsModulesDir)) {
+  const allFiles = fs.readdirSync(jsModulesDir).filter(f => f.endsWith('.js'));
+  
+  // Load explicitly ordered files first
+  for (const file of loadOrder) {
+    if (allFiles.includes(file)) {
+      jsApp += fs.readFileSync(path.join(jsModulesDir, file), 'utf8') + '\n\n';
+    }
+  }
+  
+  // Load any remaining files
+  for (const file of allFiles) {
+    if (!loadOrder.includes(file)) {
+      jsApp += fs.readFileSync(path.join(jsModulesDir, file), 'utf8') + '\n\n';
+    }
+  }
+}
+
+// Fallback to old app.js if still migrating
+const oldAppJsPath = path.join(srcDir, 'js', 'app.js');
+if (fs.existsSync(oldAppJsPath)) {
+  jsApp += fs.readFileSync(oldAppJsPath, 'utf8') + '\n';
+}
+
 htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_JS -->', () => jsApp);
 
 // replace components
