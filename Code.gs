@@ -786,11 +786,13 @@ function sendLineMessage(message, targetId) {
     // แยกประเภท User IDs (U...) กับ Group/Room IDs (C... หรือ R...)
     const userIds = validTargets.filter(id => id.startsWith('U'));
     const groupIds = validTargets.filter(id => !id.startsWith('U'));
+    
+    let allResponses = [];
 
     // 1. ส่งถึง User IDs (ใช้ multicast ถ้ามีหลายคน หรือ push ถ้ามีคนเดียว)
     if (userIds.length > 0) {
       if (userIds.length === 1) {
-        UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+        const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
           method: "post",
           headers: headers,
           payload: JSON.stringify({
@@ -799,10 +801,11 @@ function sendLineMessage(message, targetId) {
           }),
           muteHttpExceptions: true
         });
+        allResponses.push(`[Push User] ${res.getResponseCode()}: ${res.getContentText()}`);
       } else {
         for (let i = 0; i < userIds.length; i += 500) {
           const chunk = userIds.slice(i, i + 500);
-          UrlFetchApp.fetch("https://api.line.me/v2/bot/message/multicast", {
+          const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/multicast", {
             method: "post",
             headers: headers,
             payload: JSON.stringify({
@@ -811,13 +814,14 @@ function sendLineMessage(message, targetId) {
             }),
             muteHttpExceptions: true
           });
+          allResponses.push(`[Multicast Users] ${res.getResponseCode()}: ${res.getContentText()}`);
         }
       }
     }
 
     // 2. ส่งถึง Group/Room IDs (ผ่าน push เป็นรายกลุ่ม)
     for (const gid of groupIds) {
-      UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+      const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
         method: "post",
         headers: headers,
         payload: JSON.stringify({
@@ -826,10 +830,33 @@ function sendLineMessage(message, targetId) {
         }),
         muteHttpExceptions: true
       });
+      allResponses.push(`[Push Group] ${res.getResponseCode()}: ${res.getContentText()}`);
+    }
+    
+    // ==========================================
+    // เขียน Logs ลงชีต "Logs" เพื่อการตรวจสอบ
+    // ==========================================
+    try {
+      const db = getDB();
+      let logSheet = db.getSheetByName('Logs');
+      if (!logSheet) {
+        logSheet = db.insertSheet('Logs');
+        logSheet.appendRow(['Timestamp', 'Action', 'Targets', 'Responses', 'Message']);
+        logSheet.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#f3f4f6');
+      }
+      logSheet.appendRow([new Date(), 'LINE API', JSON.stringify(validTargets), allResponses.join(' | '), message]);
+    } catch (logErr) {
+      Logger.log("Failed to write log: " + logErr.message);
     }
 
   } catch (e) {
     Logger.log("Line Messaging API Error: " + e.message);
+    try {
+      const db = getDB();
+      let logSheet = db.getSheetByName('Logs');
+      if (!logSheet) { logSheet = db.insertSheet('Logs'); }
+      logSheet.appendRow([new Date(), 'LINE API ERROR', '', e.message, '']);
+    } catch (logErr) {}
   }
 }
 
