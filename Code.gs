@@ -149,7 +149,42 @@ function doPost(e) {
         `;
         sendEmailNotification(`🔔 แจ้งซ่อมใหม่: ${data.subject}`, repBody);
         
-        const lineRepMsg = `\n🔔 แจ้งซ่อมใหม่: ${data.subject}\nผู้แจ้ง: ${data.reporter}\nสถานที่: ${data.loc || '-'}\nรายละเอียด: ${data.detail}`;
+        const lineRepMsg = {
+          "type": "flex",
+          "altText": `แจ้งซ่อมใหม่: ${data.subject}`,
+          "contents": {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "backgroundColor": "#265D5A",
+              "contents": [
+                { "type": "text", "text": "🔔 แจ้งปัญหาใหม่", "weight": "bold", "color": "#ffffff", "size": "xl" }
+              ]
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "md",
+              "contents": [
+                { "type": "text", "text": data.subject, "weight": "bold", "size": "lg", "wrap": true, "color": "#1f2937" },
+                { "type": "separator", "margin": "md" },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ผู้แจ้ง", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.reporter, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "สถานที่", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.loc || '-', "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ปัญหา", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.detail, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ด่วน", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.urgency || '-', "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] }
+              ]
+            },
+            "footer": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "sm",
+              "contents": [
+                { "type": "button", "style": "primary", "color": "#265D5A", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+              ]
+            }
+          }
+        };
         
         let repLineTargets = getAdminAndTechLineIds();
         let reporterLineId = getUserLineIdByName(data.reporter);
@@ -177,7 +212,41 @@ function doPost(e) {
         `;
         sendEmailNotification(`📢 ขอยืมอุปกรณ์โสตฯ: ${data.borrower}`, avBody);
         
-        const lineAvMsg = `\n📢 แจ้งยืมอุปกรณ์โสตฯ\nผู้ยืม: ${data.borrower}\nอุปกรณ์ที่ต้องการ: ${data.equipment}\nวันที่ใช้งาน: ${data.useDate}\nสถานที่: ${data.location}`;
+        const lineAvMsg = {
+          "type": "flex",
+          "altText": `แจ้งยืมโสตฯ: ${data.borrower}`,
+          "contents": {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "backgroundColor": "#0d9488",
+              "contents": [
+                { "type": "text", "text": "📢 ขอยืมอุปกรณ์โสตฯ", "weight": "bold", "color": "#ffffff", "size": "xl" }
+              ]
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "md",
+              "contents": [
+                { "type": "text", "text": data.equipment, "weight": "bold", "size": "md", "wrap": true, "color": "#1f2937" },
+                { "type": "separator", "margin": "md" },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ผู้ยืม", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.borrower, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "วันที่", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.useDate, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "สถานที่", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.location, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] }
+              ]
+            },
+            "footer": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "sm",
+              "contents": [
+                { "type": "button", "style": "primary", "color": "#0d9488", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+              ]
+            }
+          }
+        };
         
         let avLineTargets = getAdminAndTechLineIds();
         let borrowerLineId = getUserLineIdByName(data.borrower);
@@ -789,6 +858,8 @@ function sendLineMessage(message, targetId) {
     
     let allResponses = [];
 
+    const msgPayload = typeof message === 'string' ? { "type": "text", "text": message } : message;
+
     // 1. ส่งถึง User IDs (ใช้ multicast ถ้ามีหลายคน หรือ push ถ้ามีคนเดียว)
     if (userIds.length > 0) {
       if (userIds.length === 1) {
@@ -797,7 +868,7 @@ function sendLineMessage(message, targetId) {
           headers: headers,
           payload: JSON.stringify({
             "to": userIds[0],
-            "messages": [{ "type": "text", "text": message }]
+            "messages": [msgPayload]
           }),
           muteHttpExceptions: true
         });
@@ -810,7 +881,7 @@ function sendLineMessage(message, targetId) {
             headers: headers,
             payload: JSON.stringify({
               "to": chunk,
-              "messages": [{ "type": "text", "text": message }]
+              "messages": [msgPayload]
             }),
             muteHttpExceptions: true
           });
@@ -826,7 +897,7 @@ function sendLineMessage(message, targetId) {
         headers: headers,
         payload: JSON.stringify({
           "to": gid,
-          "messages": [{ "type": "text", "text": message }]
+          "messages": [msgPayload]
         }),
         muteHttpExceptions: true
       });

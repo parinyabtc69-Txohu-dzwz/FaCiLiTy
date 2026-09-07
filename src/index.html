@@ -22,6 +22,8 @@
   </style>
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 
 <body class="bg-[#edfaf8] min-h-screen flex flex-col">
@@ -239,6 +241,22 @@
     </button>
 
   </nav>
+
+  <!-- QR Code Scanner Modal -->
+  <div id="qrScannerModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden flex flex-col shadow-xl">
+      <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+        <h3 class="font-bold text-slate-800"><i class="fa-solid fa-qrcode mr-2 text-[#265D5A]"></i> สแกน QR Code</h3>
+        <button onclick="closeQrScanner()" class="text-slate-500 hover:text-rose-500 transition-colors w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 hover:bg-rose-100"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <div class="p-0 bg-black flex justify-center w-full relative min-h-[300px]">
+        <div id="qr-reader" class="w-full h-full"></div>
+      </div>
+      <div class="p-4 bg-slate-50 text-center text-sm font-medium text-slate-600 border-t border-slate-200">
+        หันกล้องไปยัง QR Code เพื่อสแกนข้อมูลอัตโนมัติ
+      </div>
+    </div>
+  </div>
 
   <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
