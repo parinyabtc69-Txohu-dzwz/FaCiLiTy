@@ -1491,7 +1491,7 @@ window.viewRepairDetails = function (index) {
       if (m2) fileId = m2[1];
     }
     if (fileId) {
-      return `<div class="mt-3 text-center"><p class="text-sm text-slate-500 font-medium mb-2">${title}:</p><a href="${url}" target="_blank"><img src="https://drive.google.com/uc?id=${fileId}" class="max-w-full h-auto rounded-lg border border-${colorTheme}-200 mx-auto max-h-64 object-contain shadow-sm hover:opacity-90 transition-opacity" alt="${title}"></a></div>`;
+      return `<div class="mt-3 text-center"><p class="text-sm text-slate-500 font-medium mb-2">${title}:</p><a href="${url}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-w-full h-auto rounded-lg border border-${colorTheme}-200 mx-auto max-h-64 object-contain shadow-sm hover:opacity-90 transition-opacity" alt="${title}"></a></div>`;
     }
     return `<a href="${url}" target="_blank" class="block mt-3 bg-${colorTheme}-50 text-${colorTheme}-700 text-center py-2 rounded-lg border border-${colorTheme}-200 hover:bg-${colorTheme}-100 font-semibold"><i class="fa-solid fa-image"></i> ดู${title}</a>`;
   }
