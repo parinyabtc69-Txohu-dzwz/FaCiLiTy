@@ -262,7 +262,40 @@ function doPost(e) {
         const sheetBug = db.getSheetByName(CONFIG.BUG_SHEET_NAME);
         sheetBug.appendRow([timestamp, data.reporter, data.issue, data.page, "รอดำเนินการ"]);
         
-        const lineBugMsg = `\n🐞 แจ้งปัญหาใหม่ (Bug)\nผู้แจ้ง: ${data.reporter}\nหัวข้อ: ${data.issue}\nหน้าจอ: ${data.page}`;
+        const lineBugMsg = {
+          "type": "flex",
+          "altText": `แจ้งปัญหาใหม่ (Bug): ${data.issue}`,
+          "contents": {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "backgroundColor": "#dc2626",
+              "contents": [
+                { "type": "text", "text": "🐞 แจ้งปัญหาระบบ (Bug)", "weight": "bold", "color": "#ffffff", "size": "xl" }
+              ]
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "md",
+              "contents": [
+                { "type": "text", "text": data.issue, "weight": "bold", "size": "md", "wrap": true, "color": "#1f2937" },
+                { "type": "separator", "margin": "md" },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ผู้แจ้ง", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.reporter, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "หน้าจอ", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.page, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] }
+              ]
+            },
+            "footer": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "sm",
+              "contents": [
+                { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+              ]
+            }
+          }
+        };
         let bugLineTargets = getAdminAndTechLineIds();
         let bugReporterLineId = getUserLineIdByName(data.reporter);
         if (bugReporterLineId && !bugLineTargets.includes(bugReporterLineId)) {
@@ -309,7 +342,40 @@ function doPost(e) {
             } catch (e) { Logger.log(e.message); }
           }
           
-          const statusMsg = `\n✅ งานซ่อมเสร็จสิ้น\nหัวข้อ: ${subjectStr}\nรายละเอียด: ${detailStr}\nสถานะปัจจุบัน: เสร็จสิ้น`;
+          const statusMsg = {
+            "type": "flex",
+            "altText": `งานซ่อมเสร็จสิ้น: ${subjectStr}`,
+            "contents": {
+              "type": "bubble",
+              "header": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": "#059669",
+                "contents": [
+                  { "type": "text", "text": "✅ งานซ่อมเสร็จสิ้น", "weight": "bold", "color": "#ffffff", "size": "xl" }
+                ]
+              },
+              "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                  { "type": "text", "text": subjectStr, "weight": "bold", "size": "md", "wrap": true, "color": "#1f2937" },
+                  { "type": "separator", "margin": "md" },
+                  { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "รายละเอียด", "color": "#aaaaaa", "size": "sm", "flex": 3 }, { "type": "text", "text": detailStr, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                  { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "สถานะ", "color": "#aaaaaa", "size": "sm", "flex": 3 }, { "type": "text", "text": "เสร็จสิ้น", "wrap": true, "color": "#059669", "weight": "bold", "size": "sm", "flex": 5 }] }
+                ]
+              },
+              "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                  { "type": "button", "style": "primary", "color": "#059669", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+                ]
+              }
+            }
+          };
           let statusTargets = getAdminAndTechLineIds();
           if (reporterLineId && !statusTargets.includes(reporterLineId)) {
             statusTargets.push(reporterLineId);
@@ -375,7 +441,40 @@ function doPost(e) {
             } catch (e) { Logger.log(e.message); }
           }
           
-        const proofMsg = `\n✅ งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน)\nหัวข้อ: ${proofSubject}\nการแก้ไขปัญหา: ${data.fixDetail}\nช่างผู้รับผิดชอบ: ${data.technician}`;
+        const proofMsg = {
+          "type": "flex",
+          "altText": `งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน): ${proofSubject}`,
+          "contents": {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "backgroundColor": "#059669",
+              "contents": [
+                { "type": "text", "text": "✅ ปิดงานซ่อม (พร้อมหลักฐาน)", "weight": "bold", "color": "#ffffff", "size": "lg" }
+              ]
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "md",
+              "contents": [
+                { "type": "text", "text": proofSubject, "weight": "bold", "size": "md", "wrap": true, "color": "#1f2937" },
+                { "type": "separator", "margin": "md" },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "การแก้ไข", "color": "#aaaaaa", "size": "sm", "flex": 3 }, { "type": "text", "text": data.fixDetail, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ช่าง", "color": "#aaaaaa", "size": "sm", "flex": 3 }, { "type": "text", "text": data.technician, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] }
+              ]
+            },
+            "footer": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "sm",
+              "contents": [
+                { "type": "button", "style": "primary", "color": "#059669", "action": { "type": "uri", "label": "เปิดดูรูปหลักฐานในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+              ]
+            }
+          }
+        };
         let proofTargets = getAdminAndTechLineIds();
         if (proofReporterLineId && !proofTargets.includes(proofReporterLineId)) {
           proofTargets.push(proofReporterLineId);
