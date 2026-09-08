@@ -1,4 +1,4 @@
-﻿      <div id="page-dashboard" class="page-section">
+      <div id="page-dashboard" class="page-section">
         <div class="max-w-7xl mx-auto space-y-6">
 
           <!-- Header Bar -->
@@ -12,7 +12,11 @@
               </h1>
               <p class="text-[#B0EDE6] text-sm mt-1">สรุปภาพรวมงานซ่อมบำรุงอาคารและงานโสตทัศนูปกรณ์แบบ Real-time</p>
             </div>
-            <div class="flex gap-3">
+            <div class="flex gap-3 items-center flex-wrap">
+              <!-- Dropdown เลือกเดือน/ปี สำหรับ Dashboard ย้อนหลัง -->
+              <input type="month" id="dashboardMonthFilter" onchange="loadDashboard()"
+                class="bg-white text-[#265D5A] px-4 py-2.5 rounded-xl font-bold shadow-sm border-none outline-none focus:ring-2 focus:ring-[#B0EDE6] cursor-pointer"
+                title="เลือกเดือน/ปี">
               <button onclick="loadDashboard()"
                 class="bg-white text-[#265D5A] px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm hover:bg-[#B0EDE6]">
                 <i class="fa-solid fa-rotate"></i> <span>รีเฟรชข้อมูล</span>

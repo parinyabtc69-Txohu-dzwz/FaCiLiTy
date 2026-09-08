@@ -49,6 +49,15 @@
     </div>
 
     <div class="flex items-center gap-2 relative">
+      <div class="relative">
+        <button id="notification-bell"
+          class="w-10 h-10 rounded-full hover:bg-[#B0EDE6]/20 flex items-center justify-center text-[#B0EDE6] transition-colors relative"
+          title="แจ้งเตือนงานค้าง">
+          <i class="fa-solid fa-bell text-xl"></i>
+          <span id="global-overdue-badge" class="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">0</span>
+        </button>
+      </div>
+
       <button onclick="openBugReportModal('แถบเมนูด้านบน')"
         class="w-10 h-10 rounded-full hover:bg-[#B0EDE6]/20 flex items-center justify-center text-[#B0EDE6] transition-colors"
         title="แจ้งโปรแกรมเสีย">

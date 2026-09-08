@@ -78,7 +78,7 @@ function doGet(e) {
       break;
 
     case 'get_dashboard':
-      return ContentService.createTextOutput(JSON.stringify(getDashboardDataInternal()))
+      return ContentService.createTextOutput(JSON.stringify(getDashboardDataInternal(e.parameter.month)))
         .setMimeType(ContentService.MimeType.JSON);
 
     case 'get_master_data':
@@ -477,6 +477,29 @@ function doPost(e) {
         deleteRowById(sheetName, 0, delId);
         break;
 
+      // ── ตั้งค่าระบบ ──────────────────────────────────────────
+      case 'save_overdue_settings':
+        let sheetSettings = db.getSheetByName('Settings');
+        if (!sheetSettings) {
+          sheetSettings = db.insertSheet('Settings');
+          sheetSettings.appendRow(['Key', 'Value']);
+        }
+        
+        let foundKey = false;
+        const settingsData = sheetSettings.getDataRange().getValues();
+        for (let i = 1; i < settingsData.length; i++) {
+          if (settingsData[i][0] === 'overdue_days') {
+            sheetSettings.getRange(i + 1, 2).setValue(data.days);
+            foundKey = true;
+            break;
+          }
+        }
+        
+        if (!foundKey) {
+          sheetSettings.appendRow(['overdue_days', data.days]);
+        }
+        break;
+
       // ── เอกสาร: อัปโหลด → เก็บใน "เอกสารระบบ" ──────────────
       case 'add_document':
         let sheetAddDoc = db.getSheetByName(CONFIG.DOC_SHEET_NAME);
@@ -579,38 +602,89 @@ function deleteRowById(sheetName, idColIndex, idValue) {
   }
 }
 
-function getDashboardDataInternal() {
+function getDashboardDataInternal(monthStr) {
   const db = getDB();
   const bSheet   = db.getSheetByName(CONFIG.SHEET_NAME);
   const avSheet  = db.getSheetByName(CONFIG.AV_SHEET_NAME);
   const bugSheet = db.getSheetByName(CONFIG.BUG_SHEET_NAME);
   
   const bData = bSheet ? bSheet.getDataRange().getDisplayValues().slice(1) : [];
+  let filteredBData = bData;
+  if (monthStr) {
+    filteredBData = bData.filter(r => {
+      if (!r[0]) return false;
+      const d = new Date(r[0]);
+      if (isNaN(d.getTime())) return false;
+      const ym = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
+      return ym === monthStr;
+    });
+  }
+
   const building = {
-    total:      bData.length,
-    pending:    bData.filter(r => r[4] === "รอดำเนินการ").length,
-    inProgress: bData.filter(r => r[4] === "กำลังดำเนินการ").length,
-    completed:  bData.filter(r => r[4] === "เสร็จสิ้น").length
+    total:      filteredBData.length,
+    pending:    filteredBData.filter(r => r[4] === "รอดำเนินการ").length,
+    inProgress: filteredBData.filter(r => r[4] === "กำลังดำเนินการ").length,
+    completed:  filteredBData.filter(r => r[4] === "เสร็จสิ้น").length
   };
 
   const avData = avSheet ? avSheet.getDataRange().getDisplayValues().slice(1) : [];
+  let filteredAVData = avData;
+  if (monthStr) {
+    filteredAVData = avData.filter(r => {
+      if (!r[0]) return false;
+      const d = new Date(r[0]);
+      if (isNaN(d.getTime())) return false;
+      const ym = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
+      return ym === monthStr;
+    });
+  }
+
   const av = {
-    total:     avData.length,
-    pending:   avData.filter(r => r[5] === "รอยืนยันการยืม").length,
-    active:    avData.filter(r => r[5] === "กำลังใช้งาน" || r[5] === "จัดเตรียมแล้ว").length,
-    completed: avData.filter(r => r[5] === "เสร็จสิ้น/คืนเรียบร้อย").length
+    total:     filteredAVData.length,
+    pending:   filteredAVData.filter(r => r[5] === "รอยืนยันการยืม").length,
+    active:    filteredAVData.filter(r => r[5] === "กำลังใช้งาน" || r[5] === "จัดเตรียมแล้ว").length,
+    completed: filteredAVData.filter(r => r[5] === "เสร็จสิ้น/คืนเรียบร้อย").length
   };
 
-  const bugs = bugSheet ? bugSheet.getLastRow() - 1 : 0;
-  return { building, av, bugs: bugs > 0 ? bugs : 0 };
+  let filteredBugs = 0;
+  if (bugSheet) {
+    const bugData = bugSheet.getDataRange().getDisplayValues().slice(1);
+    if (monthStr) {
+      filteredBugs = bugData.filter(r => {
+        if (!r[0]) return false;
+        const d = new Date(r[0]);
+        if (isNaN(d.getTime())) return false;
+        const ym = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
+        return ym === monthStr;
+      }).length;
+    } else {
+      filteredBugs = bugData.length;
+    }
+  }
+
+  return { building, av, bugs: filteredBugs };
 }
 
 function getMasterDataInternal() {
   const db = getDB();
+  
+  let overdueDays = 3;
+  const sheetSettings = db.getSheetByName('Settings');
+  if (sheetSettings) {
+    const settingsData = sheetSettings.getDataRange().getValues();
+    for (let i = 1; i < settingsData.length; i++) {
+      if (settingsData[i][0] === 'overdue_days') {
+        overdueDays = parseInt(settingsData[i][1]) || 3;
+        break;
+      }
+    }
+  }
+
   return {
     locations: getSheetDataAsObjects(db, CONFIG.MASTER_LOC_SHEET),
     projects:  getSheetDataAsObjects(db, CONFIG.MASTER_PROJ_SHEET),
-    mechanics: getSheetDataAsObjects(db, CONFIG.MASTER_MECH_SHEET)
+    mechanics: getSheetDataAsObjects(db, CONFIG.MASTER_MECH_SHEET),
+    settings: { overdueDays: overdueDays }
   };
 }
 
@@ -1002,5 +1076,154 @@ function sendLineMessage(message, targetId) {
     } catch (logErr) {}
   }
 }
+
+// ============================================================
+// ฟังก์ชันตรวจสอบงานค้าง (Overdue Tasks)
+// ── วิธีใช้: ให้ตั้ง Time-driven Trigger รันฟังก์ชันนี้ทุกวัน ──────
+// ============================================================
+function checkOverdueTasks() {
+  const db = getDB();
+  
+  // 1. ดึงการตั้งค่า Overdue Days
+  let overdueDays = 3;
+  const sheetSettings = db.getSheetByName('Settings');
+  if (sheetSettings) {
+    const settingsData = sheetSettings.getDataRange().getValues();
+    for (let i = 1; i < settingsData.length; i++) {
+      if (settingsData[i][0] === 'overdue_days') {
+        overdueDays = parseInt(settingsData[i][1]) || 3;
+        break;
+      }
+    }
+  }
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเพื่อเปรียบเทียบแค่วันที่
+
+  // 2. เช็คงานซ่อม
+  const repSheet = db.getSheetByName(CONFIG.SHEET_NAME);
+  if (repSheet) {
+    const repData = repSheet.getDataRange().getValues();
+    let overdueCount = 0;
+    
+    for (let i = 1; i < repData.length; i++) {
+      const status = (repData[i][4] || '').toString().trim();
+      if (status === 'รอดำเนินการ') {
+        const dateStr = (repData[i][0] || '').toString().split(' ')[0]; // dd/MM/yyyy
+        if (dateStr) {
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            const taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            taskDate.setHours(0, 0, 0, 0);
+            const diffTime = Math.abs(now - taskDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            if (diffDays >= overdueDays) {
+              overdueCount++;
+            }
+          }
+        }
+      }
+    }
+    
+    if (overdueCount > 0) {
+      const msg = {
+        "type": "flex",
+        "altText": `แจ้งเตือน: มีงานซ่อมค้างเกินกำหนด ${overdueCount} งาน`,
+        "contents": {
+          "type": "bubble",
+          "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#dc2626",
+            "contents": [
+              { "type": "text", "text": "⚠️ แจ้งเตือนงานค้าง (ซ่อม)", "weight": "bold", "color": "#ffffff", "size": "lg" }
+            ]
+          },
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+              { "type": "text", "text": `มีงานซ่อมค้างสถานะ "รอดำเนินการ" เกิน ${overdueDays} วัน จำนวน ${overdueCount} งาน`, "wrap": true, "color": "#1f2937", "size": "md" },
+              { "type": "text", "text": "กรุณาเข้าสู่ระบบเพื่อตรวจสอบและจัดสรรงาน", "wrap": true, "color": "#6b7280", "size": "sm" }
+            ]
+          },
+          "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+            ]
+          }
+        }
+      };
+      notifyUpdateTask(msg, null); // ส่งหา Admin
+    }
+  }
+
+  // 3. เช็คงานโสตฯ
+  const avSheet = db.getSheetByName(CONFIG.AV_SHEET_NAME);
+  if (avSheet) {
+    const avData = avSheet.getDataRange().getValues();
+    let avOverdueCount = 0;
+    
+    for (let i = 1; i < avData.length; i++) {
+      const status = (avData[i][5] || '').toString().trim();
+      if (status === 'รอยืนยันการยืม') {
+        const dateStr = (avData[i][0] || '').toString().split(' ')[0]; // dd/MM/yyyy
+        if (dateStr) {
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            const taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            taskDate.setHours(0, 0, 0, 0);
+            const diffTime = Math.abs(now - taskDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            if (diffDays >= overdueDays) {
+              avOverdueCount++;
+            }
+          }
+        }
+      }
+    }
+    
+    if (avOverdueCount > 0) {
+      const msg = {
+        "type": "flex",
+        "altText": `แจ้งเตือน: มีรายการยืมโสตฯค้างเกินกำหนด ${avOverdueCount} รายการ`,
+        "contents": {
+          "type": "bubble",
+          "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#dc2626",
+            "contents": [
+              { "type": "text", "text": "⚠️ แจ้งเตือนงานค้าง (โสตฯ)", "weight": "bold", "color": "#ffffff", "size": "lg" }
+            ]
+          },
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+              { "type": "text", "text": `มีงานโสตฯค้างสถานะ "รอยืนยันการยืม" เกิน ${overdueDays} วัน จำนวน ${avOverdueCount} งาน`, "wrap": true, "color": "#1f2937", "size": "md" },
+              { "type": "text", "text": "กรุณาเข้าสู่ระบบเพื่อตรวจสอบ", "wrap": true, "color": "#6b7280", "size": "sm" }
+            ]
+          },
+          "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+            ]
+          }
+        }
+      };
+      notifyUpdateTask(msg, null); // ส่งหา Admin
+    }
+  }
+}
+
 
 

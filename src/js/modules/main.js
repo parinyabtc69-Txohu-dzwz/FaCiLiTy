@@ -179,8 +179,8 @@ const ResourceHubCore = {
     updateStatus: payload => ResourceHubCore.api.post({ action: 'update_av_status', ...payload })
   },
   dashboard: {
-    legacy: () => ResourceHubCore.api.get('get_dashboard'),
-    pro: () => ResourceHubCore.api.get('get_unified_dashboard'),
+    legacy: (params = {}) => ResourceHubCore.api.get('get_dashboard', params),
+    pro: (params = {}) => ResourceHubCore.api.get('get_unified_dashboard', params),
   },
   master: {
     list: () => ResourceHubCore.api.get('get_master_data'),
@@ -412,7 +412,8 @@ const ResourceHubCore = {
           if ($(id)) $(id).innerHTML = loadingHtml;
         });
 
-        const d = await ResourceHubCore.dashboard.legacy();
+        const monthFilter = $('dashboardMonthFilter') ? $('dashboardMonthFilter').value : '';
+        const d = await ResourceHubCore.dashboard.legacy({ month: monthFilter });
         const bTotal = Number(d?.building?.total) || 0;
         const bPending = Number(d?.building?.pending) || 0;
         const bProgress = Number(d?.building?.inProgress) || 0;
@@ -433,6 +434,17 @@ const ResourceHubCore = {
         if ($('dash-pending-all')) $('dash-pending-all').textContent = pendingAll;
         if ($('dash-progress-all')) $('dash-progress-all').textContent = progressAll;
         if ($('dash-completed-all')) $('dash-completed-all').textContent = completedAll;
+
+        // อัปเดตแจ้งเตือนที่กระดิ่ง Header (สรุปงานรอดำเนินการ)
+        const globalBadge = $('global-overdue-badge');
+        if (globalBadge) {
+          if (pendingAll > 0) {
+            globalBadge.textContent = pendingAll > 99 ? '99+' : pendingAll;
+            globalBadge.classList.remove('hidden');
+          } else {
+            globalBadge.classList.add('hidden');
+          }
+        }
 
         // งานซ่อมบำรุงอาคาร
         if ($('b-total')) $('b-total').textContent = bTotal;
@@ -1025,6 +1037,11 @@ function renderMasterData() {
           <div class="text-xs text-slate-500">${mergedEsc(x.phone || '')} · ${mergedEsc(x.skills || '')}</div>
         </div>`
   ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
+
+  const overdueInput = $('md-overdue-days');
+  if (overdueInput && mergedCache.settings && mergedCache.settings.overdueDays) {
+    overdueInput.value = mergedCache.settings.overdueDays;
+  }
 }
 
 async function addMaster(type) {
@@ -1499,20 +1516,20 @@ window.renderRepairTable = function () {
             <span class="text-[10px] text-blue-500 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity block"><i class="fa-solid fa-expand mr-1"></i> ดูรายละเอียด</span>
           </button>`;
 
-    return `<tr class="border-b ${rowBg} transition-colors">
-            <td class="p-4 text-center">${starIcon}</td>
-            <td class="p-4 text-slate-500">${r[0]}</td>
-            <td class="p-4 align-top">
-              <div class="flex flex-col items-start">
+    return `<tr class="border-b ${rowBg} transition-colors md:table-row flex flex-col p-4 md:p-0 gap-2 md:gap-0">
+            <td class="p-2 md:p-4 text-left md:text-center w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">ความเร่งด่วน:</span>${starIcon}</td>
+            <td class="p-2 md:p-4 text-slate-500 w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">เวลาแจ้ง:</span><span>${r[0]}</span></td>
+            <td class="p-2 md:p-4 align-top w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">สถานะ:</span>
+              <div class="flex flex-col items-end md:items-start text-right">
                 ${statusTagClass(r[4])}
                 ${urgencyTag}
               </div>
             </td>
-            <td class="p-4">${topicText}</td>
-            <td class="p-4">${detailBtn}</td>
-            <td class="p-4 font-semibold text-slate-700">${r[3]}</td>
-            <td class="p-4">${img}</td>
-            <td class="p-4 text-center"><button onclick="updateTask(${originalIndex})" class="bg-blue-50 border border-blue-200 hover:bg-blue-600 hover:text-white text-blue-700 px-4 py-1.5 rounded-lg shadow-sm transition-colors">อัปเดต</button></td>
+            <td class="p-2 md:p-4 w-full md:w-auto flex flex-col md:table-cell"><span class="md:hidden font-bold text-slate-500 mb-1">หัวข้อปัญหา:</span>${topicText}</td>
+            <td class="p-2 md:p-4 w-full md:w-auto flex flex-col md:table-cell"><span class="md:hidden font-bold text-slate-500 mb-1">รายละเอียด:</span>${detailBtn}</td>
+            <td class="p-2 md:p-4 font-semibold text-slate-700 w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">ผู้แจ้ง:</span><span>${r[3]}</span></td>
+            <td class="p-2 md:p-4 w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">รูปภาพ:</span>${img}</td>
+            <td class="p-2 md:p-4 text-center w-full md:w-auto mt-2 md:mt-0 flex justify-center md:table-cell border-t md:border-none pt-4 md:pt-4"><button onclick="updateTask(${originalIndex})" class="w-full md:w-auto bg-blue-50 border border-blue-200 hover:bg-blue-600 hover:text-white text-blue-700 px-4 py-2 md:py-1.5 rounded-lg shadow-sm transition-colors font-bold text-base md:text-sm">อัปเดต</button></td>
           </tr>`;
   }).join('');
 };
@@ -1711,17 +1728,17 @@ window.renderAVTable = function () {
             <span class="text-[10px] text-blue-500 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity block"><i class="fa-solid fa-expand mr-1"></i> ดูรายละเอียด</span>
           </button>`;
 
-    return `<tr class="border-b ${rowBg} transition-colors">
-            <td class="px-4 py-4 text-center">${starIcon}</td>
-            <td class="px-4 py-4 text-slate-500 whitespace-nowrap">${r[0]}</td>
-            <td class="px-4 py-4">${statusTagClass(st)}</td>
-            <td class="px-4 py-4 font-bold text-slate-800 whitespace-nowrap">${r[1]}</td>
-            <td class="px-4 py-4">${equipBtn}</td>
-            <td class="px-4 py-4 text-slate-600 whitespace-nowrap">${r[3]}</td>
-            <td class="px-4 py-4 font-semibold text-slate-700 whitespace-nowrap">${r[4]}</td>
-            <td class="px-4 py-4 font-medium text-slate-700">${tech}</td>
-            <td class="px-4 py-4 text-center">
-              <button onclick="openAVModal(${originalIndex},'${String(st).replace(/'/g, "\\'")}','${String(tech).replace(/'/g, "\\'")}')" class="bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300 shadow-sm transition-colors">
+    return `<tr class="border-b ${rowBg} transition-colors md:table-row flex flex-col p-4 md:p-0 gap-2 md:gap-0">
+            <td class="p-2 md:p-4 text-left md:text-center w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">⭐:</span>${starIcon}</td>
+            <td class="p-2 md:p-4 text-slate-500 whitespace-nowrap w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">วันที่แจ้ง:</span><span>${r[0]}</span></td>
+            <td class="p-2 md:p-4 w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">สถานะ:</span>${statusTagClass(st)}</td>
+            <td class="p-2 md:p-4 font-bold text-slate-800 whitespace-nowrap w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">ผู้แจ้งยืม:</span><span>${r[1]}</span></td>
+            <td class="p-2 md:p-4 w-full md:w-auto flex flex-col md:table-cell"><span class="md:hidden font-bold text-slate-500 mb-1">รายการอุปกรณ์:</span>${equipBtn}</td>
+            <td class="p-2 md:p-4 text-slate-600 whitespace-nowrap w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">วัน-เวลาที่ใช้:</span><span>${r[3]}</span></td>
+            <td class="p-2 md:p-4 font-semibold text-slate-700 whitespace-nowrap w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">สถานที่:</span><span>${r[4]}</span></td>
+            <td class="p-2 md:p-4 font-medium text-slate-700 w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">เจ้าหน้าที่:</span><span>${tech}</span></td>
+            <td class="p-2 md:p-4 text-center w-full md:w-auto mt-2 md:mt-0 flex justify-center md:table-cell border-t md:border-none pt-4 md:pt-4">
+              <button onclick="openAVModal(${originalIndex},'${String(st).replace(/'/g, "\\'")}','${String(tech).replace(/'/g, "\\'")}')" class="w-full md:w-auto bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-700 px-4 py-2 md:py-1.5 rounded-lg font-bold border border-slate-300 shadow-sm transition-colors text-base md:text-sm">
                 <i class="fa-solid fa-pen-to-square mr-1"></i> อัปเดต
               </button>
             </td>
@@ -1920,4 +1937,22 @@ window.exportTableToCSV = function(tbodyId, filename) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+};
+
+window.saveOverdueSettings = function() {
+  const input = document.getElementById('md-overdue-days');
+  if (!input) return;
+  const days = parseInt(input.value);
+  if (isNaN(days) || days < 1) {
+    alertBox('error', 'ข้อผิดพลาด', 'กรุณาระบุจำนวนวันให้ถูกต้อง (อย่างน้อย 1 วัน)');
+    return;
+  }
+  
+  submitAction(
+    () => ResourceHubCore.api.post({ action: 'save_overdue_settings', days: days }),
+    'บันทึกการตั้งค่าแจ้งเตือนเรียบร้อย',
+    () => {
+      // Refresh หรืออัปเดต UI ถ้าจำเป็น
+    }
+  );
 };
