@@ -1620,7 +1620,7 @@ window.renderAVTable = function () {
   const tbody = $('avDataView');
   if (!tbody) return;
   if (!filteredList.length) {
-    tbody.innerHTML = `< tr > <td colspan="9" class="p-8 text-center text-slate-500">ไม่มีรายการในสถานะนี้</td></tr > `;
+    tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">ไม่มีรายการในสถานะนี้</td></tr>`;
     return;
   }
 
@@ -1635,12 +1635,12 @@ window.renderAVTable = function () {
 
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-amber-50/30 hover:bg-amber-50/60 font-medium';
 
-    const equipBtn = `< button onclick = "viewAVDetails(${originalIndex})" class="text-left w-full max-w-[200px] sm:max-w-xs md:max-w-sm text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 bg-slate-50 border border-slate-200 rounded-lg p-2.5 transition-all group" title = "คลิกเพื่อดูรายละเอียด" >
+    const equipBtn = `<button onclick="viewAVDetails(${originalIndex})" class="text-left w-full max-w-[200px] sm:max-w-xs md:max-w-sm text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 bg-slate-50 border border-slate-200 rounded-lg p-2.5 transition-all group" title="คลิกเพื่อดูรายละเอียด">
             <span class="line-clamp-2 leading-relaxed whitespace-normal">${r[2]}</span>
             <span class="text-[10px] text-blue-500 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity block"><i class="fa-solid fa-expand mr-1"></i> ดูรายละเอียด</span>
-          </button > `;
+          </button>`;
 
-    return `< tr class="border-b ${rowBg} transition-colors" >
+    return `<tr class="border-b ${rowBg} transition-colors">
             <td class="px-4 py-4 text-center">${starIcon}</td>
             <td class="px-4 py-4 text-slate-500 whitespace-nowrap">${r[0]}</td>
             <td class="px-4 py-4">${statusTagClass(st)}</td>
@@ -1653,8 +1653,8 @@ window.renderAVTable = function () {
               <button onclick="openAVModal(${originalIndex},'${String(st).replace(/'/g, "\\'")}','${String(tech).replace(/'/g, "\\'")}')" class="bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300 shadow-sm transition-colors">
                 <i class="fa-solid fa-pen-to-square mr-1"></i> อัปเดต
               </button>
-            </td >
-          </tr > `;
+            </td>
+          </tr>`;
   }).join('');
 };
 

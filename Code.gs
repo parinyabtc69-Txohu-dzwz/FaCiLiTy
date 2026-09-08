@@ -125,14 +125,7 @@ function doPost(e) {
       // ── แจ้งซ่อม: เก็บรูปใน "รูปภาพแจ้งซ่อม" ──────────────
       case 'submit_repair':
         const sheetRep = db.getSheetByName(CONFIG.SHEET_NAME);
-        let repFileUrl = "-";
-        if (data.file && data.file.data) {
-          const folder = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_REPORT);
-          const blob = Utilities.newBlob(Utilities.base64Decode(data.file.data), data.file.type, data.file.name);
-          const file = folder.createFile(blob);
-          try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
-          repFileUrl = file.getUrl();
-        }
+        const repFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_REPORT);
         sheetRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", repFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
         
         const repBody = `
@@ -186,12 +179,7 @@ function doPost(e) {
           }
         };
         
-        let repLineTargets = getAdminAndTechLineIds();
-        let reporterLineId = getUserLineIdByName(data.reporter);
-        if (reporterLineId && !repLineTargets.includes(reporterLineId)) {
-          repLineTargets.push(reporterLineId);
-        }
-        sendLineMessage(lineRepMsg, repLineTargets);
+        notifyLine(lineRepMsg, data.reporter);
         
         break;
 
@@ -248,12 +236,7 @@ function doPost(e) {
           }
         };
         
-        let avLineTargets = getAdminAndTechLineIds();
-        let borrowerLineId = getUserLineIdByName(data.borrower);
-        if (borrowerLineId && !avLineTargets.includes(borrowerLineId)) {
-          avLineTargets.push(borrowerLineId);
-        }
-        sendLineMessage(lineAvMsg, avLineTargets);
+        notifyLine(lineAvMsg, data.borrower);
         
         break;
 
@@ -296,12 +279,7 @@ function doPost(e) {
             }
           }
         };
-        let bugLineTargets = getAdminAndTechLineIds();
-        let bugReporterLineId = getUserLineIdByName(data.reporter);
-        if (bugReporterLineId && !bugLineTargets.includes(bugReporterLineId)) {
-          bugLineTargets.push(bugReporterLineId);
-        }
-        sendLineMessage(lineBugMsg, bugLineTargets);
+        notifyLine(lineBugMsg, data.reporter);
         
         break;
 
@@ -376,11 +354,7 @@ function doPost(e) {
               }
             }
           };
-          let statusTargets = getAdminAndTechLineIds();
-          if (reporterLineId && !statusTargets.includes(reporterLineId)) {
-            statusTargets.push(reporterLineId);
-          }
-          sendLineMessage(statusMsg, statusTargets);
+          notifyLine(statusMsg, reporterNameStr);
         }
         break;
 
@@ -388,23 +362,8 @@ function doPost(e) {
       case 'update_task_proof':
         const sheetTaskProof = db.getSheetByName(CONFIG.SHEET_NAME);
         const targetRow = data.rowIndex + 2;
-        let proofFileUrl = "-";
-        if (data.file && data.file.data) {
-          const folder = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_PROOF);
-          const blob = Utilities.newBlob(Utilities.base64Decode(data.file.data), data.file.type, data.file.name);
-          const file = folder.createFile(blob);
-          try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
-          proofFileUrl = file.getUrl();
-        }
-        
-        let receiptUrl = "-";
-        if (data.receiptFile && data.receiptFile.data) {
-          const folder = getOrCreateSubFolder(CONFIG.FOLDER_RECEIPTS);
-          const blob = Utilities.newBlob(Utilities.base64Decode(data.receiptFile.data), data.receiptFile.type, data.receiptFile.name);
-          const file = folder.createFile(blob);
-          try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
-          receiptUrl = file.getUrl();
-        }
+        const proofFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_PROOF);
+        const receiptUrl = uploadFileToDrive(data.receiptFile, CONFIG.FOLDER_RECEIPTS);
         
         sheetTaskProof.getRange(targetRow, 5).setValue("เสร็จสิ้น");
         sheetTaskProof.getRange(targetRow, 7).setValue(data.fixDetail);
@@ -475,11 +434,7 @@ function doPost(e) {
             }
           }
         };
-        let proofTargets = getAdminAndTechLineIds();
-        if (proofReporterLineId && !proofTargets.includes(proofReporterLineId)) {
-          proofTargets.push(proofReporterLineId);
-        }
-        sendLineMessage(proofMsg, proofTargets);
+        notifyLine(proofMsg, proofReporter);
         break;
 
       // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
@@ -519,16 +474,7 @@ function doPost(e) {
         const sheetName = delType === 'location' ? CONFIG.MASTER_LOC_SHEET 
                         : delType === 'project'  ? CONFIG.MASTER_PROJ_SHEET 
                         : CONFIG.MASTER_MECH_SHEET;
-        const sheetDel = db.getSheetByName(sheetName);
-        if (sheetDel) {
-          const values = sheetDel.getDataRange().getValues();
-          for (let i = 1; i < values.length; i++) {
-            if (String(values[i][0]) === String(delId)) {
-              sheetDel.deleteRow(i + 1);
-              break;
-            }
-          }
-        }
+        deleteRowById(sheetName, 0, delId);
         break;
 
       // ── เอกสาร: อัปโหลด → เก็บใน "เอกสารระบบ" ──────────────
@@ -539,14 +485,7 @@ function doPost(e) {
           sheetAddDoc.appendRow(['docId', 'category', 'uploadDate', 'docName', 'uploader', 'fileUrl', 'fileExt', 'description']);
         }
         
-        let addDocFileUrl = "";
-        if (data.file && data.file.data) {
-          const folder = getOrCreateSubFolder(CONFIG.FOLDER_DOCUMENTS);
-          const blob = Utilities.newBlob(Utilities.base64Decode(data.file.data), data.file.type, data.file.name);
-          const file = folder.createFile(blob);
-          try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
-          addDocFileUrl = file.getUrl();
-        }
+        const addDocFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_DOCUMENTS);
 
         const docId = 'doc_' + new Date().getTime();
         sheetAddDoc.appendRow([
@@ -563,16 +502,7 @@ function doPost(e) {
 
       // ── เอกสาร: ลบ ──────────────────────────────────────────
       case 'delete_document':
-        const sheetDelDoc = db.getSheetByName(CONFIG.DOC_SHEET_NAME);
-        if (sheetDelDoc) {
-          const values = sheetDelDoc.getDataRange().getValues();
-          for (let i = 1; i < values.length; i++) {
-            if (String(values[i][0]) === String(data.docId)) {
-              sheetDelDoc.deleteRow(i + 1);
-              break;
-            }
-          }
-        }
+        deleteRowById(CONFIG.DOC_SHEET_NAME, 0, data.docId);
         break;
 
       // ── จัดการผู้ใช้ ──────────────────────────────────────────
@@ -606,6 +536,38 @@ function doPost(e) {
 // ============================================================
 // Helper Functions
 // ============================================================
+function uploadFileToDrive(fileData, folderName) {
+  if (!fileData || !fileData.data) return "-";
+  const folder = getOrCreateSubFolder(folderName);
+  const blob = Utilities.newBlob(Utilities.base64Decode(fileData.data), fileData.type, fileData.name);
+  const file = folder.createFile(blob);
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
+  return file.getUrl();
+}
+
+function notifyLine(message, userToInclude) {
+  let targets = getAdminAndTechLineIds();
+  if (userToInclude) {
+    let lineId = getUserLineIdByName(userToInclude);
+    if (lineId && !targets.includes(lineId)) {
+      targets.push(lineId);
+    }
+  }
+  sendLineMessage(message, targets);
+}
+
+function deleteRowById(sheetName, idColIndex, idValue) {
+  const sheet = getDB().getSheetByName(sheetName);
+  if (!sheet) return;
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][idColIndex]) === String(idValue)) {
+      sheet.deleteRow(i + 1);
+      break;
+    }
+  }
+}
+
 function getDashboardDataInternal() {
   const db = getDB();
   const bSheet   = db.getSheetByName(CONFIG.SHEET_NAME);
