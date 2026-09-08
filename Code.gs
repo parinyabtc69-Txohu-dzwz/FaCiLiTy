@@ -613,9 +613,10 @@ function getDashboardDataInternal(monthStr) {
   if (monthStr) {
     filteredBData = bData.filter(r => {
       if (!r[0]) return false;
-      const d = new Date(r[0]);
-      if (isNaN(d.getTime())) return false;
-      const ym = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
+      const dateStr = r[0].toString().split(' ')[0];
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return false;
+      const ym = parts[2] + "-" + parts[1].padStart(2, '0');
       return ym === monthStr;
     });
   }
@@ -632,9 +633,10 @@ function getDashboardDataInternal(monthStr) {
   if (monthStr) {
     filteredAVData = avData.filter(r => {
       if (!r[0]) return false;
-      const d = new Date(r[0]);
-      if (isNaN(d.getTime())) return false;
-      const ym = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
+      const dateStr = r[0].toString().split(' ')[0];
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return false;
+      const ym = parts[2] + "-" + parts[1].padStart(2, '0');
       return ym === monthStr;
     });
   }
