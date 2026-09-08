@@ -1406,6 +1406,7 @@ window.renderRepairTable = function () {
     return 1;
   };
 
+  const searchQuery = (window.currentRepairSearch || '').toLowerCase().trim();
   const dateFilter = window.currentRepairDate || '';
   const reporterFilter = (window.currentRepairReporter || '').toLowerCase().trim();
   const locFilter = (window.currentRepairLocation || '').toLowerCase().trim();
