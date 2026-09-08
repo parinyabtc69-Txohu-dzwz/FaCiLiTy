@@ -833,8 +833,29 @@ function updateSessionUI() {
 
 function handleGlobalSearch(keyword) {
   const term = keyword.toLowerCase().trim();
-  if (!term) return;
+  
+  // Check active page
+  const techPage = $('page-technician');
+  const avPage = $('page-av-manage');
+  
+  if (techPage && !techPage.classList.contains('hidden')) {
+    window.currentRepairSearch = term;
+    if (typeof window.renderRepairTable === 'function') {
+      window.renderRepairTable();
+    }
+    return;
+  }
+  
+  if (avPage && !avPage.classList.contains('hidden')) {
+    window.currentAVSearch = term;
+    if (typeof window.renderAVTable === 'function') {
+      window.renderAVTable();
+    }
+    return;
+  }
 
+  // Fallback to navigation if not on manageable pages
+  if (!term) return;
   if (term.includes('ซ่อม')) {
     nav('page-repair-form');
   } else if (term.includes('โสต') || term.includes('ยืม')) {
@@ -1385,7 +1406,9 @@ window.renderRepairTable = function () {
     return 1;
   };
 
-  const searchQuery = (window.currentRepairSearch || '').toLowerCase().trim();
+  const dateFilter = window.currentRepairDate || '';
+  const reporterFilter = (window.currentRepairReporter || '').toLowerCase().trim();
+  const locFilter = (window.currentRepairLocation || '').toLowerCase().trim();
 
   const filteredList = listWithIndex.filter(({ r }) => {
     const w = getWeight(r[4]);
@@ -1396,6 +1419,23 @@ window.renderRepairTable = function () {
     if (searchQuery) {
       const detailText = (r[2] || '').toLowerCase();
       if (!detailText.includes(searchQuery)) return false;
+    }
+    
+    if (reporterFilter && !(r[3] || '').toLowerCase().includes(reporterFilter)) return false;
+    if (locFilter && !(r[13] || '').toLowerCase().includes(locFilter)) return false;
+    
+    if (dateFilter) {
+      const parts = (r[0] || '').split(' ')[0].split('/'); // dd/mm/yyyy
+      if (parts.length === 3) {
+        const taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        if (!isNaN(taskDate.getTime())) {
+          const now = new Date();
+          const diffDays = (now - taskDate) / (1000 * 60 * 60 * 24);
+          if (dateFilter === 'today' && taskDate.toDateString() !== now.toDateString()) return false;
+          if (dateFilter === 'week' && diffDays > 7) return false;
+          if (dateFilter === 'month' && diffDays > 30) return false;
+        }
+      }
     }
 
     return true;
@@ -1411,7 +1451,12 @@ window.renderRepairTable = function () {
   const tbody = $('taskBody');
   if (!tbody) return;
   if (!filteredList.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500">ไม่มีรายการในสถานะนี้</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center">
+      <div class="flex flex-col items-center gap-3 text-slate-400">
+        <i class="fa-solid fa-folder-open text-5xl text-blue-200"></i>
+        <p class="font-semibold text-slate-500">ไม่มีรายการในขณะนี้</p>
+      </div>
+    </td></tr>`;
     return;
   }
 
@@ -1595,6 +1640,9 @@ window.renderAVTable = function () {
   };
 
   const searchQuery = (window.currentAVSearch || '').toLowerCase().trim();
+  const dateFilter = window.currentAVDate || '';
+  const reporterFilter = (window.currentAVReporter || '').toLowerCase().trim();
+  const locFilter = (window.currentAVLocation || '').toLowerCase().trim();
 
   const filteredList = listWithIndex.filter(({ r }) => {
     const w = getWeight(r[5]);
@@ -1605,6 +1653,23 @@ window.renderAVTable = function () {
     if (searchQuery) {
       const equipmentText = (r[2] || '').toLowerCase();
       if (!equipmentText.includes(searchQuery)) return false;
+    }
+    
+    if (reporterFilter && !(r[1] || '').toLowerCase().includes(reporterFilter)) return false;
+    if (locFilter && !(r[4] || '').toLowerCase().includes(locFilter)) return false;
+    
+    if (dateFilter) {
+      const parts = (r[0] || '').split(' ')[0].split('/'); // dd/mm/yyyy
+      if (parts.length === 3) {
+        const taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        if (!isNaN(taskDate.getTime())) {
+          const now = new Date();
+          const diffDays = (now - taskDate) / (1000 * 60 * 60 * 24);
+          if (dateFilter === 'today' && taskDate.toDateString() !== now.toDateString()) return false;
+          if (dateFilter === 'week' && diffDays > 7) return false;
+          if (dateFilter === 'month' && diffDays > 30) return false;
+        }
+      }
     }
 
     return true;
@@ -1620,7 +1685,12 @@ window.renderAVTable = function () {
   const tbody = $('avDataView');
   if (!tbody) return;
   if (!filteredList.length) {
-    tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">ไม่มีรายการในสถานะนี้</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="p-10 text-center">
+      <div class="flex flex-col items-center gap-3 text-slate-400">
+        <i class="fa-solid fa-folder-open text-5xl text-blue-200"></i>
+        <p class="font-semibold text-slate-500">ไม่มีรายการในขณะนี้</p>
+      </div>
+    </td></tr>`;
     return;
   }
 
@@ -1798,4 +1868,55 @@ window.showImageModal = function(url) {
       image: 'object-contain max-h-[80vh] w-auto max-w-[90vw] rounded-lg'
     }
   });
+};
+
+window.exportTableToCSV = function(tbodyId, filename) {
+  const tbody = $(tbodyId);
+  if (!tbody) {
+    alertBox('error', 'ไม่พบข้อมูล', 'ไม่สามารถส่งออกข้อมูลได้');
+    return;
+  }
+  
+  const rows = tbody.querySelectorAll('tr');
+  if (rows.length === 0 || (rows.length === 1 && rows[0].innerText.includes('ไม่มีรายการ'))) {
+    alertBox('warning', 'ไม่มีข้อมูล', 'ไม่มีข้อมูลสำหรับส่งออกในขณะนี้');
+    return;
+  }
+  
+  let csvContent = '\uFEFF'; // BOM for Excel
+  
+  let headers = [];
+  const table = tbody.closest('table');
+  if (table) {
+    const thead = table.querySelector('thead');
+    if (thead) {
+      const ths = thead.querySelectorAll('th');
+      ths.forEach(th => {
+        let text = th.innerText.trim();
+        headers.push('"' + text.replace(/"/g, '""') + '"');
+      });
+      csvContent += headers.join(',') + '\n';
+    }
+  }
+
+  rows.forEach(row => {
+    let rowData = [];
+    const cols = row.querySelectorAll('td');
+    cols.forEach((col, index) => {
+      let text = col.innerText.trim();
+      text = text.replace(/"/g, '""');
+      rowData.push('"' + text + '"');
+    });
+    csvContent += rowData.join(',') + '\n';
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };

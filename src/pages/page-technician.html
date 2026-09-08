@@ -1,4 +1,4 @@
-﻿      <div id="page-technician" class="page-section">
+      <div id="page-technician" class="page-section">
         <div class="max-w-7xl mx-auto">
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
@@ -21,6 +21,18 @@
                 class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold text-emerald-700 hover:bg-emerald-100 shadow-sm transition-colors hidden sm:block"><i
                   class="fa-solid fa-file-csv mr-1"></i> ส่งออก CSV</button>
             </div>
+          </div>
+          
+          <div class="flex flex-wrap items-center gap-3 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> กรองข้อมูล:</span>
+            <select id="repairFilterDate" onchange="window.currentRepairDate = this.value; window.renderRepairTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+              <option value="">ทุกช่วงเวลา</option>
+              <option value="today">วันนี้</option>
+              <option value="week">สัปดาห์นี้</option>
+              <option value="month">เดือนนี้</option>
+            </select>
+            <input type="text" id="repairFilterReporter" oninput="window.currentRepairReporter = this.value; window.renderRepairTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="ชื่อผู้แจ้ง...">
+            <input type="text" id="repairFilterLocation" oninput="window.currentRepairLocation = this.value; window.renderRepairTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="สถานที่...">
           </div>
           
           <div class="flex gap-2 border-b border-slate-200 mb-4 overflow-x-auto" id="repairAdminTabs">
