@@ -179,7 +179,7 @@ function doPost(e) {
           }
         };
         
-        notifyLine(lineRepMsg, data.reporter);
+        notifyNewTask(lineRepMsg, data.reporter);
         
         break;
 
@@ -236,7 +236,7 @@ function doPost(e) {
           }
         };
         
-        notifyLine(lineAvMsg, data.borrower);
+        notifyNewTask(lineAvMsg, data.borrower);
         
         break;
 
@@ -279,7 +279,7 @@ function doPost(e) {
             }
           }
         };
-        notifyLine(lineBugMsg, data.reporter);
+        notifyNewTask(lineBugMsg, data.reporter);
         
         break;
 
@@ -354,7 +354,7 @@ function doPost(e) {
               }
             }
           };
-          notifyLine(statusMsg, reporterNameStr);
+          notifyUpdateTask(statusMsg, reporterNameStr);
         }
         break;
 
@@ -434,7 +434,7 @@ function doPost(e) {
             }
           }
         };
-        notifyLine(proofMsg, proofReporter);
+        notifyUpdateTask(proofMsg, proofReporter);
         break;
 
       // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
@@ -545,8 +545,19 @@ function uploadFileToDrive(fileData, folderName) {
   return file.getUrl();
 }
 
-function notifyLine(message, userToInclude) {
-  let targets = getAdminAndTechLineIds();
+function notifyNewTask(message, userToInclude) {
+  let targets = getLineIdsByRoles(['admin', 'executive', 'tech', 'technician']);
+  if (userToInclude) {
+    let lineId = getUserLineIdByName(userToInclude);
+    if (lineId && !targets.includes(lineId)) {
+      targets.push(lineId);
+    }
+  }
+  sendLineMessage(message, targets);
+}
+
+function notifyUpdateTask(message, userToInclude) {
+  let targets = getLineIdsByRoles(['admin', 'executive']); // แอดมินทุกคน
   if (userToInclude) {
     let lineId = getUserLineIdByName(userToInclude);
     if (lineId && !targets.includes(lineId)) {
@@ -805,8 +816,8 @@ function getUserLineIdByName(name) {
   }
 }
 
-// ดึง Line ID ของช่างและแอดมินทั้งหมด
-function getAdminAndTechLineIds() {
+// ดึง Line ID ตาม Role ที่กำหนด
+function getLineIdsByRoles(targetRoles) {
   try {
     const db = getDB();
     const sheet = db.getSheetByName('Users');
@@ -818,9 +829,9 @@ function getAdminAndTechLineIds() {
     for (let i = 1; i < data.length; i++) {
       const role = (data[i][2] || '').toString().trim().toLowerCase();
       const status = (data[i][3] || '').toString().trim().toLowerCase();
-      if (status === 'approved' && (role === 'admin' || role === 'executive' || role === 'tech' || role === 'technician')) {
+      if (status === 'approved' && targetRoles.includes(role)) {
         const lineId = (data[i][6] || '').toString().trim();
-        if (lineId && lineId.startsWith('U')) {
+        if (lineId && (lineId.startsWith('U') || lineId.startsWith('C') || lineId.startsWith('R'))) {
           lineIds.push(lineId);
         }
       }
