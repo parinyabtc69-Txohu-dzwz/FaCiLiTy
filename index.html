@@ -2537,9 +2537,31 @@ window.renderRepairTable = function () {
     const status = (r[4] || '').trim();
     const isDone = (status === 'เสร็จสิ้น' || status === 'เรียบร้อยแล้ว' || status === 'เสร็จสิ้น/คืนเรียบร้อย');
 
+    let urgencyLevel = 1;
+    let urgencyTag = '';
+    const newUrgency = (r[11] || '').trim();
+    const detailStr = r[2] || '';
+
+    if (newUrgency === 'ด่วน' || detailStr.includes('ความเร่งด่วน: ด่วน')) {
+      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-rose-500 animate-pulse"></i> ด่วน</span></div>';
+      urgencyLevel = 3;
+    } else if (newUrgency === 'ตามคิว' || detailStr.includes('ความเร่งด่วน: ตามคิว')) {
+      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-blue-500"></i> ตามคิว</span></div>';
+      urgencyLevel = 2;
+    } else if (newUrgency === 'ไม่รีบ' || detailStr.includes('ความเร่งด่วน: ไม่รีบ')) {
+      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-emerald-500"></i> ไม่รีบ</span></div>';
+      urgencyLevel = 1;
+    }
+
+    const activeStarHtml = '<i class="fa-solid fa-star text-base animate-bounce"></i>';
+    const activeStars = Array(urgencyLevel).fill(activeStarHtml).join('');
+    
+    const inactiveStarHtml = '<i class="fa-regular fa-star"></i>';
+    const inactiveStars = Array(urgencyLevel).fill(inactiveStarHtml).join('');
+
     const starIcon = isDone
-      ? '<span class="text-slate-300"><i class="fa-regular fa-star"></i></span>'
-      : '<span class="text-amber-400 drop-shadow-sm"><i class="fa-solid fa-star text-lg animate-bounce"></i></span>';
+      ? `<span class="text-slate-300 flex justify-center gap-1">${inactiveStars}</span>`
+      : `<span class="text-amber-400 drop-shadow-sm flex justify-center gap-1">${activeStars}</span>`;
 
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60 font-medium';
     const img = r[5] && r[5] !== '-' ? `<button onclick="showImageModal('${r[5]}')" class="text-blue-500 underline hover:text-blue-700 transition-colors"><i class="fa-solid fa-image"></i> ดูรูป</button>` : '-';
@@ -2548,18 +2570,6 @@ window.renderRepairTable = function () {
             <span class="line-clamp-2 leading-relaxed whitespace-normal">${r[2]}</span>
             <span class="text-[10px] text-blue-500 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity block"><i class="fa-solid fa-expand mr-1"></i> ดูรายละเอียด</span>
           </button>`;
-
-    let urgencyTag = '';
-    const newUrgency = (r[11] || '').trim();
-    const detailStr = r[2] || '';
-
-    if (newUrgency === 'ด่วน' || detailStr.includes('ความเร่งด่วน: ด่วน')) {
-      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-rose-500 animate-pulse"></i> ด่วน</span></div>';
-    } else if (newUrgency === 'ตามคิว' || detailStr.includes('ความเร่งด่วน: ตามคิว')) {
-      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-blue-500"></i> ตามคิว</span></div>';
-    } else if (newUrgency === 'ไม่รีบ' || detailStr.includes('ความเร่งด่วน: ไม่รีบ')) {
-      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-emerald-500"></i> ไม่รีบ</span></div>';
-    }
 
     return `<tr class="border-b ${rowBg} transition-colors">
             <td class="p-4 text-center">${starIcon}</td>
