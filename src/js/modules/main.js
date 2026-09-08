@@ -446,6 +446,47 @@ const ResourceHubCore = {
           }
         }
 
+        const dropdownCount = $('dropdown-overdue-count');
+        if (dropdownCount) dropdownCount.textContent = pendingAll;
+
+        const notifList = $('notification-list');
+        if (notifList) {
+          if (pendingAll > 0) {
+             let html = '';
+             if (bPending > 0) {
+                html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-rose-100 flex items-center justify-between mb-2">
+                           <div class="flex items-center gap-3">
+                             <div class="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
+                               <i class="fa-solid fa-wrench"></i>
+                             </div>
+                             <div>
+                               <p class="text-xs font-bold text-slate-700">แจ้งซ่อมอาคาร</p>
+                               <p class="text-[10px] text-slate-500">รอดำเนินการ ${bPending} รายการ</p>
+                             </div>
+                           </div>
+                           <button onclick="toggleNotificationDropdown(); nav('page-technician');" class="text-xs font-bold text-[#265D5A] hover:underline">จัดการ</button>
+                         </div>`;
+             }
+             if (avPending > 0) {
+                html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-amber-100 flex items-center justify-between">
+                           <div class="flex items-center gap-3">
+                             <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+                               <i class="fa-solid fa-microphone-lines"></i>
+                             </div>
+                             <div>
+                               <p class="text-xs font-bold text-slate-700">ยืมอุปกรณ์โสตฯ</p>
+                               <p class="text-[10px] text-slate-500">รอดำเนินการ ${avPending} รายการ</p>
+                             </div>
+                           </div>
+                           <button onclick="toggleNotificationDropdown(); nav('page-av-manage');" class="text-xs font-bold text-[#265D5A] hover:underline">จัดการ</button>
+                         </div>`;
+             }
+             notifList.innerHTML = html;
+          } else {
+             notifList.innerHTML = '<div class="p-4 text-center text-sm text-slate-400">ไม่มีงานค้าง</div>';
+          }
+        }
+
         // งานซ่อมบำรุงอาคาร
         if ($('b-total')) $('b-total').textContent = bTotal;
         if ($('b-pending')) $('b-pending').textContent = bPending;
@@ -882,7 +923,35 @@ function handleGlobalSearch(keyword) {
 function toggleProfileDropdown() {
   const dropdown = $('profile-dropdown');
   if (dropdown) dropdown.classList.toggle('hidden');
+  const notifDropdown = $('notification-dropdown');
+  if (notifDropdown && !notifDropdown.classList.contains('hidden')) {
+    notifDropdown.classList.add('hidden');
+  }
 }
+
+function toggleNotificationDropdown() {
+  const dropdown = $('notification-dropdown');
+  if (dropdown) dropdown.classList.toggle('hidden');
+  const profileDropdown = $('profile-dropdown');
+  if (profileDropdown && !profileDropdown.classList.contains('hidden')) {
+    profileDropdown.classList.add('hidden');
+  }
+}
+
+// ปิด dropdown เมื่อคลิกที่อื่น
+document.addEventListener('click', (e) => {
+  const profileDropdown = $('profile-dropdown');
+  const profileBtn = $('profile-btn') || e.target.closest('button[title="ข้อมูลส่วนตัว"]');
+  if (profileDropdown && !profileDropdown.classList.contains('hidden') && !profileDropdown.contains(e.target) && !profileBtn) {
+    profileDropdown.classList.add('hidden');
+  }
+
+  const notifDropdown = $('notification-dropdown');
+  const notifBtn = $('notification-bell');
+  if (notifDropdown && !notifDropdown.classList.contains('hidden') && !notifDropdown.contains(e.target) && (!notifBtn || !notifBtn.contains(e.target))) {
+    notifDropdown.classList.add('hidden');
+  }
+});
 
 function openProfileModal() {
   const name = isAdminLoggedIn ? 'ผู้ดูแลระบบ (Admin)' : (currentTeacher ? `คุณครู ${currentTeacher}` : 'บุคคลทั่วไป');
