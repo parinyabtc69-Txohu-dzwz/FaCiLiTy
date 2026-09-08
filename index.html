@@ -1124,7 +1124,7 @@ console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; fo
 const scriptURL = 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec';
 
 
-// 🔴 โฟลเดอร์ที่เก็บรูป (เปลี่ยนเป็นอันใหม่เรียบร้อย)
+// 🔴 โฟลเดอร์ที่เก็บรูป 
 const REPAIR_DRIVE_FOLDER_ID = '1tkOHFwH4MC-eA_eNLThTcLVF3CRHQUXT';
 
 // 🔒 SESSION CONFIG
@@ -1373,26 +1373,26 @@ const ResourceHubCore = {
       const useDate = $('useDate').value;
       const loc = $('av_location').value.trim();
       const signer = $('signerName').value.trim();
-      
+
       let equipmentList = [];
       const checkboxes = document.querySelectorAll('input[name="equipment"]:checked');
       checkboxes.forEach(cb => {
         const qty = cb.parentElement.querySelector('input[type=number]').value;
         equipmentList.push(`${cb.value} (${qty})`);
       });
-      
+
       const otherEq = $('other_equip').value.trim();
       if (otherEq) {
         const otherQty = $('qty_other').value;
         equipmentList.push(`${otherEq} (${otherQty})`);
       }
-      
+
       const equipmentStr = equipmentList.join(', ');
-      
+
       if (!borrower || !useDate || !loc || !signer || !equipmentStr) {
         return alertBox('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลและเลือกอุปกรณ์ให้ครบถ้วน');
       }
-      
+
       const btn = $('btnSubmitAV');
       setBusy(btn, true);
       try {
@@ -1529,7 +1529,7 @@ const ResourceHubCore = {
         idsToLoad.forEach(id => {
           if ($(id)) $(id).innerHTML = loadingHtml;
         });
-        
+
         const d = await ResourceHubCore.dashboard.legacy();
         const bTotal = Number(d?.building?.total) || 0;
         const bPending = Number(d?.building?.pending) || 0;
@@ -1662,9 +1662,9 @@ function handleLiffLogin() {
     const lineId = profile.userId;
     const name = profile.displayName;
     const picture = profile.pictureUrl;
-    
-    
-    
+
+
+
     post({ action: 'link_line_account', email: email, lineId: lineId, name: name, picture: picture })
       .then((res) => {
         currentTeacher = res.name;
@@ -2552,7 +2552,7 @@ window.renderRepairTable = function () {
     let urgencyTag = '';
     const newUrgency = (r[11] || '').trim();
     const detailStr = r[2] || '';
-    
+
     if (newUrgency === 'ด่วน' || detailStr.includes('ความเร่งด่วน: ด่วน')) {
       urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-rose-500 animate-pulse"></i> ด่วน</span></div>';
     } else if (newUrgency === 'ตามคิว' || detailStr.includes('ความเร่งด่วน: ตามคิว')) {
@@ -2599,11 +2599,27 @@ window.filterRepairTab = function (tabId, btn) {
 window.viewRepairDetails = function (index) {
   const row = window.allRepairTasks[index];
   if (!row) return;
+  function getDriveImgHtml(url, title, colorTheme) {
+    if (!url || url === '-') return '';
+    let fileId = '';
+    const m1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (m1) fileId = m1[1];
+    else {
+      const m2 = url.match(/id=([a-zA-Z0-9_-]+)/);
+      if (m2) fileId = m2[1];
+    }
+    if (fileId) {
+      return `<div class="mt-3 text-center"><p class="text-sm text-slate-500 font-medium mb-2">${title}:</p><a href="${url}" target="_blank"><img src="https://drive.google.com/uc?id=${fileId}" class="max-w-full h-auto rounded-lg border border-${colorTheme}-200 mx-auto max-h-64 object-contain shadow-sm hover:opacity-90 transition-opacity" alt="${title}"></a></div>`;
+    }
+    return `<a href="${url}" target="_blank" class="block mt-3 bg-${colorTheme}-50 text-${colorTheme}-700 text-center py-2 rounded-lg border border-${colorTheme}-200 hover:bg-${colorTheme}-100 font-semibold"><i class="fa-solid fa-image"></i> ดู${title}</a>`;
+  }
+
   const topic = row[1] || '-';
   const detail = row[2] || '-';
   const fixDetail = row[6] || 'ยังไม่มีการบันทึกการแก้ปัญหา';
   const tech = row[7] || '-';
-  const proofImg = (row[8] && row[8] !== '-') ? `<a href="${row[8]}" target="_blank" class="block mt-3 bg-emerald-50 text-emerald-700 text-center py-2 rounded-lg border border-emerald-200 hover:bg-emerald-100 font-semibold"><i class="fa-solid fa-image"></i> ดูรูปภาพผลการซ่อม</a>` : '';
+  const reportImg = getDriveImgHtml(row[5], 'รูปภาพประกอบปัญหา', 'slate');
+  const proofImg = getDriveImgHtml(row[8], 'รูปภาพผลการซ่อม', 'emerald');
 
   const cost = (row[9] && row[9] !== '-') ? row[9] : null;
   const receiptUrl = (row[10] && row[10] !== '-') ? row[10] : null;
@@ -2622,6 +2638,7 @@ window.viewRepairDetails = function (index) {
                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                       <h3 class="font-bold text-slate-800 text-lg mb-1">${topic}</h3>
                       <p class="text-sm text-slate-600">${detail}</p>
+                      ${reportImg}
                    </div>
                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
                       <div class="flex items-center gap-2 mb-2">
@@ -2651,7 +2668,7 @@ window.viewAVDetails = function (index) {
 
   Swal.fire({
     title: 'รายละเอียดการขอยืม',
-    html: `<div class="text-left mt-4 text-slate-700 space-y-4">
+    html: `< div class="text-left mt-4 text-slate-700 space-y-4" >
                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                       <div class="flex items-center gap-2 mb-2">
                          <i class="fa-solid fa-microphone-lines text-blue-600"></i>
@@ -2666,7 +2683,7 @@ window.viewAVDetails = function (index) {
                       <hr class="border-blue-200 my-2">
                       <p class="text-sm text-slate-500 font-medium"><i class="fa-solid fa-user-gear mr-1"></i> ผู้จัดการงาน: <span class="text-slate-800 font-bold">${tech}</span></p>
                    </div>
-                 </div>`,
+                 </div > `,
     confirmButtonText: 'ปิด',
     confirmButtonColor: '#3b82f6',
     width: '500px'
@@ -2711,7 +2728,7 @@ window.renderAVTable = function () {
   const tbody = $('avDataView');
   if (!tbody) return;
   if (!filteredList.length) {
-    tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">ไม่มีรายการในสถานะนี้</td></tr>`;
+    tbody.innerHTML = `< tr > <td colspan="9" class="p-8 text-center text-slate-500">ไม่มีรายการในสถานะนี้</td></tr > `;
     return;
   }
 
@@ -2726,12 +2743,12 @@ window.renderAVTable = function () {
 
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-amber-50/30 hover:bg-amber-50/60 font-medium';
 
-    const equipBtn = `<button onclick="viewAVDetails(${originalIndex})" class="text-left w-full max-w-[200px] sm:max-w-xs md:max-w-sm text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 bg-slate-50 border border-slate-200 rounded-lg p-2.5 transition-all group" title="คลิกเพื่อดูรายละเอียด">
+    const equipBtn = `< button onclick = "viewAVDetails(${originalIndex})" class="text-left w-full max-w-[200px] sm:max-w-xs md:max-w-sm text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 bg-slate-50 border border-slate-200 rounded-lg p-2.5 transition-all group" title = "คลิกเพื่อดูรายละเอียด" >
             <span class="line-clamp-2 leading-relaxed whitespace-normal">${r[2]}</span>
             <span class="text-[10px] text-blue-500 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity block"><i class="fa-solid fa-expand mr-1"></i> ดูรายละเอียด</span>
-          </button>`;
+          </button > `;
 
-    return `<tr class="border-b ${rowBg} transition-colors">
+    return `< tr class="border-b ${rowBg} transition-colors" >
             <td class="px-4 py-4 text-center">${starIcon}</td>
             <td class="px-4 py-4 text-slate-500 whitespace-nowrap">${r[0]}</td>
             <td class="px-4 py-4">${statusTagClass(st)}</td>
@@ -2744,8 +2761,8 @@ window.renderAVTable = function () {
               <button onclick="openAVModal(${originalIndex},'${String(st).replace(/'/g, "\\'")}','${String(tech).replace(/'/g, "\\'")}')" class="bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300 shadow-sm transition-colors">
                 <i class="fa-solid fa-pen-to-square mr-1"></i> อัปเดต
               </button>
-            </td>
-          </tr>`;
+            </td >
+          </tr > `;
   }).join('');
 };
 
@@ -2806,12 +2823,12 @@ function renderUserTable() {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 transition-colors';
     tr.innerHTML = `
-      <td class="px-4 py-3">
-        <div class="flex items-center gap-3">
-          ${picture ? `<img src="${picture}" class="w-8 h-8 rounded-full shadow-sm" alt="profile">` : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500"><i class="fa-solid fa-user"></i></div>`}
-          <span class="font-medium">${name}</span>
-        </div>
-      </td>
+    < td class="px-4 py-3" >
+      <div class="flex items-center gap-3">
+        ${picture ? `<img src="${picture}" class="w-8 h-8 rounded-full shadow-sm" alt="profile">` : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500"><i class="fa-solid fa-user"></i></div>`}
+        <span class="font-medium">${name}</span>
+      </div>
+      </td >
       <td class="px-4 py-3">${email}</td>
       <td class="px-4 py-3">
         <select class="border border-slate-300 rounded-md text-sm p-1" onchange="updateUserRole('${email}', this.value, '${status}')">
@@ -2827,7 +2844,7 @@ function renderUserTable() {
         <!-- Actions if needed -->
         <span class="text-slate-400 text-xs"><i class="fa-solid fa-check text-emerald-500 hidden" id="check-${email.replace(/[@.]/g, '')}"></i> บันทึกออโต้</span>
       </td>
-    `;
+  `;
     tbody.appendChild(tr);
   });
 }
