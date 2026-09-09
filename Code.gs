@@ -313,11 +313,11 @@ function doPost(e) {
               </div>
             `;
             try {
-              // MailApp.sendEmail({
+              /* MailApp.sendEmail({
                 to: reporterEmail,
                 subject: `✅ งานซ่อมเสร็จสิ้น: ${subjectStr}`,
                 htmlBody: bodyHtml
-              });
+              }); */
             } catch (e) { Logger.log(e.message); }
           }
           
@@ -393,11 +393,11 @@ function doPost(e) {
             </div>
           `;
           try {
-            // MailApp.sendEmail({
+            /* MailApp.sendEmail({
               to: proofReporterEmail,
               subject: `✅ งานซ่อมเสร็จสิ้น: ${proofSubject}`,
               htmlBody: bodyHtml
-            });
+            }); */
             } catch (e) { Logger.log(e.message); }
           }
           
@@ -921,11 +921,11 @@ function sendEmailNotification(subject, bodyHtml) {
     adminEmails = [...new Set(adminEmails)];
     
     if (adminEmails.length > 0) {
-      // MailApp.sendEmail({
+      /* MailApp.sendEmail({
         to: adminEmails.join(','),
         subject: subject,
         htmlBody: bodyHtml
-      });
+      }); */
     }
   } catch(e) {
     Logger.log("Email error: " + e.message);
