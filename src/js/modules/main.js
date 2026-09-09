@@ -2090,3 +2090,38 @@ window.submitSurvey = function() {
     }
   );
 };
+
+// ==========================================
+// 📄 ระบบออกรายงาน PDF (Export Dashboard)
+// ==========================================
+window.exportDashboardToPDF = function() {
+  const element = document.getElementById('page-dashboard');
+  if (!element) return;
+  
+  // เตรียมส่วนหัว (Header Bar) ที่มีปุ่ม จะซ่อนปุ่ม
+  const headerDiv = element.querySelector('.bg-gradient-to-r');
+  const buttons = headerDiv ? headerDiv.querySelectorAll('button') : [];
+  
+  // ซ่อนปุ่มชั่วคราว
+  buttons.forEach(btn => btn.style.display = 'none');
+
+  Swal.fire({ title: 'กำลังสร้างไฟล์ PDF...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  const opt = {
+    margin:       [10, 10, 10, 10],
+    filename:     `FaCiLiTy_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, logging: false },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save().then(() => {
+    // คืนค่าการแสดงผล
+    buttons.forEach(btn => btn.style.display = '');
+    Swal.close();
+  }).catch(err => {
+    console.error(err);
+    buttons.forEach(btn => btn.style.display = '');
+    alertBox('error', 'ข้อผิดพลาด', 'ไม่สามารถ Export เป็น PDF ได้');
+  });
+};

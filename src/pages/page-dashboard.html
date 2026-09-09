@@ -19,7 +19,11 @@
                 title="เลือกเดือน/ปี">
               <button onclick="loadDashboard()"
                 class="bg-white text-[#265D5A] px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm hover:bg-[#B0EDE6]">
-                <i class="fa-solid fa-rotate"></i> <span>รีเฟรชข้อมูล</span>
+                <i class="fa-solid fa-rotate"></i> <span>รีเฟรช</span>
+              </button>
+              <button onclick="exportDashboardToPDF()"
+                class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm">
+                <i class="fa-solid fa-file-pdf"></i> <span class="hidden md:inline">Export PDF</span>
               </button>
               <button onclick="nav('page-home')"
                 class="bg-[#265D5A]/40 hover:bg-[#265D5A]/60 text-white px-5 py-2.5 rounded-xl font-bold flex gap-2 transition-colors border border-white/20 items-center">

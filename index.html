@@ -16,6 +16,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
         :root {
@@ -565,7 +566,11 @@
                 title="เลือกเดือน/ปี">
               <button onclick="loadDashboard()"
                 class="bg-white text-[#265D5A] px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm hover:bg-[#B0EDE6]">
-                <i class="fa-solid fa-rotate"></i> <span>รีเฟรชข้อมูล</span>
+                <i class="fa-solid fa-rotate"></i> <span>รีเฟรช</span>
+              </button>
+              <button onclick="exportDashboardToPDF()"
+                class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm">
+                <i class="fa-solid fa-file-pdf"></i> <span class="hidden md:inline">Export PDF</span>
               </button>
               <button onclick="nav('page-home')"
                 class="bg-[#265D5A]/40 hover:bg-[#265D5A]/60 text-white px-5 py-2.5 rounded-xl font-bold flex gap-2 transition-colors border border-white/20 items-center">
@@ -3271,6 +3276,41 @@ window.submitSurvey = function() {
       }
     }
   );
+};
+
+// ==========================================
+// 📄 ระบบออกรายงาน PDF (Export Dashboard)
+// ==========================================
+window.exportDashboardToPDF = function() {
+  const element = document.getElementById('page-dashboard');
+  if (!element) return;
+  
+  // เตรียมส่วนหัว (Header Bar) ที่มีปุ่ม จะซ่อนปุ่ม
+  const headerDiv = element.querySelector('.bg-gradient-to-r');
+  const buttons = headerDiv ? headerDiv.querySelectorAll('button') : [];
+  
+  // ซ่อนปุ่มชั่วคราว
+  buttons.forEach(btn => btn.style.display = 'none');
+
+  Swal.fire({ title: 'กำลังสร้างไฟล์ PDF...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  const opt = {
+    margin:       [10, 10, 10, 10],
+    filename:     `FaCiLiTy_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, logging: false },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save().then(() => {
+    // คืนค่าการแสดงผล
+    buttons.forEach(btn => btn.style.display = '');
+    Swal.close();
+  }).catch(err => {
+    console.error(err);
+    buttons.forEach(btn => btn.style.display = '');
+    alertBox('error', 'ข้อผิดพลาด', 'ไม่สามารถ Export เป็น PDF ได้');
+  });
 };
 
 
