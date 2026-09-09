@@ -312,13 +312,7 @@ function doPost(e) {
                 <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">เข้าสู่ระบบเพื่อดูรายละเอียดเพิ่มเติม</p>
               </div>
             `;
-            try {
-              /* MailApp.sendEmail({
-                to: reporterEmail,
-                subject: `✅ งานซ่อมเสร็จสิ้น: ${subjectStr}`,
-                htmlBody: bodyHtml
-              }); */
-            } catch (e) { Logger.log(e.message); }
+
           }
           
           const statusMsg = {
@@ -392,13 +386,7 @@ function doPost(e) {
               <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">เข้าสู่ระบบเพื่อดูรายละเอียดเพิ่มเติมหรือหลักฐานการซ่อม</p>
             </div>
           `;
-          try {
-            /* MailApp.sendEmail({
-              to: proofReporterEmail,
-              subject: `✅ งานซ่อมเสร็จสิ้น: ${proofSubject}`,
-              htmlBody: bodyHtml
-            }); */
-            } catch (e) { Logger.log(e.message); }
+
           }
           
         const proofMsg = {
@@ -921,13 +909,7 @@ function sendEmailNotification(subject, bodyHtml) {
     // Remove duplicates
     adminEmails = [...new Set(adminEmails)];
     
-    if (adminEmails.length > 0) {
-      /* MailApp.sendEmail({
-        to: adminEmails.join(','),
-        subject: subject,
-        htmlBody: bodyHtml
-      }); */
-    }
+
   } catch(e) {
     Logger.log("Email error: " + e.message);
   }
