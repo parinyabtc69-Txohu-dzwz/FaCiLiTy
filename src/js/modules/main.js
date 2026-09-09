@@ -1886,12 +1886,12 @@ function renderUserTable() {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 transition-colors';
     tr.innerHTML = `
-    < td class="px-4 py-3" >
+    <td class="px-4 py-3">
       <div class="flex items-center gap-3">
         ${picture ? `<img src="${picture}" class="w-8 h-8 rounded-full shadow-sm" alt="profile">` : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500"><i class="fa-solid fa-user"></i></div>`}
         <span class="font-medium">${name}</span>
       </div>
-      </td >
+    </td>
       <td class="px-4 py-3">${email}</td>
       <td class="px-4 py-3">
         <select class="border border-slate-300 rounded-md text-sm p-1" onchange="updateUserRole('${email}', this.value, '${status}')">

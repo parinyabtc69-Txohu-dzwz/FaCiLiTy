@@ -490,7 +490,7 @@ function doPost(e) {
       // ── ประเมินความพึงพอใจ ──────────────────────────────────
       case 'submit_survey':
         const typeSur = data.type; // 'repair' or 'av'
-        const rowSur = data.row;
+        const rowSur = parseInt(data.row);
         let sheetSur = null;
         let ratingCol = 17, commentCol = 18;
         if (typeSur === 'repair') {
