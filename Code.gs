@@ -481,6 +481,7 @@ function doPost(e) {
                   { "type": "button", "style": "primary", "color": "#f59e0b", "action": { "type": "uri", "label": "⭐ ประเมินความพึงพอใจ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?action=survey&type=av&row=" + avTargetRow } }
                 ]
               }
+            }
           };
           notifyUpdateTask(avMsg, avReporter);
         } else if (data.status === 'จัดเตรียมแล้ว') {
