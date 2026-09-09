@@ -106,6 +106,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- QR Code Scanner Library -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body class="bg-[#edfaf8] min-h-screen flex flex-col">
@@ -2300,7 +2301,10 @@ function renderMasterData() {
   loc.innerHTML = (mergedCache.locations || []).map(x =>
     `<div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 text-slate-800">
           <span>${mergedEsc(x.name)} <small class="text-slate-400">${mergedEsc(x.department || '')}</small></span>
-          <button onclick="deleteMaster('location','${mergedEsc(x.id)}')" class="text-rose-500">ลบ</button>
+          <div class="flex gap-4">
+            <button onclick="openQrGenModal('${mergedEsc(x.name)}')" class="text-[#265D5A] hover:text-[#1a3f3d]" title="สร้าง QR Code"><i class="fa-solid fa-qrcode"></i></button>
+            <button onclick="deleteMaster('location','${mergedEsc(x.id)}')" class="text-rose-500 hover:text-rose-700" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+          </div>
         </div>`
   ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
 
@@ -3331,6 +3335,48 @@ window.exportDashboardToPDF = function() {
 };
 
 
+// ==========================================
+// ⬛ ระบบสร้าง QR Code (QR Generator)
+// ==========================================
+let currentQrCode = null;
+
+window.openQrGenModal = function(text) {
+  $('qrGenText').textContent = text;
+  $('qrGenCanvas').innerHTML = '';
+  currentQrCode = new QRCode($('qrGenCanvas'), {
+    text: text,
+    width: 200,
+    height: 200,
+    colorDark : "#000000",
+    colorLight : "#ffffff",
+    correctLevel : QRCode.CorrectLevel.H
+  });
+  $('qrGenModal').classList.remove('hidden');
+};
+
+window.closeQrGenModal = function() {
+  $('qrGenModal').classList.add('hidden');
+};
+
+window.downloadQrCode = function() {
+  const canvas = document.querySelector('#qrGenCanvas canvas');
+  const img = document.querySelector('#qrGenCanvas img');
+  if (img && img.src && img.src.startsWith('data:')) {
+    const link = document.createElement('a');
+    link.download = 'QR_' + $('qrGenText').textContent + '.png';
+    link.href = img.src;
+    link.click();
+  } else if (canvas) {
+    const link = document.createElement('a');
+    link.download = 'QR_' + $('qrGenText').textContent + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } else {
+    alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถดาวน์โหลดรูป QR Code ได้');
+  }
+};
+
+
 // === QR Code Scanner ===
 let html5QrcodeScanner = null;
 let currentQrTargetId = null;
@@ -3492,6 +3538,26 @@ function closeQrScanner() {
 
   <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <!-- QR Code Generator Modal -->
+  <div id="qrGenModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl w-full max-w-sm mx-4 overflow-hidden shadow-2xl transform transition-all">
+      <div class="bg-[#265D5A] p-4 flex justify-between items-center text-white">
+        <h3 class="font-bold text-lg"><i class="fa-solid fa-qrcode mr-2"></i>สร้าง QR Code</h3>
+        <button onclick="closeQrGenModal()" class="text-white hover:text-slate-200 transition-colors">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="p-6 text-center">
+        <p id="qrGenText" class="text-slate-600 mb-4 font-medium text-lg"></p>
+        <div id="qrGenCanvas" class="mx-auto flex justify-center items-center bg-white p-4 rounded-xl shadow-inner border inline-block"></div>
+        <button onclick="downloadQrCode()" class="mt-6 w-full bg-[#265D5A] hover:bg-[#1a3f3d] text-white font-bold py-3 rounded-xl transition-colors shadow-md">
+          <i class="fa-solid fa-download mr-2"></i> ดาวน์โหลดรูปภาพ
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

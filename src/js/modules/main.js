@@ -1100,7 +1100,10 @@ function renderMasterData() {
   loc.innerHTML = (mergedCache.locations || []).map(x =>
     `<div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 text-slate-800">
           <span>${mergedEsc(x.name)} <small class="text-slate-400">${mergedEsc(x.department || '')}</small></span>
-          <button onclick="deleteMaster('location','${mergedEsc(x.id)}')" class="text-rose-500">ลบ</button>
+          <div class="flex gap-4">
+            <button onclick="openQrGenModal('${mergedEsc(x.name)}')" class="text-[#265D5A] hover:text-[#1a3f3d]" title="สร้าง QR Code"><i class="fa-solid fa-qrcode"></i></button>
+            <button onclick="deleteMaster('location','${mergedEsc(x.id)}')" class="text-rose-500 hover:text-rose-700" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+          </div>
         </div>`
   ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
 
@@ -2128,4 +2131,46 @@ window.exportDashboardToPDF = function() {
     buttons.forEach(btn => btn.style.display = '');
     alertBox('error', 'ข้อผิดพลาด', 'ไม่สามารถ Export เป็น PDF ได้');
   });
+};
+
+
+// ==========================================
+// ⬛ ระบบสร้าง QR Code (QR Generator)
+// ==========================================
+let currentQrCode = null;
+
+window.openQrGenModal = function(text) {
+  $('qrGenText').textContent = text;
+  $('qrGenCanvas').innerHTML = '';
+  currentQrCode = new QRCode($('qrGenCanvas'), {
+    text: text,
+    width: 200,
+    height: 200,
+    colorDark : "#000000",
+    colorLight : "#ffffff",
+    correctLevel : QRCode.CorrectLevel.H
+  });
+  $('qrGenModal').classList.remove('hidden');
+};
+
+window.closeQrGenModal = function() {
+  $('qrGenModal').classList.add('hidden');
+};
+
+window.downloadQrCode = function() {
+  const canvas = document.querySelector('#qrGenCanvas canvas');
+  const img = document.querySelector('#qrGenCanvas img');
+  if (img && img.src && img.src.startsWith('data:')) {
+    const link = document.createElement('a');
+    link.download = 'QR_' + $('qrGenText').textContent + '.png';
+    link.href = img.src;
+    link.click();
+  } else if (canvas) {
+    const link = document.createElement('a');
+    link.download = 'QR_' + $('qrGenText').textContent + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } else {
+    alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถดาวน์โหลดรูป QR Code ได้');
+  }
 };

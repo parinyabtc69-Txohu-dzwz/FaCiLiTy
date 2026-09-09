@@ -26,6 +26,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- QR Code Scanner Library -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body class="bg-[#edfaf8] min-h-screen flex flex-col">
@@ -322,6 +323,26 @@
 
   <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <!-- QR Code Generator Modal -->
+  <div id="qrGenModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl w-full max-w-sm mx-4 overflow-hidden shadow-2xl transform transition-all">
+      <div class="bg-[#265D5A] p-4 flex justify-between items-center text-white">
+        <h3 class="font-bold text-lg"><i class="fa-solid fa-qrcode mr-2"></i>สร้าง QR Code</h3>
+        <button onclick="closeQrGenModal()" class="text-white hover:text-slate-200 transition-colors">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="p-6 text-center">
+        <p id="qrGenText" class="text-slate-600 mb-4 font-medium text-lg"></p>
+        <div id="qrGenCanvas" class="mx-auto flex justify-center items-center bg-white p-4 rounded-xl shadow-inner border inline-block"></div>
+        <button onclick="downloadQrCode()" class="mt-6 w-full bg-[#265D5A] hover:bg-[#1a3f3d] text-white font-bold py-3 rounded-xl transition-colors shadow-md">
+          <i class="fa-solid fa-download mr-2"></i> ดาวน์โหลดรูปภาพ
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>
