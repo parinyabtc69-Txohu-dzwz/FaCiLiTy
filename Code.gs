@@ -481,6 +481,35 @@ function doPost(e) {
                   { "type": "button", "style": "primary", "color": "#f59e0b", "action": { "type": "uri", "label": "⭐ ประเมินความพึงพอใจ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?action=survey&type=av&row=" + avTargetRow } }
                 ]
               }
+          };
+          notifyUpdateTask(avMsg, avReporter);
+        } else if (data.status === 'จัดเตรียมแล้ว') {
+           const avSubject = sheetAvStatus.getRange(avTargetRow, 3).getValue();
+           const avReporter = sheetAvStatus.getRange(avTargetRow, 2).getValue();
+           const avMsg = {
+            "type": "flex",
+            "altText": `เตรียมอุปกรณ์เรียบร้อย: ${avSubject}`,
+            "contents": {
+              "type": "bubble",
+              "header": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": "#3b82f6",
+                "contents": [
+                  { "type": "text", "text": "🛠️ จัดเตรียมอุปกรณ์ให้แล้ว", "weight": "bold", "color": "#ffffff", "size": "lg" }
+                ]
+              },
+              "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                  { "type": "text", "text": "อุปกรณ์พร้อมให้มารับแล้วครับ", "weight": "regular", "size": "sm", "color": "#4b5563" },
+                  { "type": "separator", "margin": "md" },
+                  { "type": "text", "text": avSubject, "weight": "bold", "size": "md", "wrap": true, "color": "#1f2937" },
+                  { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "เจ้าหน้าที่", "color": "#aaaaaa", "size": "sm", "flex": 3 }, { "type": "text", "text": data.technician, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] }
+                ]
+              }
             }
           };
           notifyUpdateTask(avMsg, avReporter);
