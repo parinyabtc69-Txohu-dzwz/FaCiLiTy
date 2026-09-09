@@ -1748,6 +1748,16 @@ document.addEventListener('DOMContentLoaded', () => {
 const LIFF_ID = "2011401549-8xNgb1CC"; // <-- เปลี่ยนเป็น LIFF ID ของคุณ
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Check for survey parameter
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('action') === 'survey') {
+    const type = params.get('type');
+    const row = params.get('row');
+    if (type && row) {
+      setTimeout(() => openSurveyModal(type, row), 1500); // Wait for initialization
+    }
+  }
+
   if (LIFF_ID && LIFF_ID !== "ใส่_LIFF_ID_ที่นี่") {
     liff.init({ liffId: LIFF_ID }).then(() => {
       if (liff.isLoggedIn()) {
@@ -3208,6 +3218,61 @@ window.saveOverdueSettings = function() {
   );
 };
 
+// ==========================================
+// ⭐️ ระบบประเมินความพึงพอใจ (Satisfaction Survey)
+// ==========================================
+window.openSurveyModal = function(type, row) {
+  $('survey-type').value = type;
+  $('survey-row').value = row;
+  $('survey-rating').value = '0';
+  $('survey-comment').value = '';
+  setSurveyRating(0);
+  $('surveyModal').classList.remove('hidden');
+};
+
+window.closeSurveyModal = function() {
+  $('surveyModal').classList.add('hidden');
+};
+
+window.setSurveyRating = function(rating) {
+  $('survey-rating').value = rating;
+  const stars = document.querySelectorAll('.survey-star');
+  stars.forEach(star => {
+    const val = parseInt(star.getAttribute('data-value'));
+    if (val <= rating) {
+      star.classList.remove('text-slate-200');
+      star.classList.add('text-amber-400');
+    } else {
+      star.classList.remove('text-amber-400');
+      star.classList.add('text-slate-200');
+    }
+  });
+};
+
+window.submitSurvey = function() {
+  const rating = parseInt($('survey-rating').value);
+  if (rating === 0 || isNaN(rating)) {
+    alertBox('warning', 'กรุณาให้คะแนน', 'กรุณากดเลือกดาวเพื่อประเมินความพึงพอใจก่อนกดส่งครับ');
+    return;
+  }
+  
+  const type = $('survey-type').value;
+  const row = $('survey-row').value;
+  const comment = $('survey-comment').value;
+
+  submitAction(
+    () => ResourceHubCore.api.post({ action: 'submit_survey', type, row, rating, comment }),
+    'ขอบคุณที่ร่วมประเมินความพึงพอใจครับ',
+    () => {
+      closeSurveyModal();
+      // ปิด LIFF หากเปิดผ่าน LINE
+      if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+        setTimeout(() => { liff.closeWindow(); }, 1500);
+      }
+    }
+  );
+};
+
 
 // === QR Code Scanner ===
 let html5QrcodeScanner = null;
@@ -3326,6 +3391,44 @@ function closeQrScanner() {
       </div>
       <div class="p-4 bg-slate-50 text-center text-sm font-medium text-slate-600 border-t border-slate-200">
         หันกล้องไปยัง QR Code เพื่อสแกนข้อมูลอัตโนมัติ
+      </div>
+    </div>
+  </div>
+
+  <!-- Survey Modal -->
+  <div id="surveyModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden flex flex-col shadow-xl">
+      <div class="bg-gradient-to-r from-amber-400 to-orange-500 p-6 text-center relative">
+        <button onclick="closeSurveyModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors">
+          <i class="fa-solid fa-times"></i>
+        </button>
+        <h3 class="font-bold text-white text-xl">⭐ ประเมินความพึงพอใจ</h3>
+        <p class="text-white/80 text-sm mt-1">กรุณาให้คะแนนการให้บริการของเรา</p>
+      </div>
+      <div class="p-6">
+        <input type="hidden" id="survey-type" value="">
+        <input type="hidden" id="survey-row" value="">
+        <input type="hidden" id="survey-rating" value="0">
+        
+        <div class="flex justify-center gap-2 mb-6" id="star-rating-container">
+          <i class="fa-solid fa-star text-4xl text-slate-200 cursor-pointer hover:scale-110 transition-transform survey-star" data-value="1" onclick="setSurveyRating(1)"></i>
+          <i class="fa-solid fa-star text-4xl text-slate-200 cursor-pointer hover:scale-110 transition-transform survey-star" data-value="2" onclick="setSurveyRating(2)"></i>
+          <i class="fa-solid fa-star text-4xl text-slate-200 cursor-pointer hover:scale-110 transition-transform survey-star" data-value="3" onclick="setSurveyRating(3)"></i>
+          <i class="fa-solid fa-star text-4xl text-slate-200 cursor-pointer hover:scale-110 transition-transform survey-star" data-value="4" onclick="setSurveyRating(4)"></i>
+          <i class="fa-solid fa-star text-4xl text-slate-200 cursor-pointer hover:scale-110 transition-transform survey-star" data-value="5" onclick="setSurveyRating(5)"></i>
+        </div>
+        
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-slate-700 mb-2">ข้อเสนอแนะเพิ่มเติม (ถ้ามี)</label>
+          <textarea id="survey-comment" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition-all text-sm" rows="3" placeholder="พิมพ์ข้อเสนอแนะของคุณที่นี่..."></textarea>
+        </div>
+        
+        <button onclick="submitSurvey()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2">
+          <i class="fa-solid fa-paper-plane"></i> ส่งแบบประเมิน
+        </button>
+        <button onclick="closeSurveyModal()" class="w-full py-2 mt-2 text-slate-500 hover:text-slate-700 text-sm font-medium transition-colors">
+          ยกเลิก
+        </button>
       </div>
     </div>
   </div>

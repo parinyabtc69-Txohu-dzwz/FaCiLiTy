@@ -566,6 +566,16 @@ document.addEventListener('DOMContentLoaded', () => {
 const LIFF_ID = "2011401549-8xNgb1CC"; // <-- เปลี่ยนเป็น LIFF ID ของคุณ
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Check for survey parameter
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('action') === 'survey') {
+    const type = params.get('type');
+    const row = params.get('row');
+    if (type && row) {
+      setTimeout(() => openSurveyModal(type, row), 1500); // Wait for initialization
+    }
+  }
+
   if (LIFF_ID && LIFF_ID !== "ใส่_LIFF_ID_ที่นี่") {
     liff.init({ liffId: LIFF_ID }).then(() => {
       if (liff.isLoggedIn()) {
@@ -2022,6 +2032,61 @@ window.saveOverdueSettings = function() {
     'บันทึกการตั้งค่าแจ้งเตือนเรียบร้อย',
     () => {
       // Refresh หรืออัปเดต UI ถ้าจำเป็น
+    }
+  );
+};
+
+// ==========================================
+// ⭐️ ระบบประเมินความพึงพอใจ (Satisfaction Survey)
+// ==========================================
+window.openSurveyModal = function(type, row) {
+  $('survey-type').value = type;
+  $('survey-row').value = row;
+  $('survey-rating').value = '0';
+  $('survey-comment').value = '';
+  setSurveyRating(0);
+  $('surveyModal').classList.remove('hidden');
+};
+
+window.closeSurveyModal = function() {
+  $('surveyModal').classList.add('hidden');
+};
+
+window.setSurveyRating = function(rating) {
+  $('survey-rating').value = rating;
+  const stars = document.querySelectorAll('.survey-star');
+  stars.forEach(star => {
+    const val = parseInt(star.getAttribute('data-value'));
+    if (val <= rating) {
+      star.classList.remove('text-slate-200');
+      star.classList.add('text-amber-400');
+    } else {
+      star.classList.remove('text-amber-400');
+      star.classList.add('text-slate-200');
+    }
+  });
+};
+
+window.submitSurvey = function() {
+  const rating = parseInt($('survey-rating').value);
+  if (rating === 0 || isNaN(rating)) {
+    alertBox('warning', 'กรุณาให้คะแนน', 'กรุณากดเลือกดาวเพื่อประเมินความพึงพอใจก่อนกดส่งครับ');
+    return;
+  }
+  
+  const type = $('survey-type').value;
+  const row = $('survey-row').value;
+  const comment = $('survey-comment').value;
+
+  submitAction(
+    () => ResourceHubCore.api.post({ action: 'submit_survey', type, row, rating, comment }),
+    'ขอบคุณที่ร่วมประเมินความพึงพอใจครับ',
+    () => {
+      closeSurveyModal();
+      // ปิด LIFF หากเปิดผ่าน LINE
+      if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+        setTimeout(() => { liff.closeWindow(); }, 1500);
+      }
     }
   );
 };

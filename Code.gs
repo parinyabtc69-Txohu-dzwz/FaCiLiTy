@@ -429,7 +429,8 @@ function doPost(e) {
               "layout": "vertical",
               "spacing": "sm",
               "contents": [
-                { "type": "button", "style": "primary", "color": "#059669", "action": { "type": "uri", "label": "เปิดดูรูปหลักฐานในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+                { "type": "button", "style": "primary", "color": "#059669", "action": { "type": "uri", "label": "เปิดดูรูปหลักฐานในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } },
+                { "type": "button", "style": "primary", "color": "#f59e0b", "margin": "sm", "action": { "type": "uri", "label": "⭐ ประเมินความพึงพอใจ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?action=survey&type=repair&row=" + targetRow } }
               ]
             }
           }
@@ -443,6 +444,64 @@ function doPost(e) {
         const avTargetRow = data.rowIndex + 2;
         sheetAvStatus.getRange(avTargetRow, 6).setValue(data.status);
         sheetAvStatus.getRange(avTargetRow, 7).setValue(data.technician);
+        
+        // Notify AV completion
+        if (data.status === 'เสร็จสิ้น/คืนเรียบร้อย') {
+           const avSubject = sheetAvStatus.getRange(avTargetRow, 3).getValue();
+           const avReporter = sheetAvStatus.getRange(avTargetRow, 2).getValue();
+           const avMsg = {
+            "type": "flex",
+            "altText": `คืนอุปกรณ์เรียบร้อย: ${avSubject}`,
+            "contents": {
+              "type": "bubble",
+              "header": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": "#059669",
+                "contents": [
+                  { "type": "text", "text": "✅ คืนอุปกรณ์เรียบร้อย", "weight": "bold", "color": "#ffffff", "size": "lg" }
+                ]
+              },
+              "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                  { "type": "text", "text": avSubject, "weight": "bold", "size": "md", "wrap": true, "color": "#1f2937" },
+                  { "type": "separator", "margin": "md" },
+                  { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "เจ้าหน้าที่", "color": "#aaaaaa", "size": "sm", "flex": 3 }, { "type": "text", "text": data.technician, "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] }
+                ]
+              },
+              "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                  { "type": "button", "style": "primary", "color": "#f59e0b", "action": { "type": "uri", "label": "⭐ ประเมินความพึงพอใจ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?action=survey&type=av&row=" + avTargetRow } }
+                ]
+              }
+            }
+          };
+          notifyUpdateTask(avMsg, avReporter);
+        }
+        break;
+
+      // ── ประเมินความพึงพอใจ ──────────────────────────────────
+      case 'submit_survey':
+        const typeSur = data.type; // 'repair' or 'av'
+        const rowSur = data.row;
+        let sheetSur = null;
+        let ratingCol = 17, commentCol = 18;
+        if (typeSur === 'repair') {
+           sheetSur = db.getSheetByName(CONFIG.SHEET_NAME);
+        } else if (typeSur === 'av') {
+           sheetSur = db.getSheetByName(CONFIG.AV_SHEET_NAME);
+           ratingCol = 13; commentCol = 14;
+        }
+        if (sheetSur && rowSur) {
+           sheetSur.getRange(rowSur, ratingCol).setValue(data.rating);
+           sheetSur.getRange(rowSur, commentCol).setValue(data.comment);
+        }
         break;
 
       // ── Master Data: เพิ่ม ──────────────────────────────────
