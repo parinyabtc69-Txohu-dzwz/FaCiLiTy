@@ -49,6 +49,7 @@ function getOrCreateSubFolder(folderName) {
 // รองรับ CORS Preflight
 // ============================================================
 function doOptions(e) {
+  const _x = "RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5";
   return ContentService.createTextOutput("")
     .setMimeType(ContentService.MimeType.TEXT);
 }
