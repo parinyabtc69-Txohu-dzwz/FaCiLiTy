@@ -14,6 +14,9 @@ const CONFIG = {
   MASTER_PROJ_SHEET: "Master_Projects",
   MASTER_MECH_SHEET: "Master_Mechanics",
   DOC_SHEET_NAME: "Documents",
+  IT_SHEET_NAME: "IT_Repairs",
+  AV_REPAIR_SHEET_NAME: "AV_Repairs",
+  PROJECT_SHEET_NAME: "Facility_Projects",
 
   // โฟลเดอร์หลักของระบบ (parent)
   ROOT_FOLDER_ID: "1tkOHFwH4MC-eA_eNLThTcLVF3CRHQUXT",
@@ -23,6 +26,9 @@ const CONFIG = {
   FOLDER_REPAIR_PROOF:  "รูปภาพผลการซ่อม",       // รูปที่ช่างส่งตอนปิดงาน
   FOLDER_DOCUMENTS:     "เอกสารระบบ",             // เอกสารจากระบบจัดการเอกสาร
   FOLDER_RECEIPTS:      "เอกสารใบเสร็จ",          // ใบเสร็จเบิกจ่าย / ใบเสนอราคา
+  FOLDER_IT_REPORT:     "รูปภาพแจ้งซ่อมไอที",
+  FOLDER_AV_REPAIR:     "รูปภาพซ่อมโสตฯ",
+  FOLDER_PROJECTS:      "เอกสารโครงการระยะยาว",
   LINE_CHANNEL_ACCESS_TOKEN: "/m/tnS6KiDY+44jNQDWM2LOTR2pX0qmiA7RT23sE7rGQjTSTcp3TpNlXJYootWAJCYogsOY/KEW4s3Ex5in2tKeaHTbT3l3f2Ro2ROefSj8tNk8yh6FRkH4ccnNGSr1Lx/O6/+b1cFIm9sLRLa2SQAdB04t89/1O/w1cDnyilFU=", // <-- เปลี่ยนเป็น Channel Access Token ของคุณ
   LINE_TARGET_ID: "Cb807a01a3cd43b8118ce271e8da5718a", // Default target ID
   LIFF_ID: "2011401549-8xNgb1CC", // LIFF ID สำหรับใช้งาน LINE Login
@@ -184,6 +190,150 @@ function doPost(e) {
         
         break;
 
+      // ── แจ้งซ่อมระบบ IT ──────────────────────────────────────
+      case 'submit_it_repair':
+        let sheetIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
+        if (!sheetIt) {
+          sheetIt = db.insertSheet(CONFIG.IT_SHEET_NAME);
+          sheetIt.appendRow(['Timestamp', 'Subject', 'Detail', 'Reporter', 'Status', 'Image_Report', 'Image_Proof', 'Fix_Detail', 'Technician', 'Cost', 'Receipt', 'Urgency', 'Department', 'Location', 'IncidentDate', 'Contact']);
+        }
+        const itFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_IT_REPORT);
+        sheetIt.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", itFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
+        
+        const lineItMsg = {
+          "type": "flex",
+          "altText": `แจ้งซ่อม IT ใหม่: ${data.subject}`,
+          "contents": {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "backgroundColor": "#0ea5e9",
+              "contents": [
+                { "type": "text", "text": "💻 แจ้งปัญหาไอทีใหม่", "weight": "bold", "color": "#ffffff", "size": "xl" }
+              ]
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "md",
+              "contents": [
+                { "type": "text", "text": data.subject || "-", "weight": "bold", "size": "lg", "wrap": true, "color": "#1f2937" },
+                { "type": "separator", "margin": "md" },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ผู้แจ้ง", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.reporter || "-", "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "สถานที่", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.loc || '-', "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ปัญหา", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.detail || "-", "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] }
+              ]
+            },
+            "footer": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "sm",
+              "contents": [
+                { "type": "button", "style": "primary", "color": "#0ea5e9", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+              ]
+            }
+          }
+        };
+        notifyNewTask(lineItMsg, data.reporter);
+        break;
+
+      // ── แจ้งซ่อมโสตฯ ──────────────────────────────────────
+      case 'submit_av_repair':
+        let sheetAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
+        if (!sheetAvRep) {
+          sheetAvRep = db.insertSheet(CONFIG.AV_REPAIR_SHEET_NAME);
+          sheetAvRep.appendRow(['Timestamp', 'Subject', 'Detail', 'Reporter', 'Status', 'Image_Report', 'Image_Proof', 'Fix_Detail', 'Technician', 'Cost', 'Receipt', 'Urgency', 'Department', 'Location', 'IncidentDate', 'Contact']);
+        }
+        const avRepFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_AV_REPAIR);
+        sheetAvRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", avRepFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
+        
+        const lineAvRepMsg = {
+          "type": "flex",
+          "altText": `แจ้งซ่อมโสตฯ ใหม่: ${data.subject}`,
+          "contents": {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "backgroundColor": "#f59e0b",
+              "contents": [
+                { "type": "text", "text": "🎥 แจ้งซ่อมโสตฯใหม่", "weight": "bold", "color": "#ffffff", "size": "xl" }
+              ]
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "md",
+              "contents": [
+                { "type": "text", "text": data.subject || "-", "weight": "bold", "size": "lg", "wrap": true, "color": "#1f2937" },
+                { "type": "separator", "margin": "md" },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ผู้แจ้ง", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.reporter || "-", "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "สถานที่", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.loc || '-', "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ปัญหา", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.detail || "-", "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] }
+              ]
+            },
+            "footer": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "sm",
+              "contents": [
+                { "type": "button", "style": "primary", "color": "#f59e0b", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+              ]
+            }
+          }
+        };
+        notifyNewTask(lineAvRepMsg, data.reporter);
+        break;
+
+      // ── แจ้งโครงการระยะยาว ──────────────────────────────────────
+      case 'submit_project':
+        let sheetProjData = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
+        if (!sheetProjData) {
+          sheetProjData = db.insertSheet(CONFIG.PROJECT_SHEET_NAME);
+          sheetProjData.appendRow(['Timestamp', 'Subject', 'Detail', 'Reporter', 'Status', 'Document_Url', 'Proof_Url', 'Approval_Note', 'Approver', 'Cost', 'Receipt', 'Urgency', 'Department', 'Location', 'TargetDate', 'Contact']);
+        }
+        const projFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_PROJECTS);
+        sheetProjData.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอผู้อำนวยการอนุมัติ", projFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.targetDate || "", data.contact || ""]);
+        
+        const lineProjMsg = {
+          "type": "flex",
+          "altText": `แจ้งโครงการใหม่: ${data.subject}`,
+          "contents": {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "backgroundColor": "#8b5cf6",
+              "contents": [
+                { "type": "text", "text": "🏗️ โครงการระยะยาวใหม่", "weight": "bold", "color": "#ffffff", "size": "xl" }
+              ]
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "md",
+              "contents": [
+                { "type": "text", "text": data.subject || "-", "weight": "bold", "size": "lg", "wrap": true, "color": "#1f2937" },
+                { "type": "separator", "margin": "md" },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "ผู้เสนอ", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.reporter || "-", "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "สถานที่", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.loc || '-', "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] },
+                { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [{ "type": "text", "text": "รายละเอียด", "color": "#aaaaaa", "size": "sm", "flex": 2 }, { "type": "text", "text": data.detail || "-", "wrap": true, "color": "#4b5563", "size": "sm", "flex": 5 }] }
+              ]
+            },
+            "footer": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "sm",
+              "contents": [
+                { "type": "button", "style": "primary", "color": "#8b5cf6", "action": { "type": "uri", "label": "พิจารณาอนุมัติ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+              ]
+            }
+          }
+        };
+        notifyNewTask(lineProjMsg, data.reporter);
+        break;
+
       // ── ยืมโสตฯ ─────────────────────────────────────────────
       case 'submit_av':
         const sheetAvReq = db.getSheetByName(CONFIG.AV_SHEET_NAME);
@@ -240,6 +390,35 @@ function doPost(e) {
         notifyNewTask(lineAvMsg, data.borrower);
         
         break;
+
+      case 'get_adv_tasks':
+        let itData = [];
+        let avRepData = [];
+        let projData = [];
+
+        const sIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
+        if (sIt) {
+          const vals = sIt.getDataRange().getDisplayValues();
+          if (vals.length > 1) itData = vals.slice(1);
+        }
+
+        const sAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
+        if (sAvRep) {
+          const vals = sAvRep.getDataRange().getDisplayValues();
+          if (vals.length > 1) avRepData = vals.slice(1);
+        }
+
+        const sProj = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
+        if (sProj) {
+          const vals = sProj.getDataRange().getDisplayValues();
+          if (vals.length > 1) projData = vals.slice(1);
+        }
+
+        return {
+          it: itData.reverse(),
+          av: avRepData.reverse(),
+          project: projData.reverse()
+        };
 
       // ── แจ้งบั๊ก ─────────────────────────────────────────────
       case 'report_bug':
@@ -801,11 +980,17 @@ function setupFolders() {
   const f2 = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_PROOF);
   const f3 = getOrCreateSubFolder(CONFIG.FOLDER_DOCUMENTS);
   const f4 = getOrCreateSubFolder(CONFIG.FOLDER_RECEIPTS);
+  const f5 = getOrCreateSubFolder(CONFIG.FOLDER_IT_REPORT);
+  const f6 = getOrCreateSubFolder(CONFIG.FOLDER_AV_REPAIR);
+  const f7 = getOrCreateSubFolder(CONFIG.FOLDER_PROJECTS);
   Logger.log("สร้างโฟลเดอร์สำเร็จ:");
   Logger.log("  - " + CONFIG.FOLDER_REPAIR_REPORT + "   " + f1.getId());
   Logger.log("  - " + CONFIG.FOLDER_REPAIR_PROOF  + "   " + f2.getId());
   Logger.log("  - " + CONFIG.FOLDER_DOCUMENTS     + "   " + f3.getId());
   Logger.log("  - " + CONFIG.FOLDER_RECEIPTS      + "   " + f4.getId());
+  Logger.log("  - " + CONFIG.FOLDER_IT_REPORT     + "   " + f5.getId());
+  Logger.log("  - " + CONFIG.FOLDER_AV_REPAIR     + "   " + f6.getId());
+  Logger.log("  - " + CONFIG.FOLDER_PROJECTS      + "   " + f7.getId());
 }
 
 

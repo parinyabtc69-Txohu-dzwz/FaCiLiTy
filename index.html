@@ -293,7 +293,112 @@
       class="flex-1 overflow-y-auto p-4 md:p-6 bg-white md:m-3 md:rounded-3xl md:shadow-sm md:border md:border-[#B0EDE6]">
 
       <!-- Pages will be dynamically loaded here -->
-            <div id="page-auth" class="page-section active max-w-md mx-auto py-10">
+            <div id="page-advanced-manage" class="page-section hidden">
+        <div class="max-w-7xl mx-auto">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-server text-indigo-600"></i>
+                จัดการระบบ (Advanced Manage)</h1>
+              <p class="text-xs text-slate-500 mt-1">จัดการงานแจ้งซ่อม IT, แจ้งซ่อมโสตฯ และพิจารณาอนุมัติโครงการระยะยาว</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <button onclick="loadAdvancedTasks()"
+                class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
+                  class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
+            </div>
+          </div>
+          
+          <div class="flex gap-2 border-b border-slate-200 mb-6 overflow-x-auto" id="advManageMainTabs">
+            <button class="px-5 py-3 font-bold text-sky-600 border-b-2 border-sky-600 whitespace-nowrap flex items-center gap-2" onclick="switchAdvTab('it', this)">
+              <i class="fa-solid fa-desktop"></i> งานซ่อม IT
+            </button>
+            <button class="px-5 py-3 font-semibold text-slate-500 hover:text-slate-700 whitespace-nowrap flex items-center gap-2" onclick="switchAdvTab('av', this)">
+              <i class="fa-solid fa-camera"></i> งานซ่อมโสตฯ
+            </button>
+            <button class="px-5 py-3 font-semibold text-slate-500 hover:text-slate-700 whitespace-nowrap flex items-center gap-2" onclick="switchAdvTab('project', this)">
+              <i class="fa-solid fa-building-circle-check"></i> โครงการระยะยาว
+            </button>
+          </div>
+
+          <!-- IT Section -->
+          <div id="adv-section-it" class="adv-section block">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+              <table class="w-full text-left text-sm md:table block">
+                <thead class="bg-sky-50 text-sky-800 border-b border-sky-100 hidden md:table-header-group">
+                  <tr>
+                    <th class="p-4 w-12 text-center">⭐</th>
+                    <th class="p-4">เวลาแจ้ง</th>
+                    <th class="p-4">สถานะ</th>
+                    <th class="p-4">หัวข้อปัญหา (IT)</th>
+                    <th class="p-4">รายละเอียด</th>
+                    <th class="p-4">ผู้แจ้ง</th>
+                    <th class="p-4">รูปภาพ</th>
+                    <th class="p-4 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="itTaskBody" class="block md:table-row-group">
+                  <tr>
+                    <td colspan="8" class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- AV Section -->
+          <div id="adv-section-av" class="adv-section hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+              <table class="w-full text-left text-sm md:table block">
+                <thead class="bg-amber-50 text-amber-800 border-b border-amber-100 hidden md:table-header-group">
+                  <tr>
+                    <th class="p-4 w-12 text-center">⭐</th>
+                    <th class="p-4">เวลาแจ้ง</th>
+                    <th class="p-4">สถานะ</th>
+                    <th class="p-4">หัวข้อปัญหา (โสตฯ)</th>
+                    <th class="p-4">รายละเอียด</th>
+                    <th class="p-4">ผู้แจ้ง</th>
+                    <th class="p-4">รูปภาพ</th>
+                    <th class="p-4 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="avRepairBody" class="block md:table-row-group">
+                  <tr>
+                    <td colspan="8" class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Project Section -->
+          <div id="adv-section-project" class="adv-section hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+              <table class="w-full text-left text-sm md:table block">
+                <thead class="bg-violet-50 text-violet-800 border-b border-violet-100 hidden md:table-header-group">
+                  <tr>
+                    <th class="p-4 w-12 text-center">📌</th>
+                    <th class="p-4">เวลาแจ้ง</th>
+                    <th class="p-4">สถานะ</th>
+                    <th class="p-4">ประเภทโครงการ</th>
+                    <th class="p-4">สถานที่ / รายละเอียด</th>
+                    <th class="p-4">ผู้เสนอ</th>
+                    <th class="p-4">เอกสารแนบ</th>
+                    <th class="p-4 text-center">พิจารณา</th>
+                  </tr>
+                </thead>
+                <tbody id="projectBody" class="block md:table-row-group">
+                  <tr>
+                    <td colspan="8" class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div id="page-auth" class="page-section active max-w-md mx-auto py-10">
         <div class="bg-white w-full rounded-3xl shadow-sm p-8 border border-slate-200 text-center">
           <div class="w-16 h-16 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">
             <i class="fa-solid fa-chalkboard-user"></i>
@@ -494,6 +599,114 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="page-av-repair" class="page-section hidden">
+        <div class="flex items-center justify-center min-h-[70vh] py-6">
+          <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
+            <button onclick="nav('page-home')"
+              class="text-[#f59e0b] font-bold mb-4 hover:text-[#d97706] transition-colors text-sm inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+            </button>
+            <div class="text-center mb-6">
+              <div
+                class="w-14 h-14 bg-[#fef3c7] text-[#f59e0b] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
+                <i class="fa-solid fa-microphone"></i>
+              </div>
+              <h2 class="text-2xl font-bold text-slate-800">แจ้งซ่อมอุปกรณ์โสตทัศนศึกษา</h2>
+              <p class="text-xs text-slate-500 mt-1">แจ้งปัญหาเครื่องเสียง โปรเจคเตอร์ หรืออุปกรณ์โสตฯ ที่ชำรุด</p>
+            </div>
+            <form id="avRepForm" class="space-y-4" onsubmit="event.preventDefault(); submitAvRepair();">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-rose-500">*</span></label>
+                <input type="text" id="avRepReporter" placeholder="เช่น สมชาย ใจดี"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm font-medium"
+                  required>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
+                  <input type="text" id="avRepDepartment" placeholder="ถ้ามี เช่น ฝ่ายวิชาการ"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ / ห้อง</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="avRepLocation" placeholder="เช่น หอประชุมใหญ่"
+                      class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm">
+                    <button type="button" onclick="openQrScanner('avRepLocation')" class="bg-[#fef3c7] hover:bg-[#f59e0b] hover:text-white text-[#f59e0b] px-4 rounded-xl transition-colors shadow-sm flex items-center justify-center shrink-0">
+                      <i class="fa-solid fa-qrcode text-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ปัญหาเกี่ยวกับอะไร <span class="text-rose-500">*</span></label>
+                <select id="avRepSubject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm font-medium" required>
+                  <option value="เครื่องเสียง / ไมโครโฟน / ลำโพง">เครื่องเสียง / ไมโครโฟน / ลำโพง</option>
+                  <option value="โปรเจคเตอร์ / จอรับภาพ">โปรเจคเตอร์ / จอรับภาพ</option>
+                  <option value="โทรทัศน์ / จอ LED">โทรทัศน์ / จอ LED</option>
+                  <option value="กล้องถ่ายรูป / กล้องวิดีโอ">กล้องถ่ายรูป / กล้องวิดีโอ</option>
+                  <option value="สายสัญญาณ / อุปกรณ์เชื่อมต่อ">สายสัญญาณ / อุปกรณ์เชื่อมต่อ</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ความเร่งด่วน <span class="text-rose-500">*</span></label>
+                <div class="grid grid-cols-3 gap-2">
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50 has-[:checked]:text-rose-700">
+                    <input type="radio" name="avRepUrgency" value="ด่วน" class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🔴 ด่วน</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">กระทบงานกิจกรรม</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-[#f59e0b] has-[:checked]:bg-[#fef3c7]/30 has-[:checked]:text-[#f59e0b]">
+                    <input type="radio" name="avRepUrgency" value="ตามคิว" checked class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🔵 ตามคิว</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">งานทั่วไป</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50 has-[:checked]:text-emerald-700">
+                    <input type="radio" name="avRepUrgency" value="ไม่รีบ" class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🟢 ไม่รีบ</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">ดำเนินการภายหลัง</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่/เวลาที่พบปัญหา <span class="text-slate-400 font-normal">(ถ้าจำได้)</span></label>
+                  <input type="datetime-local" id="avRepIncidentDate"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดปัญหา <span class="text-rose-500">*</span></label>
+                <textarea id="avRepDetail" rows="3" placeholder="บอกรายละเอียดเพิ่มเติม เช่น ไมค์หอน ภาพไม่ติด"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm" required></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อกลับ</label>
+                <input type="text" id="avRepContact" placeholder="เช่น 081-234-5678 หรือ LINE ID"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">รูปภาพประกอบ (ถ้ามี)</label>
+                <input type="file" id="avRepFile" accept="image/*" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#fef3c7] file:text-[#f59e0b] hover:file:bg-[#f59e0b] hover:file:text-white file:transition-colors">
+              </div>
+
+              <button type="button" onclick="submitAvRepair()" id="btnSubmitAvRepair"
+                class="w-full bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
+                <i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งซ่อมโสตฯ</span>
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -778,6 +991,45 @@
             <div class="text-slate-300 font-bold text-lg group-hover:text-[#FF5F5F]">›</div>
           </button>
 
+          <button id="home-card-it-repair" onclick="nav('page-it-repair')"
+            class="btn-card hidden items-center p-5 border border-sky-100 rounded-2xl bg-white hover:bg-sky-50 hover:border-sky-300 transition-all text-left group shadow-sm">
+            <div
+              class="icon-wrapper w-12 h-12 rounded-xl bg-sky-100 text-sky-500 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-desktop"></i>
+            </div>
+            <div class="flex-grow">
+              <span class="block text-base font-medium text-slate-800">แจ้งซ่อมไอที / เครือข่าย</span>
+              <span class="block text-xs text-slate-500 font-light">ซ่อมคอมพิวเตอร์ อินเทอร์เน็ต กล้องวงจรปิด</span>
+            </div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-sky-500">›</div>
+          </button>
+
+          <button id="home-card-av-repair" onclick="nav('page-av-repair')"
+            class="btn-card hidden items-center p-5 border border-amber-100 rounded-2xl bg-white hover:bg-amber-50 hover:border-amber-300 transition-all text-left group shadow-sm">
+            <div
+              class="icon-wrapper w-12 h-12 rounded-xl bg-amber-100 text-amber-500 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-camera"></i>
+            </div>
+            <div class="flex-grow">
+              <span class="block text-base font-medium text-slate-800">แจ้งซ่อมอุปกรณ์โสตฯ</span>
+              <span class="block text-xs text-slate-500 font-light">ซ่อมไมโครโฟน ลำโพง โปรเจคเตอร์ที่ชำรุด</span>
+            </div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-amber-500">›</div>
+          </button>
+
+          <button id="home-card-project" onclick="nav('page-project-form')"
+            class="btn-card hidden items-center p-5 border border-violet-100 rounded-2xl bg-white hover:bg-violet-50 hover:border-violet-300 transition-all text-left group shadow-sm">
+            <div
+              class="icon-wrapper w-12 h-12 rounded-xl bg-violet-100 text-violet-500 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-building-circle-check"></i>
+            </div>
+            <div class="flex-grow">
+              <span class="block text-base font-medium text-slate-800">เสนอโครงการ / จัดซื้อ</span>
+              <span class="block text-xs text-slate-500 font-light">โครงการปรับปรุงระยะยาวที่ต้องรออนุมัติ</span>
+            </div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-violet-500">›</div>
+          </button>
+
           <button id="home-card-teacher-profile" onclick="nav('page-teacher-profile')"
             class="btn-card hidden items-center p-5 border border-slate-200 rounded-2xl bg-white hover:bg-emerald-50/50 hover:border-emerald-200 transition-all text-left group shadow-sm">
             <div
@@ -818,6 +1070,115 @@
             <div class="text-slate-300 font-bold text-lg group-hover:text-sky-600">›</div>
           </button>
 
+        </div>
+      </div>
+
+      <div id="page-it-repair" class="page-section hidden">
+        <div class="flex items-center justify-center min-h-[70vh] py-6">
+          <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
+            <button onclick="nav('page-home')"
+              class="text-[#0ea5e9] font-bold mb-4 hover:text-[#0284c7] transition-colors text-sm inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+            </button>
+            <div class="text-center mb-6">
+              <div
+                class="w-14 h-14 bg-[#e0f2fe] text-[#0ea5e9] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
+                <i class="fa-solid fa-desktop"></i>
+              </div>
+              <h2 class="text-2xl font-bold text-slate-800">แจ้งปัญหาด้านไอที</h2>
+              <p class="text-xs text-slate-500 mt-1">แจ้งซ่อมคอมพิวเตอร์ อินเทอร์เน็ต กล้องวงจรปิด หรือระบบสารสนเทศอื่นๆ</p>
+            </div>
+            <form id="itRepairForm" class="space-y-4" onsubmit="event.preventDefault(); submitItRepair();">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-rose-500">*</span></label>
+                <input type="text" id="itReporter" placeholder="เช่น สมชาย ใจดี"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm font-medium"
+                  required>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
+                  <input type="text" id="itDepartment" placeholder="ถ้ามี เช่น ฝ่ายวิชาการ"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ / ห้อง</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="itLocation" placeholder="เช่น ห้องพักครู 3"
+                      class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
+                    <button type="button" onclick="openQrScanner('itLocation')" class="bg-[#e0f2fe] hover:bg-[#0ea5e9] hover:text-white text-[#0ea5e9] px-4 rounded-xl transition-colors shadow-sm flex items-center justify-center shrink-0">
+                      <i class="fa-solid fa-qrcode text-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ปัญหาเรื่องอะไร <span class="text-rose-500">*</span></label>
+                <select id="itSubject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm font-medium" required>
+                  <option value="คอมพิวเตอร์ / โน้ตบุ๊ก">คอมพิวเตอร์ / โน้ตบุ๊ก</option>
+                  <option value="ระบบเครือข่าย / อินเทอร์เน็ต">ระบบเครือข่าย / อินเทอร์เน็ต</option>
+                  <option value="เครื่องพิมพ์ (Printer) / หมึกพิมพ์">เครื่องพิมพ์ (Printer) / หมึกพิมพ์</option>
+                  <option value="กล้องวงจรปิด (CCTV)">กล้องวงจรปิด (CCTV)</option>
+                  <option value="ซอฟต์แวร์ / โปรแกรม">ซอฟต์แวร์ / โปรแกรม</option>
+                  <option value="อุปกรณ์เสริม (เมาส์ คีย์บอร์ด ฯลฯ)">อุปกรณ์เสริม (เมาส์ คีย์บอร์ด ฯลฯ)</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ความเร่งด่วน <span class="text-rose-500">*</span></label>
+                <div class="grid grid-cols-3 gap-2">
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50 has-[:checked]:text-rose-700">
+                    <input type="radio" name="itUrgency" value="ด่วน" class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🔴 ด่วน</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">กระทบการสอน/งาน</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-[#0ea5e9] has-[:checked]:bg-[#e0f2fe]/30 has-[:checked]:text-[#0ea5e9]">
+                    <input type="radio" name="itUrgency" value="ตามคิว" checked class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🔵 ตามคิว</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">งานทั่วไป</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50 has-[:checked]:text-emerald-700">
+                    <input type="radio" name="itUrgency" value="ไม่รีบ" class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🟢 ไม่รีบ</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">ดำเนินการภายหลัง</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่/เวลาที่พบปัญหา <span class="text-slate-400 font-normal">(ถ้าจำได้)</span></label>
+                  <input type="datetime-local" id="itIncidentDate"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดปัญหา <span class="text-rose-500">*</span></label>
+                <textarea id="itDetail" rows="3" placeholder="บอกรายละเอียดเพิ่มเติม เช่น อาการที่พบ หรือข้อความ Error"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm" required></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อกลับ</label>
+                <input type="text" id="itContact" placeholder="เช่น 081-234-5678 หรือ LINE ID"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">รูปภาพประกอบ (ถ้ามี)</label>
+                <input type="file" id="itFile" accept="image/*" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#e0f2fe] file:text-[#0ea5e9] hover:file:bg-[#0ea5e9] hover:file:text-white file:transition-colors">
+              </div>
+
+              <button type="button" onclick="submitItRepair()" id="btnSubmitItRepair"
+                class="w-full bg-[#0ea5e9] hover:bg-[#0284c7] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
+                <i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหาไอที</span>
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
@@ -881,6 +1242,111 @@
       <!-- ================= PAGE: DOCUMENT MANAGEMENT ================= -->
 
 
+
+      <div id="page-project-form" class="page-section hidden">
+        <div class="flex items-center justify-center min-h-[70vh] py-6">
+          <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
+            <button onclick="nav('page-home')"
+              class="text-[#8b5cf6] font-bold mb-4 hover:text-[#7c3aed] transition-colors text-sm inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+            </button>
+            <div class="text-center mb-6">
+              <div
+                class="w-14 h-14 bg-[#ede9fe] text-[#8b5cf6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
+                <i class="fa-solid fa-building-circle-check"></i>
+              </div>
+              <h2 class="text-2xl font-bold text-slate-800">แจ้งโครงการระยะยาว / จัดซื้อ</h2>
+              <p class="text-xs text-slate-500 mt-1">เสนอโครงการปรับปรุงสถานที่ จัดซื้อ หรือโครงการที่ต้องรอผู้อำนวยการอนุมัติ</p>
+            </div>
+            <form id="projectForm" class="space-y-4" onsubmit="event.preventDefault(); submitProject();">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้เสนอโครงการ <span class="text-rose-500">*</span></label>
+                <input type="text" id="projReporter" placeholder="เช่น สมชาย ใจดี"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm font-medium"
+                  required>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
+                  <input type="text" id="projDepartment" placeholder="ถ้ามี เช่น ฝ่ายบริหารทั่วไป"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ดำเนินการ</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="projLocation" placeholder="เช่น อาคาร 2 หรือ ทั้งโรงเรียน"
+                      class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm">
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ประเภทโครงการ <span class="text-rose-500">*</span></label>
+                <select id="projSubject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm font-medium" required>
+                  <option value="ปรับปรุงอาคาร / ทาสี / ต่อเติม">ปรับปรุงอาคาร / ทาสี / ต่อเติม</option>
+                  <option value="ห้องน้ำ / ระบบประปาขนาดใหญ่">ห้องน้ำ / ระบบประปาขนาดใหญ่</option>
+                  <option value="จัดซื้อครุภัณฑ์ / อุปกรณ์ล็อตใหญ่">จัดซื้อครุภัณฑ์ / อุปกรณ์ล็อตใหญ่</option>
+                  <option value="ปรับภูมิทัศน์ / สวน">ปรับภูมิทัศน์ / สวน</option>
+                  <option value="โครงการพิเศษ">โครงการพิเศษ</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ความเร่งด่วน <span class="text-rose-500">*</span></label>
+                <div class="grid grid-cols-3 gap-2">
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50 has-[:checked]:text-rose-700">
+                    <input type="radio" name="projUrgency" value="ด่วน" class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🔴 ด่วน</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">ต้องรีบพิจารณา</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-[#8b5cf6] has-[:checked]:bg-[#ede9fe]/30 has-[:checked]:text-[#8b5cf6]">
+                    <input type="radio" name="projUrgency" value="ปานกลาง" checked class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🔵 ปานกลาง</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">ตามแผนงาน</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50 has-[:checked]:text-emerald-700">
+                    <input type="radio" name="projUrgency" value="ไม่รีบ" class="sr-only">
+                    <span class="text-sm font-bold flex items-center gap-1">🟢 ไม่รีบ</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 text-center">ไว้พิจารณาปีงบฯหน้า</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่ต้องการให้แล้วเสร็จ <span class="text-slate-400 font-normal">(Target Date)</span></label>
+                  <input type="date" id="projTargetDate"
+                    class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดโครงการ / เหตุผลความจำเป็น <span class="text-rose-500">*</span></label>
+                <textarea id="projDetail" rows="3" placeholder="อธิบายสิ่งที่ต้องการทำ เหตุผล และงบประมาณคร่าวๆ (ถ้ามี)"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm" required></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อ</label>
+                <input type="text" id="projContact" placeholder="เช่น 081-234-5678"
+                  class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เอกสารโครงการ / รูปภาพประกอบ (ถ้ามี)</label>
+                <input type="file" id="projFile" accept=".pdf,image/*,.doc,.docx" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#ede9fe] file:text-[#8b5cf6] hover:file:bg-[#8b5cf6] hover:file:text-white file:transition-colors">
+              </div>
+
+              <button type="button" onclick="submitProject()" id="btnSubmitProject"
+                class="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
+                <i class="fa-solid fa-paper-plane"></i> <span>ส่งเสนอโครงการ</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
 
       <div id="page-repair-form" class="page-section">
         <div class="flex items-center justify-center min-h-[70vh] py-6">
