@@ -713,7 +713,8 @@ function nav(pageId) {
     'page-av-manage': 'gnav-av-manage-menu',
     'page-master-data': 'gnav-master-data',
     'page-document': 'gnav-document',
-    'page-user-manage': 'gnav-user-manage'
+    'page-user-manage': 'gnav-user-manage',
+    'page-advanced-manage': 'gnav-advanced-manage'
   };
   if (activeMap[pageId] && $(activeMap[pageId])) {
     $(activeMap[pageId]).classList.add('active');
@@ -736,6 +737,8 @@ function nav(pageId) {
     ResourceHubCore.ui.loadAdminTable('repair');
   } else if (pageId === 'page-av-manage') {
     ResourceHubCore.ui.loadAdminTable('av');
+  } else if (pageId === 'page-advanced-manage') {
+    loadAdvancedTasks();
   } else if (pageId === 'page-master-data') {
     loadMasterData();
   } else if (pageId === 'page-bug-manage') {
@@ -783,6 +786,10 @@ function updateSessionUI() {
     if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
+    if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
+    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
+    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
+    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
     // Admin sees the basic menus too!
     if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
@@ -809,6 +816,10 @@ function updateSessionUI() {
     if (homeCardDash) homeCardDash.classList.add('hidden');
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
+    if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
+    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
+    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
+    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
     let roleDisplay = 'ผู้ใช้งานระบบ';
 
@@ -883,6 +894,10 @@ function updateSessionUI() {
     if (homeCardDash) homeCardDash.classList.add('hidden');
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
+    if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
+    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
+    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
+    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
     if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
     if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
