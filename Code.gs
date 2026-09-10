@@ -1098,6 +1098,26 @@ function sendLineMessage(message, targetId) {
 
     const msgPayload = typeof message === 'string' ? { "type": "text", "text": message } : message;
 
+    // Sanitize Flex Message to prevent Line API crashes (empty strings or non-string values)
+    function sanitizeFlex(obj) {
+      if (Array.isArray(obj)) {
+        obj.forEach(sanitizeFlex);
+      } else if (typeof obj === 'object' && obj !== null) {
+        for (let key in obj) {
+          if (key === 'text' || key === 'altText') {
+            if (obj[key] === undefined || obj[key] === null || obj[key] === '') {
+              obj[key] = '-';
+            } else {
+              obj[key] = String(obj[key]);
+            }
+          } else {
+            sanitizeFlex(obj[key]);
+          }
+        }
+      }
+    }
+    sanitizeFlex(msgPayload);
+
     // 1. ส่งถึง User IDs (ใช้ multicast ถ้ามีหลายคน หรือ push ถ้ามีคนเดียว)
     if (userIds.length > 0) {
       if (userIds.length === 1) {
