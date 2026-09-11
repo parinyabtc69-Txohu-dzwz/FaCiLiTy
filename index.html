@@ -2966,6 +2966,28 @@ async function updateNotificationBadges() {
       badgeAV.textContent = avPending;
       badgeAV.classList.remove('hidden');
     }
+
+    try {
+      const badgeAdv = document.getElementById('badge-adv');
+      if (badgeAdv) {
+        const advD = await ResourceHubCore.api.get('get_adv_tasks');
+        let pendingAdv = 0;
+        if (advD.it) {
+          pendingAdv += advD.it.filter(r => !['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes((r[4] || '').trim())).length;
+        }
+        if (advD.project) {
+          pendingAdv += advD.project.filter(r => !['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes((r[4] || '').trim())).length;
+        }
+        if (pendingAdv > 0) {
+          badgeAdv.textContent = pendingAdv;
+          badgeAdv.classList.remove('hidden');
+        } else {
+          badgeAdv.classList.add('hidden');
+        }
+      }
+    } catch(e) {
+      console.warn('Could not fetch adv tasks for badge', e);
+    }
   } catch (e) {
     console.error('Error loading badges:', e);
   }
@@ -3083,9 +3105,80 @@ function renderAdvTable(tbodyId, rows, type) {
   }).join('');
 }
 
-window.updateAdvTask = function(type, index, currentStatus) {
-  // TODO: Add UI modal for updating advanced task status
-  alertBox('info', 'กำลังพัฒนา', 'ฟีเจอร์นี้กำลังเปิดใช้งานในระยะถัดไป');
+window.updateAdvTask = async function(type, index, currentStatus) {
+  const r = await Swal.fire({ 
+    title: 'อัปเดตสถานะ', 
+    showDenyButton: true, 
+    showCancelButton: true, 
+    confirmButtonText: 'กำลังดำเนินการ', 
+    denyButtonText: 'ปิดงาน (แนบรูป)', 
+    confirmButtonColor: '#3b82f6', 
+    denyButtonColor: '#10b981' 
+  });
+  
+  if (r.isConfirmed) {
+    return submitAction(
+      () => ResourceHubCore.api.post({ action: 'update_adv_task', tabType: type, rowIndex: index, status: 'กำลังดำเนินการ' }),
+      'อัปเดตสถานะเรียบร้อย',
+      () => loadAdvancedTasks()
+    );
+  }
+  
+  if (!r.isDenied) return;
+  
+  const techLabel = type === 'it' ? 'ชื่อช่างผู้ซ่อม / ผู้รับผิดชอบ' : 'ผู้อนุมัติโครงการ';
+  const detailLabel = type === 'it' ? 'ซ่อมหรือแก้ไขอะไรไปบ้าง?' : 'บันทึกการอนุมัติ / รายละเอียดเพิ่มเติม';
+  const proofLabel = type === 'it' ? 'รูปภาพผลการซ่อม (บังคับ)' : 'เอกสาร/รูปภาพอนุมัติ (บังคับ)';
+  const statusToSave = type === 'it' ? 'เสร็จสิ้น' : 'อนุมัติ';
+
+  const x = await Swal.fire({
+    title: 'ปิดงาน / สรุปผล',
+    html: `<div class="text-left space-y-3 mt-4 text-slate-900">
+             <input id="advTechName" class="w-full p-2.5 border rounded-lg" placeholder="${techLabel}">
+             <textarea id="advFixDetail" rows="2" class="w-full p-2.5 border rounded-lg" placeholder="${detailLabel}"></textarea>
+             <label class="block text-xs font-semibold text-slate-600 mt-2">${proofLabel}</label>
+             <input type="file" id="advProofFile" accept="image/*,application/pdf" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+             <hr class="my-2 border-slate-200">
+             <label class="block text-xs font-semibold text-slate-600">ค่าใช้จ่าย (บาท) [ไม่บังคับ]</label>
+             <input type="number" id="advRepairCost" min="0" class="w-full p-2.5 border rounded-lg bg-slate-50" placeholder="0">
+             <label class="block text-xs font-semibold text-slate-600 mt-2">เอกสารใบเสร็จ / เบิกจ่าย [ไม่บังคับ]</label>
+             <input type="file" id="advReceiptFile" accept="image/*,application/pdf" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+           </div>`,
+    focusConfirm: false, showCancelButton: true, confirmButtonText: 'บันทึกปิดงาน', cancelButtonText: 'ยกเลิก',
+    preConfirm: () => {
+      const techName = $('advTechName').value.trim();
+      const fixDetail = $('advFixDetail').value.trim();
+      const file = $('advProofFile').files[0];
+      const cost = $('advRepairCost').value.trim();
+      const receipt = $('advReceiptFile').files[0];
+      if (!techName || !fixDetail || !file) return Swal.showValidationMessage('กรุณากรอกข้อมูลและแนบไฟล์ให้ครบถ้วนครับ');
+      return { techName, fixDetail, file, cost, receipt };
+    }
+  });
+
+  if (!x.isConfirmed) return;
+  submitAction(
+    async () => {
+      const file = await readFile(x.value.file);
+      let receiptFile = null;
+      if (x.value.receipt) {
+        receiptFile = await readFile(x.value.receipt);
+      }
+      return ResourceHubCore.api.post({
+        action: 'update_adv_task',
+        tabType: type,
+        rowIndex: index,
+        status: statusToSave,
+        technician: x.value.techName,
+        fixDetail: x.value.fixDetail,
+        file,
+        cost: x.value.cost,
+        receiptFile
+      });
+    },
+    'ปิดงานสำเร็จ',
+    () => loadAdvancedTasks()
+  );
 };
 function switchAdvTab(tabId, btn) {
   document.querySelectorAll('.adv-section').forEach(s => {
