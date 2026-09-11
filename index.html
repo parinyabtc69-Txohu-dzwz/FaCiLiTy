@@ -2993,183 +2993,6 @@ async function updateNotificationBadges() {
     console.error('Error loading badges:', e);
   }
 }
-mergedCacheLoad();
-  }
-  renderMasterData();
-}
-
-function renderMasterData() {
-  const loc = $('md-locations');
-  const pro = $('md-projects');
-  const mec = $('md-mechanics');
-  if (!loc) return;
-
-  loc.innerHTML = (mergedCache.locations || []).map(x =>
-    `<div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 text-slate-800">
-          <span>${mergedEsc(x.name)} <small class="text-slate-400">${mergedEsc(x.department || '')}</small></span>
-          <div class="flex gap-4">
-            <button onclick="openQrGenModal('${mergedEsc(x.name)}')" class="text-[#265D5A] hover:text-[#1a3f3d]" title="สร้าง QR Code"><i class="fa-solid fa-qrcode"></i></button>
-            <button onclick="deleteMaster('location','${mergedEsc(x.id)}')" class="text-rose-500 hover:text-rose-700" title="ลบ"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>`
-  ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
-
-  pro.innerHTML = (mergedCache.projects || []).map(x =>
-    `<div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 text-slate-800">
-          <span>${mergedEsc(x.name)} <small class="text-slate-400">${mergedEsc(x.department || '')}</small></span>
-          <button onclick="deleteMaster('project','${mergedEsc(x.id)}')" class="text-rose-500">ลบ</button>
-        </div>`
-  ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
-
-  mec.innerHTML = (mergedCache.mechanics || []).map(x =>
-    `<div class="p-2 rounded-lg bg-slate-50 text-slate-800">
-          <div class="flex justify-between">
-            <b>${mergedEsc(x.name)}</b>
-            <button onclick="deleteMaster('mechanic','${mergedEsc(x.id)}')" class="text-rose-500">ลบ</button>
-          </div>
-          <div class="text-xs text-slate-500">${mergedEsc(x.phone || '')} · ${mergedEsc(x.skills || '')}</div>
-        </div>`
-  ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
-
-  const overdueInput = $('md-overdue-days');
-  if (overdueInput && mergedCache.settings && mergedCache.settings.overdueDays) {
-    overdueInput.value = mergedCache.settings.overdueDays;
-  }
-}
-
-async function addMaster(type) {
-  const p = { action: 'master_add', type, id: `${type}_${Date.now()}` };
-  if (type === 'location') {
-    p.name = $('md-location-name').value.trim();
-    p.department = $('md-location-dept').value;
-  }
-  if (type === 'project') {
-    p.name = $('md-project-name').value.trim();
-    p.department = $('md-project-dept').value;
-  }
-  if (type === 'mechanic') {
-    p.name = $('md-mechanic-name').value.trim();
-    p.phone = $('md-mechanic-phone').value.trim();
-    p.skills = $('md-mechanic-skills').value.trim();
-    p.notes = '';
-  }
-  if (!p.name) return alertBox('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกชื่อข้อมูลก่อน');
-
-  submitAction(
-    () => ResourceHubCore.master.add(p),
-    'เพิ่มข้อมูลสำเร็จ',
-    () => {
-      if ($('md-location-name')) $('md-location-name').value = '';
-      if ($('md-project-name')) $('md-project-name').value = '';
-      if ($('md-mechanic-name')) $('md-mechanic-name').value = '';
-      if ($('md-mechanic-phone')) $('md-mechanic-phone').value = '';
-      if ($('md-mechanic-skills')) $('md-mechanic-skills').value = '';
-      loadMasterData();
-    }
-  );
-}
-
-async function deleteMaster(type, id) {
-  if (!confirm('ยืนยันการลบข้อมูลนี้?')) return;
-  submitAction(
-    () => ResourceHubCore.master.remove({ type, id }),
-    'ลบข้อมูลสำเร็จ',
-    () => loadMasterData()
-  );
-}
-
-function filterTable(tbodyId, searchText) {
-  const tbody = document.getElementById(tbodyId);
-  if (!tbody) return;
-  const rows = tbody.querySelectorAll('tr');
-  const query = searchText.toLowerCase().trim();
-
-  rows.forEach(row => {
-    // Skip the "loading" or "no data" placeholder row if it's there
-    if (row.cells.length === 1 && row.cells[0].colSpan > 1) return;
-
-    const rowText = row.textContent.toLowerCase();
-    if (rowText.includes(query)) {
-      row.style.display = '';
-    } else {
-      row.style.display = 'none';
-    }
-  });
-}
-
-function exportTableToCSV(tbodyId, filename) {
-  const tbody = document.getElementById(tbodyId);
-  if (!tbody) return;
-  const table = tbody.closest('table');
-  if (!table) return;
-
-  let csv = [];
-  const rows = table.querySelectorAll('tr');
-
-  for (let i = 0; i < rows.length; i++) {
-    // Skip hidden rows (filtered out) or placeholder rows
-    if (rows[i].style.display === 'none') continue;
-    if (rows[i].cells.length === 1 && rows[i].cells[0].colSpan > 1) continue;
-
-    let row = [], cols = rows[i].querySelectorAll('td, th');
-
-    for (let j = 0; j < cols.length; j++) {
-      // Skip the first "⭐" column and the last "จัดการ" column for cleaner export
-      const headerText = table.querySelector('thead tr').cells[j].innerText.trim();
-      if (headerText === '⭐' || headerText === 'จัดการ') continue;
-
-      // Get inner text, remove multiple spaces and newlines
-      let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/ +/g, ' ').trim();
-      // Escape double quotes
-      data = data.replace(/"/g, '""');
-      // Enclose in double quotes
-      row.push('"' + data + '"');
-    }
-    csv.push(row.join(','));
-  }
-
-  const csvString = '\\uFEFF' + csv.join('\\n');
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-}
-
-async function updateNotificationBadges() {
-  if (!isAdminLoggedIn && (!currentRole || currentRole === 'Teacher')) return;
-  try {
-    const d = await ResourceHubCore.dashboard.legacy();
-
-    const bPending = (Number(d?.building?.pending) || 0) + (Number(d?.building?.inProgress) || 0);
-    const badgeRepair = document.getElementById('badge-repair');
-    if (badgeRepair) {
-      badgeRepair.textContent = bPending;
-      badgeRepair.classList.remove('hidden');
-    }
-
-    const mbBadgeRepair = document.getElementById('mb-badge-repair');
-    if (mbBadgeRepair) {
-      mbBadgeRepair.textContent = bPending;
-      mbBadgeRepair.classList.remove('hidden');
-    }
-
-    const avPending = Number(d?.av?.pending) || 0;
-    const badgeAV = document.getElementById('badge-av');
-    if (badgeAV) {
-      badgeAV.textContent = avPending;
-      badgeAV.classList.remove('hidden');
-    }
-  } catch (e) {
-    console.error('Error loading badges:', e);
-  }
-}
 
 mergedCacheLoad();
 
@@ -3283,9 +3106,80 @@ function renderAdvTable(tbodyId, rows, type) {
   }).join('');
 }
 
-window.updateAdvTask = function(type, index, currentStatus) {
-  // TODO: Add UI modal for updating advanced task status
-  alertBox('info', 'กำลังพัฒนา', 'ฟีเจอร์นี้กำลังเปิดใช้งานในระยะถัดไป');
+window.updateAdvTask = async function(type, index, currentStatus) {
+  const r = await Swal.fire({ 
+    title: 'อัปเดตสถานะ', 
+    showDenyButton: true, 
+    showCancelButton: true, 
+    confirmButtonText: 'กำลังดำเนินการ', 
+    denyButtonText: 'ปิดงาน (แนบรูป)', 
+    confirmButtonColor: '#3b82f6', 
+    denyButtonColor: '#10b981' 
+  });
+  
+  if (r.isConfirmed) {
+    return submitAction(
+      () => ResourceHubCore.api.post({ action: 'update_adv_task', tabType: type, rowIndex: index, status: 'กำลังดำเนินการ' }),
+      'อัปเดตสถานะเรียบร้อย',
+      () => loadAdvancedTasks()
+    );
+  }
+  
+  if (!r.isDenied) return;
+  
+  const techLabel = type === 'it' ? 'ชื่อช่างผู้ซ่อม / ผู้รับผิดชอบ' : 'ผู้อนุมัติโครงการ';
+  const detailLabel = type === 'it' ? 'ซ่อมหรือแก้ไขอะไรไปบ้าง?' : 'บันทึกการอนุมัติ / รายละเอียดเพิ่มเติม';
+  const proofLabel = type === 'it' ? 'รูปภาพผลการซ่อม (บังคับ)' : 'เอกสาร/รูปภาพอนุมัติ (บังคับ)';
+  const statusToSave = type === 'it' ? 'เสร็จสิ้น' : 'อนุมัติ';
+
+  const x = await Swal.fire({
+    title: 'ปิดงาน / สรุปผล',
+    html: `<div class="text-left space-y-3 mt-4 text-slate-900">
+             <input id="advTechName" class="w-full p-2.5 border rounded-lg" placeholder="${techLabel}">
+             <textarea id="advFixDetail" rows="2" class="w-full p-2.5 border rounded-lg" placeholder="${detailLabel}"></textarea>
+             <label class="block text-xs font-semibold text-slate-600 mt-2">${proofLabel}</label>
+             <input type="file" id="advProofFile" accept="image/*,application/pdf" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+             <hr class="my-2 border-slate-200">
+             <label class="block text-xs font-semibold text-slate-600">ค่าใช้จ่าย (บาท) [ไม่บังคับ]</label>
+             <input type="number" id="advRepairCost" min="0" class="w-full p-2.5 border rounded-lg bg-slate-50" placeholder="0">
+             <label class="block text-xs font-semibold text-slate-600 mt-2">เอกสารใบเสร็จ / เบิกจ่าย [ไม่บังคับ]</label>
+             <input type="file" id="advReceiptFile" accept="image/*,application/pdf" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+           </div>`,
+    focusConfirm: false, showCancelButton: true, confirmButtonText: 'บันทึกปิดงาน', cancelButtonText: 'ยกเลิก',
+    preConfirm: () => {
+      const techName = $('advTechName').value.trim();
+      const fixDetail = $('advFixDetail').value.trim();
+      const file = $('advProofFile').files[0];
+      const cost = $('advRepairCost').value.trim();
+      const receipt = $('advReceiptFile').files[0];
+      if (!techName || !fixDetail || !file) return Swal.showValidationMessage('กรุณากรอกข้อมูลและแนบไฟล์ให้ครบถ้วนครับ');
+      return { techName, fixDetail, file, cost, receipt };
+    }
+  });
+
+  if (!x.isConfirmed) return;
+  submitAction(
+    async () => {
+      const file = await readFile(x.value.file);
+      let receiptFile = null;
+      if (x.value.receipt) {
+        receiptFile = await readFile(x.value.receipt);
+      }
+      return ResourceHubCore.api.post({
+        action: 'update_adv_task',
+        tabType: type,
+        rowIndex: index,
+        status: statusToSave,
+        technician: x.value.techName,
+        fixDetail: x.value.fixDetail,
+        file,
+        cost: x.value.cost,
+        receiptFile
+      });
+    },
+    'ปิดงานสำเร็จ',
+    () => loadAdvancedTasks()
+  );
 };
 function switchAdvTab(tabId, btn) {
   document.querySelectorAll('.adv-section').forEach(s => {
