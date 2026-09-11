@@ -2491,9 +2491,9 @@ function updateSessionUI() {
     
     // Hide admin-only menus for regular teachers
     if ($('gnav-advanced-manage')) $('gnav-advanced-manage').classList.add('hidden');
-    if ($('home-card-it-repair')) $('home-card-it-repair').classList.add('hidden');
-    if ($('home-card-av-repair')) $('home-card-av-repair').classList.add('hidden');
-    if ($('home-card-project')) $('home-card-project').classList.add('hidden');
+    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
+    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
+    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
     let roleDisplay = 'ผู้ใช้งานระบบ';
 
@@ -2564,8 +2564,8 @@ function updateSessionUI() {
       if (homeCardTeacherAVProfile) { homeCardTeacherAVProfile.classList.remove('hidden'); homeCardTeacherAVProfile.classList.add('flex'); }
     }
 
-    if ($('dropdown-user-name')) $('dropdown-user-name').textContent = "คุณครู ${currentTeacher}";
-    if ($('dropdown-user-role')) $('dropdown-user-role').textContent = "สถานะ: ${roleDisplay}";
+    if ($('dropdown-user-name')) $('dropdown-user-name').textContent = `คุณครู ${currentTeacher}`;
+    if ($('dropdown-user-role')) $('dropdown-user-role').textContent = `สถานะ: ${roleDisplay}`;
 
     if ($('page-auth').classList.contains('active')) nav('page-teacher-profile');
 
