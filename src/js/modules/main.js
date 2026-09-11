@@ -409,7 +409,11 @@ const ResourceHubCore = {
           'dash-total-all', 'dash-pending-all', 'dash-progress-all', 'dash-completed-all',
           'b-total', 'b-pending', 'b-progress', 'b-completed',
           'av-total', 'av-pending', 'av-active', 'av-completed',
-          'ratio-building-count', 'ratio-av-count', 'ratio-building-pct', 'ratio-av-pct',
+          'it-total', 'it-pending', 'it-progress', 'it-completed',
+          'avrep-total', 'avrep-pending', 'avrep-progress', 'avrep-completed',
+          'proj-total', 'proj-pending', 'proj-progress', 'proj-completed',
+          'ratio-building-count', 'ratio-av-count', 'ratio-it-count', 'ratio-av-repair-count', 'ratio-project-count',
+          'ratio-building-pct', 'ratio-av-pct', 'ratio-it-pct', 'ratio-av-repair-pct', 'ratio-project-pct',
           'overall-progress-text'
         ];
         idsToLoad.forEach(id => {
@@ -517,6 +521,24 @@ const ResourceHubCore = {
         if ($('av-pending')) $('av-pending').textContent = avPending;
         if ($('av-active')) $('av-active').textContent = avActive;
         if ($('av-completed')) $('av-completed').textContent = avCompleted;
+
+        // งานซ่อมไอที
+        if ($('it-total')) $('it-total').textContent = itTotal;
+        if ($('it-pending')) $('it-pending').textContent = itPending;
+        if ($('it-progress')) $('it-progress').textContent = itProgress;
+        if ($('it-completed')) $('it-completed').textContent = itCompleted;
+
+        // งานซ่อมโสตฯ
+        if ($('avrep-total')) $('avrep-total').textContent = avRepTotal;
+        if ($('avrep-pending')) $('avrep-pending').textContent = avRepPending;
+        if ($('avrep-progress')) $('avrep-progress').textContent = avRepProgress;
+        if ($('avrep-completed')) $('avrep-completed').textContent = avRepCompleted;
+
+        // เสนอโครงการ
+        if ($('proj-total')) $('proj-total').textContent = projTotal;
+        if ($('proj-pending')) $('proj-pending').textContent = projPending;
+        if ($('proj-progress')) $('proj-progress').textContent = projProgress;
+        if ($('proj-completed')) $('proj-completed').textContent = projCompleted;
 
         // สถิติรายงานบั๊ก
         if ($('bug-count')) $('bug-count').textContent = d?.bugs || 0;

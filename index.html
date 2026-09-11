@@ -887,6 +887,87 @@
               </div>
             </div>
 
+            <!-- งานซ่อมไอที -->
+            <div class="bg-white p-6 rounded-3xl border border-sky-200 space-y-4 shadow-sm">
+              <div class="flex items-center justify-between border-b border-sky-200 pb-3">
+                <h2 class="text-base font-bold text-sky-500 flex items-center gap-2">
+                  <i class="fa-solid fa-desktop"></i> <span>งานซ่อมไอที / เครือข่าย</span>
+                </h2>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-sky-50 p-4 rounded-2xl border border-sky-200 text-center">
+                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="it-total">0</div>
+                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
+                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="it-pending">0</div>
+                  <div class="text-[11px] text-amber-500">รอซ่อม</div>
+                </div>
+                <div class="bg-sky-50 p-4 rounded-2xl border border-sky-200 text-center">
+                  <div class="text-2xl font-bold text-sky-500 mb-0.5" id="it-progress">0</div>
+                  <div class="text-[11px] text-sky-500">กำลังซ่อม</div>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
+                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="it-completed">0</div>
+                  <div class="text-[11px] text-emerald-600">ซ่อมเสร็จ</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- งานซ่อมอุปกรณ์โสตฯ -->
+            <div class="bg-white p-6 rounded-3xl border border-amber-200 space-y-4 shadow-sm">
+              <div class="flex items-center justify-between border-b border-amber-200 pb-3">
+                <h2 class="text-base font-bold text-amber-500 flex items-center gap-2">
+                  <i class="fa-solid fa-camera"></i> <span>งานซ่อมอุปกรณ์โสตฯ</span>
+                </h2>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
+                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="avrep-total">0</div>
+                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                </div>
+                <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200 text-center">
+                  <div class="text-2xl font-bold text-rose-500 mb-0.5" id="avrep-pending">0</div>
+                  <div class="text-[11px] text-rose-500">รอซ่อม</div>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
+                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="avrep-progress">0</div>
+                  <div class="text-[11px] text-amber-500">กำลังซ่อม</div>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
+                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="avrep-completed">0</div>
+                  <div class="text-[11px] text-emerald-600">ซ่อมเสร็จ</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- เสนอโครงการ -->
+            <div class="bg-white p-6 rounded-3xl border border-violet-200 space-y-4 shadow-sm">
+              <div class="flex items-center justify-between border-b border-violet-200 pb-3">
+                <h2 class="text-base font-bold text-violet-500 flex items-center gap-2">
+                  <i class="fa-solid fa-building-circle-check"></i> <span>เสนอโครงการ / จัดซื้อ</span>
+                </h2>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-violet-50 p-4 rounded-2xl border border-violet-200 text-center">
+                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="proj-total">0</div>
+                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
+                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="proj-pending">0</div>
+                  <div class="text-[11px] text-amber-500">รออนุมัติ</div>
+                </div>
+                <div class="bg-violet-50 p-4 rounded-2xl border border-violet-200 text-center">
+                  <div class="text-2xl font-bold text-violet-500 mb-0.5" id="proj-progress">0</div>
+                  <div class="text-[11px] text-violet-500">กำลังดำเนินการ</div>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
+                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="proj-completed">0</div>
+                  <div class="text-[11px] text-emerald-600">เสร็จสิ้น</div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           <!-- ส่วนที่ 3: สัดส่วนงาน (Analytics) -->
@@ -2100,7 +2181,11 @@ const ResourceHubCore = {
           'dash-total-all', 'dash-pending-all', 'dash-progress-all', 'dash-completed-all',
           'b-total', 'b-pending', 'b-progress', 'b-completed',
           'av-total', 'av-pending', 'av-active', 'av-completed',
-          'ratio-building-count', 'ratio-av-count', 'ratio-building-pct', 'ratio-av-pct',
+          'it-total', 'it-pending', 'it-progress', 'it-completed',
+          'avrep-total', 'avrep-pending', 'avrep-progress', 'avrep-completed',
+          'proj-total', 'proj-pending', 'proj-progress', 'proj-completed',
+          'ratio-building-count', 'ratio-av-count', 'ratio-it-count', 'ratio-av-repair-count', 'ratio-project-count',
+          'ratio-building-pct', 'ratio-av-pct', 'ratio-it-pct', 'ratio-av-repair-pct', 'ratio-project-pct',
           'overall-progress-text'
         ];
         idsToLoad.forEach(id => {
@@ -2208,6 +2293,24 @@ const ResourceHubCore = {
         if ($('av-pending')) $('av-pending').textContent = avPending;
         if ($('av-active')) $('av-active').textContent = avActive;
         if ($('av-completed')) $('av-completed').textContent = avCompleted;
+
+        // งานซ่อมไอที
+        if ($('it-total')) $('it-total').textContent = itTotal;
+        if ($('it-pending')) $('it-pending').textContent = itPending;
+        if ($('it-progress')) $('it-progress').textContent = itProgress;
+        if ($('it-completed')) $('it-completed').textContent = itCompleted;
+
+        // งานซ่อมโสตฯ
+        if ($('avrep-total')) $('avrep-total').textContent = avRepTotal;
+        if ($('avrep-pending')) $('avrep-pending').textContent = avRepPending;
+        if ($('avrep-progress')) $('avrep-progress').textContent = avRepProgress;
+        if ($('avrep-completed')) $('avrep-completed').textContent = avRepCompleted;
+
+        // เสนอโครงการ
+        if ($('proj-total')) $('proj-total').textContent = projTotal;
+        if ($('proj-pending')) $('proj-pending').textContent = projPending;
+        if ($('proj-progress')) $('proj-progress').textContent = projProgress;
+        if ($('proj-completed')) $('proj-completed').textContent = projCompleted;
 
         // สถิติรายงานบั๊ก
         if ($('bug-count')) $('bug-count').textContent = d?.bugs || 0;
