@@ -541,8 +541,8 @@ function doPost(e) {
 
       // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
       case 'update_adv_task':
-        let sheetName = data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : CONFIG.PROJECT_SHEET_NAME;
-        const sheetAdv = db.getSheetByName(sheetName);
+        let advSheetName = data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : CONFIG.PROJECT_SHEET_NAME;
+        const sheetAdv = db.getSheetByName(advSheetName);
         if (!sheetAdv) {
           return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
         }
