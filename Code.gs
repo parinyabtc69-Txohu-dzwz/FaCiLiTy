@@ -908,20 +908,34 @@ function getDashboardDataInternal(monthStr) {
   const bSheet   = db.getSheetByName(CONFIG.SHEET_NAME);
   const avSheet  = db.getSheetByName(CONFIG.AV_SHEET_NAME);
   const bugSheet = db.getSheetByName(CONFIG.BUG_SHEET_NAME);
+  const itSheet = db.getSheetByName(CONFIG.IT_SHEET_NAME);
+  const avRepSheet = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
+  const projSheet = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
   
-  const bData = bSheet ? bSheet.getDataRange().getDisplayValues().slice(1) : [];
-  let filteredBData = bData;
-  if (monthStr) {
-    filteredBData = bData.filter(r => {
+  const filterByMonth = (data) => {
+    if (!monthStr) return data;
+    return data.filter(r => {
       if (!r[0]) return false;
       const dateStr = r[0].toString().split(' ')[0];
-      const parts = dateStr.split('/');
-      if (parts.length !== 3) return false;
-      const ym = parts[2] + "-" + parts[1].padStart(2, '0');
-      return ym === monthStr;
+      if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          const ym = parts[2] + "-" + parts[1].padStart(2, '0');
+          if (ym === monthStr) return true;
+        }
+      } else {
+        const d = new Date(r[0]);
+        if (!isNaN(d.getTime())) {
+          const ym = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
+          if (ym === monthStr) return true;
+        }
+      }
+      return false;
     });
-  }
+  };
 
+  const bData = bSheet ? bSheet.getDataRange().getDisplayValues().slice(1) : [];
+  const filteredBData = filterByMonth(bData);
   const building = {
     total:      filteredBData.length,
     pending:    filteredBData.filter(r => r[4] === "รอดำเนินการ").length,
@@ -930,18 +944,7 @@ function getDashboardDataInternal(monthStr) {
   };
 
   const avData = avSheet ? avSheet.getDataRange().getDisplayValues().slice(1) : [];
-  let filteredAVData = avData;
-  if (monthStr) {
-    filteredAVData = avData.filter(r => {
-      if (!r[0]) return false;
-      const dateStr = r[0].toString().split(' ')[0];
-      const parts = dateStr.split('/');
-      if (parts.length !== 3) return false;
-      const ym = parts[2] + "-" + parts[1].padStart(2, '0');
-      return ym === monthStr;
-    });
-  }
-
+  const filteredAVData = filterByMonth(avData);
   const av = {
     total:     filteredAVData.length,
     pending:   filteredAVData.filter(r => r[5] === "รอยืนยันการยืม").length,
@@ -949,23 +952,40 @@ function getDashboardDataInternal(monthStr) {
     completed: filteredAVData.filter(r => r[5] === "เสร็จสิ้น/คืนเรียบร้อย").length
   };
 
+  const itData = itSheet ? itSheet.getDataRange().getDisplayValues().slice(1) : [];
+  const filteredITData = filterByMonth(itData);
+  const it = {
+    total:     filteredITData.length,
+    pending:   filteredITData.filter(r => r[4] === "รอดำเนินการ").length,
+    inProgress: filteredITData.filter(r => r[4] === "กำลังดำเนินการ").length,
+    completed: filteredITData.filter(r => r[4] === "เสร็จสิ้น").length
+  };
+
+  const avRepData = avRepSheet ? avRepSheet.getDataRange().getDisplayValues().slice(1) : [];
+  const filteredAVRepData = filterByMonth(avRepData);
+  const avRep = {
+    total:     filteredAVRepData.length,
+    pending:   filteredAVRepData.filter(r => r[4] === "รอดำเนินการ").length,
+    inProgress: filteredAVRepData.filter(r => r[4] === "กำลังดำเนินการ").length,
+    completed: filteredAVRepData.filter(r => r[4] === "เสร็จสิ้น").length
+  };
+
+  const projData = projSheet ? projSheet.getDataRange().getDisplayValues().slice(1) : [];
+  const filteredProjData = filterByMonth(projData);
+  const proj = {
+    total:     filteredProjData.length,
+    pending:   filteredProjData.filter(r => r[4] === "รอพิจารณาอนุมัติ").length,
+    inProgress: filteredProjData.filter(r => r[4] === "กำลังดำเนินการ").length,
+    completed: filteredProjData.filter(r => r[4] === "อนุมัติ" || r[4] === "เสร็จสิ้น").length
+  };
+
   let filteredBugs = 0;
   if (bugSheet) {
     const bugData = bugSheet.getDataRange().getDisplayValues().slice(1);
-    if (monthStr) {
-      filteredBugs = bugData.filter(r => {
-        if (!r[0]) return false;
-        const d = new Date(r[0]);
-        if (isNaN(d.getTime())) return false;
-        const ym = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
-        return ym === monthStr;
-      }).length;
-    } else {
-      filteredBugs = bugData.length;
-    }
+    filteredBugs = filterByMonth(bugData).length;
   }
 
-  return { building, av, bugs: filteredBugs };
+  return { building, av, it, avRep, proj, bugs: filteredBugs };
 }
 
 function getMasterDataInternal() {

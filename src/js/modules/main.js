@@ -428,10 +428,25 @@ const ResourceHubCore = {
         const avActive = Number(d?.av?.active) || 0;
         const avCompleted = Number(d?.av?.completed) || 0;
 
-        const totalAll = bTotal + avTotal;
-        const pendingAll = bPending + avPending;
-        const progressAll = bProgress + avActive;
-        const completedAll = bCompleted + avCompleted;
+        const itTotal = Number(d?.it?.total) || 0;
+        const itPending = Number(d?.it?.pending) || 0;
+        const itProgress = Number(d?.it?.inProgress) || 0;
+        const itCompleted = Number(d?.it?.completed) || 0;
+
+        const avRepTotal = Number(d?.avRep?.total) || 0;
+        const avRepPending = Number(d?.avRep?.pending) || 0;
+        const avRepProgress = Number(d?.avRep?.inProgress) || 0;
+        const avRepCompleted = Number(d?.avRep?.completed) || 0;
+
+        const projTotal = Number(d?.proj?.total) || 0;
+        const projPending = Number(d?.proj?.pending) || 0;
+        const projProgress = Number(d?.proj?.inProgress) || 0;
+        const projCompleted = Number(d?.proj?.completed) || 0;
+
+        const totalAll = bTotal + avTotal + itTotal + avRepTotal + projTotal;
+        const pendingAll = bPending + avPending + itPending + avRepPending + projPending;
+        const progressAll = bProgress + avActive + itProgress + avRepProgress + projProgress;
+        const completedAll = bCompleted + avCompleted + itCompleted + avRepCompleted + projCompleted;
 
         // ยอดรวมระบบทั้งหมด
         if ($('dash-total-all')) $('dash-total-all').textContent = totalAll;
@@ -509,12 +524,27 @@ const ResourceHubCore = {
         // สัดส่วนกราฟและอัตราความสำเร็จ
         if ($('ratio-building-count')) $('ratio-building-count').textContent = `${bTotal} รายการ`;
         if ($('ratio-av-count')) $('ratio-av-count').textContent = `${avTotal} รายการ`;
-        const bPct = totalAll > 0 ? Math.round((bTotal / totalAll) * 100) : 50;
-        const avPct = totalAll > 0 ? (100 - bPct) : 50;
+        if ($('ratio-it-count')) $('ratio-it-count').textContent = `${itTotal} รายการ`;
+        if ($('ratio-av-repair-count')) $('ratio-av-repair-count').textContent = `${avRepTotal} รายการ`;
+        if ($('ratio-project-count')) $('ratio-project-count').textContent = `${projTotal} รายการ`;
+
+        const bPct = totalAll > 0 ? Math.round((bTotal / totalAll) * 100) : 0;
+        const avPct = totalAll > 0 ? Math.round((avTotal / totalAll) * 100) : 0;
+        const itPct = totalAll > 0 ? Math.round((itTotal / totalAll) * 100) : 0;
+        const avRepPct = totalAll > 0 ? Math.round((avRepTotal / totalAll) * 100) : 0;
+        const projPct = totalAll > 0 ? Math.round((projTotal / totalAll) * 100) : 0;
+
         if ($('ratio-building-bar')) $('ratio-building-bar').style.width = `${bPct}%`;
         if ($('ratio-av-bar')) $('ratio-av-bar').style.width = `${avPct}%`;
+        if ($('ratio-it-bar')) $('ratio-it-bar').style.width = `${itPct}%`;
+        if ($('ratio-av-repair-bar')) $('ratio-av-repair-bar').style.width = `${avRepPct}%`;
+        if ($('ratio-project-bar')) $('ratio-project-bar').style.width = `${projPct}%`;
+
         if ($('ratio-building-pct')) $('ratio-building-pct').textContent = `${bPct}%`;
         if ($('ratio-av-pct')) $('ratio-av-pct').textContent = `${avPct}%`;
+        if ($('ratio-it-pct')) $('ratio-it-pct').textContent = `${itPct}%`;
+        if ($('ratio-av-repair-pct')) $('ratio-av-repair-pct').textContent = `${avRepPct}%`;
+        if ($('ratio-project-pct')) $('ratio-project-pct').textContent = `${projPct}%`;
 
         const completedPct = totalAll > 0 ? Math.round((completedAll / totalAll) * 100) : 0;
         if ($('overall-progress-bar')) $('overall-progress-bar').style.width = `${completedPct}%`;
