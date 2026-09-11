@@ -1288,6 +1288,106 @@ async function openAVModal(idx, oldStatus, oldTech) { return ResourceHubCore.ui.
 async function updateTask(idx) { return ResourceHubCore.ui.updateRepair(idx); }
 function loadBuildingTasks() { return ResourceHubCore.ui.loadAdminTable('repair'); }
 
+// === New Form Global Wrappers (Phase 7) ===
+async function submitItRepair() {
+  const subject = $('itSubject')?.value.trim();
+  const detail = $('itDetail')?.value.trim();
+  const reporter = $('itReporter')?.value.trim();
+  const dept = $('itDepartment')?.value.trim() || '';
+  const loc = $('itLocation')?.value.trim() || '';
+  const urgency = document.querySelector('input[name="itUrgency"]:checked')?.value || 'ตามคิว';
+  const contact = $('itContact')?.value.trim() || '';
+  const incidentDate = $('itIncidentDate')?.value || '';
+  const btn = $('btnSubmitItRepair');
+  if (!subject || !reporter || !detail) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณากรอกชื่อผู้แจ้ง หัวข้อ และรายละเอียดปัญหา');
+  setBusy(btn, true);
+  try {
+    const file = await readFile($('itFile')?.files[0]);
+    await ResourceHubCore.api.post({ action: 'submit_it_repair', subject, detail, reporter, dept, loc, urgency, contact, incidentDate, file });
+    setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหาไอที</span>');
+    await alertBox('success', 'ส่งเรื่องสำเร็จ!', 'ทีมไอทีจะดำเนินการโดยเร็วที่สุดครับ', { timer: 2000, showConfirmButton: false });
+    $('itRepairForm')?.reset();
+    nav('page-home');
+  } catch (e) {
+    setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหาไอที</span>');
+    alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+  }
+}
+
+async function submitProject() {
+  const subject = $('projSubject')?.value.trim();
+  const detail = $('projDetail')?.value.trim();
+  const reporter = $('projReporter')?.value.trim();
+  const dept = $('projDepartment')?.value.trim() || '';
+  const loc = $('projLocation')?.value.trim() || '';
+  const urgency = document.querySelector('input[name="projUrgency"]:checked')?.value || 'ตามคิว';
+  const contact = $('projContact')?.value.trim() || '';
+  const targetDate = $('projTargetDate')?.value || '';
+  const btn = $('btnSubmitProject');
+  if (!subject || !reporter || !detail) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณากรอกชื่อผู้เสนอ หัวข้อ และรายละเอียดโครงการ');
+  setBusy(btn, true);
+  try {
+    const file = await readFile($('projFile')?.files[0]);
+    await ResourceHubCore.api.post({ action: 'submit_project', subject, detail, reporter, dept, loc, urgency, contact, targetDate, file });
+    setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเสนอโครงการ</span>');
+    await alertBox('success', 'ส่งเรื่องสำเร็จ!', 'โครงการของคุณถูกบันทึกและรอการพิจารณาแล้วครับ', { timer: 2000, showConfirmButton: false });
+    $('projectForm')?.reset();
+    nav('page-home');
+  } catch (e) {
+    setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเสนอโครงการ</span>');
+    alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+  }
+}
+
+// === Advanced Manage Functions ===
+async function loadAdvancedTasks() {
+  try {
+    const data = await ResourceHubCore.api.get('get_adv_tasks');
+    if (data.it) renderAdvTable('itTaskBody', data.it, 'it');
+    if (data.projects) renderAdvTable('projectBody', data.projects, 'project');
+  } catch(e) {
+    console.error('loadAdvancedTasks error:', e);
+  }
+}
+
+function renderAdvTable(tbodyId, rows, type) {
+  const tbody = $(tbodyId);
+  if (!tbody) return;
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-500">ไม่มีรายการในขณะนี้</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map((r, i) => {
+    const status = (r[4] || '').trim();
+    const isDone = ['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes(status);
+    const urgency = (r[11] || '').trim();
+    let urgHtml = '<span class="text-xs text-slate-400">-</span>';
+    if (urgency === 'ด่วน') urgHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200"><i class="fa-solid fa-bolt text-[9px]"></i> ด่วน</span>';
+    else if (urgency === 'ตามคิว') urgHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200"><i class="fa-solid fa-list-ul text-[9px]"></i> ตามคิว</span>';
+    else if (urgency === 'ไม่รีบ') urgHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-leaf text-[9px]"></i> ไม่รีบ</span>';
+    const img = r[5] && r[5] !== '-' ? '<button onclick="showImageModal(\'' + r[5] + '\')" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</button>' : '-';
+    const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60';
+    return '<tr class="border-b ' + rowBg + ' transition-colors"><td class="p-4 text-center">' + urgHtml + '</td><td class="p-4 text-slate-500">' + (r[0]||'') + '</td><td class="p-4">' + statusTagClass(r[4]) + '</td><td class="p-4 font-bold text-slate-800">' + (r[1]||'') + '</td><td class="p-4 text-sm text-slate-600 max-w-xs truncate">' + (r[2]||'') + '</td><td class="p-4 font-semibold text-slate-700">' + (r[3]||'') + '</td><td class="p-4">' + img + '</td><td class="p-4 text-center"><span class="text-xs text-slate-400">-</span></td></tr>';
+  }).join('');
+}
+
+function switchAdvTab(tabId, btn) {
+  document.querySelectorAll('.adv-section').forEach(s => s.classList.add('hidden'));
+  const target = $('adv-section-' + tabId);
+  if (target) target.classList.remove('hidden');
+  if (btn) {
+    const container = $('advManageMainTabs');
+    if (container) {
+      container.querySelectorAll('button').forEach(b => {
+        b.classList.remove('font-bold', 'text-sky-600', 'border-b-2', 'border-sky-600');
+        b.classList.add('font-semibold', 'text-slate-500', 'hover:text-slate-700');
+      });
+      btn.classList.remove('font-semibold', 'text-slate-500', 'hover:text-slate-700');
+      btn.classList.add('font-bold', 'text-sky-600', 'border-b-2', 'border-sky-600');
+    }
+  }
+}
+
 // === dashboard.js ===
 async function loadDashboard() { return ResourceHubCore.ui.loadDashboard(); }
 async function loadDashboardPro() { return ResourceHubCore.ui.loadDashboard(); }

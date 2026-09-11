@@ -3,8 +3,8 @@
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-server text-indigo-600"></i>
-                จัดการระบบ (Advanced Manage)</h1>
-              <p class="text-xs text-slate-500 mt-1">จัดการงานแจ้งซ่อม IT, แจ้งซ่อมโสตฯ และพิจารณาอนุมัติโครงการระยะยาว</p>
+                จัดการระบบขั้นสูง</h1>
+              <p class="text-xs text-slate-500 mt-1">จัดการงานแจ้งซ่อม IT และพิจารณาอนุมัติโครงการระยะยาว</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
               <button onclick="loadAdvancedTasks()"
@@ -12,13 +12,11 @@
                   class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
             </div>
           </div>
-          
+
+          <!-- Tabs: IT + Project only -->
           <div class="flex gap-2 border-b border-slate-200 mb-6 overflow-x-auto" id="advManageMainTabs">
             <button class="px-5 py-3 font-bold text-sky-600 border-b-2 border-sky-600 whitespace-nowrap flex items-center gap-2" onclick="switchAdvTab('it', this)">
               <i class="fa-solid fa-desktop"></i> งานซ่อม IT
-            </button>
-            <button class="px-5 py-3 font-semibold text-slate-500 hover:text-slate-700 whitespace-nowrap flex items-center gap-2" onclick="switchAdvTab('av', this)">
-              <i class="fa-solid fa-camera"></i> งานซ่อมโสตฯ
             </button>
             <button class="px-5 py-3 font-semibold text-slate-500 hover:text-slate-700 whitespace-nowrap flex items-center gap-2" onclick="switchAdvTab('project', this)">
               <i class="fa-solid fa-building-circle-check"></i> โครงการระยะยาว
@@ -31,7 +29,7 @@
               <table class="w-full text-left text-sm md:table block">
                 <thead class="bg-sky-50 text-sky-800 border-b border-sky-100 hidden md:table-header-group">
                   <tr>
-                    <th class="p-4 w-12 text-center">⭐</th>
+                    <th class="p-4 w-16 text-center">ความเร่งด่วน</th>
                     <th class="p-4">เวลาแจ้ง</th>
                     <th class="p-4">สถานะ</th>
                     <th class="p-4">หัวข้อปัญหา (IT)</th>
@@ -50,42 +48,17 @@
             </div>
           </div>
 
-          <!-- AV Section -->
-          <div id="adv-section-av" class="adv-section hidden">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
-              <table class="w-full text-left text-sm md:table block">
-                <thead class="bg-amber-50 text-amber-800 border-b border-amber-100 hidden md:table-header-group">
-                  <tr>
-                    <th class="p-4 w-12 text-center">⭐</th>
-                    <th class="p-4">เวลาแจ้ง</th>
-                    <th class="p-4">สถานะ</th>
-                    <th class="p-4">หัวข้อปัญหา (โสตฯ)</th>
-                    <th class="p-4">รายละเอียด</th>
-                    <th class="p-4">ผู้แจ้ง</th>
-                    <th class="p-4">รูปภาพ</th>
-                    <th class="p-4 text-center">จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody id="avRepairBody" class="block md:table-row-group">
-                  <tr>
-                    <td colspan="8" class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
           <!-- Project Section -->
           <div id="adv-section-project" class="adv-section hidden">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
               <table class="w-full text-left text-sm md:table block">
                 <thead class="bg-violet-50 text-violet-800 border-b border-violet-100 hidden md:table-header-group">
                   <tr>
-                    <th class="p-4 w-12 text-center">📌</th>
+                    <th class="p-4 w-16 text-center">ความเร่งด่วน</th>
                     <th class="p-4">เวลาแจ้ง</th>
                     <th class="p-4">สถานะ</th>
                     <th class="p-4">ประเภทโครงการ</th>
-                    <th class="p-4">สถานที่ / รายละเอียด</th>
+                    <th class="p-4">รายละเอียด / สถานที่</th>
                     <th class="p-4">ผู้เสนอ</th>
                     <th class="p-4">เอกสารแนบ</th>
                     <th class="p-4 text-center">พิจารณา</th>
@@ -102,3 +75,4 @@
 
         </div>
       </div>
+
