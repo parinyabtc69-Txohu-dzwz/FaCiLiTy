@@ -101,6 +101,36 @@ function doGet(e) {
       const sheetUsers = db.getSheetByName('Users');
       result = sheetUsers ? sheetUsers.getDataRange().getDisplayValues().slice(1) : [];
       break;
+
+    case 'get_adv_tasks':
+      let itData = [];
+      let avRepData = [];
+      let projData = [];
+
+      const sIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
+      if (sIt) {
+        const vals = sIt.getDataRange().getDisplayValues();
+        if (vals.length > 1) itData = vals.slice(1);
+      }
+
+      const sAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
+      if (sAvRep) {
+        const vals = sAvRep.getDataRange().getDisplayValues();
+        if (vals.length > 1) avRepData = vals.slice(1);
+      }
+
+      const sProj = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
+      if (sProj) {
+        const vals = sProj.getDataRange().getDisplayValues();
+        if (vals.length > 1) projData = vals.slice(1);
+      }
+
+      result = {
+        it: itData.reverse(),
+        av: avRepData.reverse(),
+        project: projData.reverse()
+      };
+      break;
   }
 
   return ContentService.createTextOutput(JSON.stringify(result))
@@ -390,35 +420,6 @@ function doPost(e) {
         notifyNewTask(lineAvMsg, data.borrower);
         
         break;
-
-      case 'get_adv_tasks':
-        let itData = [];
-        let avRepData = [];
-        let projData = [];
-
-        const sIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
-        if (sIt) {
-          const vals = sIt.getDataRange().getDisplayValues();
-          if (vals.length > 1) itData = vals.slice(1);
-        }
-
-        const sAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
-        if (sAvRep) {
-          const vals = sAvRep.getDataRange().getDisplayValues();
-          if (vals.length > 1) avRepData = vals.slice(1);
-        }
-
-        const sProj = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
-        if (sProj) {
-          const vals = sProj.getDataRange().getDisplayValues();
-          if (vals.length > 1) projData = vals.slice(1);
-        }
-
-        return {
-          it: itData.reverse(),
-          av: avRepData.reverse(),
-          project: projData.reverse()
-        };
 
       // ── แจ้งบั๊ก ─────────────────────────────────────────────
       case 'report_bug':

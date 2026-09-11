@@ -1383,26 +1383,50 @@ async function loadAdvancedTasks() {
 }
 
 function renderAdvTable(tbodyId, rows, type) {
-  const tbody = $(tbodyId);
+  const tbody = $('adv-section-' + type)?.querySelector('tbody');
   if (!tbody) return;
   if (!rows || !rows.length) {
     tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-500">ไม่มีรายการในขณะนี้</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map((r, i) => {
-    const status = (r[4] || '').trim();
-    const isDone = ['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes(status);
-    const urgency = (r[11] || '').trim();
+    let timestamp, subject, detail, status, urgency, reporter, img, isDone;
+
+    if (type === 'it') {
+      // IT_Repairs: [0:itId, 1:reporter, 2:dept, 3:loc, 4:subject, 5:detail, 6:urgency, 7:contact, 8:incidentDate, 9:imgUrl, 10:status, 11:timestamp]
+      timestamp = r[11] || '';
+      subject = r[4] || '';
+      detail = r[5] || '';
+      status = (r[10] || '').trim();
+      urgency = (r[6] || '').trim();
+      reporter = r[1] || '';
+      img = r[9] && r[9] !== '-' ? '<button onclick="showImageModal(\'' + r[9] + '\')" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</button>' : '-';
+    } else if (type === 'project') {
+      // Facility_Projects: [0:Timestamp, 1:Subject, 2:Detail, 3:Reporter, 4:Status, 5:Document_Url, ..., 11:Urgency, 12:Dept, 13:Loc]
+      timestamp = r[0] || '';
+      subject = r[1] || '';
+      detail = r[2] || '';
+      status = (r[4] || '').trim();
+      urgency = (r[11] || '').trim();
+      reporter = r[3] || '';
+      img = r[5] && r[5] !== '-' ? '<a href="' + r[5] + '" target="_blank" class="text-blue-500 underline"><i class="fa-solid fa-file-pdf"></i> เอกสาร</a>' : '-';
+    }
+
+    isDone = ['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes(status);
     let urgHtml = '<span class="text-xs text-slate-400">-</span>';
     if (urgency === 'ด่วน') urgHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200"><i class="fa-solid fa-bolt text-[9px]"></i> ด่วน</span>';
     else if (urgency === 'ตามคิว') urgHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200"><i class="fa-solid fa-list-ul text-[9px]"></i> ตามคิว</span>';
     else if (urgency === 'ไม่รีบ') urgHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-leaf text-[9px]"></i> ไม่รีบ</span>';
-    const img = r[5] && r[5] !== '-' ? '<button onclick="showImageModal(\'' + r[5] + '\')" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</button>' : '-';
+    
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60';
-    return '<tr class="border-b ' + rowBg + ' transition-colors"><td class="p-4 text-center">' + urgHtml + '</td><td class="p-4 text-slate-500">' + (r[0]||'') + '</td><td class="p-4">' + statusTagClass(r[4]) + '</td><td class="p-4 font-bold text-slate-800">' + (r[1]||'') + '</td><td class="p-4 text-sm text-slate-600 max-w-xs truncate">' + (r[2]||'') + '</td><td class="p-4 font-semibold text-slate-700">' + (r[3]||'') + '</td><td class="p-4">' + img + '</td><td class="p-4 text-center"><span class="text-xs text-slate-400">-</span></td></tr>';
+    return '<tr class="border-b ' + rowBg + ' transition-colors"><td class="p-4 text-center">' + urgHtml + '</td><td class="p-4 text-slate-500">' + timestamp + '</td><td class="p-4">' + statusTagClass(status) + '</td><td class="p-4 font-bold text-slate-800">' + subject + '</td><td class="p-4 text-sm text-slate-600 max-w-xs truncate">' + detail + '</td><td class="p-4 font-semibold text-slate-700">' + reporter + '</td><td class="p-4">' + img + '</td><td class="p-4 text-center"><button class="text-blue-500 hover:text-blue-700 font-semibold" onclick="updateAdvTask(\'' + type + '\',' + i + ',\'' + status + '\')"><i class="fa-solid fa-pen-to-square"></i></button></td></tr>';
   }).join('');
 }
 
+window.updateAdvTask = function(type, index, currentStatus) {
+  // TODO: Add UI modal for updating advanced task status
+  alertBox('info', 'กำลังพัฒนา', 'ฟีเจอร์นี้กำลังเปิดใช้งานในระยะถัดไป');
+};
 function switchAdvTab(tabId, btn) {
   document.querySelectorAll('.adv-section').forEach(s => {
     s.classList.add('hidden');
