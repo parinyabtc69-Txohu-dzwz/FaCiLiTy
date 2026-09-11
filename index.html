@@ -2434,10 +2434,6 @@ function updateSessionUI() {
     if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
-    if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
-    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
-    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
-    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
     // Admin sees the basic menus too!
     if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
@@ -2464,6 +2460,11 @@ function updateSessionUI() {
     if (homeCardDash) homeCardDash.classList.add('hidden');
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
+    // Hide admin-only menus for regular teachers
+    if ($('gnav-advanced-manage')) $('gnav-advanced-manage').classList.add('hidden');
+    if ($('home-card-it-repair')) $('home-card-it-repair').classList.add('hidden');
+    if ($('home-card-av-repair')) $('home-card-av-repair').classList.add('hidden');
+    if ($('home-card-project')) $('home-card-project').classList.add('hidden');
     if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
     if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
     if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
