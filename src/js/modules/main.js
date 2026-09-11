@@ -1415,14 +1415,14 @@ function renderAdvTable(tbodyId, rows, type) {
     let timestamp, subject, detail, status, urgency, reporter, img, isDone;
 
     if (type === 'it') {
-      // IT_Repairs: [0:itId, 1:reporter, 2:dept, 3:loc, 4:subject, 5:detail, 6:urgency, 7:contact, 8:incidentDate, 9:imgUrl, 10:status, 11:timestamp]
-      timestamp = r[11] || '';
-      subject = r[4] || '';
-      detail = r[5] || '';
-      status = (r[10] || '').trim();
-      urgency = (r[6] || '').trim();
-      reporter = r[1] || '';
-      img = r[9] && r[9] !== '-' ? '<button onclick="showImageModal(\'' + r[9] + '\')" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</button>' : '-';
+      // IT_Repairs: [0:Timestamp, 1:Subject, 2:Detail, 3:Reporter, 4:Status, 5:Image_Report, ..., 11:Urgency, 12:Dept, 13:Loc]
+      timestamp = r[0] || '';
+      subject = r[1] || '';
+      detail = r[2] || '';
+      status = (r[4] || '').trim();
+      urgency = (r[11] || '').trim();
+      reporter = r[3] || '';
+      img = r[5] && r[5] !== '-' ? '<button onclick="showImageModal(\'' + r[5] + '\')" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</button>' : '-';
     } else if (type === 'project') {
       // Facility_Projects: [0:Timestamp, 1:Subject, 2:Detail, 3:Reporter, 4:Status, 5:Document_Url, ..., 11:Urgency, 12:Dept, 13:Loc]
       timestamp = r[0] || '';
