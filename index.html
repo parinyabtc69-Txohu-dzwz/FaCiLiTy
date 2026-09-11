@@ -2434,6 +2434,12 @@ function updateSessionUI() {
     if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
+    
+    // New Admin menus
+    if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
+    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
+    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
+    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
     // Admin sees the basic menus too!
     if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
@@ -2460,15 +2466,12 @@ function updateSessionUI() {
     if (homeCardDash) homeCardDash.classList.add('hidden');
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
+    
     // Hide admin-only menus for regular teachers
     if ($('gnav-advanced-manage')) $('gnav-advanced-manage').classList.add('hidden');
     if ($('home-card-it-repair')) $('home-card-it-repair').classList.add('hidden');
     if ($('home-card-av-repair')) $('home-card-av-repair').classList.add('hidden');
     if ($('home-card-project')) $('home-card-project').classList.add('hidden');
-    if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
-    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
-    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
-    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
     let roleDisplay = 'ผู้ใช้งานระบบ';
 
@@ -2500,11 +2503,14 @@ function updateSessionUI() {
       if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
       if (avManageNav) { avManageNav.classList.remove('hidden'); avManageNav.classList.add('flex'); }
       if (masterDataNav) { masterDataNav.classList.remove('hidden'); masterDataNav.classList.add('flex'); }
-      if ($('gnav-bug-manage')) { $('gnav-bug-manage').classList.remove('hidden'); $('gnav-bug-manage').classList.add('flex'); }
       if ($('gnav-user-manage')) { $('gnav-user-manage').classList.remove('hidden'); $('gnav-user-manage').classList.add('flex'); }
-      if (docNav) { docNav.classList.remove('hidden'); docNav.classList.add('flex'); }
-      if (homeCardDocument) { homeCardDocument.classList.remove('hidden'); homeCardDocument.classList.add('flex'); }
       if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
+      
+      // New Admin menus for Staff
+      if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
+      if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
+      if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
+      if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
       if (basicNavHome) basicNavHome.classList.add('hidden');
       if (basicNavRepair) basicNavRepair.classList.add('hidden');
@@ -2512,26 +2518,25 @@ function updateSessionUI() {
       if (basicNavCreateBtn) basicNavCreateBtn.classList.add('hidden');
 
     } else {
-      // Teacher
-
-      roleDisplay = 'คุณครู / บุคลากร';
-      if (teacherProfileNav) { teacherProfileNav.classList.remove('hidden'); teacherProfileNav.classList.add('flex'); }
-      if (teacherAVProfileNav) { teacherAVProfileNav.classList.remove('hidden'); teacherAVProfileNav.classList.add('flex'); }
-      if (homeCardTeacherProfile) { homeCardTeacherProfile.classList.remove('hidden'); homeCardTeacherProfile.classList.add('flex'); }
-      if (homeCardTeacherAVProfile) { homeCardTeacherAVProfile.classList.remove('hidden'); homeCardTeacherAVProfile.classList.add('flex'); }
-
+      // Normal Teacher
       if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
       if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
       if (basicNavAV) { basicNavAV.classList.remove('hidden'); basicNavAV.classList.add('flex'); }
       if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
+      
+      if (teacherProfileNav) { teacherProfileNav.classList.remove('hidden'); teacherProfileNav.classList.add('flex'); }
+      if (teacherAVProfileNav) { teacherAVProfileNav.classList.remove('hidden'); teacherAVProfileNav.classList.add('flex'); }
+      if (homeCardTeacherProfile) { homeCardTeacherProfile.classList.remove('hidden'); homeCardTeacherProfile.classList.add('flex'); }
+      if (homeCardTeacherAVProfile) { homeCardTeacherAVProfile.classList.remove('hidden'); homeCardTeacherAVProfile.classList.add('flex'); }
     }
 
-    if ($('dropdown-user-name')) $('dropdown-user-name').textContent = `คุณครู ${currentTeacher}`;
-    if ($('dropdown-user-role')) $('dropdown-user-role').textContent = `สถานะ: ${roleDisplay}`;
+    if ($('dropdown-user-name')) $('dropdown-user-name').textContent = "คุณครู ${currentTeacher}";
+    if ($('dropdown-user-role')) $('dropdown-user-role').textContent = "สถานะ: ${roleDisplay}";
 
     if ($('page-auth').classList.contains('active')) nav('page-teacher-profile');
 
   } else {
+    // Guest
     if (dashNav) dashNav.classList.add('hidden');
     if (techNav) techNav.classList.add('hidden');
     if (avManageNav) avManageNav.classList.add('hidden');
@@ -2543,10 +2548,12 @@ function updateSessionUI() {
     if (homeCardDash) homeCardDash.classList.add('hidden');
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
-    if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
-    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
-    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
-    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
+    
+    // Hide admin-only menus for guests
+    if ($('gnav-advanced-manage')) $('gnav-advanced-manage').classList.add('hidden');
+    if ($('home-card-it-repair')) $('home-card-it-repair').classList.add('hidden');
+    if ($('home-card-av-repair')) $('home-card-av-repair').classList.add('hidden');
+    if ($('home-card-project')) $('home-card-project').classList.add('hidden');
 
     if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
     if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
@@ -3021,9 +3028,15 @@ function renderAdvTable(tbodyId, rows, type) {
 }
 
 function switchAdvTab(tabId, btn) {
-  document.querySelectorAll('.adv-section').forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('.adv-section').forEach(s => {
+    s.classList.add('hidden');
+    s.classList.remove('block');
+  });
   const target = $('adv-section-' + tabId);
-  if (target) target.classList.remove('hidden');
+  if (target) {
+    target.classList.remove('hidden');
+    target.classList.add('block');
+  }
   if (btn) {
     const container = $('advManageMainTabs');
     if (container) {
@@ -3037,8 +3050,7 @@ function switchAdvTab(tabId, btn) {
   }
 }
 
-// === dashboard.js ===
-async function loadDashboard() { return ResourceHubCore.ui.loadDashboard(); }
+// === dashboard.js ===async function loadDashboard() { return ResourceHubCore.ui.loadDashboard(); }
 async function loadDashboardPro() { return ResourceHubCore.ui.loadDashboard(); }
 
 // ========================
