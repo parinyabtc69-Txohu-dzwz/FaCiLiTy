@@ -262,10 +262,11 @@
           </button>
 
           <button onclick="nav('page-advanced-manage')" id="gnav-advanced-manage"
-            class="gmail-nav-item w-full hidden items-center px-4 py-2.5 rounded-r-full text-slate-700 hover:bg-slate-200/60 transition-colors text-sm font-normal">
+            class="gmail-nav-item w-full hidden items-center justify-between px-4 py-2.5 rounded-r-full text-slate-700 hover:bg-slate-200/60 transition-colors text-sm font-normal">
             <div class="flex items-center gap-4">
               <i class="fa-solid fa-server w-5 text-center text-indigo-600"></i> จัดการระบบ IT/AV
             </div>
+            <span id="badge-adv" class="bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
           </button>
 
           <button onclick="nav('page-av-manage')" id="gnav-av-manage-menu"
@@ -2794,6 +2795,205 @@ async function loadMasterData() {
     mergedCacheSave();
   } catch (e) {
     mergedCacheLoad();
+  }
+  renderMasterData();
+}
+
+function renderMasterData() {
+  const loc = $('md-locations');
+  const pro = $('md-projects');
+  const mec = $('md-mechanics');
+  if (!loc) return;
+
+  loc.innerHTML = (mergedCache.locations || []).map(x =>
+    `<div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 text-slate-800">
+          <span>${mergedEsc(x.name)} <small class="text-slate-400">${mergedEsc(x.department || '')}</small></span>
+          <div class="flex gap-4">
+            <button onclick="openQrGenModal('${mergedEsc(x.name)}')" class="text-[#265D5A] hover:text-[#1a3f3d]" title="สร้าง QR Code"><i class="fa-solid fa-qrcode"></i></button>
+            <button onclick="deleteMaster('location','${mergedEsc(x.id)}')" class="text-rose-500 hover:text-rose-700" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>`
+  ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
+
+  pro.innerHTML = (mergedCache.projects || []).map(x =>
+    `<div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 text-slate-800">
+          <span>${mergedEsc(x.name)} <small class="text-slate-400">${mergedEsc(x.department || '')}</small></span>
+          <button onclick="deleteMaster('project','${mergedEsc(x.id)}')" class="text-rose-500">ลบ</button>
+        </div>`
+  ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
+
+  mec.innerHTML = (mergedCache.mechanics || []).map(x =>
+    `<div class="p-2 rounded-lg bg-slate-50 text-slate-800">
+          <div class="flex justify-between">
+            <b>${mergedEsc(x.name)}</b>
+            <button onclick="deleteMaster('mechanic','${mergedEsc(x.id)}')" class="text-rose-500">ลบ</button>
+          </div>
+          <div class="text-xs text-slate-500">${mergedEsc(x.phone || '')} · ${mergedEsc(x.skills || '')}</div>
+        </div>`
+  ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
+
+  const overdueInput = $('md-overdue-days');
+  if (overdueInput && mergedCache.settings && mergedCache.settings.overdueDays) {
+    overdueInput.value = mergedCache.settings.overdueDays;
+  }
+}
+
+async function addMaster(type) {
+  const p = { action: 'master_add', type, id: `${type}_${Date.now()}` };
+  if (type === 'location') {
+    p.name = $('md-location-name').value.trim();
+    p.department = $('md-location-dept').value;
+  }
+  if (type === 'project') {
+    p.name = $('md-project-name').value.trim();
+    p.department = $('md-project-dept').value;
+  }
+  if (type === 'mechanic') {
+    p.name = $('md-mechanic-name').value.trim();
+    p.phone = $('md-mechanic-phone').value.trim();
+    p.skills = $('md-mechanic-skills').value.trim();
+    p.notes = '';
+  }
+  if (!p.name) return alertBox('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกชื่อข้อมูลก่อน');
+
+  submitAction(
+    () => ResourceHubCore.master.add(p),
+    'เพิ่มข้อมูลสำเร็จ',
+    () => {
+      if ($('md-location-name')) $('md-location-name').value = '';
+      if ($('md-project-name')) $('md-project-name').value = '';
+      if ($('md-mechanic-name')) $('md-mechanic-name').value = '';
+      if ($('md-mechanic-phone')) $('md-mechanic-phone').value = '';
+      if ($('md-mechanic-skills')) $('md-mechanic-skills').value = '';
+      loadMasterData();
+    }
+  );
+}
+
+async function deleteMaster(type, id) {
+  if (!confirm('ยืนยันการลบข้อมูลนี้?')) return;
+  submitAction(
+    () => ResourceHubCore.master.remove({ type, id }),
+    'ลบข้อมูลสำเร็จ',
+    () => loadMasterData()
+  );
+}
+
+function filterTable(tbodyId, searchText) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  const rows = tbody.querySelectorAll('tr');
+  const query = searchText.toLowerCase().trim();
+
+  rows.forEach(row => {
+    // Skip the "loading" or "no data" placeholder row if it's there
+    if (row.cells.length === 1 && row.cells[0].colSpan > 1) return;
+
+    const rowText = row.textContent.toLowerCase();
+    if (rowText.includes(query)) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+function exportTableToCSV(tbodyId, filename) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  const table = tbody.closest('table');
+  if (!table) return;
+
+  let csv = [];
+  const rows = table.querySelectorAll('tr');
+
+  for (let i = 0; i < rows.length; i++) {
+    // Skip hidden rows (filtered out) or placeholder rows
+    if (rows[i].style.display === 'none') continue;
+    if (rows[i].cells.length === 1 && rows[i].cells[0].colSpan > 1) continue;
+
+    let row = [], cols = rows[i].querySelectorAll('td, th');
+
+    for (let j = 0; j < cols.length; j++) {
+      // Skip the first "⭐" column and the last "จัดการ" column for cleaner export
+      const headerText = table.querySelector('thead tr').cells[j].innerText.trim();
+      if (headerText === '⭐' || headerText === 'จัดการ') continue;
+
+      // Get inner text, remove multiple spaces and newlines
+      let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/ +/g, ' ').trim();
+      // Escape double quotes
+      data = data.replace(/"/g, '""');
+      // Enclose in double quotes
+      row.push('"' + data + '"');
+    }
+    csv.push(row.join(','));
+  }
+
+  const csvString = '\\uFEFF' + csv.join('\\n');
+  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
+async function updateNotificationBadges() {
+  if (!isAdminLoggedIn && (!currentRole || currentRole === 'Teacher')) return;
+  try {
+    const d = await ResourceHubCore.dashboard.legacy();
+
+    const bPending = (Number(d?.building?.pending) || 0) + (Number(d?.building?.inProgress) || 0);
+    const badgeRepair = document.getElementById('badge-repair');
+    if (badgeRepair) {
+      badgeRepair.textContent = bPending;
+      badgeRepair.classList.remove('hidden');
+    }
+
+    const mbBadgeRepair = document.getElementById('mb-badge-repair');
+    if (mbBadgeRepair) {
+      mbBadgeRepair.textContent = bPending;
+      mbBadgeRepair.classList.remove('hidden');
+    }
+
+    const avPending = Number(d?.av?.pending) || 0;
+    const badgeAV = document.getElementById('badge-av');
+    if (badgeAV) {
+      badgeAV.textContent = avPending;
+      badgeAV.classList.remove('hidden');
+    }
+
+    try {
+      const badgeAdv = document.getElementById('badge-adv');
+      if (badgeAdv) {
+        const advD = await ResourceHubCore.api.get('get_adv_tasks');
+        let pendingAdv = 0;
+        if (advD.it) {
+          pendingAdv += advD.it.filter(r => !['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes((r[4] || '').trim())).length;
+        }
+        if (advD.project) {
+          pendingAdv += advD.project.filter(r => !['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes((r[4] || '').trim())).length;
+        }
+        if (pendingAdv > 0) {
+          badgeAdv.textContent = pendingAdv;
+          badgeAdv.classList.remove('hidden');
+        } else {
+          badgeAdv.classList.add('hidden');
+        }
+      }
+    } catch(e) {
+      console.warn('Could not fetch adv tasks for badge', e);
+    }
+  } catch (e) {
+    console.error('Error loading badges:', e);
+  }
+}
+mergedCacheLoad();
   }
   renderMasterData();
 }

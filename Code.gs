@@ -540,6 +540,37 @@ function doPost(e) {
         break;
 
       // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
+      case 'update_adv_task':
+        let sheetName = data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : CONFIG.PROJECT_SHEET_NAME;
+        const sheetAdv = db.getSheetByName(sheetName);
+        if (!sheetAdv) {
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+        }
+        
+        const targetAdvRow = data.rowIndex + 2;
+        sheetAdv.getRange(targetAdvRow, 5).setValue(data.status);
+        
+        if (data.file) {
+          const proofUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_PROOF);
+          sheetAdv.getRange(targetAdvRow, 7).setValue(proofUrl);
+        }
+        if (data.fixDetail) {
+          sheetAdv.getRange(targetAdvRow, 8).setValue(data.fixDetail);
+        }
+        if (data.technician) {
+          sheetAdv.getRange(targetAdvRow, 9).setValue(data.technician);
+        }
+        if (data.cost) {
+          const advCost = (!isNaN(data.cost) && Number(data.cost) > 0) ? Number(data.cost) : "-";
+          sheetAdv.getRange(targetAdvRow, 10).setValue(advCost);
+        }
+        if (data.receiptFile) {
+          const receiptUrlAdv = uploadFileToDrive(data.receiptFile, CONFIG.FOLDER_RECEIPTS);
+          sheetAdv.getRange(targetAdvRow, 11).setValue(receiptUrlAdv);
+        }
+        
+        // Return success
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
       case 'update_task_proof':
         const sheetTaskProof = db.getSheetByName(CONFIG.SHEET_NAME);
         const targetRow = data.rowIndex + 2;
