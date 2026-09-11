@@ -714,7 +714,10 @@ function nav(pageId) {
     'page-master-data': 'gnav-master-data',
     'page-document': 'gnav-document',
     'page-user-manage': 'gnav-user-manage',
-    'page-advanced-manage': 'gnav-advanced-manage'
+    'page-advanced-manage': 'gnav-advanced-manage',
+    'page-it-repair': 'gnav-it-repair',
+    'page-av-repair': 'gnav-av-repair',
+    'page-project-form': 'gnav-project-form'
   };
   if (activeMap[pageId] && $(activeMap[pageId])) {
     $(activeMap[pageId]).classList.add('active');
@@ -763,6 +766,9 @@ function updateSessionUI() {
   const basicNavHome = $('gnav-home');
   const basicNavRepair = $('gnav-repair');
   const basicNavAV = $('gnav-av');
+  const basicNavItRepair = $('gnav-it-repair');
+  const basicNavAvRepair = $('gnav-av-repair');
+  const basicNavProject = $('gnav-project-form');
   const basicNavCreateBtn = $('gnav-create-btn');
 
   const homeCardDash = $('home-card-dash');
@@ -797,6 +803,9 @@ function updateSessionUI() {
     if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
     if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
     if (basicNavAV) { basicNavAV.classList.remove('hidden'); basicNavAV.classList.add('flex'); }
+    if (basicNavItRepair) { basicNavItRepair.classList.remove('hidden'); basicNavItRepair.classList.add('flex'); }
+    if (basicNavAvRepair) { basicNavAvRepair.classList.remove('hidden'); basicNavAvRepair.classList.add('flex'); }
+    if (basicNavProject) { basicNavProject.classList.remove('hidden'); basicNavProject.classList.add('flex'); }
     if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
 
     if ($('dropdown-user-name')) $('dropdown-user-name').textContent = currentRole === 'Executive' ? 'ผู้บริหาร (Executive)' : 'ผู้ดูแลระบบ (Admin)';
@@ -836,6 +845,9 @@ function updateSessionUI() {
       if (basicNavHome) basicNavHome.classList.add('hidden');
       if (basicNavRepair) basicNavRepair.classList.add('hidden');
       if (basicNavAV) basicNavAV.classList.add('hidden');
+      if (basicNavItRepair) basicNavItRepair.classList.add('hidden');
+      if (basicNavAvRepair) basicNavAvRepair.classList.add('hidden');
+      if (basicNavProject) basicNavProject.classList.add('hidden');
       if (basicNavCreateBtn) basicNavCreateBtn.classList.add('hidden');
 
     } else if (currentRole === 'AV') {
@@ -847,6 +859,9 @@ function updateSessionUI() {
       if (basicNavHome) basicNavHome.classList.add('hidden');
       if (basicNavRepair) basicNavRepair.classList.add('hidden');
       if (basicNavAV) basicNavAV.classList.add('hidden');
+      if (basicNavItRepair) basicNavItRepair.classList.add('hidden');
+      if (basicNavAvRepair) basicNavAvRepair.classList.add('hidden');
+      if (basicNavProject) basicNavProject.classList.add('hidden');
       if (basicNavCreateBtn) basicNavCreateBtn.classList.add('hidden');
 
     } else if (currentRole === 'Staff') {
@@ -867,6 +882,9 @@ function updateSessionUI() {
       if (basicNavHome) basicNavHome.classList.add('hidden');
       if (basicNavRepair) basicNavRepair.classList.add('hidden');
       if (basicNavAV) basicNavAV.classList.add('hidden');
+      if (basicNavItRepair) basicNavItRepair.classList.add('hidden');
+      if (basicNavAvRepair) basicNavAvRepair.classList.add('hidden');
+      if (basicNavProject) basicNavProject.classList.add('hidden');
       if (basicNavCreateBtn) basicNavCreateBtn.classList.add('hidden');
 
     } else {
@@ -874,6 +892,9 @@ function updateSessionUI() {
       if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
       if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
       if (basicNavAV) { basicNavAV.classList.remove('hidden'); basicNavAV.classList.add('flex'); }
+    if (basicNavItRepair) { basicNavItRepair.classList.remove('hidden'); basicNavItRepair.classList.add('flex'); }
+    if (basicNavAvRepair) { basicNavAvRepair.classList.remove('hidden'); basicNavAvRepair.classList.add('flex'); }
+    if (basicNavProject) { basicNavProject.classList.remove('hidden'); basicNavProject.classList.add('flex'); }
       if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
       
       if (teacherProfileNav) { teacherProfileNav.classList.remove('hidden'); teacherProfileNav.classList.add('flex'); }
@@ -910,6 +931,9 @@ function updateSessionUI() {
     if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
     if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
     if (basicNavAV) { basicNavAV.classList.remove('hidden'); basicNavAV.classList.add('flex'); }
+    if (basicNavItRepair) { basicNavItRepair.classList.remove('hidden'); basicNavItRepair.classList.add('flex'); }
+    if (basicNavAvRepair) { basicNavAvRepair.classList.remove('hidden'); basicNavAvRepair.classList.add('flex'); }
+    if (basicNavProject) { basicNavProject.classList.remove('hidden'); basicNavProject.classList.add('flex'); }
     if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
 
     if ($('dropdown-user-name')) $('dropdown-user-name').textContent = 'ยังไม่ได้เข้าสู่ระบบ';
