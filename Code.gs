@@ -677,7 +677,7 @@ function doPost(e) {
         else if (data.sheetName === CONFIG.AV_REPAIR_SHEET_NAME) { advTaskType = 'av_repair'; color = '#f59e0b'; }
         else if (data.sheetName === CONFIG.PROJECT_SHEET_NAME) { advTaskType = 'project'; color = '#8b5cf6'; }
         
-        notifyTask(advTaskType, proofMsg, `อัปเดตสถานะงาน`, color, {reporter: proofReporter, subject: sheetAdv.getRange(advTargetRow, 3).getValue(), status: data.status}, null);
+        notifyTask(advTaskType, proofMsg, `อัปเดตสถานะงาน`, color, {reporter: proofReporter, subject: proofSubject, status: data.status || 'เสร็จสิ้น'}, null);
         break;
 
       // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
