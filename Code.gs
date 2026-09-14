@@ -159,6 +159,29 @@ function doPost(e) {
       case 'link_line_account':
         return handleLinkLineAccount(data.email, data.lineId, data.name, data.picture);
 
+      // ── ประเมินความพึงพอใจ ────────────────────────
+      case 'submit_survey':
+        let surveySheetName = '';
+        if (data.type === 'repair') {
+          surveySheetName = CONFIG.SHEET_NAME;
+        } else if (data.type === 'it_repair') {
+          surveySheetName = CONFIG.IT_SHEET_NAME;
+        } else if (data.type === 'av') {
+          surveySheetName = CONFIG.AV_SHEET_NAME;
+        } else if (data.type === 'av_repair') {
+          surveySheetName = CONFIG.AV_REPAIR_SHEET_NAME;
+        }
+        
+        if (surveySheetName) {
+          const surveySheet = db.getSheetByName(surveySheetName);
+          if (surveySheet) {
+            surveySheet.getRange(data.row, 19).setValue(data.rating); // Col S
+            surveySheet.getRange(data.row, 20).setValue(data.comment || ""); // Col T
+          }
+        }
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'บันทึกการประเมินสำเร็จ' }))
+          .setMimeType(ContentService.MimeType.JSON);
+
       // ── แจ้งซ่อม: เก็บรูปใน "รูปภาพแจ้งซ่อม" ──────────────
       case 'submit_repair':
         const sheetRep = db.getSheetByName(CONFIG.SHEET_NAME);
