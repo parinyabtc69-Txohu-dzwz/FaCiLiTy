@@ -210,7 +210,7 @@ function doPost(e) {
               "layout": "vertical",
               "spacing": "sm",
               "contents": [
-                { "type": "button", "style": "primary", "color": "#265D5A", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+                { "type": "button", "style": "primary", "color": "#265D5A", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
               ]
             }
           }
@@ -260,7 +260,7 @@ function doPost(e) {
               "layout": "vertical",
               "spacing": "sm",
               "contents": [
-                { "type": "button", "style": "primary", "color": "#0ea5e9", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+                { "type": "button", "style": "primary", "color": "#0ea5e9", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
               ]
             }
           }
@@ -308,7 +308,7 @@ function doPost(e) {
               "layout": "vertical",
               "spacing": "sm",
               "contents": [
-                { "type": "button", "style": "primary", "color": "#f59e0b", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+                { "type": "button", "style": "primary", "color": "#f59e0b", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
               ]
             }
           }
@@ -356,7 +356,7 @@ function doPost(e) {
               "layout": "vertical",
               "spacing": "sm",
               "contents": [
-                { "type": "button", "style": "primary", "color": "#8b5cf6", "action": { "type": "uri", "label": "พิจารณาอนุมัติ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+                { "type": "button", "style": "primary", "color": "#8b5cf6", "action": { "type": "uri", "label": "พิจารณาอนุมัติ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
               ]
             }
           }
@@ -411,7 +411,7 @@ function doPost(e) {
               "layout": "vertical",
               "spacing": "sm",
               "contents": [
-                { "type": "button", "style": "primary", "color": "#0d9488", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+                { "type": "button", "style": "primary", "color": "#0d9488", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
               ]
             }
           }
@@ -455,7 +455,7 @@ function doPost(e) {
               "layout": "vertical",
               "spacing": "sm",
               "contents": [
-                { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+                { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
               ]
             }
           }
@@ -530,7 +530,7 @@ function doPost(e) {
                 "layout": "vertical",
                 "spacing": "sm",
                 "contents": [
-                  { "type": "button", "style": "primary", "color": "#059669", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+                  { "type": "button", "style": "primary", "color": "#059669", "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
                 ]
               }
             }
@@ -641,8 +641,8 @@ function doPost(e) {
               "layout": "vertical",
               "spacing": "sm",
               "contents": [
-                { "type": "button", "style": "primary", "color": "#059669", "action": { "type": "uri", "label": "เปิดดูรูปหลักฐานในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } },
-                { "type": "button", "style": "primary", "color": "#f59e0b", "margin": "sm", "action": { "type": "uri", "label": "⭐ ประเมินความพึงพอใจ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?action=survey&type=repair&row=" + targetRow } }
+                { "type": "button", "style": "primary", "color": "#059669", "action": { "type": "uri", "label": "เปิดดูรูปหลักฐานในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } },
+                { "type": "button", "style": "primary", "color": "#f59e0b", "margin": "sm", "action": { "type": "uri", "label": "⭐ ประเมินความพึงพอใจ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1&action=survey&type=repair&row=" + targetRow } }
               ]
             }
           }
@@ -696,7 +696,7 @@ function doPost(e) {
                 "layout": "vertical",
                 "spacing": "sm",
                 "contents": [
-                  { "type": "button", "style": "primary", "color": "#f59e0b", "action": { "type": "uri", "label": "⭐ ประเมินความพึงพอใจ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?action=survey&type=av&row=" + avTargetRow } }
+                  { "type": "button", "style": "primary", "color": "#f59e0b", "action": { "type": "uri", "label": "⭐ ประเมินความพึงพอใจ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1&action=survey&type=av&row=" + avTargetRow } }
                 ]
               }
             }
@@ -1598,7 +1598,7 @@ function checkOverdueTasks() {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
             ]
           }
         }
@@ -1660,7 +1660,7 @@ function checkOverdueTasks() {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID } }
+              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
             ]
           }
         }
