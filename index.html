@@ -1858,6 +1858,7 @@ function showLockoutAlert(lockUntil) {
 
 let currentTeacher = sessionStorage.getItem('logged_teacher') || null;
 let currentRole = sessionStorage.getItem('logged_role') || null;
+let currentEmail = sessionStorage.getItem('logged_email') || '';
 let isAdminLoggedIn = sessionStorage.getItem('logged_admin') === 'true' || false;
 let isRegisterMode = false;
 
@@ -2442,10 +2443,12 @@ function handleLiffLogin() {
       .then((res) => {
         currentTeacher = res.name;
         currentRole = res.role;
+        currentEmail = res.email || email || '';
         isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive');
 
         sessionStorage.setItem('logged_teacher', currentTeacher);
         sessionStorage.setItem('logged_role', currentRole);
+        sessionStorage.setItem('logged_email', currentEmail);
         if (isAdminLoggedIn) sessionStorage.setItem('logged_admin', 'true');
         sessionStorage.setItem('session_login_time', Date.now().toString());
 
@@ -2485,10 +2488,12 @@ function handleCredentialResponse(response) {
       // res.role = 'Teacher' | 'Admin' | 'Staff'
       currentTeacher = res.name;
       currentRole = res.role;
+      currentEmail = res.email || '';
       isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive');
 
       sessionStorage.setItem('logged_teacher', currentTeacher);
       sessionStorage.setItem('logged_role', currentRole);
+      sessionStorage.setItem('logged_email', currentEmail);
       if (isAdminLoggedIn) sessionStorage.setItem('logged_admin', 'true');
       sessionStorage.setItem('session_login_time', Date.now().toString());
 
@@ -2507,7 +2512,9 @@ function handleCredentialResponse(response) {
 function handleGlobalLogout() {
   sessionStorage.removeItem('logged_teacher');
   sessionStorage.removeItem('logged_admin');
+  sessionStorage.removeItem('logged_email');
   currentTeacher = null;
+  currentEmail = '';
   isAdminLoggedIn = false;
   updateSessionUI();
   alertBox('info', 'ออกจากระบบเรียบร้อย', '', { timer: 1000, showConfirmButton: false });
@@ -2633,7 +2640,10 @@ function updateSessionUI() {
     if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
 
     if ($('dropdown-user-name')) $('dropdown-user-name').textContent = currentRole === 'Executive' ? 'ผู้บริหาร (Executive)' : 'ผู้ดูแลระบบ (Admin)';
-    if ($('dropdown-user-role')) $('dropdown-user-role').textContent = currentRole === 'Executive' ? 'สถานะ: ผู้บริหาร' : 'สถานะ: เจ้าหน้าที่ / Admin';
+    if ($('dropdown-user-role')) {
+      let textRole = currentRole === 'Executive' ? 'ผู้บริหาร' : 'เจ้าหน้าที่ / Admin';
+      $('dropdown-user-role').innerHTML = `สถานะ: ${textRole}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
+    }
 
     if ($('page-auth').classList.contains('active')) nav('page-dashboard');
 
@@ -2728,7 +2738,9 @@ function updateSessionUI() {
     }
 
     if ($('dropdown-user-name')) $('dropdown-user-name').textContent = `คุณครู ${currentTeacher}`;
-    if ($('dropdown-user-role')) $('dropdown-user-role').textContent = `สถานะ: ${roleDisplay}`;
+    if ($('dropdown-user-role')) {
+      $('dropdown-user-role').innerHTML = `สถานะ: ${roleDisplay}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
+    }
 
     if ($('page-auth').classList.contains('active')) nav('page-teacher-profile');
 
