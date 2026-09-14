@@ -2,6 +2,11 @@
 <html lang="th">
 
 <head>
+  <script>
+    if (navigator.userAgent.includes("Line") && !window.location.search.includes("openExternalBrowser=1")) {
+      window.location.replace(window.location.href + (window.location.search ? "&" : "?") + "openExternalBrowser=1");
+    }
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="author" content="Taohx_dz_parinya">
