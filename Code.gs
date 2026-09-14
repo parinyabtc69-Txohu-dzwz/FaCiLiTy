@@ -177,7 +177,7 @@ function doPost(e) {
             <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">กรุณาเข้าสู่ระบบเพื่อดูรายละเอียดและรับงานซ่อม</p>
           </div>
         `;
-        sendEmailNotification(`🔔 แจ้งซ่อมใหม่: ${data.subject}`, repBody);
+        // Email handled by notifyTask
         
         const lineRepMsg = {
           "type": "flex",
@@ -216,7 +216,7 @@ function doPost(e) {
           }
         };
         
-        notifyNewTask(lineRepMsg, data.reporter);
+        notifyTask('building', lineRepMsg, `🚨 แจ้งซ่อมอาคารสถานที่ใหม่`, '#265D5A', data, null);
         
         break;
 
@@ -265,7 +265,7 @@ function doPost(e) {
             }
           }
         };
-        notifyNewTask(lineItMsg, data.reporter);
+        notifyTask('it', lineItMsg, `💻 แจ้งปัญหาไอทีใหม่`, '#0ea5e9', data, null);
         break;
 
       // ── แจ้งซ่อมโสตฯ ──────────────────────────────────────
@@ -313,7 +313,7 @@ function doPost(e) {
             }
           }
         };
-        notifyNewTask(lineAvRepMsg, data.reporter);
+        notifyTask('av_repair', lineAvRepMsg, `📷 แจ้งซ่อมอุปกรณ์โสตฯ ใหม่`, '#f59e0b', data, null);
         break;
 
       // ── แจ้งโครงการระยะยาว ──────────────────────────────────────
@@ -361,7 +361,7 @@ function doPost(e) {
             }
           }
         };
-        notifyNewTask(lineProjMsg, data.reporter);
+        notifyTask('project', lineProjMsg, `🏢 เสนอโครงการ / จัดซื้อใหม่`, '#8b5cf6', data, null);
         break;
 
       // ── ยืมโสตฯ ─────────────────────────────────────────────
@@ -379,7 +379,7 @@ function doPost(e) {
             <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">กรุณาเข้าสู่ระบบเพื่อพิจารณาอนุมัติการยืม</p>
           </div>
         `;
-        sendEmailNotification(`📢 ขอยืมอุปกรณ์โสตฯ: ${data.borrower}`, avBody);
+        // Email handled by notifyTask
         
         const lineAvMsg = {
           "type": "flex",
@@ -417,7 +417,7 @@ function doPost(e) {
           }
         };
         
-        notifyNewTask(lineAvMsg, data.borrower);
+        notifyTask('av', lineAvMsg, `🎤 แจ้งยืมอุปกรณ์โสตฯ ใหม่`, '#0d9488', data, null);
         
         break;
 
@@ -460,7 +460,7 @@ function doPost(e) {
             }
           }
         };
-        notifyNewTask(lineBugMsg, data.reporter);
+        notifyTask('bug', lineBugMsg, `🐞 แจ้งปัญหาระบบใหม่`, '#ef4444', data, null);
         
         break;
 
@@ -535,7 +535,7 @@ function doPost(e) {
               }
             }
           };
-          notifyUpdateTask(statusMsg, reporterNameStr);
+          notifyTask('building', statusMsg, `อัปเดตสถานะงานซ่อมอาคาร`, '#265D5A', {reporter: reporterNameStr, subject: sheetStatus.getRange(targetRow, 3).getValue(), status: newStatus}, null);
         }
         break;
 
@@ -647,7 +647,14 @@ function doPost(e) {
             }
           }
         };
-        notifyUpdateTask(proofMsg, proofReporter);
+        // Determine taskType based on sheetName
+        let advTaskType = 'building';
+        let color = '#265D5A';
+        if (data.sheetName === CONFIG.IT_SHEET_NAME) { advTaskType = 'it'; color = '#0ea5e9'; }
+        else if (data.sheetName === CONFIG.AV_REPAIR_SHEET_NAME) { advTaskType = 'av_repair'; color = '#f59e0b'; }
+        else if (data.sheetName === CONFIG.PROJECT_SHEET_NAME) { advTaskType = 'project'; color = '#8b5cf6'; }
+        
+        notifyTask(advTaskType, proofMsg, `อัปเดตสถานะงาน`, color, {reporter: proofReporter, subject: sheetAdv.getRange(advTargetRow, 3).getValue(), status: data.status}, null);
         break;
 
       // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
@@ -694,7 +701,7 @@ function doPost(e) {
               }
             }
           };
-          notifyUpdateTask(avMsg, avReporter);
+          notifyTask('av', avMsg, `อัปเดตสถานะงานยืมโสตฯ`, '#0d9488', {borrower: avReporter, subject: sheetAvStatus.getRange(avTargetRow, 3).getValue(), status: 'ใช้งานอยู่'}, null);
         } else if (data.status === 'จัดเตรียมแล้ว') {
            const avSubject = sheetAvStatus.getRange(avTargetRow, 3).getValue();
            const avReporter = sheetAvStatus.getRange(avTargetRow, 2).getValue();
@@ -724,7 +731,7 @@ function doPost(e) {
               }
             }
           };
-          notifyUpdateTask(avMsg, avReporter);
+          notifyTask('av', avMsg, `อัปเดตสถานะงานยืมโสตฯ`, '#0d9488', {borrower: avReporter, subject: sheetAvStatus.getRange(avTargetRow, 3).getValue(), status: 'คืนเรียบร้อย'}, null);
         }
         break;
 
@@ -869,26 +876,115 @@ function uploadFileToDrive(fileData, folderName) {
   return file.getUrl();
 }
 
-function notifyNewTask(message, userToInclude) {
-  let targets = getLineIdsByRoles(['admin', 'executive', 'tech', 'technician']);
-  if (userToInclude) {
-    let lineId = getUserLineIdByName(userToInclude);
-    if (lineId && !targets.includes(lineId)) {
-      targets.push(lineId);
+function getContactsByRoles(targetRoles) {
+  try {
+    const db = getDB();
+    const sheet = db.getSheetByName('Users');
+    if (!sheet) return { emails: [], lineIds: [] };
+    
+    const data = sheet.getDataRange().getValues();
+    let emails = [];
+    let lineIds = [];
+    
+    for (let i = 1; i < data.length; i++) {
+      const role = (data[i][2] || '').toString().trim().toLowerCase();
+      const status = (data[i][3] || '').toString().trim().toLowerCase();
+      if (status === 'approved' && targetRoles.includes(role)) {
+        const email = (data[i][0] || '').toString().trim();
+        const lineId = (data[i][6] || '').toString().trim();
+        if (email && email.includes('@')) emails.push(email);
+        if (lineId && (lineId.startsWith('U') || lineId.startsWith('C') || lineId.startsWith('R'))) {
+          lineIds.push(lineId);
+        }
+      }
     }
+    return { emails: [...new Set(emails)], lineIds: [...new Set(lineIds)] };
+  } catch(e) {
+    return { emails: [], lineIds: [] };
   }
-  sendLineMessage(message, targets);
 }
 
-function notifyUpdateTask(message, userToInclude) {
-  let targets = getLineIdsByRoles(['admin', 'executive']); // แอดมินทุกคน
-  if (userToInclude) {
-    let lineId = getUserLineIdByName(userToInclude);
-    if (lineId && !targets.includes(lineId)) {
-      targets.push(lineId);
+function getReporterContacts(name) {
+  try {
+    const db = getDB();
+    const sheet = db.getSheetByName('Users');
+    if (!sheet || !name) return { email: null, lineId: null };
+    
+    const data = sheet.getDataRange().getValues();
+    const searchName = name.toString().trim().toLowerCase();
+    
+    for (let i = 1; i < data.length; i++) {
+      const rowName = (data[i][1] || '').toString().trim().toLowerCase();
+      if (rowName === searchName) {
+        return {
+          email: (data[i][0] || '').toString().trim(),
+          lineId: (data[i][6] || '').toString().trim()
+        };
+      }
+    }
+    return { email: null, lineId: null };
+  } catch(e) {
+    return { email: null, lineId: null };
+  }
+}
+
+function generateEmailHtml(title, color, reporter, loc, subject, detail) {
+  return `
+    <div style="font-family:sans-serif; max-width:600px; margin:0 auto; padding:20px; border:1px solid #e2e8f0; border-radius:12px;">
+      <h2 style="color:${color}; border-bottom:2px solid ${color}; padding-bottom:10px;">${title}</h2>
+      <p><strong>ผู้แจ้ง:</strong> ${reporter || '-'}</p>
+      ${loc ? `<p><strong>สถานที่:</strong> ${loc}</p>` : ''}
+      <p><strong>เรื่อง:</strong> ${subject || '-'}</p>
+      <p><strong>รายละเอียด/สถานะ:</strong> ${detail || '-'}</p>
+      <hr style="border:0; border-top:1px solid #e2e8f0; margin:20px 0;">
+      <p style="text-align:center; color:#64748b; font-size:12px;">FaCiLiTy System Notification</p>
+    </div>
+  `;
+}
+
+function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporterNameOverride) {
+  let targetRoles = [];
+  
+  if (taskType === 'project') {
+    targetRoles = ['admin', 'executive'];
+  } else if (taskType === 'bug') {
+    targetRoles = ['admin', 'executive'];
+  } else {
+    // building, it, av, av_repair
+    targetRoles = ['admin', 'executive', 'tech', 'av'];
+  }
+  
+  const contacts = getContactsByRoles(targetRoles);
+  let lineTargets = contacts.lineIds;
+  let emailTargets = contacts.emails;
+  
+  const reporterName = reporterNameOverride || dataObj?.reporter || dataObj?.borrower || null;
+  
+  if (reporterName) {
+    const reporter = getReporterContacts(reporterName);
+    if (reporter.lineId && (reporter.lineId.startsWith('U') || reporter.lineId.startsWith('C') || reporter.lineId.startsWith('R')) && !lineTargets.includes(reporter.lineId)) {
+      lineTargets.push(reporter.lineId);
+    }
+    if (reporter.email && reporter.email.includes('@') && !emailTargets.includes(reporter.email)) {
+      emailTargets.push(reporter.email);
     }
   }
-  sendLineMessage(message, targets);
+  
+  if (lineTargets.length > 0 && lineMsg) {
+    sendLineMessage(lineMsg, lineTargets);
+  }
+  
+  if (emailTargets.length > 0 && emailTitle) {
+    const emailHtml = generateEmailHtml(
+      emailTitle, 
+      emailColor, 
+      reporterName, 
+      dataObj?.loc || null, 
+      dataObj?.subject || dataObj?.borrower || 'System Update', 
+      dataObj?.detail || dataObj?.status || 'มีการอัปเดตข้อมูล'
+    );
+    sendEmailNotification(emailTitle, emailHtml, emailTargets);
+  }
 }
 
 function deleteRowById(sheetName, idColIndex, idValue) {
@@ -1507,7 +1603,7 @@ function checkOverdueTasks() {
           }
         }
       };
-      notifyUpdateTask(msg, null); // ส่งหา Admin
+      notifyTask('building', msg, 'แจ้งเตือนงานเกินกำหนด', '#f43f5e', null, null);
     }
   }
 
@@ -1569,7 +1665,7 @@ function checkOverdueTasks() {
           }
         }
       };
-      notifyUpdateTask(msg, null); // ส่งหา Admin
+      notifyTask('building', msg, 'แจ้งเตือนงานเกินกำหนด', '#f43f5e', null, null);
     }
   }
 }
