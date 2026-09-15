@@ -758,23 +758,6 @@ function doPost(e) {
         }
         break;
 
-      // ── ประเมินความพึงพอใจ ──────────────────────────────────
-      case 'submit_survey':
-        const typeSur = data.type; // 'repair' or 'av'
-        const rowSur = parseInt(data.row);
-        let sheetSur = null;
-        let ratingCol = 17, commentCol = 18;
-        if (typeSur === 'repair') {
-           sheetSur = db.getSheetByName(CONFIG.SHEET_NAME);
-        } else if (typeSur === 'av') {
-           sheetSur = db.getSheetByName(CONFIG.AV_SHEET_NAME);
-           ratingCol = 13; commentCol = 14;
-        }
-        if (sheetSur && rowSur) {
-           sheetSur.getRange(rowSur, ratingCol).setValue(data.rating);
-           sheetSur.getRange(rowSur, commentCol).setValue(data.comment);
-        }
-        break;
 
       // ── Master Data: เพิ่ม ──────────────────────────────────
       case 'master_add':
