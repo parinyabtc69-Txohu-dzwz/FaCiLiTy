@@ -14,7 +14,7 @@ const scriptURL = 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xK
 const REPAIR_DRIVE_FOLDER_ID = '1tkOHFwH4MC-eA_eNLThTcLVF3CRHQUXT';
 
 // 🔒 SESSION CONFIG
-const SESSION_EXPIRY_MS = 8 * 60 * 60 * 1000; // 8 ชั่วโมง
+const SESSION_EXPIRY_MS = 8 * 60 * 60 * 1000; // ออกจากระบบหลังจาก 8 ชั่วโมง
 const MAX_LOGIN_ATTEMPTS = 5;                  // ล็อกหลังผิด 5 ครั้ง
 const LOCKOUT_MS = 15 * 60 * 1000;             // ล็อก 15 นาที
 
@@ -476,9 +476,9 @@ const ResourceHubCore = {
         const notifList = $('notification-list');
         if (notifList) {
           if (pendingAll > 0) {
-             let html = '';
-             if (bPending > 0) {
-                html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-rose-100 flex items-center justify-between mb-2">
+            let html = '';
+            if (bPending > 0) {
+              html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-rose-100 flex items-center justify-between mb-2">
                            <div class="flex items-center gap-3">
                              <div class="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
                                <i class="fa-solid fa-wrench"></i>
@@ -490,9 +490,9 @@ const ResourceHubCore = {
                            </div>
                            <button onclick="toggleNotificationDropdown(); nav('page-technician');" class="text-xs font-bold text-[#265D5A] hover:underline">จัดการ</button>
                          </div>`;
-             }
-             if (avPending > 0) {
-                html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-amber-100 flex items-center justify-between">
+            }
+            if (avPending > 0) {
+              html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-amber-100 flex items-center justify-between">
                            <div class="flex items-center gap-3">
                              <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
                                <i class="fa-solid fa-microphone-lines"></i>
@@ -504,10 +504,10 @@ const ResourceHubCore = {
                            </div>
                            <button onclick="toggleNotificationDropdown(); nav('page-av-manage');" class="text-xs font-bold text-[#265D5A] hover:underline">จัดการ</button>
                          </div>`;
-             }
-             notifList.innerHTML = html;
+            }
+            notifList.innerHTML = html;
           } else {
-             notifList.innerHTML = '<div class="p-4 text-center text-sm text-slate-400">ไม่มีงานค้าง</div>';
+            notifList.innerHTML = '<div class="p-4 text-center text-sm text-slate-400">ไม่มีงานค้าง</div>';
           }
         }
 
@@ -620,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === auth.js ===
-const LIFF_ID = "2011401549-8xNgb1CC"; // <-- เปลี่ยนเป็น LIFF ID ของคุณ
+const LIFF_ID = "2011401549-8xNgb1CC"; // <-- LIFF ID LINE Deverloper 
 
 document.addEventListener('DOMContentLoaded', () => {
   // Check for survey parameter
@@ -851,7 +851,7 @@ function updateSessionUI() {
     if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
-    
+
     // New Admin menus
     if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
     if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
@@ -889,7 +889,7 @@ function updateSessionUI() {
     if (homeCardDash) homeCardDash.classList.add('hidden');
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
-    
+
     // Hide admin-only menus for regular teachers
     if ($('gnav-advanced-manage')) $('gnav-advanced-manage').classList.add('hidden');
     if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
@@ -934,7 +934,7 @@ function updateSessionUI() {
       if (masterDataNav) { masterDataNav.classList.remove('hidden'); masterDataNav.classList.add('flex'); }
       if ($('gnav-user-manage')) { $('gnav-user-manage').classList.remove('hidden'); $('gnav-user-manage').classList.add('flex'); }
       if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
-      
+
       // New Admin menus for Staff
       if ($('gnav-advanced-manage')) { $('gnav-advanced-manage').classList.remove('hidden'); $('gnav-advanced-manage').classList.add('flex'); }
       if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
@@ -954,11 +954,11 @@ function updateSessionUI() {
       if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
       if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
       if (basicNavAV) { basicNavAV.classList.remove('hidden'); basicNavAV.classList.add('flex'); }
-    if (basicNavItRepair) { basicNavItRepair.classList.remove('hidden'); basicNavItRepair.classList.add('flex'); }
-    if (basicNavAvRepair) { basicNavAvRepair.classList.remove('hidden'); basicNavAvRepair.classList.add('flex'); }
-    if (basicNavProject) { basicNavProject.classList.remove('hidden'); basicNavProject.classList.add('flex'); }
+      if (basicNavItRepair) { basicNavItRepair.classList.remove('hidden'); basicNavItRepair.classList.add('flex'); }
+      if (basicNavAvRepair) { basicNavAvRepair.classList.remove('hidden'); basicNavAvRepair.classList.add('flex'); }
+      if (basicNavProject) { basicNavProject.classList.remove('hidden'); basicNavProject.classList.add('flex'); }
       if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
-      
+
       if (teacherProfileNav) { teacherProfileNav.classList.remove('hidden'); teacherProfileNav.classList.add('flex'); }
       if (teacherAVProfileNav) { teacherAVProfileNav.classList.remove('hidden'); teacherAVProfileNav.classList.add('flex'); }
       if (homeCardTeacherProfile) { homeCardTeacherProfile.classList.remove('hidden'); homeCardTeacherProfile.classList.add('flex'); }
@@ -985,7 +985,7 @@ function updateSessionUI() {
     if (homeCardDash) homeCardDash.classList.add('hidden');
     if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
     if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
-    
+
     // Hide admin-only menus for guests
     if ($('gnav-advanced-manage')) $('gnav-advanced-manage').classList.add('hidden');
     if ($('home-card-it-repair')) $('home-card-it-repair').classList.add('hidden');
@@ -1011,11 +1011,11 @@ function updateSessionUI() {
 
 function handleGlobalSearch(keyword) {
   const term = keyword.toLowerCase().trim();
-  
+
   // Check active page
   const techPage = $('page-technician');
   const avPage = $('page-av-manage');
-  
+
   if (techPage && !techPage.classList.contains('hidden')) {
     window.currentRepairSearch = term;
     if (typeof window.renderRepairTable === 'function') {
@@ -1023,7 +1023,7 @@ function handleGlobalSearch(keyword) {
     }
     return;
   }
-  
+
   if (avPage && !avPage.classList.contains('hidden')) {
     window.currentAVSearch = term;
     if (typeof window.renderAVTable === 'function') {
@@ -1377,10 +1377,10 @@ async function updateNotificationBadges() {
         const advD = await ResourceHubCore.api.get('get_adv_tasks');
         let pendingAdv = 0;
         if (advD.it) {
-          pendingAdv += advD.it.filter(r => !['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes((r[4] || '').trim())).length;
+          pendingAdv += advD.it.filter(r => !['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes((r[4] || '').trim())).length;
         }
         if (advD.project) {
-          pendingAdv += advD.project.filter(r => !['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes((r[4] || '').trim())).length;
+          pendingAdv += advD.project.filter(r => !['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes((r[4] || '').trim())).length;
         }
         if (pendingAdv > 0) {
           badgeAdv.textContent = pendingAdv;
@@ -1389,7 +1389,7 @@ async function updateNotificationBadges() {
           badgeAdv.classList.add('hidden');
         }
       }
-    } catch(e) {
+    } catch (e) {
       console.warn('Could not fetch adv tasks for badge', e);
     }
   } catch (e) {
@@ -1407,54 +1407,77 @@ async function updateTask(idx) { return ResourceHubCore.ui.updateRepair(idx); }
 function loadBuildingTasks() { return ResourceHubCore.ui.loadAdminTable('repair'); }
 
 // === New Form Global Wrappers (Phase 7) ===
-async function submitItRepair() {
-  const subject = $('itSubject')?.value.trim();
-  const detail = $('itDetail')?.value.trim();
-  const reporter = $('itReporter')?.value.trim();
-  const dept = $('itDepartment')?.value.trim() || '';
-  const loc = $('itLocation')?.value.trim() || '';
-  const urgency = document.querySelector('input[name="itUrgency"]:checked')?.value || 'ตามคิว';
-  const contact = $('itContact')?.value.trim() || '';
-  const incidentDate = $('itIncidentDate')?.value || '';
-  const btn = $('btnSubmitItRepair');
-  if (!subject || !reporter || !detail) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณากรอกชื่อผู้แจ้ง หัวข้อ และรายละเอียดปัญหา');
+async function submitGenericForm(config) {
+  const subject = $(config.prefix + 'Subject')?.value.trim();
+  const detail = $(config.prefix + 'Detail')?.value.trim();
+  const reporter = $(config.prefix + 'Reporter')?.value.trim();
+  const dept = $(config.prefix + 'Department')?.value.trim() || '';
+  const loc = $(config.prefix + 'Location')?.value.trim() || '';
+  const urgency = document.querySelector(`input[name="${config.prefix}Urgency"]:checked`)?.value || 'ตามคิว';
+  const contact = $(config.prefix + 'Contact')?.value.trim() || '';
+
+  // Handle specific date fields
+  const incidentDate = $(config.prefix + 'IncidentDate')?.value || '';
+  const targetDate = $(config.prefix + 'TargetDate')?.value || '';
+
+  const btn = $('btnSubmit' + config.btnSuffix);
+
+  if (!subject || !reporter || !detail) {
+    return alertBox('warning', 'กรอกข้อมูลไม่ครบ', config.missingText || 'กรุณากรอกข้อมูลให้ครบถ้วน');
+  }
+
   setBusy(btn, true);
   try {
-    const file = await readFile($('itFile')?.files[0]);
-    await ResourceHubCore.api.post({ action: 'submit_it_repair', subject, detail, reporter, dept, loc, urgency, contact, incidentDate, file });
-    setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหาไอที</span>');
-    await alertBox('success', 'ส่งเรื่องสำเร็จ!', 'ทีมไอทีจะดำเนินการโดยเร็วที่สุดครับ', { timer: 2000, showConfirmButton: false });
-    $('itRepairForm')?.reset();
+    const file = await readFile($(config.prefix + 'File')?.files[0]);
+    const payload = { action: config.action, subject, detail, reporter, dept, loc, urgency, contact, file };
+    if (incidentDate) payload.incidentDate = incidentDate;
+    if (targetDate) payload.targetDate = targetDate;
+
+    await ResourceHubCore.api.post(payload);
+    setBusy(btn, false, config.btnOriginalHtml);
+    await alertBox('success', 'ส่งเรื่องสำเร็จ!', config.successText, { timer: 2000, showConfirmButton: false });
+    $(config.formId)?.reset();
     nav('page-home');
   } catch (e) {
-    setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหาไอที</span>');
+    setBusy(btn, false, config.btnOriginalHtml);
     alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
   }
 }
 
+async function submitItRepair() {
+  return submitGenericForm({
+    action: 'submit_it_repair',
+    prefix: 'it',
+    btnSuffix: 'ItRepair',
+    missingText: 'กรุณากรอกชื่อผู้แจ้ง หัวข้อ และรายละเอียดปัญหา',
+    successText: 'ทีมไอทีจะดำเนินการโดยเร็วที่สุดครับ',
+    btnOriginalHtml: '<i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหาไอที</span>',
+    formId: 'itRepairForm'
+  });
+}
+
+async function submitAvRepair() {
+  return submitGenericForm({
+    action: 'submit_av_repair',
+    prefix: 'avRep',
+    btnSuffix: 'AvRepair',
+    missingText: 'กรุณากรอกชื่อผู้แจ้ง หัวข้อ และรายละเอียดปัญหา',
+    successText: 'ทีมโสตฯ จะดำเนินการโดยเร็วที่สุดครับ',
+    btnOriginalHtml: '<i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งซ่อมโสตฯ</span>',
+    formId: 'avRepairForm'
+  });
+}
+
 async function submitProject() {
-  const subject = $('projSubject')?.value.trim();
-  const detail = $('projDetail')?.value.trim();
-  const reporter = $('projReporter')?.value.trim();
-  const dept = $('projDepartment')?.value.trim() || '';
-  const loc = $('projLocation')?.value.trim() || '';
-  const urgency = document.querySelector('input[name="projUrgency"]:checked')?.value || 'ตามคิว';
-  const contact = $('projContact')?.value.trim() || '';
-  const targetDate = $('projTargetDate')?.value || '';
-  const btn = $('btnSubmitProject');
-  if (!subject || !reporter || !detail) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณากรอกชื่อผู้เสนอ หัวข้อ และรายละเอียดโครงการ');
-  setBusy(btn, true);
-  try {
-    const file = await readFile($('projFile')?.files[0]);
-    await ResourceHubCore.api.post({ action: 'submit_project', subject, detail, reporter, dept, loc, urgency, contact, targetDate, file });
-    setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเสนอโครงการ</span>');
-    await alertBox('success', 'ส่งเรื่องสำเร็จ!', 'โครงการของคุณถูกบันทึกและรอการพิจารณาแล้วครับ', { timer: 2000, showConfirmButton: false });
-    $('projectForm')?.reset();
-    nav('page-home');
-  } catch (e) {
-    setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเสนอโครงการ</span>');
-    alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
-  }
+  return submitGenericForm({
+    action: 'submit_project',
+    prefix: 'proj',
+    btnSuffix: 'Project',
+    missingText: 'กรุณากรอกชื่อผู้เสนอ หัวข้อ และรายละเอียดโครงการ',
+    successText: 'โครงการของคุณถูกบันทึกและรอการพิจารณาแล้วครับ',
+    btnOriginalHtml: '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเสนอโครงการ</span>',
+    formId: 'projectForm'
+  });
 }
 
 // === Advanced Manage Functions ===
@@ -1463,7 +1486,7 @@ async function loadAdvancedTasks() {
     const data = await ResourceHubCore.api.get('get_adv_tasks');
     if (data.it) renderAdvTable('itTaskBody', data.it, 'it');
     if (data.projects) renderAdvTable('projectBody', data.projects, 'project');
-  } catch(e) {
+  } catch (e) {
     console.error('loadAdvancedTasks error:', e);
   }
 }
@@ -1498,9 +1521,9 @@ function renderAdvTable(tbodyId, rows, type) {
       img = r[5] && r[5] !== '-' ? '<a href="' + r[5] + '" target="_blank" class="text-blue-500 underline"><i class="fa-solid fa-file-pdf"></i> เอกสาร</a>' : '-';
     }
 
-    isDone = ['เสร็จสิ้น','เรียบร้อยแล้ว','อนุมัติ'].includes(status);
+    isDone = ['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes(status);
     let urgHtml = '<span class="text-xs text-slate-400">-</span>';
-    
+
     if (isDone && type === 'it') {
       const rating = parseInt(r[18] || '0', 10);
       if (rating > 0) {
@@ -1515,23 +1538,23 @@ function renderAdvTable(tbodyId, rows, type) {
       else if (urgency === 'ตามคิว') urgHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200"><i class="fa-solid fa-list-ul text-[9px]"></i> ตามคิว</span>';
       else if (urgency === 'ไม่รีบ') urgHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-leaf text-[9px]"></i> ไม่รีบ</span>';
     }
-    
+
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60';
     return '<tr class="border-b ' + rowBg + ' transition-colors"><td class="p-4 text-center">' + urgHtml + '</td><td class="p-4 text-slate-500">' + timestamp + '</td><td class="p-4">' + statusTagClass(status) + '</td><td class="p-4 font-bold text-slate-800">' + subject + '</td><td class="p-4 text-sm text-slate-600 max-w-xs truncate">' + detail + '</td><td class="p-4 font-semibold text-slate-700">' + reporter + '</td><td class="p-4">' + img + '</td><td class="p-4 text-center"><button class="text-blue-500 hover:text-blue-700 font-semibold" onclick="updateAdvTask(\'' + type + '\',' + i + ',\'' + status + '\')"><i class="fa-solid fa-pen-to-square"></i></button></td></tr>';
   }).join('');
 }
 
-window.updateAdvTask = async function(type, index, currentStatus) {
-  const r = await Swal.fire({ 
-    title: 'อัปเดตสถานะ', 
-    showDenyButton: true, 
-    showCancelButton: true, 
-    confirmButtonText: 'กำลังดำเนินการ', 
-    denyButtonText: 'ปิดงาน (แนบรูป)', 
-    confirmButtonColor: '#3b82f6', 
-    denyButtonColor: '#10b981' 
+window.updateAdvTask = async function (type, index, currentStatus) {
+  const r = await Swal.fire({
+    title: 'อัปเดตสถานะ',
+    showDenyButton: true,
+    showCancelButton: true,
+    confirmButtonText: 'กำลังดำเนินการ',
+    denyButtonText: 'ปิดงาน (แนบรูป)',
+    confirmButtonColor: '#3b82f6',
+    denyButtonColor: '#10b981'
   });
-  
+
   if (r.isConfirmed) {
     return submitAction(
       () => ResourceHubCore.api.post({ action: 'update_adv_task', tabType: type, rowIndex: index, status: 'กำลังดำเนินการ' }),
@@ -1539,9 +1562,9 @@ window.updateAdvTask = async function(type, index, currentStatus) {
       () => loadAdvancedTasks()
     );
   }
-  
+
   if (!r.isDenied) return;
-  
+
   const techLabel = type === 'it' ? 'ชื่อช่างผู้ซ่อม / ผู้รับผิดชอบ' : 'ผู้อนุมัติโครงการ';
   const detailLabel = type === 'it' ? 'ซ่อมหรือแก้ไขอะไรไปบ้าง?' : 'บันทึกการอนุมัติ / รายละเอียดเพิ่มเติม';
   const proofLabel = type === 'it' ? 'รูปภาพผลการซ่อม (บังคับ)' : 'เอกสาร/รูปภาพอนุมัติ (บังคับ)';
@@ -1869,10 +1892,10 @@ window.renderRepairTable = function () {
       const detailText = (r[2] || '').toLowerCase();
       if (!detailText.includes(searchQuery)) return false;
     }
-    
+
     if (reporterFilter && !(r[3] || '').toLowerCase().includes(reporterFilter)) return false;
     if (locFilter && !(r[13] || '').toLowerCase().includes(locFilter)) return false;
-    
+
     if (dateFilter) {
       const parts = (r[0] || '').split(' ')[0].split('/'); // dd/mm/yyyy
       if (parts.length === 3) {
@@ -2115,10 +2138,10 @@ window.renderAVTable = function () {
       const equipmentText = (r[2] || '').toLowerCase();
       if (!equipmentText.includes(searchQuery)) return false;
     }
-    
+
     if (reporterFilter && !(r[1] || '').toLowerCase().includes(reporterFilter)) return false;
     if (locFilter && !(r[4] || '').toLowerCase().includes(locFilter)) return false;
-    
+
     if (dateFilter) {
       const parts = (r[0] || '').split(' ')[0].split('/'); // dd/mm/yyyy
       if (parts.length === 3) {
@@ -2316,7 +2339,7 @@ function toggleMobileSidebar() {
   }
 }
 
-window.showImageModal = function(url) {
+window.showImageModal = function (url) {
   if (!url || url === '-') return;
   let fileId = '';
   const m1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -2326,7 +2349,7 @@ window.showImageModal = function(url) {
     if (m2) fileId = m2[1];
   }
   const imgSrc = fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000` : url;
-  
+
   Swal.fire({
     imageUrl: imgSrc,
     imageAlt: 'รูปภาพ',
@@ -2341,21 +2364,21 @@ window.showImageModal = function(url) {
   });
 };
 
-window.exportTableToCSV = function(tbodyId, filename) {
+window.exportTableToCSV = function (tbodyId, filename) {
   const tbody = $(tbodyId);
   if (!tbody) {
     alertBox('error', 'ไม่พบข้อมูล', 'ไม่สามารถส่งออกข้อมูลได้');
     return;
   }
-  
+
   const rows = tbody.querySelectorAll('tr');
   if (rows.length === 0 || (rows.length === 1 && rows[0].innerText.includes('ไม่มีรายการ'))) {
     alertBox('warning', 'ไม่มีข้อมูล', 'ไม่มีข้อมูลสำหรับส่งออกในขณะนี้');
     return;
   }
-  
+
   let csvContent = '\uFEFF'; // BOM for Excel
-  
+
   let headers = [];
   const table = tbody.closest('table');
   if (table) {
@@ -2392,7 +2415,7 @@ window.exportTableToCSV = function(tbodyId, filename) {
   document.body.removeChild(link);
 };
 
-window.saveOverdueSettings = function() {
+window.saveOverdueSettings = function () {
   const input = document.getElementById('md-overdue-days');
   if (!input) return;
   const days = parseInt(input.value);
@@ -2400,7 +2423,7 @@ window.saveOverdueSettings = function() {
     alertBox('error', 'ข้อผิดพลาด', 'กรุณาระบุจำนวนวันให้ถูกต้อง (อย่างน้อย 1 วัน)');
     return;
   }
-  
+
   submitAction(
     () => ResourceHubCore.api.post({ action: 'save_overdue_settings', days: days }),
     'บันทึกการตั้งค่าแจ้งเตือนเรียบร้อย',
@@ -2413,7 +2436,7 @@ window.saveOverdueSettings = function() {
 // ==========================================
 // ⭐️ ระบบประเมินความพึงพอใจ (Satisfaction Survey)
 // ==========================================
-window.openSurveyModal = function(type, row) {
+window.openSurveyModal = function (type, row) {
   $('survey-type').value = type;
   $('survey-row').value = row;
   $('survey-rating').value = '0';
@@ -2422,11 +2445,11 @@ window.openSurveyModal = function(type, row) {
   $('surveyModal').classList.remove('hidden');
 };
 
-window.closeSurveyModal = function() {
+window.closeSurveyModal = function () {
   $('surveyModal').classList.add('hidden');
 };
 
-window.setSurveyRating = function(rating) {
+window.setSurveyRating = function (rating) {
   $('survey-rating').value = rating;
   const stars = document.querySelectorAll('.survey-star');
   stars.forEach(star => {
@@ -2441,13 +2464,13 @@ window.setSurveyRating = function(rating) {
   });
 };
 
-window.submitSurvey = function() {
+window.submitSurvey = function () {
   const rating = parseInt($('survey-rating').value);
   if (rating === 0 || isNaN(rating)) {
     alertBox('warning', 'กรุณาให้คะแนน', 'กรุณากดเลือกดาวเพื่อประเมินความพึงพอใจก่อนกดส่งครับ');
     return;
   }
-  
+
   const type = $('survey-type').value;
   const row = $('survey-row').value;
   const comment = $('survey-comment').value;
@@ -2468,25 +2491,25 @@ window.submitSurvey = function() {
 // ==========================================
 // 📄 ระบบออกรายงาน PDF (Export Dashboard)
 // ==========================================
-window.exportDashboardToPDF = function() {
+window.exportDashboardToPDF = function () {
   const element = document.getElementById('page-dashboard');
   if (!element) return;
-  
+
   // เตรียมส่วนหัว (Header Bar) ที่มีปุ่ม จะซ่อนปุ่ม
   const headerDiv = element.querySelector('.bg-gradient-to-r');
   const buttons = headerDiv ? headerDiv.querySelectorAll('button') : [];
-  
+
   // ซ่อนปุ่มชั่วคราว
   buttons.forEach(btn => btn.style.display = 'none');
 
   Swal.fire({ title: 'กำลังสร้างไฟล์ PDF...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
   const opt = {
-    margin:       [10, 10, 10, 10],
-    filename:     `FaCiLiTy_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, logging: false },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    margin: [10, 10, 10, 10],
+    filename: `FaCiLiTy_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
   html2pdf().set(opt).from(element).save().then(() => {
@@ -2506,25 +2529,25 @@ window.exportDashboardToPDF = function() {
 // ==========================================
 let currentQrCode = null;
 
-window.openQrGenModal = function(text) {
+window.openQrGenModal = function (text) {
   $('qrGenText').textContent = text;
   $('qrGenCanvas').innerHTML = '';
   currentQrCode = new QRCode($('qrGenCanvas'), {
     text: text,
     width: 200,
     height: 200,
-    colorDark : "#000000",
-    colorLight : "#ffffff",
-    correctLevel : QRCode.CorrectLevel.H
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.H
   });
   $('qrGenModal').classList.remove('hidden');
 };
 
-window.closeQrGenModal = function() {
+window.closeQrGenModal = function () {
   $('qrGenModal').classList.add('hidden');
 };
 
-window.downloadQrCode = function() {
+window.downloadQrCode = function () {
   const canvas = document.querySelector('#qrGenCanvas canvas');
   const img = document.querySelector('#qrGenCanvas img');
   if (img && img.src && img.src.startsWith('data:')) {

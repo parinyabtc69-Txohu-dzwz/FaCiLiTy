@@ -188,18 +188,6 @@ function doPost(e) {
         const repFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_REPORT);
         sheetRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", repFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
         
-        const repBody = `
-          <div style="font-family: sans-serif; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px;">
-            <h2 style="color: #4f46e5; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">แจ้งซ่อมใหม่: ${data.subject}</h2>
-            <p><strong>ผู้แจ้ง:</strong> ${data.reporter}</p>
-            <p><strong>สถานที่:</strong> ${data.loc || '-'}</p>
-            <p><strong>รายละเอียด:</strong> ${data.detail}</p>
-            <p><strong>ความเร่งด่วน:</strong> ${data.urgency || '-'}</p>
-            <p><strong>วันที่เกิดเหตุ:</strong> ${data.incidentDate || '-'}</p>
-            <p><strong>ช่องทางติดต่อ:</strong> ${data.contact || '-'}</p>
-            <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">กรุณาเข้าสู่ระบบเพื่อดูรายละเอียดและรับงานซ่อม</p>
-          </div>
-        `;
         // Email handled by notifyTask
         
         const lineRepMsg = {
@@ -392,16 +380,6 @@ function doPost(e) {
         const sheetAvReq = db.getSheetByName(CONFIG.AV_SHEET_NAME);
         sheetAvReq.appendRow([timestamp, data.borrower, data.equipment, data.useDate, data.location, "รอยืนยันการยืม", "-", data.signature]);
         
-        const avBody = `
-          <div style="font-family: sans-serif; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px;">
-            <h2 style="color: #0d9488; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">ขอยืมอุปกรณ์โสตฯ: ${data.borrower}</h2>
-            <p><strong>ผู้ยืม:</strong> ${data.borrower}</p>
-            <p><strong>อุปกรณ์ที่ต้องการ:</strong> ${data.equipment}</p>
-            <p><strong>วันที่ใช้งาน:</strong> ${data.useDate}</p>
-            <p><strong>สถานที่:</strong> ${data.location}</p>
-            <p style="margin-top: 20px; font-size: 0.9em; color: #6b7280; text-align: center;">กรุณาเข้าสู่ระบบเพื่อพิจารณาอนุมัติการยืม</p>
-          </div>
-        `;
         // Email handled by notifyTask
         
         const lineAvMsg = {
