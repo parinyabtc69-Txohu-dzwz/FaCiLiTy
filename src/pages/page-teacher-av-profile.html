@@ -23,23 +23,9 @@
             <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i
                 class="fa-solid fa-list-check text-[#FF5F5F]"></i> ประวัติรายการขอยืมอุปกรณ์โสตฯ ของคุณครู</h2>
             <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm whitespace-nowrap">
-                <thead class="bg-slate-50 text-slate-700 rounded-xl">
-                  <tr>
-                    <th class="p-4 rounded-l-xl">วันที่แจ้ง</th>
-                    <th class="p-4">รายการอุปกรณ์</th>
-                    <th class="p-4">วันที่ใช้งาน</th>
-                    <th class="p-4">สถานที่</th>
-                    <th class="p-4">สถานะปัจจุบัน</th>
-                    <th class="p-4 rounded-r-xl">เจ้าหน้าที่ผู้ดูแล</th>
-                  </tr>
-                </thead>
-                <tbody id="teacherAVTaskBody">
-                  <tr>
-                    <td colspan="6" class="p-8 text-center text-slate-500">กำลังโหลดข้อมูลประวัติการยืม...</td>
-                  </tr>
-                </tbody>
-              </table>
+              <div id="teacherAVTaskBody" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="col-span-full p-8 text-center text-slate-500">กำลังโหลดข้อมูลประวัติการยืม...</div>
+              </div>
             </div>
           </div>
         </div>

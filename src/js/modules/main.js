@@ -6,6 +6,56 @@ console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; fo
   window._SYS_VER = "RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5";
 })();
 
+/**
+ * ==============================================================================
+ * 📌 คำอธิบายโครงสร้างไฟล์ main.js (FaCiLiTy System)
+ * ==============================================================================
+ * ไฟล์นี้เป็นส่วนของ Logic ทั้งหมดที่ใช้ขับเคลื่อนเว็บไซต์ (Frontend) โดยแบ่งเป็น 18 ส่วนหลักๆ ดังนี้:
+ *
+ * 1. Global Config
+ *    - ทำหน้าที่: เก็บตัวแปรสำคัญเช่น scriptURL สำหรับติดต่อกับฐานข้อมูล Google Apps Script
+ *    - ตำแหน่งในเว็บ: ใช้ทุกหน้าเพื่อเชื่อมต่อฐานข้อมูล
+ * 2. Security & Session
+ *    - ทำหน้าที่: จัดการตัวแปรที่เก็บสถานะการล็อกอิน เช่น ชื่อครู สิทธิ์แอดมิน และอีเมล
+ *    - ตำแหน่งในเว็บ: ระบบตรวจสอบสิทธิ์เมื่อเปลี่ยนหน้า (Nav) และใช้เช็คสิทธิ์ซ่อน/แสดงเมนูแอดมิน
+ * 3. Helpers
+ *    - ทำหน้าที่: ฟังก์ชันช่วยเหลือทั่วไป เช่น setBusy (แสดงปุ่มโหลด), alertBox (แสดงแจ้งเตือน SweetAlert2)
+ *    - ตำแหน่งในเว็บ: ใช้ทุกหน้าเวลาบันทึกฟอร์มหรือเกิด Error
+ * 4. UI Formatting Tools
+ *    - ทำหน้าที่: ฟังก์ชันแปลงสถานะเป็นป้ายสี (Badge) เช่น "รอรับเรื่อง" (สีเหลือง), "เสร็จสิ้น" (สีเขียว)
+ *    - ตำแหน่งในเว็บ: หน้าตารางแอดมิน (Dashboard, จัดการงานซ่อม) และหน้าประวัติของผู้แจ้ง (Timeline)
+ * 5. Core Framework
+ *    - ทำหน้าที่: ฟังก์ชัน renderTableData สำหรับลูปสร้าง <tr> ในตารางต่างๆ ลดการเขียนโค้ดซ้ำ
+ *    - ตำแหน่งในเว็บ: ใช้สร้างตารางข้อมูลในหน้าแอดมินทุกหน้า
+ * 6. ResourceHubCore (API)
+ *    - ทำหน้าที่: ศูนย์กลางในการดึงข้อมูล (Fetch) ระหว่าง Frontend กับ Google Apps Script (Backend)
+ *    - ตำแหน่งในเว็บ: ใช้โหลดข้อมูลต่างๆ เมื่อเข้าสู่แต่ละหน้า
+ * 7. UI Controllers (ResourceHubCore.ui)
+ *    - ทำหน้าที่: โลจิกสำหรับการส่งฟอร์ม (แจ้งซ่อม/ยืมโสตฯ) และแสดงผลหน้าจอ
+ *    - ตำแหน่งในเว็บ: หน้าแจ้งซ่อม (page-repair-form), หน้าประวัติ (page-teacher-profile)
+ * 8. Authentication (LINE LIFF & Google OAuth)
+ *    - ทำหน้าที่: โลจิกล็อกอินด้วย LINE และ Google 
+ *    - ตำแหน่งในเว็บ: หน้าล็อกอิน (page-auth) และ Modal เข้าสู่ระบบ
+ * 9. Navigation & Routing (ระบบเปลี่ยนหน้า)
+ *    - ทำหน้าที่: ฟังก์ชัน nav() ใช้เปลี่ยนหน้าเว็บโดยซ่อน/แสดง Div ตาม ID แทนการโหลดหน้าใหม่
+ *    - ตำแหน่งในเว็บ: เมนูแถบด้านข้าง (Sidebar) และเมนูด่วนหน้าแรก
+ * 10. Master Data & Cache
+ *     - ทำหน้าที่: โหลดข้อมูลพื้นฐาน เช่น สถานที่ซ่อม, ชื่อช่าง, หมวดหมู่อุปกรณ์ แล้วเก็บใน Cache
+ *     - ตำแหน่งในเว็บ: หน้าจัดการข้อมูลหลัก (page-master-data)
+ * 11-12. Wrappers & Generic Form
+ *     - ทำหน้าที่: ตัวกลางครอบฟังก์ชันส่งฟอร์มอื่นๆ และระบบส่งฟอร์มแบบ Generic
+ * 13-14. Advanced Tasks & Dashboard Pro
+ *     - ทำหน้าที่: จัดการงานซ่อมโครงการ/งานไอทีแบบละเอียด และโหลดกราฟสรุปผล (Chart.js)
+ *     - ตำแหน่งในเว็บ: หน้าแดชบอร์ด (page-dashboard)
+ * 15-18. Admin UI & User Management
+ *     - ทำหน้าที่: ฟังก์ชันสำหรับแอดมินใช้จัดการตารางข้อมูลผู้ใช้งาน การซ่อมบำรุง และเอกสาร
+ *     - ตำแหน่งในเว็บ: เมนูสำหรับแอดมิน เช่น หน้าตารางซ่อมอาคาร, จัดการผู้ใช้
+ * 19. Satisfaction Survey & QR Code
+ *     - ทำหน้าที่: แบบประเมินดาว 1-5 ดาว และระบบสแกน/สร้าง QR Code ด่วน
+ *     - ตำแหน่งในเว็บ: Modal ประเมินความพึงพอใจ, และปุ่มสแกน QR บนหน้าแรก
+ * ==============================================================================
+ */
+
 // ==========================================
 // 1. ตั้งค่าพื้นฐานระบบ (Global Config)
 // ==========================================
@@ -238,26 +288,125 @@ const ResourceHubCore = {
       if (!currentTeacher) return;
       const isRepair = type === 'repair';
       const nameEl = $(isRepair ? 'profile-teacher-name' : 'profile-teacher-av-name');
-      if (nameEl) nameEl.textContent = isRepair ? `ยินดีต้อนรับ, ${sanitizeHtml(currentTeacher)}` : `ประวัติการขอยืมอุปกรณ์โสตฯ ของคุณ ${sanitizeHtml(currentTeacher)};`
+      if (nameEl) nameEl.textContent = isRepair ? `ยินดีต้อนรับ, ${sanitizeHtml(currentTeacher)}` : `ประวัติการขอยืมอุปกรณ์โสตฯ ของคุณ ${sanitizeHtml(currentTeacher)}`;
 
-      const promise = isRepair
+      const dataP = isRepair
         ? ResourceHubCore.work.repairs().then(d => (d || []).filter(r => r[3]?.toString().trim() === currentTeacher.trim()))
         : ResourceHubCore.av.list().then(d => (d || []).filter(r => r[1]?.toString().trim() === currentTeacher.trim() || r[7]?.toString().trim() === currentTeacher.trim()));
 
-      const tbodyId = isRepair ? 'teacherTaskBody' : 'teacherAVTaskBody';
+      const containerId = isRepair ? 'teacherTaskBody' : 'teacherAVTaskBody';
       const emptyMsg = isRepair ? 'คุณยังไม่มีประวัติการแจ้งซ่อมอาคารในระบบครับ' : 'คุณยังไม่มีประวัติการขอยืมอุปกรณ์โสตฯ ในระบบครับ';
 
-      await renderTableData(promise, tbodyId, r => {
-        if (isRepair) {
-          const img = r[5] && r[5] !== '-' ? `<button onclick="showImageModal('${r[5]}')" class="text-blue-600 underline font-semibold hover:text-blue-800 transition-colors"><i class="fa-solid fa-image"></i> ดูรูป</button>` : '-';
-          const tech = r[6] ? `<span class="font-bold text-slate-700">ช่าง: ${sanitizeHtml(r[6])}</span><br><span class="text-xs text-slate-500">${sanitizeHtml(r[7] || '')}</span>` : '<span class="text-slate-400">รอเจ้าหน้าที่รับเรื่อง</span>';
-          return `<tr class="border-b hover:bg-slate-50 transition-colors"><td class="p-4 text-slate-500">${sanitizeHtml(r[0])}</td><td class="p-4 font-bold text-slate-800">${sanitizeHtml(r[1])}</td><td class="p-4"><div class="bg-slate-50 border border-slate-200 rounded-lg p-2.5 whitespace-pre-wrap text-sm text-slate-700 min-w-[200px]">${sanitizeHtml(r[2])}</div></td><td class="p-4">${img}</td><td class="p-4">${statusTagClass(r[4])}</td><td class="p-4">${tech}</td></tr>`;
-        } else {
-          const st = r[5] || 'รอยืนยันการยืม';
-          const tech = r[6] || '<span class="text-slate-400">รอเจ้าหน้าที่รับเรื่อง</span>';
-          return `<tr class="border-b hover:bg-slate-50 transition-colors"><td class="p-4 text-slate-500">${sanitizeHtml(r[0])}</td><td class="p-4 font-bold text-slate-800">${sanitizeHtml(r[2])}</td><td class="p-4 text-slate-600">${sanitizeHtml(r[3])}</td><td class="p-4 text-slate-700 font-semibold">${sanitizeHtml(r[4])}</td><td class="p-4">${statusTagClass(st)}</td><td class="p-4">${tech}</td></tr>`;
+      const container = $(containerId);
+      if (!container) return;
+
+      container.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูล...</div>`;
+
+      try {
+        const data = await dataP;
+        if (!data || !data.length) {
+          container.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">${emptyMsg}</div>`;
+          return;
         }
-      }, 6, emptyMsg);
+
+        const renderTimeline = (status) => {
+          const steps = isRepair ? [
+            { label: 'ส่งเรื่อง', s: ['รอรับเรื่อง', 'กำลังดำเนินการ', 'เสร็จสิ้น'] },
+            { label: 'รับเรื่องแล้ว', s: ['กำลังดำเนินการ', 'เสร็จสิ้น'] },
+            { label: 'กำลังดำเนินการ', s: ['กำลังดำเนินการ', 'เสร็จสิ้น'] },
+            { label: 'เสร็จสิ้น', s: ['เสร็จสิ้น'] }
+          ] : [
+            { label: 'ส่งเรื่อง', s: ['รอยืนยันการยืม', 'อนุมัติการยืม', 'กำลังใช้งาน', 'คืนอุปกรณ์แล้ว'] },
+            { label: 'อนุมัติแล้ว', s: ['อนุมัติการยืม', 'กำลังใช้งาน', 'คืนอุปกรณ์แล้ว'] },
+            { label: 'กำลังใช้งาน', s: ['กำลังใช้งาน', 'คืนอุปกรณ์แล้ว'] },
+            { label: 'คืนแล้ว', s: ['คืนอุปกรณ์แล้ว'] }
+          ];
+
+          let html = `<div class="flex items-center justify-between mt-6 mb-2 relative">`;
+          html += `<div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-100 rounded-full z-0"></div>`;
+          
+          let lastActiveIdx = -1;
+          steps.forEach((step, idx) => {
+            let isActive = false;
+            if (idx === 0) isActive = true;
+            if (step.s.includes(status)) isActive = true;
+            if (isActive) lastActiveIdx = idx;
+          });
+
+          steps.forEach((step, idx) => {
+            const isActive = idx <= lastActiveIdx;
+            const bgClass = isActive ? (isRepair ? 'bg-[#265D5A] text-white' : 'bg-[#FF5F5F] text-white') : 'bg-white text-slate-300 border-2 border-slate-200';
+            const textClass = isActive ? (isRepair ? 'text-[#265D5A] font-bold' : 'text-[#FF5F5F] font-bold') : 'text-slate-400';
+            
+            if (idx > 0 && isActive) {
+              const lineColor = isRepair ? 'bg-[#265D5A]' : 'bg-[#FF5F5F]';
+              html += `<div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 ${lineColor} rounded-full z-0" style="width: ${(idx / (steps.length - 1)) * 100}%"></div>`;
+            }
+
+            html += `
+              <div class="relative z-10 flex flex-col items-center gap-1">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs ${bgClass}">
+                  ${isActive ? '<i class="fa-solid fa-check text-[10px]"></i>' : ''}
+                </div>
+                <span class="text-[10px] ${textClass} whitespace-nowrap text-center max-w-[60px] leading-tight absolute top-8">${step.label}</span>
+              </div>
+            `;
+          });
+          html += `</div><div class="h-8"></div>`;
+          return html;
+        };
+
+        const html = data.map(r => {
+          if (isRepair) {
+            const img = r[5] && r[5] !== '-' ? `<button onclick="showImageModal('${r[5]}')" class="mt-3 text-[#265D5A] bg-[#B0EDE6]/30 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#B0EDE6] transition-colors"><i class="fa-solid fa-image"></i> ดูรูปปัญหา</button>` : '';
+            const tech = r[6] ? `<div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><i class="fa-solid fa-user-gear"></i></div><div><div class="text-xs font-bold text-slate-700">${sanitizeHtml(r[6])}</div><div class="text-[10px] text-slate-500 line-clamp-1">${sanitizeHtml(r[7] || '')}</div></div></div>` : '<div class="mt-3 pt-3 border-t border-slate-100"><span class="text-xs text-slate-400"><i class="fa-regular fa-clock"></i> รอเจ้าหน้าที่รับเรื่อง</span></div>';
+            
+            return `
+              <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div>
+                  <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs text-slate-400 font-medium">${sanitizeHtml(r[0])}</span>
+                    ${statusTagClass(r[4])}
+                  </div>
+                  <h3 class="font-bold text-slate-800 text-base mb-1">${sanitizeHtml(r[1])}</h3>
+                  <p class="text-sm text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">${sanitizeHtml(r[2])}</p>
+                  ${img}
+                </div>
+                <div>
+                  ${renderTimeline(r[4])}
+                  ${tech}
+                </div>
+              </div>
+            `;
+          } else {
+            const st = r[5] || 'รอยืนยันการยืม';
+            const tech = r[6] ? `<div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><i class="fa-solid fa-user-check"></i></div><div><div class="text-xs font-bold text-slate-700">${sanitizeHtml(r[6])}</div></div></div>` : '<div class="mt-3 pt-3 border-t border-slate-100"><span class="text-xs text-slate-400"><i class="fa-regular fa-clock"></i> รอเจ้าหน้าที่รับเรื่อง</span></div>';
+            
+            return `
+              <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div>
+                  <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs text-slate-400 font-medium">${sanitizeHtml(r[0])}</span>
+                    ${statusTagClass(st)}
+                  </div>
+                  <h3 class="font-bold text-slate-800 text-base mb-1">${sanitizeHtml(r[2])}</h3>
+                  <div class="flex flex-col gap-1 mt-2 mb-3">
+                    <span class="text-xs text-slate-500"><i class="fa-regular fa-calendar text-[#FF5F5F]/70 w-4"></i> ${sanitizeHtml(r[3])}</span>
+                    <span class="text-xs text-slate-500"><i class="fa-solid fa-location-dot text-[#FF5F5F]/70 w-4"></i> ${sanitizeHtml(r[4])}</span>
+                  </div>
+                </div>
+                <div>
+                  ${renderTimeline(st)}
+                  ${tech}
+                </div>
+              </div>
+            `;
+          }
+        }).join('');
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = `<div class="col-span-full p-8 text-center text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${e.message}</div>`;
+      }
     },
     // ฟังก์ชันเก่า (ยังเหลือไว้): ระบบส่งแจ้งซ่อมอาคารสถานที่
     async submitRepair() {
@@ -456,7 +605,10 @@ const ResourceHubCore = {
           'proj-total', 'proj-pending', 'proj-progress', 'proj-completed',
           'ratio-building-count', 'ratio-av-count', 'ratio-it-count', 'ratio-av-repair-count', 'ratio-project-count',
           'ratio-building-pct', 'ratio-av-pct', 'ratio-it-pct', 'ratio-av-repair-pct', 'ratio-project-pct',
-          'overall-progress-text'
+          'overall-progress-text',
+          'b-rating', 'b-rating-count', 'av-rating', 'av-rating-count',
+          'it-rating', 'it-rating-count', 'avrep-rating', 'avrep-rating-count',
+          'proj-rating', 'proj-rating-count'
         ];
         idsToLoad.forEach(id => {
           if ($(id)) $(id).innerHTML = loadingHtml;
@@ -557,30 +709,40 @@ const ResourceHubCore = {
         if ($('b-pending')) $('b-pending').textContent = bPending;
         if ($('b-progress')) $('b-progress').textContent = bProgress;
         if ($('b-completed')) $('b-completed').textContent = bCompleted;
+        if ($('b-rating')) $('b-rating').textContent = d?.building?.rating?.avg || '0.0';
+        if ($('b-rating-count')) $('b-rating-count').textContent = d?.building?.rating?.count || '0';
 
         // งานยืม-คืนโสตฯ
         if ($('av-total')) $('av-total').textContent = avTotal;
         if ($('av-pending')) $('av-pending').textContent = avPending;
         if ($('av-active')) $('av-active').textContent = avActive;
         if ($('av-completed')) $('av-completed').textContent = avCompleted;
+        if ($('av-rating')) $('av-rating').textContent = d?.av?.rating?.avg || '0.0';
+        if ($('av-rating-count')) $('av-rating-count').textContent = d?.av?.rating?.count || '0';
 
         // งานซ่อมไอที
         if ($('it-total')) $('it-total').textContent = itTotal;
         if ($('it-pending')) $('it-pending').textContent = itPending;
         if ($('it-progress')) $('it-progress').textContent = itProgress;
         if ($('it-completed')) $('it-completed').textContent = itCompleted;
+        if ($('it-rating')) $('it-rating').textContent = d?.it?.rating?.avg || '0.0';
+        if ($('it-rating-count')) $('it-rating-count').textContent = d?.it?.rating?.count || '0';
 
         // งานซ่อมโสตฯ
         if ($('avrep-total')) $('avrep-total').textContent = avRepTotal;
         if ($('avrep-pending')) $('avrep-pending').textContent = avRepPending;
         if ($('avrep-progress')) $('avrep-progress').textContent = avRepProgress;
         if ($('avrep-completed')) $('avrep-completed').textContent = avRepCompleted;
+        if ($('avrep-rating')) $('avrep-rating').textContent = d?.avRep?.rating?.avg || '0.0';
+        if ($('avrep-rating-count')) $('avrep-rating-count').textContent = d?.avRep?.rating?.count || '0';
 
         // เสนอโครงการ
         if ($('proj-total')) $('proj-total').textContent = projTotal;
         if ($('proj-pending')) $('proj-pending').textContent = projPending;
         if ($('proj-progress')) $('proj-progress').textContent = projProgress;
         if ($('proj-completed')) $('proj-completed').textContent = projCompleted;
+        if ($('proj-rating')) $('proj-rating').textContent = d?.proj?.rating?.avg || '0.0';
+        if ($('proj-rating-count')) $('proj-rating-count').textContent = d?.proj?.rating?.count || '0';
 
         // สถิติรายงานบั๊ก
         if ($('bug-count')) $('bug-count').textContent = d?.bugs || 0;

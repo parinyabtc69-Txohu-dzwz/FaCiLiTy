@@ -9,6 +9,11 @@
           <h1 class="text-3xl font-semibold text-slate-800 mb-2">ระบบบริการทรัพยากร</h1>
           <p class="text-sm text-slate-500 font-light">เลือกบริการหรือหน่วยงานที่คุณต้องการติดต่อ</p>
         </div>
+        <div class="text-center mb-6">
+          <button onclick="quickScanQr()" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md mx-auto w-full md:w-auto">
+            <i class="fa-solid fa-qrcode text-xl"></i> <span>สแกน QR ด่วน แจ้งซ่อมทันที</span>
+          </button>
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="homeMenuGrid">
           <button onclick="nav('page-repair-form')"

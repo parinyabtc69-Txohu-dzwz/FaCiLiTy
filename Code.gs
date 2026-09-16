@@ -913,13 +913,30 @@ function getDashboardDataInternal(monthStr) {
     });
   };
 
+  const calcRating = (filteredData) => {
+    let sum = 0;
+    let count = 0;
+    filteredData.forEach(r => {
+      const rating = parseInt(r[18]); // Col S is index 18
+      if (!isNaN(rating) && rating > 0) {
+        sum += rating;
+        count++;
+      }
+    });
+    return {
+      avg: count > 0 ? (sum / count).toFixed(1) : "0.0",
+      count: count
+    };
+  };
+
   const bData = bSheet ? bSheet.getDataRange().getDisplayValues().slice(1) : [];
   const filteredBData = filterByMonth(bData);
   const building = {
     total:      filteredBData.length,
     pending:    filteredBData.filter(r => r[4] === "รอดำเนินการ").length,
     inProgress: filteredBData.filter(r => r[4] === "กำลังดำเนินการ").length,
-    completed:  filteredBData.filter(r => r[4] === "เสร็จสิ้น").length
+    completed:  filteredBData.filter(r => r[4] === "เสร็จสิ้น").length,
+    rating:     calcRating(filteredBData)
   };
 
   const avData = avSheet ? avSheet.getDataRange().getDisplayValues().slice(1) : [];
@@ -928,7 +945,8 @@ function getDashboardDataInternal(monthStr) {
     total:     filteredAVData.length,
     pending:   filteredAVData.filter(r => r[5] === "รอยืนยันการยืม").length,
     active:    filteredAVData.filter(r => r[5] === "กำลังใช้งาน" || r[5] === "จัดเตรียมแล้ว").length,
-    completed: filteredAVData.filter(r => r[5] === "เสร็จสิ้น/คืนเรียบร้อย").length
+    completed: filteredAVData.filter(r => r[5] === "เสร็จสิ้น/คืนเรียบร้อย").length,
+    rating:    calcRating(filteredAVData)
   };
 
   const itData = itSheet ? itSheet.getDataRange().getDisplayValues().slice(1) : [];
@@ -937,7 +955,8 @@ function getDashboardDataInternal(monthStr) {
     total:     filteredITData.length,
     pending:   filteredITData.filter(r => r[4] === "รอดำเนินการ").length,
     inProgress: filteredITData.filter(r => r[4] === "กำลังดำเนินการ").length,
-    completed: filteredITData.filter(r => r[4] === "เสร็จสิ้น").length
+    completed: filteredITData.filter(r => r[4] === "เสร็จสิ้น").length,
+    rating:    calcRating(filteredITData)
   };
 
   const avRepData = avRepSheet ? avRepSheet.getDataRange().getDisplayValues().slice(1) : [];
@@ -946,7 +965,8 @@ function getDashboardDataInternal(monthStr) {
     total:     filteredAVRepData.length,
     pending:   filteredAVRepData.filter(r => r[4] === "รอดำเนินการ").length,
     inProgress: filteredAVRepData.filter(r => r[4] === "กำลังดำเนินการ").length,
-    completed: filteredAVRepData.filter(r => r[4] === "เสร็จสิ้น").length
+    completed: filteredAVRepData.filter(r => r[4] === "เสร็จสิ้น").length,
+    rating:    calcRating(filteredAVRepData)
   };
 
   const projData = projSheet ? projSheet.getDataRange().getDisplayValues().slice(1) : [];
@@ -955,7 +975,8 @@ function getDashboardDataInternal(monthStr) {
     total:     filteredProjData.length,
     pending:   filteredProjData.filter(r => r[4] === "รอพิจารณาอนุมัติ").length,
     inProgress: filteredProjData.filter(r => r[4] === "กำลังดำเนินการ").length,
-    completed: filteredProjData.filter(r => r[4] === "อนุมัติ" || r[4] === "เสร็จสิ้น").length
+    completed: filteredProjData.filter(r => r[4] === "อนุมัติ" || r[4] === "เสร็จสิ้น").length,
+    rating:    calcRating(filteredProjData)
   };
 
   let filteredBugs = 0;
@@ -1557,7 +1578,7 @@ function checkOverdueTasks() {
 
 
 // ============================================================
-// Phase B: �ѧ��ѹ�Ѻ�ҹ��ҧ (helper) + refactored checkOverdueTasks
+// Phase B: �ѧ��ѹ�Ѻ�ҹ��ҧ (helper) + refactored checkOverdueTasks
 // + setupDailyTrigger / removeDailyTrigger
 // ============================================================
 
@@ -1596,30 +1617,30 @@ function checkOverdueTasksV2() {
       }
     }
   }
-  var pendingAll = ['�ʹ��Թ���', '���ѧ���Թ���'];
-  var repCount   = _countOverdueTasks(db.getSheetByName(CONFIG.SHEET_NAME),           4, ['�ʹ��Թ���'], overdueDays);
-  var avCount    = _countOverdueTasks(db.getSheetByName(CONFIG.AV_SHEET_NAME),         5, ['���׹�ѹ������'], overdueDays);
+  var pendingAll = ['�ʹ��Թ���', '���ѧ���Թ���'];
+  var repCount   = _countOverdueTasks(db.getSheetByName(CONFIG.SHEET_NAME),           4, ['�ʹ��Թ���'], overdueDays);
+  var avCount    = _countOverdueTasks(db.getSheetByName(CONFIG.AV_SHEET_NAME),         5, ['���׹�ѹ������'], overdueDays);
   var itCount    = _countOverdueTasks(db.getSheetByName(CONFIG.IT_SHEET_NAME),         4, pendingAll, overdueDays);
   var avRepCount = _countOverdueTasks(db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME),  4, pendingAll, overdueDays);
   var projCount  = _countOverdueTasks(db.getSheetByName(CONFIG.PROJECT_SHEET_NAME),    4, pendingAll, overdueDays);
   var totalOverdue = repCount + avCount + itCount + avRepCount + projCount;
-  if (totalOverdue === 0) { Logger.log('checkOverdueTasksV2: ����էҹ��ҧ'); return; }
+  if (totalOverdue === 0) { Logger.log('checkOverdueTasksV2: ����էҹ��ҧ'); return; }
   var details = [];
-  if (repCount   > 0) details.push({ label: '?? �����Ҥ��', value: repCount   + ' �ҹ' });
-  if (avCount    > 0) details.push({ label: '?? ����ʵ�',   value: avCount    + ' �ҹ' });
-  if (itCount    > 0) details.push({ label: '?? �����ͷ�',  value: itCount    + ' �ҹ' });
-  if (avRepCount > 0) details.push({ label: '?? �����ʵ�', value: avRepCount + ' �ҹ' });
-  if (projCount  > 0) details.push({ label: '?? �ç���',   value: projCount  + ' �ҹ' });
+  if (repCount   > 0) details.push({ label: '?? �����Ҥ��', value: repCount   + ' �ҹ' });
+  if (avCount    > 0) details.push({ label: '?? ����ʵ�',   value: avCount    + ' �ҹ' });
+  if (itCount    > 0) details.push({ label: '?? �����ͷ�',  value: itCount    + ' �ҹ' });
+  if (avRepCount > 0) details.push({ label: '?? �����ʵ�', value: avRepCount + ' �ҹ' });
+  if (projCount  > 0) details.push({ label: '?? �ç���',   value: projCount  + ' �ҹ' });
   var overdueMsg = createFlexMessageTemplate(
-    '����͹: �էҹ��ҧ ' + totalOverdue + ' ��¡��',
-    '?? ����͹�ҹ��ҧ��Ш��ѹ',
-    '�էҹ��ҧ�Թ ' + overdueDays + ' �ѹ ��� ' + totalOverdue + ' ��¡��',
+    '����͹: �էҹ��ҧ ' + totalOverdue + ' ��¡��',
+    '?? ����͹�ҹ��ҧ��Ш��ѹ',
+    '�էҹ��ҧ�Թ ' + overdueDays + ' �ѹ ��� ' + totalOverdue + ' ��¡��',
     '#dc2626',
     details,
-    [{ label: '?? �������к���Ǩ�ͺ', url: 'https://liff.line.me/' + CONFIG.LIFF_ID + '?openExternalBrowser=1', color: '#dc2626' }]
+    [{ label: '?? �������к���Ǩ�ͺ', url: 'https://liff.line.me/' + CONFIG.LIFF_ID + '?openExternalBrowser=1', color: '#dc2626' }]
   );
-  notifyTask('building', overdueMsg, '?? �ҹ��ҧ ' + totalOverdue + ' ��¡�� (�Թ ' + overdueDays + ' �ѹ)', '#dc2626', null, null);
-  Logger.log('checkOverdueTasksV2: ������͹�ҹ��ҧ ' + totalOverdue + ' ��¡��');
+  notifyTask('building', overdueMsg, '?? �ҹ��ҧ ' + totalOverdue + ' ��¡�� (�Թ ' + overdueDays + ' �ѹ)', '#dc2626', null, null);
+  Logger.log('checkOverdueTasksV2: ������͹�ҹ��ҧ ' + totalOverdue + ' ��¡��');
 }
 
 function setupDailyTrigger() {
@@ -1627,8 +1648,8 @@ function setupDailyTrigger() {
     if (t.getHandlerFunction() === 'checkOverdueTasksV2') ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger('checkOverdueTasksV2').timeBased().everyDays(1).atHour(7).create();
-  Logger.log('setupDailyTrigger: Trigger ������º���� - ���ѹ�ء�ѹ 07:00 �.');
-  SpreadsheetApp.getUi().alert('? ��� Trigger �����!\n�к�������͹�ҹ��ҧ�ء�ѹ���� 07:00 �. ��ҹ LINE');
+  Logger.log('setupDailyTrigger: Trigger ������º���� - ���ѹ�ء�ѹ 07:00 �.');
+  SpreadsheetApp.getUi().alert('? ��� Trigger �����!\n�к�������͹�ҹ��ҧ�ء�ѹ���� 07:00 �. ��ҹ LINE');
 }
 
 function removeDailyTrigger() {
@@ -1636,5 +1657,5 @@ function removeDailyTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(t) {
     if (t.getHandlerFunction() === 'checkOverdueTasksV2') { ScriptApp.deleteTrigger(t); count++; }
   });
-  Logger.log('removeDailyTrigger: ź trigger ' + count + ' ��¡��');
+  Logger.log('removeDailyTrigger: ź trigger ' + count + ' ��¡��');
 }

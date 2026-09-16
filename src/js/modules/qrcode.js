@@ -38,6 +38,42 @@ function openQrScanner(targetId) {
     });
 }
 
+function quickScanQr() {
+  currentQrTargetId = 'QUICK_SCAN';
+  const modal = document.getElementById('qrScannerModal');
+  if (modal) modal.classList.remove('hidden');
+
+  if (!html5QrcodeScanner) {
+    html5QrcodeScanner = new Html5Qrcode("qr-reader");
+  }
+
+  const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+    closeQrScanner();
+    nav('page-repair-form');
+    setTimeout(() => {
+      const targetInput = document.getElementById('repair_location');
+      if (targetInput) {
+        targetInput.value = decodedText;
+        targetInput.dispatchEvent(new Event('input'));
+      }
+      Swal.fire({
+        icon: 'success',
+        title: 'สแกนห้องสำเร็จ',
+        text: 'สถานที่: ' + decodedText,
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }, 300);
+  };
+
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+  html5QrcodeScanner.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+    .catch((err) => {
+      console.error("Error starting QR scanner: ", err);
+      Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเข้าถึงกล้องได้ หรือไม่มีกล้อง', 'error');
+    });
+}
+
 function closeQrScanner() {
   const modal = document.getElementById('qrScannerModal');
   if (modal) modal.classList.add('hidden');
