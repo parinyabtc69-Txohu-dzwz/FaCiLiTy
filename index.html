@@ -1643,26 +1643,6 @@
                   class="fa-solid fa-right-from-bracket mr-1"></i> ออกจากระบบ</button>
             </div>
           </div>
-﻿      <div id="page-teacher-profile" class="page-section">
-        <div class="max-w-6xl mx-auto">
-          <div
-            class="bg-gradient-to-r from-[#265D5A] to-[#1a3f3d] text-white p-6 md:p-8 rounded-3xl shadow-sm mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <div class="text-xs uppercase tracking-widest text-[#B0EDE6] font-semibold mb-1">ระบบสมาชิกครูผู้สอน
-              </div>
-              <h1 class="text-3xl font-bold" id="profile-teacher-name">ยินดีต้อนรับ, คุณครู</h1>
-              <p class="text-[#B0EDE6] text-sm mt-1">ตรวจสอบประวัติการแจ้งซ่อม และติดตามสถานะความคืบหน้าแบบ Real-time
-              </p>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="nav('page-repair-form')"
-                class="bg-white text-[#265D5A] px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#B0EDE6] transition-colors"><i
-                  class="fa-solid fa-wrench mr-1"></i> แจ้งซ่อมใหม่</button>
-              <button onclick="handleGlobalLogout()"
-                class="bg-[#1a3f3d] text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#0c2422] transition-colors"><i
-                  class="fa-solid fa-right-from-bracket mr-1"></i> ออกจากระบบ</button>
-            </div>
-          </div>
 
           <div class="bg-white rounded-3xl shadow-sm p-6 border border-slate-200">
             <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i
@@ -1794,6 +1774,56 @@ console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; fo
 (function _initSysVer() {
   window._SYS_VER = "RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5";
 })();
+
+/**
+ * ==============================================================================
+ * 📌 คำอธิบายโครงสร้างไฟล์ main.js (FaCiLiTy System)
+ * ==============================================================================
+ * ไฟล์นี้เป็นส่วนของ Logic ทั้งหมดที่ใช้ขับเคลื่อนเว็บไซต์ (Frontend) โดยแบ่งเป็น 18 ส่วนหลักๆ ดังนี้:
+ *
+ * 1. Global Config
+ *    - ทำหน้าที่: เก็บตัวแปรสำคัญเช่น scriptURL สำหรับติดต่อกับฐานข้อมูล Google Apps Script
+ *    - ตำแหน่งในเว็บ: ใช้ทุกหน้าเพื่อเชื่อมต่อฐานข้อมูล
+ * 2. Security & Session
+ *    - ทำหน้าที่: จัดการตัวแปรที่เก็บสถานะการล็อกอิน เช่น ชื่อครู สิทธิ์แอดมิน และอีเมล
+ *    - ตำแหน่งในเว็บ: ระบบตรวจสอบสิทธิ์เมื่อเปลี่ยนหน้า (Nav) และใช้เช็คสิทธิ์ซ่อน/แสดงเมนูแอดมิน
+ * 3. Helpers
+ *    - ทำหน้าที่: ฟังก์ชันช่วยเหลือทั่วไป เช่น setBusy (แสดงปุ่มโหลด), alertBox (แสดงแจ้งเตือน SweetAlert2)
+ *    - ตำแหน่งในเว็บ: ใช้ทุกหน้าเวลาบันทึกฟอร์มหรือเกิด Error
+ * 4. UI Formatting Tools
+ *    - ทำหน้าที่: ฟังก์ชันแปลงสถานะเป็นป้ายสี (Badge) เช่น "รอรับเรื่อง" (สีเหลือง), "เสร็จสิ้น" (สีเขียว)
+ *    - ตำแหน่งในเว็บ: หน้าตารางแอดมิน (Dashboard, จัดการงานซ่อม) และหน้าประวัติของผู้แจ้ง (Timeline)
+ * 5. Core Framework
+ *    - ทำหน้าที่: ฟังก์ชัน renderTableData สำหรับลูปสร้าง <tr> ในตารางต่างๆ ลดการเขียนโค้ดซ้ำ
+ *    - ตำแหน่งในเว็บ: ใช้สร้างตารางข้อมูลในหน้าแอดมินทุกหน้า
+ * 6. ResourceHubCore (API)
+ *    - ทำหน้าที่: ศูนย์กลางในการดึงข้อมูล (Fetch) ระหว่าง Frontend กับ Google Apps Script (Backend)
+ *    - ตำแหน่งในเว็บ: ใช้โหลดข้อมูลต่างๆ เมื่อเข้าสู่แต่ละหน้า
+ * 7. UI Controllers (ResourceHubCore.ui)
+ *    - ทำหน้าที่: โลจิกสำหรับการส่งฟอร์ม (แจ้งซ่อม/ยืมโสตฯ) และแสดงผลหน้าจอ
+ *    - ตำแหน่งในเว็บ: หน้าแจ้งซ่อม (page-repair-form), หน้าประวัติ (page-teacher-profile)
+ * 8. Authentication (LINE LIFF & Google OAuth)
+ *    - ทำหน้าที่: โลจิกล็อกอินด้วย LINE และ Google 
+ *    - ตำแหน่งในเว็บ: หน้าล็อกอิน (page-auth) และ Modal เข้าสู่ระบบ
+ * 9. Navigation & Routing (ระบบเปลี่ยนหน้า)
+ *    - ทำหน้าที่: ฟังก์ชัน nav() ใช้เปลี่ยนหน้าเว็บโดยซ่อน/แสดง Div ตาม ID แทนการโหลดหน้าใหม่
+ *    - ตำแหน่งในเว็บ: เมนูแถบด้านข้าง (Sidebar) และเมนูด่วนหน้าแรก
+ * 10. Master Data & Cache
+ *     - ทำหน้าที่: โหลดข้อมูลพื้นฐาน เช่น สถานที่ซ่อม, ชื่อช่าง, หมวดหมู่อุปกรณ์ แล้วเก็บใน Cache
+ *     - ตำแหน่งในเว็บ: หน้าจัดการข้อมูลหลัก (page-master-data)
+ * 11-12. Wrappers & Generic Form
+ *     - ทำหน้าที่: ตัวกลางครอบฟังก์ชันส่งฟอร์มอื่นๆ และระบบส่งฟอร์มแบบ Generic
+ * 13-14. Advanced Tasks & Dashboard Pro
+ *     - ทำหน้าที่: จัดการงานซ่อมโครงการ/งานไอทีแบบละเอียด และโหลดกราฟสรุปผล (Chart.js)
+ *     - ตำแหน่งในเว็บ: หน้าแดชบอร์ด (page-dashboard)
+ * 15-18. Admin UI & User Management
+ *     - ทำหน้าที่: ฟังก์ชันสำหรับแอดมินใช้จัดการตารางข้อมูลผู้ใช้งาน การซ่อมบำรุง และเอกสาร
+ *     - ตำแหน่งในเว็บ: เมนูสำหรับแอดมิน เช่น หน้าตารางซ่อมอาคาร, จัดการผู้ใช้
+ * 19. Satisfaction Survey & QR Code
+ *     - ทำหน้าที่: แบบประเมินดาว 1-5 ดาว และระบบสแกน/สร้าง QR Code ด่วน
+ *     - ตำแหน่งในเว็บ: Modal ประเมินความพึงพอใจ, และปุ่มสแกน QR บนหน้าแรก
+ * ==============================================================================
+ */
 
 // ==========================================
 // 1. ตั้งค่าพื้นฐานระบบ (Global Config)
