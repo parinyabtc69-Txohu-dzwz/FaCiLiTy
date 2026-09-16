@@ -1578,7 +1578,7 @@ function checkOverdueTasks() {
 
 
 // ============================================================
-// Phase B: �ѧ��ѹ�Ѻ�ҹ��ҧ (helper) + refactored checkOverdueTasks
+// Phase B: ฟังก์ชันตัวช่วยนับงานค้าง (helper) + refactored checkOverdueTasks
 // + setupDailyTrigger / removeDailyTrigger
 // ============================================================
 
@@ -1617,30 +1617,30 @@ function checkOverdueTasksV2() {
       }
     }
   }
-  var pendingAll = ['�ʹ��Թ���', '���ѧ���Թ���'];
-  var repCount   = _countOverdueTasks(db.getSheetByName(CONFIG.SHEET_NAME),           4, ['�ʹ��Թ���'], overdueDays);
-  var avCount    = _countOverdueTasks(db.getSheetByName(CONFIG.AV_SHEET_NAME),         5, ['���׹�ѹ������'], overdueDays);
+  var pendingAll = ['รอดำเนินการ', 'กำลังดำเนินการ', 'กำลังแก้ไข'];
+  var repCount   = _countOverdueTasks(db.getSheetByName(CONFIG.SHEET_NAME),           4, ['รอดำเนินการ'], overdueDays);
+  var avCount    = _countOverdueTasks(db.getSheetByName(CONFIG.AV_SHEET_NAME),         5, ['รอยืนยันการยืม'], overdueDays);
   var itCount    = _countOverdueTasks(db.getSheetByName(CONFIG.IT_SHEET_NAME),         4, pendingAll, overdueDays);
   var avRepCount = _countOverdueTasks(db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME),  4, pendingAll, overdueDays);
   var projCount  = _countOverdueTasks(db.getSheetByName(CONFIG.PROJECT_SHEET_NAME),    4, pendingAll, overdueDays);
   var totalOverdue = repCount + avCount + itCount + avRepCount + projCount;
-  if (totalOverdue === 0) { Logger.log('checkOverdueTasksV2: ����էҹ��ҧ'); return; }
+  if (totalOverdue === 0) { Logger.log('checkOverdueTasksV2: ไม่มีงานค้าง'); return; }
   var details = [];
-  if (repCount   > 0) details.push({ label: '?? �����Ҥ��', value: repCount   + ' �ҹ' });
-  if (avCount    > 0) details.push({ label: '?? ����ʵ�',   value: avCount    + ' �ҹ' });
-  if (itCount    > 0) details.push({ label: '?? �����ͷ�',  value: itCount    + ' �ҹ' });
-  if (avRepCount > 0) details.push({ label: '?? �����ʵ�', value: avRepCount + ' �ҹ' });
-  if (projCount  > 0) details.push({ label: '?? �ç���',   value: projCount  + ' �ҹ' });
+  if (repCount   > 0) details.push({ label: '🏢 ซ่อมอาคาร', value: repCount   + ' งาน' });
+  if (avCount    > 0) details.push({ label: '🎤 ยืมโสตฯ',   value: avCount    + ' งาน' });
+  if (itCount    > 0) details.push({ label: '💻 ซ่อมไอที',  value: itCount    + ' งาน' });
+  if (avRepCount > 0) details.push({ label: '🔧 ซ่อมโสตฯ', value: avRepCount + ' งาน' });
+  if (projCount  > 0) details.push({ label: '🏗️ โครงการ',   value: projCount  + ' งาน' });
   var overdueMsg = createFlexMessageTemplate(
-    '����͹: �էҹ��ҧ ' + totalOverdue + ' ��¡��',
-    '?? ����͹�ҹ��ҧ��Ш��ѹ',
-    '�էҹ��ҧ�Թ ' + overdueDays + ' �ѹ ��� ' + totalOverdue + ' ��¡��',
+    'แจ้งเตือน: มีงานค้าง ' + totalOverdue + ' รายการ',
+    '🔔 แจ้งเตือนงานค้างประจำวัน',
+    'มีงานค้างเกิน ' + overdueDays + ' วัน รวม ' + totalOverdue + ' รายการ',
     '#dc2626',
     details,
-    [{ label: '?? �������к���Ǩ�ͺ', url: 'https://liff.line.me/' + CONFIG.LIFF_ID + '?openExternalBrowser=1', color: '#dc2626' }]
+    [{ label: '👉 เข้าสู่ระบบเพื่อตรวจสอบ', url: 'https://liff.line.me/' + CONFIG.LIFF_ID + '?openExternalBrowser=1', color: '#dc2626' }]
   );
-  notifyTask('building', overdueMsg, '?? �ҹ��ҧ ' + totalOverdue + ' ��¡�� (�Թ ' + overdueDays + ' �ѹ)', '#dc2626', null, null);
-  Logger.log('checkOverdueTasksV2: ������͹�ҹ��ҧ ' + totalOverdue + ' ��¡��');
+  notifyTask('building', overdueMsg, '🔔 งานค้าง ' + totalOverdue + ' รายการ (เกิน ' + overdueDays + ' วัน)', '#dc2626', null, null);
+  Logger.log('checkOverdueTasksV2: แจ้งเตือนงานค้าง ' + totalOverdue + ' รายการ');
 }
 
 function setupDailyTrigger() {
@@ -1648,8 +1648,8 @@ function setupDailyTrigger() {
     if (t.getHandlerFunction() === 'checkOverdueTasksV2') ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger('checkOverdueTasksV2').timeBased().everyDays(1).atHour(7).create();
-  Logger.log('setupDailyTrigger: Trigger ������º���� - ���ѹ�ء�ѹ 07:00 �.');
-  SpreadsheetApp.getUi().alert('? ��� Trigger �����!\n�к�������͹�ҹ��ҧ�ء�ѹ���� 07:00 �. ��ҹ LINE');
+  Logger.log('setupDailyTrigger: Trigger ตั้งเวลา - รันทุกวัน 07:00 น.');
+  SpreadsheetApp.getUi().alert('✅ ตั้งค่า Trigger สำเร็จ!\nระบบจะแจ้งเตือนงานค้างทุกวันเวลา 07:00 น. ผ่าน LINE');
 }
 
 function removeDailyTrigger() {
@@ -1657,5 +1657,5 @@ function removeDailyTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(t) {
     if (t.getHandlerFunction() === 'checkOverdueTasksV2') { ScriptApp.deleteTrigger(t); count++; }
   });
-  Logger.log('removeDailyTrigger: ź trigger ' + count + ' ��¡��');
+  Logger.log('removeDailyTrigger: ลบ trigger ' + count + ' รายการ');
 }
