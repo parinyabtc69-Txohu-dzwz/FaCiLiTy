@@ -6,6 +6,9 @@ console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; fo
   window._SYS_VER = "RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5";
 })();
 
+// ==========================================
+// 1. ตั้งค่าพื้นฐานระบบ (Global Config)
+// ==========================================
 // 🔴 เปลี่ยน URL ตรงนี้เป็น URL ของการ Deploy ล่าสุดจาก Google Apps Script
 const scriptURL = 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec';
 
@@ -13,12 +16,15 @@ const scriptURL = 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xK
 // 🔴 โฟลเดอร์ที่เก็บรูป 
 const REPAIR_DRIVE_FOLDER_ID = '1tkOHFwH4MC-eA_eNLThTcLVF3CRHQUXT';
 
-// 🔒 SESSION CONFIG
+// ==========================================
+// 2. ระบบรักษาความปลอดภัยและการเข้าสู่ระบบ (Security & Session)
+// ==========================================
+// 🔒 SESSION CONFIG: ตั้งค่าเวลาและการล็อกบัญชีหากเข้าสู่ระบบผิดพลาด
 const SESSION_EXPIRY_MS = 8 * 60 * 60 * 1000; // ออกจากระบบหลังจาก 8 ชั่วโมง
 const MAX_LOGIN_ATTEMPTS = 5;                  // ล็อกหลังผิด 5 ครั้ง
 const LOCKOUT_MS = 15 * 60 * 1000;             // ล็อก 15 นาที
 
-// 🔒 ตรวจสอบ Session Expiry — ถ้าหมดอายุให้ Logout อัตโนมัติ
+// 🔒 ตรวจสอบ Session Expiry: ฟังก์ชันทำงานอัตโนมัติเพื่อล้างข้อมูล Session หากผู้ใช้ออนไลน์นานเกินกำหนด
 (function checkSessionExpiry() {
   const loginTime = sessionStorage.getItem('session_login_time');
   if (loginTime && (Date.now() - parseInt(loginTime)) > SESSION_EXPIRY_MS) {
@@ -27,7 +33,7 @@ const LOCKOUT_MS = 15 * 60 * 1000;             // ล็อก 15 นาที
   }
 })();
 
-// 🔒 XSS Sanitizer — กรองโค้ดอันตรายออกจากข้อมูลก่อนแสดงผล
+// 🔒 XSS Sanitizer: กรองโค้ดอันตราย (HTML/JS) ออกจากข้อมูลก่อนนำไปแสดงผลบนหน้าเว็บ เพื่อป้องกันการถูกแฮก
 function sanitizeHtml(str) {
   if (typeof str !== 'string') return str;
   return str
@@ -40,7 +46,7 @@ function sanitizeHtml(str) {
     .replace(/on\w+\s*=/gi, '');
 }
 
-// 🔒 Login Attempt Tracker
+// 🔒 Login Attempt Tracker: ระบบจัดการการเข้าสู่ระบบผิดพลาด (ติดตามจำนวนครั้งที่กรอกรหัสผิด)
 const loginAttempts = {
   get(key) {
     try { return JSON.parse(sessionStorage.getItem('login_attempts_' + key) || '{"count":0,"lockUntil":0}'); }
@@ -62,7 +68,7 @@ const loginAttempts = {
   reset(key) { sessionStorage.removeItem('login_attempts_' + key); }
 };
 
-// 🔒 แสดง Countdown ตอนถูกล็อก
+// 🔒 แสดงหน้าต่างนับเวลาถอยหลัง (Countdown) ตอนบัญชีถูกล็อก
 function showLockoutAlert(lockUntil) {
   const remaining = () => Math.max(0, Math.ceil((lockUntil - Date.now()) / 1000));
   let seconds = remaining();
@@ -84,22 +90,33 @@ function showLockoutAlert(lockUntil) {
 }
 
 
+// ==========================================
+// 3. ตัวแปรสถานะและฟังก์ชันช่วยเหลือ (Helpers)
+// ==========================================
+// ตัวแปรเก็บข้อมูลผู้ใช้งานที่เข้าสู่ระบบปัจจุบัน
 let currentTeacher = sessionStorage.getItem('logged_teacher') || null;
 let currentRole = sessionStorage.getItem('logged_role') || null;
 let currentEmail = sessionStorage.getItem('logged_email') || '';
 let isAdminLoggedIn = sessionStorage.getItem('logged_admin') === 'true' || false;
 let isRegisterMode = false;
 
+// ฟังก์ชันย่อเพื่อเรียก DOM Elements แทนการใช้ document.getElementById หรือ querySelectorAll
 const $ = id => document.getElementById(id);
 const $$ = s => document.querySelectorAll(s);
 
+// ฟังก์ชันสำหรับเรียกแจ้งเตือน (Alert) โดยใช้ไลบรารี SweetAlert2
 const alertBox = (icon, title, text = '', opts = {}) => Swal.fire({ icon, title, text, ...opts });
+
+// ฟังก์ชันสำหรับจัดการปุ่ม (ตั้งค่าตอนระบบกำลังประมวลผลให้ปุ่มคลิกไม่ได้ และเปลี่ยนไอคอนโหลด)
 const setBusy = (btn, busy, label) => {
   btn.disabled = busy;
   btn.innerHTML = busy ? '<i class="fa-solid fa-spinner fa-spin"></i> กำลังดำเนินการ...' : label;
 };
 
-// ฟังก์ชันช่วยจัดรูปแบบสถานะ พร้อมแท็กสี (Gmail Style)
+// ==========================================
+// 4. เครื่องมือการแสดงผล UI (UI Formatting Tools)
+// ==========================================
+// ฟังก์ชันช่วยจัดรูปแบบแท็กสถานะ (Status Badge) พร้อมใส่สีและไอคอนตามสถานะงาน (เช่น สีเขียว=เสร็จ, สีเหลือง=กำลังทำ, สีแดง=รอดำเนินการ)
 const statusTagClass = s => {
   const status = (s || '').trim();
   if (status === 'เสร็จสิ้น' || status === 'เสร็จสิ้น/คืนเรียบร้อย' || status === 'เรียบร้อยแล้ว') {
@@ -111,6 +128,10 @@ const statusTagClass = s => {
   }
 };
 
+// ==========================================
+// 5. ตัวจัดการโครงสร้างแอปพลิเคชัน (Core Framework)
+// ==========================================
+// ฟังก์ชันช่วยสร้างตารางอัตโนมัติ โดยรับข้อมูลและเรนเดอร์ลงใน <tbody> ของตาราง
 async function renderTableData(fetchPromiseOrData, tbodyId, rowRendererFn, colSpan, emptyMsg) {
   const tbody = $(tbodyId);
   if (!tbody) return;
@@ -127,7 +148,7 @@ async function renderTableData(fetchPromiseOrData, tbodyId, rowRendererFn, colSp
   }
 }
 
-// 🟢 แก้ไขตรงนี้: เพื่อให้แจ้งเตือน Error จากหลังบ้าน (e.message) ขึ้นหน้าจอตรงๆ
+// ฟังก์ชันรวมศูนย์สำหรับ Submit ฟอร์ม: มีหน้าจอโหลด, จัดการข้อความแจ้งเตือนสำเร็จ, และดัก Error ส่งมาจากหลังบ้าน
 async function submitAction(fetchPromiseFn, successMsg, onSuccessCallback) {
   Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   try {
@@ -140,6 +161,7 @@ async function submitAction(fetchPromiseFn, successMsg, onSuccessCallback) {
   }
 }
 
+// ฟังก์ชันอ่านไฟล์รูปภาพหรือเอกสารให้อยู่ในรูปแบบ Base64 ก่อนส่งไปให้ฝั่งหลังบ้าน
 const readFile = file => new Promise((resolve, reject) => {
   if (!file) return resolve(null);
   const r = new FileReader();
@@ -148,8 +170,13 @@ const readFile = file => new Promise((resolve, reject) => {
   r.readAsDataURL(file);
 });
 
+// ==========================================
+// 6. ศูนย์กลางควบคุม API (ResourceHubCore)
+// ==========================================
+// ออบเจ็กต์สำหรับรวมการเรียก API ระหว่างหน้าบ้านกับหลังบ้าน (Google Apps Script) เข้าด้วยกัน
 const ResourceHubCore = {
   api: {
+    // โหลดข้อมูลด้วยวิธี GET (อ่านข้อมูล)
     async get(action, params = {}) {
       // เพิ่ม t: Date.now() เพื่อแก้ปัญหา Cache ของเบราว์เซอร์
       const q = new URLSearchParams({ action, t: Date.now(), ...params });
@@ -157,7 +184,7 @@ const ResourceHubCore = {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return await r.json();
     },
-    // 🟢 แก้ไขตรงนี้: เพื่อโยน Error กรณีที่มี Message แนบมาจาก Google Sheet
+    // ส่งข้อมูลด้วยวิธี POST (บันทึกข้อมูล)
     async post(payload) {
       const r = await fetch(scriptURL, {
         method: 'POST',
@@ -175,29 +202,38 @@ const ResourceHubCore = {
       }
     }
   },
+  // หมวดข้อมูลแจ้งซ่อมอาคารสถานที่
   work: {
     repairs: () => ResourceHubCore.api.get('get_tasks'),
   },
+  // หมวดจัดการระบบยืม-คืนอุปกรณ์โสตฯ (ดึงรายการ, ยื่นเรื่อง, อัปเดตสถานะ)
   av: {
     list: () => ResourceHubCore.api.get('get_av_requests'),
     submit: payload => ResourceHubCore.api.post({ action: 'submit_av', ...payload }),
     updateStatus: payload => ResourceHubCore.api.post({ action: 'update_av_status', ...payload })
   },
+  // หมวดดึงข้อมูลสรุปสถิติสำหรับนำไปทำ Dashboard
   dashboard: {
     legacy: (params = {}) => ResourceHubCore.api.get('get_dashboard', params),
     pro: (params = {}) => ResourceHubCore.api.get('get_unified_dashboard', params),
   },
+  // หมวดจัดการข้อมูลหลัก (Master Data) เช่น รายชื่อครู, แผนก, สถานที่, อาการเสีย
   master: {
     list: () => ResourceHubCore.api.get('get_master_data'),
     add: payload => ResourceHubCore.api.post({ action: 'master_add', ...payload }),
     remove: payload => ResourceHubCore.api.post({ action: 'master_delete', ...payload })
   },
+  // หมวดจัดการเอกสารและแบบฟอร์มให้ดาวน์โหลด
   docs: {
     list: () => ResourceHubCore.api.get('get_documents'),
     add: payload => ResourceHubCore.api.post({ action: 'add_document', ...payload }),
     remove: payload => ResourceHubCore.api.post({ action: 'delete_document', ...payload })
   },
+  // ==========================================
+  // 7. ส่วนควบคุมการทำงานหน้าจอและปุ่มกด (UI Controllers)
+  // ==========================================
   ui: {
+    // ดึงประวัติการแจ้งซ่อม/ยืมโสตฯ เฉพาะของครูคนที่ล็อกอินอยู่ ไปแสดงในหน้าโปรไฟล์
     async loadTeacherHistory(type) {
       if (!currentTeacher) return;
       const isRepair = type === 'repair';
@@ -223,6 +259,7 @@ const ResourceHubCore = {
         }
       }, 6, emptyMsg);
     },
+    // ฟังก์ชันเก่า (ยังเหลือไว้): ระบบส่งแจ้งซ่อมอาคารสถานที่
     async submitRepair() {
       const subject = $('subject').value.trim();
       let detail = $('detail').value.trim();
@@ -255,6 +292,7 @@ const ResourceHubCore = {
         alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
       }
     },
+    // ฟังก์ชันเก่า (ยังเหลือไว้): ระบบขอยืมอุปกรณ์โสตฯ
     async submitAV() {
       const borrower = $('borrower').value.trim();
       const useDate = $('useDate').value;
@@ -300,6 +338,7 @@ const ResourceHubCore = {
         alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
       }
     },
+    // โหลดตารางงานทั้งหมดมาให้แอดมินดู (แจ้งซ่อม/ยืมโสตฯ)
     async loadAdminTable(type) {
       const isRepair = type === 'repair';
       const tbodyId = isRepair ? 'taskBody' : 'avDataView';
@@ -325,6 +364,7 @@ const ResourceHubCore = {
         $(tbodyId).innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-rose-500">ไม่สามารถโหลดข้อมูลได้ในขณะนี้</td></tr>`;
       }
     },
+    // แอดมินกดเปลี่ยนสถานะงานซ่อม หรือ ปิดงาน (อัปโหลดรูปหลักฐาน)
     async updateRepair(index) {
       const r = await Swal.fire({ title: 'อัปเดตสถานะงาน', showDenyButton: true, showCancelButton: true, confirmButtonText: 'กำลังดำเนินการ', denyButtonText: 'เสร็จสิ้น (แนบรูป)', confirmButtonColor: '#3b82f6', denyButtonColor: '#10b981' });
       if (r.isConfirmed) {
@@ -403,6 +443,7 @@ const ResourceHubCore = {
         ResourceHubCore.ui.loadAdminTable('av');
       } catch (e) { alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตข้อมูลได้'); }
     },
+    // ดึงและแสดงข้อมูลสรุปสำหรับหน้า Dashboard (คำนวณตัวเลข, เปลี่ยนกราฟ, แถบความคืบหน้า)
     async loadDashboard() {
       try {
         const loadingHtml = '<i class="fa-solid fa-circle-notch fa-spin text-slate-300/50"></i>';
@@ -619,7 +660,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// === auth.js ===
+// ==========================================
+// 8. ระบบยืนยันตัวตนและการเข้าสู่ระบบ (Authentication)
+// ==========================================
 const LIFF_ID = "2011401549-8xNgb1CC"; // <-- LIFF ID LINE Deverloper 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -749,7 +792,10 @@ function handleGlobalLogout() {
   nav('page-auth');
 }
 
-// === nav.js ===
+// ==========================================
+// 9. ระบบนำทางและการสลับหน้าจอ (Navigation & Routing)
+// ==========================================
+// ฟังก์ชันสำหรับเปลี่ยนหน้า (โดยการซ่อน-แสดง div ตาม ID)
 function nav(pageId) {
   if (!currentTeacher && !isAdminLoggedIn && pageId !== 'page-auth') {
     alertBox('warning', 'ต้องเข้าสู่ระบบก่อน', 'กรุณาเข้าสู่ระบบก่อนใช้งานเมนูนี้ครับ');
@@ -814,6 +860,7 @@ function nav(pageId) {
   }
 }
 
+// ฟังก์ชันอัปเดตหน้าจอ (ซ่อน/แสดงเมนู) ตามบทบาท (Role) ของผู้ใช้งานที่ล็อกอินเข้ามา
 function updateSessionUI() {
   const dashNav = $('gnav-dash');
   const techNav = $('gnav-tech-menu');
@@ -1009,10 +1056,9 @@ function updateSessionUI() {
   updateNotificationBadges();
 }
 
+// ฟังก์ชันระบบค้นหาข้อมูล (ค้นหางานซ่อม/ยืมโสตฯ หรือนำทางไปยังหน้าอื่นๆ จากคำค้น)
 function handleGlobalSearch(keyword) {
   const term = keyword.toLowerCase().trim();
-
-  // Check active page
   const techPage = $('page-technician');
   const avPage = $('page-av-manage');
 
@@ -1120,7 +1166,9 @@ async function openBugReportModal(page) {
     .catch(() => alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถส่งรายงานได้'));
 }
 
-// === master.js ===
+// ==========================================
+// 10. ระบบจัดการข้อมูลหลัก (Master Data & Cache)
+// ==========================================
 const MERGED_CACHE_KEY = 'resource_hub_merged_cache_v1';
 let mergedCache = { locations: [], projects: [], mechanics: [], jobs: [] };
 
@@ -1399,14 +1447,18 @@ async function updateNotificationBadges() {
 
 mergedCacheLoad();
 
-// === repair.js & av.js wrappers ===
+// ==========================================
+// 11. ฟังก์ชันทางลัดสำหรับเรียกใช้งานจากหน้า HTML (Wrappers)
+// ==========================================
 async function submitRepair() { return ResourceHubCore.ui.submitRepair(); }
 async function submitAVForm() { return ResourceHubCore.ui.submitAV(); }
 async function openAVModal(idx, oldStatus, oldTech) { return ResourceHubCore.ui.updateAV(idx, oldStatus, oldTech); }
 async function updateTask(idx) { return ResourceHubCore.ui.updateRepair(idx); }
 function loadBuildingTasks() { return ResourceHubCore.ui.loadAdminTable('repair'); }
 
-// === New Form Global Wrappers (Phase 7) ===
+// ==========================================
+// 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
+// ==========================================
 async function submitGenericForm(config) {
   const subject = $(config.prefix + 'Subject')?.value.trim();
   const detail = $(config.prefix + 'Detail')?.value.trim();
@@ -1480,7 +1532,9 @@ async function submitProject() {
   });
 }
 
-// === Advanced Manage Functions ===
+// ==========================================
+// 13. จัดการรายการขั้นสูง (Advanced Tasks Management)
+// ==========================================
 async function loadAdvancedTasks() {
   try {
     const data = await ResourceHubCore.api.get('get_adv_tasks');
@@ -1642,12 +1696,15 @@ function switchAdvTab(tabId, btn) {
   }
 }
 
-// === dashboard.js ===async function loadDashboard() { return ResourceHubCore.ui.loadDashboard(); }
+// ==========================================
+// 14. แดชบอร์ดขั้นสูง (Dashboard Pro)
+// ==========================================
+async function loadDashboard() { return ResourceHubCore.ui.loadDashboard(); }
 async function loadDashboardPro() { return ResourceHubCore.ui.loadDashboard(); }
 
-// ========================
-// ===  DOCUMENT MODULE  ===
-// ========================
+// ==========================================
+// 15. ระบบคลังเอกสาร (Document Module)
+// ==========================================
 
 const DOC_DRIVE_FOLDER_ID = REPAIR_DRIVE_FOLDER_ID; // reuse same folder or set a new one
 let _docAllRows = []; // cache for client-side filtering
@@ -1865,7 +1922,9 @@ async function deleteDocument(docId, docName) {
   );
 }
 
-// === Repair Admin UI Enhancements ===
+// ==========================================
+// 16. ส่วนเสริมหน้าจอแอดมินแจ้งซ่อม (Repair Admin UI Enhancements)
+// ==========================================
 window.renderRepairTable = function () {
   const rawData = window.allRepairTasks || [];
   const listWithIndex = rawData.map((r, idx) => ({ r, originalIndex: idx }));
@@ -2111,7 +2170,9 @@ window.viewAVDetails = function (index) {
   });
 };
 
-// === AV Admin UI Enhancements ===
+// ==========================================
+// 17. ส่วนเสริมหน้าจอแอดมินโสตฯ (AV Admin UI Enhancements)
+// ==========================================
 window.renderAVTable = function () {
   const rawData = window.allAVTasks || [];
   const listWithIndex = rawData.map((r, idx) => ({ r, originalIndex: idx }));
@@ -2239,7 +2300,9 @@ window.filterAVTab = function (tabId, btn) {
   window.renderAVTable();
 };
 // ============================================================
-// USER MANAGEMENT (ADMIN)
+// ==========================================
+// 18. ระบบจัดการผู้ใช้งาน (User Management - Admin Only)
+// ==========================================
 // ============================================================
 let allUsersList = [];
 

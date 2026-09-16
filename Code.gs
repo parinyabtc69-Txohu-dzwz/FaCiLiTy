@@ -162,21 +162,40 @@ function doPost(e) {
       // ── ประเมินความพึงพอใจ ────────────────────────
       case 'submit_survey':
         let surveySheetName = '';
+        let surveyTypeLabel = '';
         if (data.type === 'repair') {
           surveySheetName = CONFIG.SHEET_NAME;
+          surveyTypeLabel = 'งานซ่อมอาคาร';
         } else if (data.type === 'it_repair') {
           surveySheetName = CONFIG.IT_SHEET_NAME;
+          surveyTypeLabel = 'งานซ่อมไอที';
         } else if (data.type === 'av') {
           surveySheetName = CONFIG.AV_SHEET_NAME;
+          surveyTypeLabel = 'งานยืมโสตฯ';
         } else if (data.type === 'av_repair') {
           surveySheetName = CONFIG.AV_REPAIR_SHEET_NAME;
+          surveyTypeLabel = 'งานซ่อมโสตฯ';
         }
         
         if (surveySheetName) {
           const surveySheet = db.getSheetByName(surveySheetName);
           if (surveySheet) {
-            surveySheet.getRange(data.row, 19).setValue(data.rating); // Col S
-            surveySheet.getRange(data.row, 20).setValue(data.comment || ""); // Col T
+            surveySheet.getRange(data.row, 19).setValue(data.rating); // Col S = Rating
+            surveySheet.getRange(data.row, 20).setValue(data.comment || ""); // Col T = Comment
+            
+            // แจ้งเตือน Admin ว่ามีการประเมิน
+            const starText = '⭐'.repeat(Number(data.rating) || 0);
+            const surveyNotifMsg = createFlexMessageTemplate(
+              `ผลประเมิน: ${surveyTypeLabel}`,
+              `${starText} ผลประเมินความพึงพอใจ`,
+              `${surveyTypeLabel} — ได้รับ ${data.rating}/5 ดาว`,
+              "#f59e0b",
+              [
+                { label: "คะแนน", value: `${data.rating}/5 ดาว ${starText}` },
+                { label: "ความคิดเห็น", value: data.comment || "(ไม่มีความคิดเห็น)" }
+              ]
+            );
+            notifyTask('admin', surveyNotifMsg, `⭐ มีผลประเมินใหม่: ${data.rating}/5 ดาว`, '#f59e0b', {reporter: 'ผู้ใช้งาน', subject: surveyTypeLabel}, null);
           }
         }
         return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'บันทึกการประเมินสำเร็จ' }))
@@ -369,9 +388,12 @@ function doPost(e) {
             [
               { label: "รายละเอียด", value: detailStr, flexLabel: 3, flexValue: 5 },
               { label: "สถานะ", value: "เสร็จสิ้น", flexLabel: 3, flexValue: 5 }
+            ],
+            [
+              { label: "⭐ ประเมินความพึงพอใจ", url: "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1&action=survey&type=repair&row=" + statusTargetRow, color: "#f59e0b" }
             ]
           );
-          notifyTask('building', statusMsg, `อัปเดตสถานะงานซ่อมอาคาร`, '#265D5A', {reporter: reporterNameStr, subject: sheetStatus.getRange(targetRow, 3).getValue(), status: newStatus}, null);
+          notifyTask('building', statusMsg, `อัปเดตสถานะงานซ่อมอาคาร`, '#265D5A', {reporter: reporterNameStr, subject: subjectStr, status: 'เสร็จสิ้น'}, null);
         }
         break;
 
@@ -403,6 +425,51 @@ function doPost(e) {
         if (data.receiptFile) {
           const receiptUrlAdv = uploadFileToDrive(data.receiptFile, CONFIG.FOLDER_RECEIPTS);
           sheetAdv.getRange(targetAdvRow, 11).setValue(receiptUrlAdv);
+        }
+        
+        // ส่งแจ้งเตือนกลับไปยังผู้แจ้ง (เฉพาะตอนปิดงาน)
+        const isDoneStatus = data.status === 'เสร็จสิ้น' || data.status === 'อนุมัติ';
+        if (isDoneStatus && data.technician) {
+          const advSubject = sheetAdv.getRange(targetAdvRow, 2).getValue();
+          const advReporter = sheetAdv.getRange(targetAdvRow, 4).getValue();
+          const advReporterEmail = getUserEmailByName(advReporter);
+          const isIT = data.tabType === 'it';
+          const surveyType = isIT ? 'it_repair' : 'project';
+          const taskLabel = isIT ? '💻 งานซ่อมไอที' : '📋 โครงการ';
+          const advColor = isIT ? '#0ea5e9' : '#8b5cf6';
+          
+          if (advReporterEmail) {
+            const advBodyHtml = generateEmailHtml(
+              `✅ ${taskLabel}เสร็จสิ้น: ${advSubject}`,
+              isIT ? "#0ea5e9" : "#8b5cf6",
+              advReporter,
+              null,
+              advSubject,
+              `การดำเนินการ: ${data.fixDetail}<br>ผู้รับผิดชอบ: ${data.technician}`
+            );
+            try {
+              MailApp.sendEmail({
+                to: advReporterEmail,
+                subject: `✅ ${taskLabel}เสร็จสิ้น: ${advSubject}`,
+                htmlBody: advBodyHtml
+              });
+            } catch (e) { Logger.log(e.message); }
+          }
+          
+          const advDoneMsg = createFlexMessageTemplate(
+            `${taskLabel}เสร็จสิ้น: ${advSubject}`,
+            `✅ ${taskLabel}เสร็จสิ้น`,
+            advSubject,
+            advColor,
+            [
+              { label: "การดำเนินการ", value: data.fixDetail, flexLabel: 3, flexValue: 5 },
+              { label: "ผู้รับผิดชอบ", value: data.technician, flexLabel: 3, flexValue: 5 }
+            ],
+            [
+              { label: "⭐ ประเมินความพึงพอใจ", url: "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1&action=survey&type=" + surveyType + "&row=" + targetAdvRow, color: "#f59e0b" }
+            ]
+          );
+          notifyTask(isIT ? 'it' : 'admin', advDoneMsg, `${taskLabel}เสร็จสิ้น`, advColor, {reporter: advReporter, subject: advSubject, status: data.status}, null);
         }
         
         // Return success
