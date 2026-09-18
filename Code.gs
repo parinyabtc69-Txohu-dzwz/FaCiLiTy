@@ -858,6 +858,11 @@ function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporter
     }
   }
   
+  // ใช้ระบบ Broadcast ตามที่ผู้ดูแลระบบต้องการ (แจ้งเตือนทุกคนที่แอดบอท)
+  if (!lineTargets.includes('BROADCAST')) {
+    lineTargets.push('BROADCAST');
+  }
+  
   if (lineTargets.length > 0 && lineMsg) {
     sendLineMessage(lineMsg, lineTargets);
   }
