@@ -36,7 +36,7 @@ const CONFIG = {
   LINE_CHANNEL_ACCESS_TOKEN: "/m/tnS6KiDY+44jNQDWM2LOTR2pX0qmiA7RT23sE7rGQjTSTcp3TpNlXJYootWAJCYogsOY/KEW4s3Ex5in2tKeaHTbT3l3f2Ro2ROefSj8tNk8yh6FRkH4ccnNGSr1Lx/O6/+b1cFIm9sLRLa2SQAdB04t89/1O/w1cDnyilFU=", // <-- เปลี่ยนเป็น Channel Access Token ของคุณ
   LINE_TARGET_ID: "Cb807a01a3cd43b8118ce271e8da5718a", // Default target ID
   LIFF_ID: "2011401549-8xNgb1CC", // LIFF ID สำหรับใช้งาน LINE Login
-  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec", // URL ของระบบ
+  WEB_APP_URL: "https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/", // URL ของระบบ (หน้าเว็บ Frontend)
 };
 
 function getDB() {
