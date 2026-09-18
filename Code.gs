@@ -1,3 +1,7 @@
+﻿// [Optimization] Override Date toJSON to mimic getDisplayValues() output format
+Date.prototype.toJSON = function() {
+  return Utilities.formatDate(this, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
+};
 /**
  * ResourceHub System
  * Developed by Taohx_dz_parinya
@@ -32,6 +36,7 @@ const CONFIG = {
   LINE_CHANNEL_ACCESS_TOKEN: "/m/tnS6KiDY+44jNQDWM2LOTR2pX0qmiA7RT23sE7rGQjTSTcp3TpNlXJYootWAJCYogsOY/KEW4s3Ex5in2tKeaHTbT3l3f2Ro2ROefSj8tNk8yh6FRkH4ccnNGSr1Lx/O6/+b1cFIm9sLRLa2SQAdB04t89/1O/w1cDnyilFU=", // <-- เปลี่ยนเป็น Channel Access Token ของคุณ
   LINE_TARGET_ID: "Cb807a01a3cd43b8118ce271e8da5718a", // Default target ID
   LIFF_ID: "2011401549-8xNgb1CC", // LIFF ID สำหรับใช้งาน LINE Login
+  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec", // URL ของระบบ
 };
 
 function getDB() {
@@ -76,12 +81,12 @@ function doGet(e) {
   switch (action) {
     case 'get_tasks':
       const sheetTasks = db.getSheetByName(CONFIG.SHEET_NAME);
-      result = sheetTasks ? sheetTasks.getDataRange().getDisplayValues().slice(1) : [];
+      result = sheetTasks ? sheetTasks.getDataRange().getValues().slice(1) : [];
       break;
     
     case 'get_av_requests':
       const sheetAV = db.getSheetByName(CONFIG.AV_SHEET_NAME);
-      result = sheetAV ? sheetAV.getDataRange().getDisplayValues().slice(1) : [];
+      result = sheetAV ? sheetAV.getDataRange().getValues().slice(1) : [];
       break;
 
     case 'get_dashboard':
@@ -94,12 +99,12 @@ function doGet(e) {
 
     case 'get_documents':
       const sheetDocs = db.getSheetByName(CONFIG.DOC_SHEET_NAME);
-      result = sheetDocs ? sheetDocs.getDataRange().getDisplayValues().slice(1) : [];
+      result = sheetDocs ? sheetDocs.getDataRange().getValues().slice(1) : [];
       break;
 
     case 'get_users':
-      const sheetUsers = db.getSheetByName('Users');
-      result = sheetUsers ? sheetUsers.getDataRange().getDisplayValues().slice(1) : [];
+      const sheetUsers = db.getSheetByName(CONFIG.USER_SHEET_NAME);
+      result = sheetUsers ? sheetUsers.getDataRange().getValues().slice(1) : [];
       break;
 
     case 'get_adv_tasks':
@@ -109,19 +114,19 @@ function doGet(e) {
 
       const sIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
       if (sIt) {
-        const vals = sIt.getDataRange().getDisplayValues();
+        const vals = sIt.getDataRange().getValues();
         if (vals.length > 1) itData = vals.slice(1);
       }
 
       const sAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
       if (sAvRep) {
-        const vals = sAvRep.getDataRange().getDisplayValues();
+        const vals = sAvRep.getDataRange().getValues();
         if (vals.length > 1) avRepData = vals.slice(1);
       }
 
       const sProj = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
       if (sProj) {
-        const vals = sProj.getDataRange().getDisplayValues();
+        const vals = sProj.getDataRange().getValues();
         if (vals.length > 1) projData = vals.slice(1);
       }
 
@@ -295,7 +300,7 @@ function doPost(e) {
             { label: "รายละเอียด", value: data.detail || "-" }
           ],
           [
-            { label: "พิจารณาอนุมัติ", url: "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" }
+            { label: "พิจารณาอนุมัติ", url: CONFIG.WEB_APP_URL }
           ]
         );
         notifyTask('project', lineProjMsg, `🏢 เสนอโครงการ / จัดซื้อใหม่`, '#8b5cf6', data, null);
@@ -390,7 +395,7 @@ function doPost(e) {
               { label: "สถานะ", value: "เสร็จสิ้น", flexLabel: 3, flexValue: 5 }
             ],
             [
-              { label: "⭐ ประเมินความพึงพอใจ", url: "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1&action=survey&type=repair&row=" + statusTargetRow, color: "#f59e0b" }
+              { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=repair&row=" + statusTargetRow, color: "#f59e0b" }
             ]
           );
           notifyTask('building', statusMsg, `อัปเดตสถานะงานซ่อมอาคาร`, '#265D5A', {reporter: reporterNameStr, subject: subjectStr, status: 'เสร็จสิ้น'}, null);
@@ -466,7 +471,7 @@ function doPost(e) {
               { label: "ผู้รับผิดชอบ", value: data.technician, flexLabel: 3, flexValue: 5 }
             ],
             [
-              { label: "⭐ ประเมินความพึงพอใจ", url: "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1&action=survey&type=" + surveyType + "&row=" + targetAdvRow, color: "#f59e0b" }
+              { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=" + surveyType + "&row=" + targetAdvRow, color: "#f59e0b" }
             ]
           );
           notifyTask(isIT ? 'it' : 'admin', advDoneMsg, `${taskLabel}เสร็จสิ้น`, advColor, {reporter: advReporter, subject: advSubject, status: data.status}, null);
@@ -524,8 +529,8 @@ function doPost(e) {
             { label: "ช่าง", value: data.technician, flexLabel: 3, flexValue: 5 }
           ],
           [
-            { label: "เปิดดูรูปหลักฐานในระบบ", url: "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1", color: "#059669" },
-            { label: "⭐ ประเมินความพึงพอใจ", url: "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1&action=survey&type=repair&row=" + targetRow, color: "#f59e0b" }
+            { label: "เปิดดูรูปหลักฐานในระบบ", url: CONFIG.WEB_APP_URL, color: "#059669" },
+            { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=repair&row=" + targetRow, color: "#f59e0b" }
           ]
         );
         // Determine taskType based on sheetName
@@ -558,7 +563,7 @@ function doPost(e) {
               { label: "เจ้าหน้าที่", value: data.technician, flexLabel: 3, flexValue: 5 }
             ],
             [
-              { label: "⭐ ประเมินความพึงพอใจ", url: "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1&action=survey&type=av&row=" + avTargetRow, color: "#f59e0b" }
+              { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=av&row=" + avTargetRow, color: "#f59e0b" }
             ]
           );
           notifyTask('av', avMsg, `อัปเดตสถานะงานยืมโสตฯ`, '#0d9488', {borrower: avReporter, subject: sheetAvStatus.getRange(avTargetRow, 3).getValue(), status: 'ใช้งานอยู่'}, null);
@@ -666,7 +671,7 @@ function doPost(e) {
 
       // ── จัดการผู้ใช้ ──────────────────────────────────────────
       case 'update_user':
-        const sheetUpdateUser = db.getSheetByName('Users');
+        const sheetUpdateUser = db.getSheetByName(CONFIG.USER_SHEET_NAME);
         if (sheetUpdateUser) {
           const values = sheetUpdateUser.getDataRange().getValues();
           for (let i = 1; i < values.length; i++) {
@@ -707,7 +712,7 @@ function uploadFileToDrive(fileData, folderName) {
 function getContactsByRoles(targetRoles) {
   try {
     const db = getDB();
-    const sheet = db.getSheetByName('Users');
+    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet) return { emails: [], lineIds: [] };
     
     const data = sheet.getDataRange().getValues();
@@ -735,7 +740,7 @@ function getContactsByRoles(targetRoles) {
 function getReporterContacts(name) {
   try {
     const db = getDB();
-    const sheet = db.getSheetByName('Users');
+    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet || !name) return { email: null, lineId: null };
     
     const data = sheet.getDataRange().getValues();
@@ -782,7 +787,7 @@ function createFlexMessageTemplate(altText, headerText, subjectText, color, deta
   } else {
     buttonsContents.push({
       "type": "button", "style": "primary", "color": color, 
-      "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" }
+      "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": CONFIG.WEB_APP_URL }
     });
   }
 
@@ -929,7 +934,7 @@ function getDashboardDataInternal(monthStr) {
     };
   };
 
-  const bData = bSheet ? bSheet.getDataRange().getDisplayValues().slice(1) : [];
+  const bData = bSheet ? bSheet.getDataRange().getValues().slice(1) : [];
   const filteredBData = filterByMonth(bData);
   const building = {
     total:      filteredBData.length,
@@ -939,7 +944,7 @@ function getDashboardDataInternal(monthStr) {
     rating:     calcRating(filteredBData)
   };
 
-  const avData = avSheet ? avSheet.getDataRange().getDisplayValues().slice(1) : [];
+  const avData = avSheet ? avSheet.getDataRange().getValues().slice(1) : [];
   const filteredAVData = filterByMonth(avData);
   const av = {
     total:     filteredAVData.length,
@@ -949,7 +954,7 @@ function getDashboardDataInternal(monthStr) {
     rating:    calcRating(filteredAVData)
   };
 
-  const itData = itSheet ? itSheet.getDataRange().getDisplayValues().slice(1) : [];
+  const itData = itSheet ? itSheet.getDataRange().getValues().slice(1) : [];
   const filteredITData = filterByMonth(itData);
   const it = {
     total:     filteredITData.length,
@@ -959,7 +964,7 @@ function getDashboardDataInternal(monthStr) {
     rating:    calcRating(filteredITData)
   };
 
-  const avRepData = avRepSheet ? avRepSheet.getDataRange().getDisplayValues().slice(1) : [];
+  const avRepData = avRepSheet ? avRepSheet.getDataRange().getValues().slice(1) : [];
   const filteredAVRepData = filterByMonth(avRepData);
   const avRep = {
     total:     filteredAVRepData.length,
@@ -969,7 +974,7 @@ function getDashboardDataInternal(monthStr) {
     rating:    calcRating(filteredAVRepData)
   };
 
-  const projData = projSheet ? projSheet.getDataRange().getDisplayValues().slice(1) : [];
+  const projData = projSheet ? projSheet.getDataRange().getValues().slice(1) : [];
   const filteredProjData = filterByMonth(projData);
   const proj = {
     total:     filteredProjData.length,
@@ -981,7 +986,7 @@ function getDashboardDataInternal(monthStr) {
 
   let filteredBugs = 0;
   if (bugSheet) {
-    const bugData = bugSheet.getDataRange().getDisplayValues().slice(1);
+    const bugData = bugSheet.getDataRange().getValues().slice(1);
     filteredBugs = filterByMonth(bugData).length;
   }
 
@@ -1014,7 +1019,7 @@ function getMasterDataInternal() {
 function getSheetDataAsObjects(db, sheetName) {
   const sheet = db.getSheetByName(sheetName);
   if (!sheet || sheet.getLastRow() <= 1) return [];
-  const data    = sheet.getDataRange().getDisplayValues();
+  const data    = sheet.getDataRange().getValues();
   const headers = data[0];
   return data.slice(1).map(row => {
     const obj = {};
@@ -1069,7 +1074,7 @@ function handleGoogleLogin(credential) {
     const picture = payload.picture;
 
     const ss = getDB();
-    let sheet = ss.getSheetByName('Users');
+    let sheet = ss.getSheetByName(CONFIG.USER_SHEET_NAME);
     
     if (!sheet) {
       sheet = ss.insertSheet('Users');
@@ -1136,7 +1141,7 @@ function handleGoogleLogin(credential) {
 function sendEmailNotification(subject, bodyHtml) {
   try {
     const db = getDB();
-    const sheet = db.getSheetByName('Users');
+    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet) return;
     
     const data = sheet.getDataRange().getValues();
@@ -1173,7 +1178,7 @@ function sendEmailNotification(subject, bodyHtml) {
 function getUserEmailByName(name) {
   try {
     const db = getDB();
-    const sheet = db.getSheetByName('Users');
+    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet) return null;
     
     const data = sheet.getDataRange().getValues();
@@ -1198,7 +1203,7 @@ function getUserEmailByName(name) {
 function getUserLineIdByName(name) {
   try {
     const db = getDB();
-    const sheet = db.getSheetByName('Users');
+    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet) return null;
     
     const data = sheet.getDataRange().getValues();
@@ -1223,7 +1228,7 @@ function getUserLineIdByName(name) {
 function getLineIdsByRoles(targetRoles) {
   try {
     const db = getDB();
-    const sheet = db.getSheetByName('Users');
+    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet) return [];
     
     const data = sheet.getDataRange().getValues();
@@ -1248,7 +1253,7 @@ function getLineIdsByRoles(targetRoles) {
 function handleLinkLineAccount(email, lineId, name, picture) {
   try {
     const ss = getDB();
-    let sheet = ss.getSheetByName('Users');
+    let sheet = ss.getSheetByName(CONFIG.USER_SHEET_NAME);
     
     if (!sheet) {
       sheet = ss.insertSheet('Users');
@@ -1344,14 +1349,28 @@ function sendLineMessage(message, targetId) {
         }
       }
       sanitizeFlex(msgPayload);
+      let resText = "No Response";
+      let resCode = 0;
       try {
-        UrlFetchApp.fetch("https://api.line.me/v2/bot/message/broadcast", {
+        const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/broadcast", {
           method: "post",
           headers: headers,
           payload: JSON.stringify({ "messages": [msgPayload] }),
           muteHttpExceptions: true
         });
-      } catch (e) { Logger.log("Broadcast error: " + e.message); }
+        resCode = res.getResponseCode();
+        resText = res.getContentText();
+      } catch (e) { resText = e.message; }
+      
+      try {
+        const db = getDB();
+        let logSheet = db.getSheetByName('Logs');
+        if (!logSheet) {
+          logSheet = db.insertSheet('Logs');
+          logSheet.appendRow(['Timestamp', 'Action', 'Targets', 'Responses', 'Message']);
+        }
+        logSheet.appendRow([new Date(), 'LINE API BROADCAST', 'BROADCAST', '[' + resCode + '] ' + resText, message]);
+      } catch (logErr) {}
       return;
     }
 
@@ -1530,7 +1549,7 @@ function checkOverdueTasks() {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
+              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": CONFIG.WEB_APP_URL } }
             ]
           }
         }
@@ -1592,7 +1611,7 @@ function checkOverdueTasks() {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": "https://liff.line.me/" + CONFIG.LIFF_ID + "?openExternalBrowser=1" } }
+              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": CONFIG.WEB_APP_URL } }
             ]
           }
         }
@@ -1665,7 +1684,7 @@ function checkOverdueTasksV2() {
     'มีงานค้างเกิน ' + overdueDays + ' วัน รวม ' + totalOverdue + ' รายการ',
     '#dc2626',
     details,
-    [{ label: '👉 เข้าสู่ระบบเพื่อตรวจสอบ', url: 'https://liff.line.me/' + CONFIG.LIFF_ID + '?openExternalBrowser=1', color: '#dc2626' }]
+    [{ label: '👉 เข้าสู่ระบบเพื่อตรวจสอบ', url: CONFIG.WEB_APP_URL, color: '#dc2626' }]
   );
   notifyTask('building', overdueMsg, '🔔 งานค้าง ' + totalOverdue + ' รายการ (เกิน ' + overdueDays + ' วัน)', '#dc2626', null, null);
   Logger.log('checkOverdueTasksV2: แจ้งเตือนงานค้าง ' + totalOverdue + ' รายการ');
@@ -1687,3 +1706,10 @@ function removeDailyTrigger() {
   });
   Logger.log('removeDailyTrigger: ลบ trigger ' + count + ' รายการ');
 }
+
+
+
+
+
+
+
