@@ -1087,7 +1087,7 @@ function handleGoogleLogin(credential) {
     const now = new Date();
 
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === email) {
+      if ((data[i][0] || '').toString().trim().toLowerCase() === (email || '').trim().toLowerCase()) {
         const role = data[i][2] || 'Teacher';
         const status = data[i][3];
 
