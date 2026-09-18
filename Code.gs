@@ -858,6 +858,11 @@ function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporter
     }
   }
   
+  // ให้ระบบแจ้งเตือนทุกคนที่เป็นเพื่อนกับ LINE OA
+  if (!lineTargets.includes('BROADCAST')) {
+    lineTargets.push('BROADCAST');
+  }
+  
   if (lineTargets.length > 0 && lineMsg) {
     sendLineMessage(lineMsg, lineTargets);
   }
