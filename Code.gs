@@ -34,7 +34,7 @@ const CONFIG = {
   FOLDER_AV_REPAIR:     "รูปภาพซ่อมโสตฯ",
   FOLDER_PROJECTS:      "เอกสารโครงการระยะยาว",
   LINE_CHANNEL_ACCESS_TOKEN: "/m/tnS6KiDY+44jNQDWM2LOTR2pX0qmiA7RT23sE7rGQjTSTcp3TpNlXJYootWAJCYogsOY/KEW4s3Ex5in2tKeaHTbT3l3f2Ro2ROefSj8tNk8yh6FRkH4ccnNGSr1Lx/O6/+b1cFIm9sLRLa2SQAdB04t89/1O/w1cDnyilFU=", // <-- เปลี่ยนเป็น Channel Access Token ของคุณ
-  LINE_TARGET_ID: "Cb807a01a3cd43b8118ce271e8da5718a", // Default target ID
+  LINE_TARGET_ID: "C3b2a8a52adb5fa219ec51bb7fda15d5e", // Default target ID
   LIFF_ID: "2011401549-8xNgb1CC", // LIFF ID สำหรับใช้งาน LINE Login
   WEB_APP_URL: "https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/", // URL ของระบบ (หน้าเว็บ Frontend)
 };
@@ -155,6 +155,17 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const db = getDB();
     const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
+    
+    // ── ตรวจสอบว่าเป็น Webhook จาก LINE หรือไม่ ────────────────────────
+    if (data.events && Array.isArray(data.events)) {
+      data.events.forEach(event => {
+        if (event.type === 'message' && event.source && (event.source.type === 'group' || event.source.type === 'room') && event.message.text === 'id') {
+          sendLineMessage('Group ID ของกลุ่มนี้คือ:\n' + event.source.groupId, event.source.groupId);
+        }
+      });
+      return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+    }
+    
     switch (data.action) {
       // ── ระบบ Login ใหม่ (Google OAuth) ────────────────────────
       case 'google_login':
