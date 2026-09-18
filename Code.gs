@@ -388,11 +388,7 @@ function doPost(e) {
               `อาการ: ${detailStr}<br>สถานะ: เสร็จสิ้น`
             );
             try {
-              // MailApp.sendEmail({
-                to: reporterEmail,
-                subject: `✅ งานซ่อมเสร็จสิ้น: ${subjectStr}`,
-                htmlBody: bodyHtml
-              });
+              // MailApp block disabled
             } catch (e) { Logger.log(e.message); }
           }
           
@@ -464,11 +460,7 @@ function doPost(e) {
               `การดำเนินการ: ${data.fixDetail}<br>ผู้รับผิดชอบ: ${data.technician}`
             );
             try {
-              // MailApp.sendEmail({
-                to: advReporterEmail,
-                subject: `✅ ${taskLabel}เสร็จสิ้น: ${advSubject}`,
-                htmlBody: advBodyHtml
-              });
+              // MailApp block disabled
             } catch (e) { Logger.log(e.message); }
           }
           
@@ -522,11 +514,7 @@ function doPost(e) {
             `อาการ: ${proofDetail}<br>การแก้ไข: ${data.fixDetail}<br>ช่าง: ${data.technician}`
           );
           try {
-            // MailApp.sendEmail({
-              to: proofReporterEmail,
-              subject: `✅ งานซ่อมเสร็จสิ้น: ${proofSubject}`,
-              htmlBody: bodyHtml
-            });
+            // MailApp block disabled
           } catch (e) { Logger.log(e.message); }
           }
           
@@ -1181,11 +1169,7 @@ function sendEmailNotification(subject, bodyHtml, targetEmails) {
     finalEmails = [...new Set(finalEmails)];
     
     if (finalEmails.length > 0) {
-      // MailApp.sendEmail({
-        to: finalEmails.join(','),
-        subject: subject,
-        htmlBody: bodyHtml
-      });
+      // MailApp block disabled
     }
   } catch(e) {
     Logger.log("Email error: " + e.message);
