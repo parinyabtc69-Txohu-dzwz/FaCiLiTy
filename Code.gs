@@ -858,11 +858,6 @@ function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporter
     }
   }
   
-  // ให้ระบบแจ้งเตือนทุกคนที่เป็นเพื่อนกับ LINE OA
-  if (!lineTargets.includes('BROADCAST')) {
-    lineTargets.push('BROADCAST');
-  }
-  
   if (lineTargets.length > 0 && lineMsg) {
     sendLineMessage(lineMsg, lineTargets);
   }
@@ -1341,23 +1336,31 @@ function sendLineMessage(message, targetId) {
 
     // แยกประเภท User IDs (U...) กับ Group/Room IDs (C... หรือ R...)
     
-    if (rawTargets.includes('BROADCAST')) {
-      const msgPayload = typeof message === 'string' ? { "type": "text", "text": message } : message;
-      function sanitizeFlex(obj) {
-        if (Array.isArray(obj)) {
-          obj.forEach(sanitizeFlex);
-        } else if (typeof obj === 'object' && obj !== null) {
-          for (let key in obj) {
-            if (key === 'text' || key === 'altText') {
-              if (obj[key] === undefined || obj[key] === null || obj[key] === '') obj[key] = '-';
-              else obj[key] = String(obj[key]);
-            } else sanitizeFlex(obj[key]);
+    let allResponses = [];
+    const isBroadcast = validTargets.includes('BROADCAST');
+    const msgPayload = typeof message === 'string' ? { "type": "text", "text": message } : message;
+
+    // Sanitize Flex Message to prevent Line API crashes (empty strings or non-string values)
+    function sanitizeFlex(obj) {
+      if (Array.isArray(obj)) {
+        obj.forEach(sanitizeFlex);
+      } else if (typeof obj === 'object' && obj !== null) {
+        for (let key in obj) {
+          if (key === 'text' || key === 'altText') {
+            if (obj[key] === undefined || obj[key] === null || obj[key] === '') {
+              obj[key] = '-';
+            } else {
+              obj[key] = String(obj[key]);
+            }
+          } else {
+            sanitizeFlex(obj[key]);
           }
         }
       }
-      sanitizeFlex(msgPayload);
-      let resText = "No Response";
-      let resCode = 0;
+    }
+    sanitizeFlex(msgPayload);
+
+    if (isBroadcast) {
       try {
         const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/broadcast", {
           method: "post",
@@ -1365,29 +1368,17 @@ function sendLineMessage(message, targetId) {
           payload: JSON.stringify({ "messages": [msgPayload] }),
           muteHttpExceptions: true
         });
-        resCode = res.getResponseCode();
-        resText = res.getContentText();
-      } catch (e) { resText = e.message; }
-      
-      try {
-        const db = getDB();
-        let logSheet = db.getSheetByName('Logs');
-        if (!logSheet) {
-          logSheet = db.insertSheet('Logs');
-          logSheet.appendRow(['Timestamp', 'Action', 'Targets', 'Responses', 'Message']);
-        }
-        logSheet.appendRow([new Date(), 'LINE API BROADCAST', 'BROADCAST', '[' + resCode + '] ' + resText, message]);
-      } catch (logErr) {}
-      return;
+        allResponses.push(`[Broadcast] ${res.getResponseCode()}: ${res.getContentText()}`);
+      } catch (e) {
+        allResponses.push(`[Broadcast Error] ${e.message}`);
+      }
     }
 
-    const userIds = validTargets.filter(id => id.startsWith('U'));
+    // ถ้า Broadcast แล้ว ไม่ต้องส่งหา User ส่วนตัวทีละคนอีก (ป้องกันการส่งซ้ำ)
+    const userIds = isBroadcast ? [] : validTargets.filter(id => id.startsWith('U') && id !== 'BROADCAST');
   
-    const groupIds = validTargets.filter(id => !id.startsWith('U'));
-    
-    let allResponses = [];
-
-    const msgPayload = typeof message === 'string' ? { "type": "text", "text": message } : message;
+    // ส่วน Group (C... หรือ R...) ต้องส่งแยกเสมอ เพราะ Broadcast ไม่เข้ากลุ่ม!
+    const groupIds = validTargets.filter(id => !id.startsWith('U') && id !== 'BROADCAST');
 
     // Sanitize Flex Message to prevent Line API crashes (empty strings or non-string values)
     function sanitizeFlex(obj) {
