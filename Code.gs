@@ -1,4 +1,4 @@
-﻿// [Optimization] Override Date toJSON to mimic getDisplayValues() output format
+// [Optimization] Override Date toJSON to mimic getDisplayValues() output format
 Date.prototype.toJSON = function() {
   return Utilities.formatDate(this, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
 };
@@ -859,7 +859,7 @@ function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporter
   }
   
   if (lineTargets.length > 0 && lineMsg) {
-    sendLineMessage(lineMsg, ['BROADCAST']);
+    sendLineMessage(lineMsg, lineTargets);
   }
   
   if (emailTargets.length > 0 && emailTitle) {
@@ -1138,34 +1138,36 @@ function handleGoogleLogin(credential) {
 // ============================================================
 // Notification Helpers
 // ============================================================
-function sendEmailNotification(subject, bodyHtml) {
+function sendEmailNotification(subject, bodyHtml, targetEmails) {
   try {
-    const db = getDB();
-    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
-    if (!sheet) return;
+    let finalEmails = [];
     
-    const data = sheet.getDataRange().getValues();
-    let adminEmails = [];
-    
-    // Column 0 = Email, Column 2 = Role
-    // Column 0 = Email, Column 2 = Role
-    for (let i = 1; i < data.length; i++) {
-      const email = (data[i][0] || '').toString().trim();
-      const role = (data[i][2] || '').toString().trim().toLowerCase();
+    if (targetEmails && Array.isArray(targetEmails) && targetEmails.length > 0) {
+      finalEmails = targetEmails;
+    } else {
+      const db = getDB();
+      const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
+      if (!sheet) return;
       
-      if (role === 'admin' || role === 'staff' || role === 'technician') {
-        if (email && email.includes('@')) {
-          adminEmails.push(email);
+      const data = sheet.getDataRange().getValues();
+      for (let i = 1; i < data.length; i++) {
+        const email = (data[i][0] || '').toString().trim();
+        const role = (data[i][2] || '').toString().trim().toLowerCase();
+        
+        if (role === 'admin' || role === 'staff' || role === 'technician' || role === 'tech' || role === 'executive') {
+          if (email && email.includes('@')) {
+            finalEmails.push(email);
+          }
         }
       }
     }
     
     // Remove duplicates
-    adminEmails = [...new Set(adminEmails)];
+    finalEmails = [...new Set(finalEmails)];
     
-    if (adminEmails.length > 0) {
+    if (finalEmails.length > 0) {
       MailApp.sendEmail({
-        to: adminEmails.join(','),
+        to: finalEmails.join(','),
         subject: subject,
         htmlBody: bodyHtml
       });

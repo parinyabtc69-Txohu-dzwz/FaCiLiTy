@@ -1,7 +1,7 @@
 // FaCiLiTy PWA Service Worker
 // Developed by Taohx_dz_parinya
 
-const CACHE_NAME = 'facility-v6.1';
+const CACHE_NAME = 'facility-v6.2';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -35,7 +35,7 @@ self.addEventListener('activate', event => {
 // Fetch: Network First strategy (เน้น Online เพราะข้อมูลมาจาก Google Sheets)
 self.addEventListener('fetch', event => {
   // ข้ามการ cache สำหรับ Google Apps Script API calls
-  if (event.request.url.includes('script.google.com')) {
+  if (event.request.url.includes('script.google.com') || event.request.url.includes('script.googleusercontent.com')) {
     return;
   }
 
