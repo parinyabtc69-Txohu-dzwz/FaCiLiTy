@@ -388,7 +388,7 @@ function doPost(e) {
               `อาการ: ${detailStr}<br>สถานะ: เสร็จสิ้น`
             );
             try {
-              MailApp.sendEmail({
+              // MailApp.sendEmail({
                 to: reporterEmail,
                 subject: `✅ งานซ่อมเสร็จสิ้น: ${subjectStr}`,
                 htmlBody: bodyHtml
@@ -464,7 +464,7 @@ function doPost(e) {
               `การดำเนินการ: ${data.fixDetail}<br>ผู้รับผิดชอบ: ${data.technician}`
             );
             try {
-              MailApp.sendEmail({
+              // MailApp.sendEmail({
                 to: advReporterEmail,
                 subject: `✅ ${taskLabel}เสร็จสิ้น: ${advSubject}`,
                 htmlBody: advBodyHtml
@@ -522,7 +522,7 @@ function doPost(e) {
             `อาการ: ${proofDetail}<br>การแก้ไข: ${data.fixDetail}<br>ช่าง: ${data.technician}`
           );
           try {
-            MailApp.sendEmail({
+            // MailApp.sendEmail({
               to: proofReporterEmail,
               subject: `✅ งานซ่อมเสร็จสิ้น: ${proofSubject}`,
               htmlBody: bodyHtml
@@ -869,10 +869,8 @@ function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporter
     }
   }
   
-  // ใช้ระบบ Broadcast ตามที่ผู้ดูแลระบบต้องการ (แจ้งเตือนทุกคนที่แอดบอท)
-  if (!lineTargets.includes('BROADCAST')) {
-    lineTargets.push('BROADCAST');
-  }
+  // ปิด Broadcast ชั่วคราว ให้แจ้งเตือนเข้ากลุ่มอย่างเดียว
+  // if (!lineTargets.includes('BROADCAST')) { lineTargets.push('BROADCAST'); }
   
   if (lineTargets.length > 0 && lineMsg) {
     sendLineMessage(lineMsg, lineTargets);
@@ -887,7 +885,7 @@ function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporter
       dataObj?.subject || dataObj?.borrower || 'System Update', 
       dataObj?.detail || dataObj?.status || 'มีการอัปเดตข้อมูล'
     );
-    sendEmailNotification(emailTitle, emailHtml, emailTargets);
+    // sendEmailNotification(emailTitle, emailHtml, emailTargets);
   }
 }
 
@@ -1155,6 +1153,7 @@ function handleGoogleLogin(credential) {
 // Notification Helpers
 // ============================================================
 function sendEmailNotification(subject, bodyHtml, targetEmails) {
+  return; // ปิดการแจ้งเตือนอีเมลชั่วคราว
   try {
     let finalEmails = [];
     
@@ -1182,7 +1181,7 @@ function sendEmailNotification(subject, bodyHtml, targetEmails) {
     finalEmails = [...new Set(finalEmails)];
     
     if (finalEmails.length > 0) {
-      MailApp.sendEmail({
+      // MailApp.sendEmail({
         to: finalEmails.join(','),
         subject: subject,
         htmlBody: bodyHtml
