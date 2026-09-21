@@ -1,5 +1,5 @@
 const fs = require('fs');
-let content = fs.readFileSync('index.html', 'utf8');
+let content = fs.readFileSync('src/js/modules/main.js', 'utf8');
 
 // Find the start of the return statement in renderRepairTable
 const searchStart = "const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60 font-medium';";
@@ -60,7 +60,7 @@ if (startIndex !== -1 && endIndex !== -1) {
 </div>\`;`;
 
     content = content.substring(0, startIndex) + newCode + content.substring(endIndex);
-    fs.writeFileSync('index.html', content, 'utf8');
+    fs.writeFileSync('src/js/modules/main.js', content, 'utf8');
     console.log("Patch applied successfully.");
 } else {
     console.log("Could not find block boundaries!");
