@@ -515,7 +515,22 @@ const ResourceHubCore = {
     },
     // แอดมินกดเปลี่ยนสถานะงานซ่อม หรือ ปิดงาน (อัปโหลดรูปหลักฐาน)
     async updateRepair(index) {
-      const r = await Swal.fire({ title: 'อัปเดตสถานะงาน', showDenyButton: true, showCancelButton: true, confirmButtonText: 'กำลังดำเนินการ', denyButtonText: 'เสร็จสิ้น (แนบรูป)', confirmButtonColor: '#3b82f6', denyButtonColor: '#10b981' });
+      const row = window.allRepairTasks ? window.allRepairTasks[index] : null;
+      let detailsHtml = '';
+      if (row) {
+        const tStamp = row[0] || '-';
+        const subj = row[1] || '-';
+        const det = row[2] || '-';
+        const rep = row[3] || '-';
+        detailsHtml = '<div class="text-left mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">'
+          + '<div class="font-bold text-slate-800 mb-1 text-base">' + subj + '</div>'
+          + '<div class="text-sm text-slate-600 mb-3" style="white-space:pre-wrap">' + det + '</div>'
+          + '<div class="text-xs font-semibold text-slate-500 border-t border-slate-200 pt-2 mt-2">'
+          + '<i class="fa-solid fa-user text-slate-400"></i> ' + rep
+          + ' &nbsp;|&nbsp; <i class="fa-regular fa-clock text-slate-400"></i> ' + tStamp
+          + '</div></div>';
+      }
+      const r = await Swal.fire({ title: 'อัปเดตสถานะงาน', html: detailsHtml, showDenyButton: true, showCancelButton: true, confirmButtonText: 'กำลังดำเนินการ', denyButtonText: 'เสร็จสิ้น (แนบรูป)', confirmButtonColor: '#3b82f6', denyButtonColor: '#10b981' });
       if (r.isConfirmed) {
         return submitAction(
           () => ResourceHubCore.api.post({ action: 'update_task_status', rowIndex: index, status: 'กำลังดำเนินการ' }),
@@ -1786,8 +1801,20 @@ function renderAdvTable(tbodyId, rows, type) {
 }
 
 window.updateAdvTask = async function (type, index, currentStatus) {
+  const allData = window.advTasksData[type === 'av-repair' ? 'av' : type];
+  const taskData = allData ? allData[index] : null;
+  let detailsHtml = '';
+  if (taskData) {
+    const timestamp = taskData[0] || '-';
+    const subject = taskData[1] || '-';
+    const detail = taskData[2] || '-';
+    const reporter = taskData[3] || '-';
+    detailsHtml = `<div class="text-left mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm"><div class="font-bold text-slate-800 mb-1 text-base">${subject}</div><div class="text-sm text-slate-600 mb-3 whitespace-pre-wrap">${detail}</div><div class="text-xs font-semibold text-slate-500 flex items-center gap-1 border-t border-slate-200 pt-2 mt-2"><i class="fa-solid fa-user text-slate-400"></i> ${reporter} &nbsp;&nbsp;|&nbsp;&nbsp;<i class="fa-regular fa-clock text-slate-400"></i> ${timestamp}</div></div>`;
+  }
+
   const r = await Swal.fire({
     title: 'อัปเดตสถานะ',
+    html: detailsHtml,
     showDenyButton: true,
     showCancelButton: true,
     confirmButtonText: 'กำลังดำเนินการ',
@@ -2163,86 +2190,74 @@ window.renderRepairTable = function () {
     const wA = getWeight(a.r[4]);
     const wB = getWeight(b.r[4]);
     if (wA !== wB) return wA - wB;
-    return a.originalIndex - b.originalIndex;
+    return b.originalIndex - a.originalIndex;
   });
 
   const tbody = $('taskBody');
   if (!tbody) return;
   if (!filteredList.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center">
-      <div class="flex flex-col items-center gap-3 text-slate-400">
+    tbody.innerHTML = `<div class="p-10 text-center flex flex-col items-center gap-3 text-slate-400 bg-white">
         <i class="fa-solid fa-folder-open text-5xl text-blue-200"></i>
         <p class="font-semibold text-slate-500">ไม่มีรายการในขณะนี้</p>
-      </div>
-    </td></tr>`;
+      </div>`;
     return;
   }
 
   tbody.innerHTML = filteredList.map(({ r, originalIndex }) => {
+    const timestamp = r[0] || '';
+    const subject = r[1] || '';
+    const detail = r[2] || '';
+    const reporter = r[3] || '';
     const status = (r[4] || '').trim();
     const isDone = (status === 'เสร็จสิ้น' || status === 'เรียบร้อยแล้ว' || status === 'เสร็จสิ้น/คืนเรียบร้อย');
+    const img = r[5] && r[5] !== '-' ? `<button onclick="event.stopPropagation(); showImageModal('${r[5]}')" class="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-md border border-blue-200 hover:bg-blue-100 mt-2"><i class="fa-solid fa-image"></i> รูปภาพ</button>` : '';
 
-    let urgencyLevel = 1;
-    let urgencyTag = '';
-    const newUrgency = (r[11] || '').trim();
-    const detailStr = r[2] || '';
-
-    if (newUrgency === 'ด่วน' || detailStr.includes('ความเร่งด่วน: ด่วน')) {
-      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-rose-500 animate-pulse"></i> ด่วน</span></div>';
-      urgencyLevel = 3;
-    } else if (newUrgency === 'ตามคิว' || detailStr.includes('ความเร่งด่วน: ตามคิว')) {
-      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-blue-500"></i> ตามคิว</span></div>';
-      urgencyLevel = 2;
-    } else if (newUrgency === 'ไม่รีบ' || detailStr.includes('ความเร่งด่วน: ไม่รีบ')) {
-      urgencyTag = '<div class="mt-2"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-emerald-500"></i> ไม่รีบ</span></div>';
-      urgencyLevel = 1;
-    }
-
-    // --- Column 1: urgency tag (pending) | rating stars (done) ---
-    let firstColHtml = '';
-    if (isDone) {
-      const rating = parseInt(r[18] || '0', 10);
-      if (rating > 0) {
-        const starArr = Array(5).fill(0).map((_, i) =>
-          '<i class="' + (i < rating ? 'fa-solid' : 'fa-regular') + ' fa-star text-sm ' + (i < rating ? 'text-amber-400' : 'text-slate-300') + '"></i>');
-        firstColHtml = '<span class="flex justify-center gap-0.5">' + starArr.join('') + '</span>';
-      } else {
-        firstColHtml = `<button onclick="openSurveyModal('repair', ${originalIndex + 2})" class="text-xs text-blue-500 hover:text-blue-700 font-semibold whitespace-nowrap"><i class="fa-regular fa-star mr-0.5"></i>ประเมิน</button>`;
-      }
-    } else {
-      if (newUrgency === 'ด่วน' || detailStr.includes('ความเร่งด่วน: ด่วน')) {
-        firstColHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 whitespace-nowrap"><i class="fa-solid fa-bolt text-[9px]"></i> ด่วน</span>';
-      } else if (newUrgency === 'ตามคิว' || detailStr.includes('ความเร่งด่วน: ตามคิว')) {
-        firstColHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-list-ul text-[9px]"></i> ตามคิว</span>';
-      } else if (newUrgency === 'ไม่รีบ' || detailStr.includes('ความเร่งด่วน: ไม่รีบ')) {
-        firstColHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap"><i class="fa-solid fa-leaf text-[9px]"></i> ไม่รีบ</span>';
-      } else {
-        firstColHtml = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap">-</span>';
-      }
-    }
+    const urgency = (r[11] || '').trim() || (r[12] || '').trim();
 
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60 font-medium';
-    const img = r[5] && r[5] !== '-' ? `<button onclick="showImageModal('${r[5]}')" class="text-blue-500 underline hover:text-blue-700 transition-colors"><i class="fa-solid fa-image"></i> ดูรูป</button>` : '-';
-    const topicText = `<span class="font-bold text-slate-800">${r[1]}</span>`;
-    const detailBtn = `<button onclick="viewRepairDetails(${originalIndex})" class="text-left w-full max-w-[200px] sm:max-w-xs md:max-w-sm text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 bg-slate-50 border border-slate-200 rounded-lg p-2.5 transition-all group" title="คลิกเพื่อดูรายละเอียด">
-            <span class="line-clamp-2 leading-relaxed whitespace-normal">${r[2]}</span>
-            <span class="text-[10px] text-blue-500 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity block"><i class="fa-solid fa-expand mr-1"></i> ดูรายละเอียด</span>
-          </button>`;
+    
+    const getInitials = (name) => {
+      if (!name || name === '-') return 'U';
+      const parts = name.trim().split(' ');
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return name.substring(0, 2).toUpperCase();
+    };
+    const getAvatarColor = (name) => {
+      const colors = ['bg-[#265D5A]', 'bg-blue-600', 'bg-emerald-600', 'bg-violet-600', 'bg-rose-600', 'bg-amber-600', 'bg-cyan-600'];
+      let hash = 0;
+      for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      return colors[Math.abs(hash) % colors.length];
+    };
+    const avatarColor = getAvatarColor(reporter);
+    const isUnread = !isDone;
+    let urgBadge = '';
+    if (urgency === 'ด่วน' || detail.includes('ความเร่งด่วน: ด่วน')) {
+      urgBadge = '<span class="text-rose-500 text-[10px] font-bold px-2 py-0.5 bg-rose-50 rounded-full border border-rose-100 ml-2 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-rose-500 animate-pulse mr-0.5"></i> ด่วน</span>';
+    } else if (urgency === 'ตามคิว') {
+      urgBadge = '<span class="text-blue-500 text-[10px] font-bold px-2 py-0.5 bg-blue-50 rounded-full border border-blue-100 ml-2 shadow-sm whitespace-nowrap"><i class="fa-solid fa-circle text-[6px] text-blue-500 mr-0.5"></i> ตามคิว</span>';
+    }
 
-    return `<tr class="border-b ${rowBg} transition-colors md:table-row flex flex-col p-4 md:p-0 gap-2 md:gap-0">
-            <td class="p-2 md:p-4 text-left md:text-center w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">ความเร่งด่วน:</span>${firstColHtml}</td>
-            <td class="p-2 md:p-4 text-slate-500 w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">เวลาแจ้ง:</span><span>${r[0]}</span></td>
-            <td class="p-2 md:p-4 align-top w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">สถานะ:</span>
-              <div class="flex flex-col items-end md:items-start text-right">
-                ${statusTagClass(r[4])}
-              </div>
-            </td>
-            <td class="p-2 md:p-4 w-full md:w-auto flex flex-col md:table-cell"><span class="md:hidden font-bold text-slate-500 mb-1">หัวข้อปัญหา:</span>${topicText}</td>
-            <td class="p-2 md:p-4 w-full md:w-auto flex flex-col md:table-cell"><span class="md:hidden font-bold text-slate-500 mb-1">รายละเอียด:</span>${detailBtn}</td>
-            <td class="p-2 md:p-4 font-semibold text-slate-700 w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">ผู้แจ้ง:</span><span>${r[3]}</span></td>
-            <td class="p-2 md:p-4 w-full md:w-auto flex justify-between items-center md:table-cell"><span class="md:hidden font-bold text-slate-500">รูปภาพ:</span>${img}</td>
-            <td class="p-2 md:p-4 text-center w-full md:w-auto mt-2 md:mt-0 flex justify-center md:table-cell border-t md:border-none pt-4 md:pt-4"><button onclick="updateTask(${originalIndex})" class="w-full md:w-auto bg-blue-50 border border-blue-200 hover:bg-blue-600 hover:text-white text-blue-700 px-4 py-2 md:py-1.5 rounded-lg shadow-sm transition-colors font-bold text-base md:text-sm">อัปเดต</button></td>
-          </tr>`;
+    const initials = getInitials(reporter);
+    const avatarBg = avatarColor;
+    const fontClass = isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-700';
+    const subjectFontClass = isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-600';
+    const paperclip = img ? '<i class="fa-solid fa-paperclip text-slate-400" title="มีรูปภาพแนบ"></i>' : '';
+
+    const html = '<div onclick="updateTask(' + originalIndex + ')" class="' + rowBg + ' cursor-pointer p-4 md:p-5 flex gap-4 items-start transition-colors border-b border-slate-100 group">'
+      + '<div class="flex-shrink-0 mt-1">'
+      + '<div class="w-12 h-12 rounded-full ' + avatarBg + ' text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">'
+      + initials
+      + '</div></div>'
+      + '<div class="flex-1 min-w-0">'
+      + '<div class="flex flex-col md:flex-row md:justify-between md:items-center mb-1.5 gap-1 md:gap-4">'
+      + '<h4 class="text-base ' + fontClass + ' truncate flex items-center">' + reporter + ' ' + urgBadge + '</h4>'
+      + '<span class="text-xs text-slate-500 whitespace-nowrap font-medium md:order-last order-first">' + timestamp + '</span>'
+      + '</div>'
+      + '<div class="text-sm ' + subjectFontClass + ' mb-1.5 truncate flex items-center gap-2">' + subject + paperclip + '</div>'
+      + '<div class="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-3">' + detail + '</div>'
+      + '<div class="flex flex-wrap gap-2 items-center">' + statusTagClass(status) + img + '</div>'
+      + '</div></div>';
+    return html;
   }).join('');
 };
 
