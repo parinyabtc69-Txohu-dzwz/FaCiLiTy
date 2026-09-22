@@ -2002,9 +2002,9 @@ const LOCKOUT_MS = 15 * 60 * 1000;             // ล็อก 15 นาที
 
 // 🔒 ตรวจสอบ Session Expiry: ฟังก์ชันทำงานอัตโนมัติเพื่อล้างข้อมูล Session หากผู้ใช้ออนไลน์นานเกินกำหนด
 (function checkSessionExpiry() {
-  const loginTime = sessionStorage.getItem('session_login_time');
+  const loginTime = localStorage.getItem('session_login_time');
   if (loginTime && (Date.now() - parseInt(loginTime)) > SESSION_EXPIRY_MS) {
-    sessionStorage.clear();
+    localStorage.clear();
     console.warn('🔒 Session หมดอายุ — ล้างข้อมูลเรียบร้อย');
   }
 })();
@@ -2025,10 +2025,10 @@ function sanitizeHtml(str) {
 // 🔒 Login Attempt Tracker: ระบบจัดการการเข้าสู่ระบบผิดพลาด (ติดตามจำนวนครั้งที่กรอกรหัสผิด)
 const loginAttempts = {
   get(key) {
-    try { return JSON.parse(sessionStorage.getItem('login_attempts_' + key) || '{"count":0,"lockUntil":0}'); }
+    try { return JSON.parse(localStorage.getItem('login_attempts_' + key) || '{"count":0,"lockUntil":0}'); }
     catch { return { count: 0, lockUntil: 0 }; }
   },
-  set(key, data) { sessionStorage.setItem('login_attempts_' + key, JSON.stringify(data)); },
+  set(key, data) { localStorage.setItem('login_attempts_' + key, JSON.stringify(data)); },
   isLocked(key) {
     const d = this.get(key);
     if (d.lockUntil && Date.now() < d.lockUntil) return d.lockUntil;
@@ -2041,7 +2041,7 @@ const loginAttempts = {
     this.set(key, d);
     return d;
   },
-  reset(key) { sessionStorage.removeItem('login_attempts_' + key); }
+  reset(key) { localStorage.removeItem('login_attempts_' + key); }
 };
 
 // 🔒 แสดงหน้าต่างนับเวลาถอยหลัง (Countdown) ตอนบัญชีถูกล็อก
@@ -2070,10 +2070,10 @@ function showLockoutAlert(lockUntil) {
 // 3. ตัวแปรสถานะและฟังก์ชันช่วยเหลือ (Helpers)
 // ==========================================
 // ตัวแปรเก็บข้อมูลผู้ใช้งานที่เข้าสู่ระบบปัจจุบัน
-let currentTeacher = sessionStorage.getItem('logged_teacher') || null;
-let currentRole = sessionStorage.getItem('logged_role') || null;
-let currentEmail = sessionStorage.getItem('logged_email') || '';
-let isAdminLoggedIn = sessionStorage.getItem('logged_admin') === 'true' || false;
+let currentTeacher = localStorage.getItem('logged_teacher') || null;
+let currentRole = localStorage.getItem('logged_role') || null;
+let currentEmail = localStorage.getItem('logged_email') || '';
+let isAdminLoggedIn = localStorage.getItem('logged_admin') === 'true' || false;
 let isRegisterMode = false;
 
 // ฟังก์ชันย่อเพื่อเรียก DOM Elements แทนการใช้ document.getElementById หรือ querySelectorAll
@@ -2796,7 +2796,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (LIFF_ID && LIFF_ID !== "ใส่_LIFF_ID_ที่นี่") {
     liff.init({ liffId: LIFF_ID }).then(() => {
       if (liff.isLoggedIn()) {
-        handleLiffLogin();
+        if (!localStorage.getItem('logged_teacher')) {
+          handleLiffLogin();
+        } else {
+          // ถ้ามี session อยู่แล้ว และเป็นแอดมิน ให้เด้งไป Dashboard หรือถอยไป Profile
+          if (localStorage.getItem('logged_admin') === 'true') {
+            nav('page-dashboard');
+          } else {
+            nav('page-teacher-profile');
+          }
+        }
       }
     }).catch(err => {
       console.error('LIFF Initialization failed', err);
@@ -2834,11 +2843,11 @@ function handleLiffLogin() {
         currentEmail = res.email || email || '';
         isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive');
 
-        sessionStorage.setItem('logged_teacher', currentTeacher);
-        sessionStorage.setItem('logged_role', currentRole);
-        sessionStorage.setItem('logged_email', currentEmail);
-        if (isAdminLoggedIn) sessionStorage.setItem('logged_admin', 'true');
-        sessionStorage.setItem('session_login_time', Date.now().toString());
+        localStorage.setItem('logged_teacher', currentTeacher);
+        localStorage.setItem('logged_role', currentRole);
+        localStorage.setItem('logged_email', currentEmail);
+        if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
+        localStorage.setItem('session_login_time', Date.now().toString());
 
         updateSessionUI();
         alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
@@ -2879,11 +2888,11 @@ function handleCredentialResponse(response) {
       currentEmail = res.email || '';
       isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive');
 
-      sessionStorage.setItem('logged_teacher', currentTeacher);
-      sessionStorage.setItem('logged_role', currentRole);
-      sessionStorage.setItem('logged_email', currentEmail);
-      if (isAdminLoggedIn) sessionStorage.setItem('logged_admin', 'true');
-      sessionStorage.setItem('session_login_time', Date.now().toString());
+      localStorage.setItem('logged_teacher', currentTeacher);
+      localStorage.setItem('logged_role', currentRole);
+      localStorage.setItem('logged_email', currentEmail);
+      if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
+      localStorage.setItem('session_login_time', Date.now().toString());
 
       updateSessionUI();
       alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
@@ -2898,9 +2907,9 @@ function handleCredentialResponse(response) {
 }
 
 function handleGlobalLogout() {
-  sessionStorage.removeItem('logged_teacher');
-  sessionStorage.removeItem('logged_admin');
-  sessionStorage.removeItem('logged_email');
+  localStorage.removeItem('logged_teacher');
+  localStorage.removeItem('logged_admin');
+  localStorage.removeItem('logged_email');
   currentTeacher = null;
   currentEmail = '';
   isAdminLoggedIn = false;
@@ -4165,7 +4174,8 @@ window.renderRepairTable = function () {
     return;
   }
 
-  tbody.innerHTML = filteredList.map(({ r, originalIndex }) => {
+  // จำกัดการวาด DOM สูงสุด 100 รายการเพื่อไม่ให้หน้าจอกระตุกหรือค้าง
+  tbody.innerHTML = filteredList.slice(0, 100).map(({ r, originalIndex }) => {
     const timestamp = r[0] || '';
     const subject = r[1] || '';
     const detail = r[2] || '';
@@ -4403,7 +4413,8 @@ window.renderAVTable = function () {
     return;
   }
 
-  tbody.innerHTML = filteredList.map(({ r, originalIndex }) => {
+  // จำกัดการวาด DOM สูงสุด 100 รายการ
+  tbody.innerHTML = filteredList.slice(0, 100).map(({ r, originalIndex }) => {
     const st = r[5] || 'รอยืนยันการยืม';
     const tech = r[6] || '-';
     const isDone = (st === 'เสร็จสิ้น' || st === 'เสร็จสิ้น/คืนเรียบร้อย' || st === 'เรียบร้อยแล้ว');
