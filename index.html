@@ -4916,11 +4916,10 @@ window.renderAdvTableFiltered = function(tbodyId, rows, type) {
 function toggleDesktopSidebar() {
   const sb = document.getElementById('app-sidebar');
   if (sb) {
-    sb.classList.toggle('sidebar-collapsed');
-    if (sb.classList.contains('sidebar-collapsed')) {
-      sb.classList.replace('w-64', 'w-[4.5rem]');
+    if (sb.classList.contains('md:flex')) {
+      sb.classList.replace('md:flex', 'md:hidden');
     } else {
-      sb.classList.replace('w-[4.5rem]', 'w-64');
+      sb.classList.replace('md:hidden', 'md:flex');
     }
   }
 }
