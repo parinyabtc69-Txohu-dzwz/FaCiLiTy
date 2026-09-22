@@ -225,14 +225,28 @@ const readFile = file => new Promise((resolve, reject) => {
 // ==========================================
 // ออบเจ็กต์สำหรับรวมการเรียก API ระหว่างหน้าบ้านกับหลังบ้าน (Google Apps Script) เข้าด้วยกัน
 const ResourceHubCore = {
+  _cache: new Map(), // เก็บ Cache ของข้อมูล
+  _cacheTTL: 60 * 1000, // อายุ Cache 60 วินาที
+
   api: {
-    // โหลดข้อมูลด้วยวิธี GET (อ่านข้อมูล)
+    // โหลดข้อมูลด้วยวิธี GET (อ่านข้อมูล) พร้อมระบบ Cache
     async get(action, params = {}) {
-      // เพิ่ม t: Date.now() เพื่อแก้ปัญหา Cache ของเบราว์เซอร์
+      const cacheKey = action + JSON.stringify(params);
+      const cached = ResourceHubCore._cache.get(cacheKey);
+      
+      if (cached && (Date.now() - cached.timestamp < ResourceHubCore._cacheTTL)) {
+        return cached.data; // คืนค่าจาก Cache ถ้ายังไม่หมดอายุ
+      }
+
+      // เพิ่ม t: Date.now() เพื่อแก้ปัญหา Cache ของเบราว์เซอร์ระดับล่าง
       const q = new URLSearchParams({ action, t: Date.now(), ...params });
       const r = await fetch(`${scriptURL}?${q}`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return await r.json();
+      const data = await r.json();
+      
+      // บันทึกลง Cache
+      ResourceHubCore._cache.set(cacheKey, { data, timestamp: Date.now() });
+      return data;
     },
     // ส่งข้อมูลด้วยวิธี POST (บันทึกข้อมูล)
     async post(payload) {
@@ -246,8 +260,13 @@ const ResourceHubCore = {
       try {
         const json = text ? JSON.parse(text) : { status: 'success' };
         if (json.status === 'error') throw new Error(json.message);
+        
+        // ล้าง Cache ทั้งหมดเมื่อมีการ POST (ข้อมูลเปลี่ยน)
+        ResourceHubCore._cache.clear();
+        
         return json;
       } catch (e) {
+
         throw e;
       }
     }
@@ -887,16 +906,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function loginWithLine() {
-  if (!LIFF_ID || LIFF_ID === "ใส่_LIFF_ID_ที่นี่") {
-    alertBox('error', 'ระบบยังไม่พร้อม', 'ผู้ดูแลระบบยังไม่ได้ตั้งค่า LIFF ID');
-    return;
-  }
-  if (!liff.isLoggedIn()) {
-    liff.login();
-  } else {
-    handleLiffLogin();
-  }
+function joinLineGroup() {
+  // แก้ไข URL เป็นลิ้งค์กลุ่ม LINE ของคุณ
+  window.open('https://line.me/ti/g/EkB7qqyTQy', '_blank');
 }
 
 function handleLiffLogin() {
@@ -1155,6 +1167,10 @@ function updateSessionUI() {
       if (dashNav) { dashNav.classList.remove('hidden'); dashNav.classList.add('flex'); }
       if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
       if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
+      
+      // New Admin menus for Tech
+      if ($('gnav-project-manage')) { $('gnav-project-manage').classList.remove('hidden'); $('gnav-project-manage').classList.add('flex'); }
+      if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
       if (basicNavHome) basicNavHome.classList.add('hidden');
       if (basicNavRepair) basicNavRepair.classList.add('hidden');
@@ -1167,8 +1183,19 @@ function updateSessionUI() {
     } else if (currentRole === 'AV') {
       roleDisplay = 'เจ้าหน้าที่โสตฯ (AV)';
       if (dashNav) { dashNav.classList.remove('hidden'); dashNav.classList.add('flex'); }
+      if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
       if (avManageNav) { avManageNav.classList.remove('hidden'); avManageNav.classList.add('flex'); }
+      if (masterDataNav) { masterDataNav.classList.remove('hidden'); masterDataNav.classList.add('flex'); }
+      if ($('gnav-user-manage')) { $('gnav-user-manage').classList.remove('hidden'); $('gnav-user-manage').classList.add('flex'); }
       if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
+  
+      // New Admin menus for AV
+      if ($('gnav-it-manage')) { $('gnav-it-manage').classList.remove('hidden'); $('gnav-it-manage').classList.add('flex'); }
+      if ($('gnav-av-repair-manage')) { $('gnav-av-repair-manage').classList.remove('hidden'); $('gnav-av-repair-manage').classList.add('flex'); }
+      if ($('gnav-project-manage')) { $('gnav-project-manage').classList.remove('hidden'); $('gnav-project-manage').classList.add('flex'); }
+      if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
+      if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
+      if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
       if (basicNavHome) basicNavHome.classList.add('hidden');
       if (basicNavRepair) basicNavRepair.classList.add('hidden');
@@ -1605,32 +1632,48 @@ function exportTableToCSV(tbodyId, filename) {
 
 async function updateNotificationBadges() {
   if (!isAdminLoggedIn && (!currentRole || currentRole === 'Teacher')) return;
+  
   try {
-    const d = await ResourceHubCore.dashboard.legacy();
+    const d = await ResourceHubCore.dashboard.legacy().catch(e => {
+      console.error('Legacy dashboard fetch failed:', e);
+      return null;
+    });
+    
+    if (d) {
+      const bPending = (Number(d?.building?.pending) || 0) + (Number(d?.building?.inProgress) || 0);
+      const badgeRepair = document.getElementById('badge-repair');
+      if (badgeRepair) {
+        badgeRepair.textContent = bPending;
+        if (bPending > 0) badgeRepair.classList.remove('hidden');
+        else badgeRepair.classList.add('hidden');
+      }
 
-    const bPending = (Number(d?.building?.pending) || 0) + (Number(d?.building?.inProgress) || 0);
-    const badgeRepair = document.getElementById('badge-repair');
-    if (badgeRepair) {
-      badgeRepair.textContent = bPending;
-      badgeRepair.classList.remove('hidden');
-    }
+      const mbBadgeRepair = document.getElementById('mb-badge-repair');
+      if (mbBadgeRepair) {
+        mbBadgeRepair.textContent = bPending;
+        if (bPending > 0) mbBadgeRepair.classList.remove('hidden');
+        else mbBadgeRepair.classList.add('hidden');
+      }
 
-    const mbBadgeRepair = document.getElementById('mb-badge-repair');
-    if (mbBadgeRepair) {
-      mbBadgeRepair.textContent = bPending;
-      mbBadgeRepair.classList.remove('hidden');
+      const avPending = Number(d?.av?.pending) || 0;
+      const badgeAV = document.getElementById('badge-av');
+      if (badgeAV) {
+        badgeAV.textContent = avPending;
+        if (avPending > 0) badgeAV.classList.remove('hidden');
+        else badgeAV.classList.add('hidden');
+      }
     }
+  } catch (e) {
+    console.error('Error loading primary badges:', e);
+  }
 
-    const avPending = Number(d?.av?.pending) || 0;
-    const badgeAV = document.getElementById('badge-av');
-    if (badgeAV) {
-      badgeAV.textContent = avPending;
-      if(avPending > 0) badgeAV.classList.remove('hidden');
-      else badgeAV.classList.add('hidden');
-    }
-    try {
-      const advD = await ResourceHubCore.api.get('get_adv_tasks');
-      
+  try {
+    const advD = await ResourceHubCore.api.get('get_adv_tasks').catch(e => {
+      console.warn('Adv tasks fetch failed (API might not exist yet):', e);
+      return null;
+    });
+    
+    if (advD) {
       const badgeAVRepair = document.getElementById('badge-av-repair');
       if (badgeAVRepair && advD.av) {
         const pendingAvRep = advD.av.filter(r => !['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes((r[4] || '').trim())).length;
@@ -1654,11 +1697,9 @@ async function updateNotificationBadges() {
         if (pendingProject > 0) badgeProject.classList.remove('hidden');
         else badgeProject.classList.add('hidden');
       }
-    } catch (e) {
-      console.warn('Could not fetch adv tasks for badge', e);
     }
   } catch (e) {
-    console.error('Error loading badges:', e);
+    console.warn('Could not fetch adv tasks for badge', e);
   }
 }
 
@@ -2529,7 +2570,7 @@ window.renderAVTable = function () {
     
     const avatarColor = getAvatarColor(r[1] || '');
 
-    return `<div onclick="updateAV(${originalIndex}, '${st}', '${tech}')" class="${rowBg} cursor-pointer p-4 flex gap-4 items-start transition-colors border-b border-slate-100 hover:bg-slate-50">
+    return `<div onclick="openAVModal(${originalIndex}, '${st}', '${tech}')" class="${rowBg} cursor-pointer p-4 flex gap-4 items-start transition-colors border-b border-slate-100 hover:bg-slate-50">
       <div class="flex-shrink-0 mt-1">
         <div class="w-12 h-12 rounded-full ${avatarColor} text-white flex items-center justify-center font-bold text-lg shadow-sm">
           ${getInitials(r[1] || '')}

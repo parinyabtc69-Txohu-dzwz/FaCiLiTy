@@ -39,8 +39,10 @@ const CONFIG = {
   WEB_APP_URL: "https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/", // URL ของระบบ (หน้าเว็บ Frontend)
 };
 
+let _globalDB = null;
 function getDB() {
-  return SpreadsheetApp.openById(CONFIG.SHEET_ID);
+  if (!_globalDB) _globalDB = SpreadsheetApp.openById(CONFIG.SHEET_ID);
+  return _globalDB;
 }
 
 // ============================================================
