@@ -3554,16 +3554,17 @@ async function updateNotificationBadges() {
       if(avPending > 0) badgeAV.classList.remove('hidden');
       else badgeAV.classList.add('hidden');
     }
-    const badgeAVRepair = document.getElementById('badge-av-repair');
-    if (badgeAVRepair) {
-      badgeAVRepair.textContent = avPending;
-      if(avPending > 0) badgeAVRepair.classList.remove('hidden');
-      else badgeAVRepair.classList.add('hidden');
-    }
-
     try {
       const advD = await ResourceHubCore.api.get('get_adv_tasks');
       
+      const badgeAVRepair = document.getElementById('badge-av-repair');
+      if (badgeAVRepair && advD.av) {
+        const pendingAvRep = advD.av.filter(r => !['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes((r[4] || '').trim())).length;
+        badgeAVRepair.textContent = pendingAvRep;
+        if (pendingAvRep > 0) badgeAVRepair.classList.remove('hidden');
+        else badgeAVRepair.classList.add('hidden');
+      }
+
       const badgeIt = document.getElementById('badge-it');
       if (badgeIt && advD.it) {
         const pendingIt = advD.it.filter(r => !['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes((r[4] || '').trim())).length;
