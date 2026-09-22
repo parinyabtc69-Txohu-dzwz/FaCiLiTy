@@ -492,10 +492,13 @@ const ResourceHubCore = {
       const isRepair = type === 'repair';
       const tbodyId = isRepair ? 'taskBody' : 'avDataView';
       const colSpan = isRepair ? 8 : 9;
+      // แสดง Skeleton ก่อนโหลด
+      const el = $(tbodyId);
+      if (el) el.innerHTML = typeof getSkeletonCards === 'function' ? getSkeletonCards(5) : '<div class="p-8 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i></div>';
       try {
         const rawData = isRepair ? await ResourceHubCore.work.repairs() : await ResourceHubCore.av.list();
         if (!rawData || !rawData.length) {
-          $(tbodyId).innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-slate-500">${isRepair ? 'ไม่มีรายการแจ้งซ่อม' : 'ยังไม่มีรายการแจ้งยืมครับ'}</td></tr>`;
+          $(tbodyId).innerHTML = `<div class="p-8 text-center text-slate-500">${isRepair ? 'ไม่มีรายการแจ้งซ่อม' : 'ยังไม่มีรายการแจ้งยืมครับ'}</div>`;
           return;
         }
 
@@ -510,7 +513,7 @@ const ResourceHubCore = {
         }
       } catch (e) {
         console.error(e);
-        $(tbodyId).innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-rose-500">ไม่สามารถโหลดข้อมูลได้ในขณะนี้</td></tr>`;
+        $(tbodyId).innerHTML = `<div class="p-8 text-center text-rose-500"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ไม่สามารถโหลดข้อมูลได้ในขณะนี้</div>`;
       }
     },
     // แอดมินกดเปลี่ยนสถานะงานซ่อม หรือ ปิดงาน (อัปโหลดรูปหลักฐาน)
@@ -1026,7 +1029,6 @@ function nav(pageId) {
 
   if (pageId === 'page-dashboard') {
     ResourceHubCore.ui.loadDashboard();
-    loadDashboardPro();
   } else if (pageId === 'page-teacher-profile') {
     ResourceHubCore.ui.loadTeacherHistory('repair');
   } else if (pageId === 'page-teacher-av-profile') {
@@ -1734,6 +1736,12 @@ async function submitProject() {
 // 13. จัดการรายการขั้นสูง (Advanced Tasks Management)
 // ==========================================
 async function loadAdvancedTasks() {
+  // แสดง Skeleton ในทุก Container ที่เกี่ยวข้อง
+  const skeletonHtml = typeof getSkeletonCards === 'function' ? getSkeletonCards(4) : '<div class="p-8 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i></div>';
+  ['it-manage-list', 'av-repair-manage-list', 'project-manage-list'].forEach(id => {
+    const el = $(id);
+    if (el) el.innerHTML = skeletonHtml;
+  });
   try {
     const data = await ResourceHubCore.api.get('get_adv_tasks');
     window.advTasksData = data;
@@ -1744,6 +1752,10 @@ async function loadAdvancedTasks() {
     }
   } catch (e) {
     console.error('loadAdvancedTasks error:', e);
+    ['it-manage-list', 'av-repair-manage-list', 'project-manage-list'].forEach(id => {
+      const el = $(id);
+      if (el) el.innerHTML = '<div class="p-8 text-center text-rose-500"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ไม่สามารถโหลดข้อมูลได้ในขณะนี้</div>';
+    });
   }
 }
 
@@ -1914,7 +1926,7 @@ function switchAdvTab(tabId, btn) {
 // 14. แดชบอร์ดขั้นสูง (Dashboard Pro)
 // ==========================================
 async function loadDashboard() { return ResourceHubCore.ui.loadDashboard(); }
-async function loadDashboardPro() { return ResourceHubCore.ui.loadDashboard(); }
+async function loadDashboardPro() { /* deprecated: merged into loadDashboard */ }
 
 // ==========================================
 // 15. ระบบคลังเอกสาร (Document Module)
@@ -2139,6 +2151,23 @@ async function deleteDocument(docId, docName) {
 // ==========================================
 // 16. ส่วนเสริมหน้าจอแอดมินแจ้งซ่อม (Repair Admin UI Enhancements)
 // ==========================================
+// ===== Skeleton Loading Helper =====
+function getSkeletonCards(count) {
+  count = count || 4;
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    html += '<div class="skeleton-card">'
+      + '<div class="skeleton skeleton-avatar"></div>'
+      + '<div class="skeleton-body">'
+      + '<div class="skeleton skeleton-line w-1/2" style="margin-bottom:10px"></div>'
+      + '<div class="skeleton skeleton-line w-3/4" style="margin-bottom:10px"></div>'
+      + '<div class="skeleton skeleton-line w-full" style="margin-bottom:12px"></div>'
+      + '<div class="skeleton skeleton-badge"></div>'
+      + '</div></div>';
+  }
+  return html;
+}
+
 window.renderRepairTable = function () {
   const rawData = window.allRepairTasks || [];
   const listWithIndex = rawData.map((r, idx) => ({ r, originalIndex: idx }));
@@ -2925,7 +2954,7 @@ window.renderAdvTableFiltered = function(tbodyId, rows, type) {
     const detail = r[2] || '';
     const reporter = r[3] || '';
     const status = r[4] || '';
-    const img = r[5] && r[5] !== '-' ? `<a href="${r[5]}" target="_blank" class="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-md border border-blue-200 hover:bg-blue-100" onclick="event.stopPropagation();"><i class="fa-solid fa-image"></i> รูปภาพ</a>` : '';
+    const img = r[5] && r[5] !== '-' ? `<button onclick="event.stopPropagation(); showImageModal('${r[5]}')" class="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-md border border-blue-200 hover:bg-blue-100"><i class="fa-solid fa-image"></i> รูปภาพ</button>` : '';
     const urgency = r[6] || '';
     const isDone = ['เสร็จสิ้น', 'อนุมัติ', 'ไม่อนุมัติ', 'ยกเลิก'].includes(status);
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60 font-medium';

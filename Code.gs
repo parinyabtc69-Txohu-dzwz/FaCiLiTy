@@ -68,6 +68,33 @@ function doOptions(e) {
 // ============================================================
 // GET Requests
 // ============================================================
+// ============================================================
+// Keep-Alive: ป้องกัน GAS Cold Start โดยการ Ping ตัวเอง
+// วิธีใช้: รัน setupKeepAliveTrigger() ครั้งเดียวใน GAS Editor
+// ============================================================
+function keepAlive() {
+  // แค่เรียกใช้ SpreadsheetApp เพื่อให้ GAS ตื่นอยู่เสมอ
+  const db = getDB();
+  const sheet = db.getSheets()[0];
+  const name = sheet ? sheet.getName() : 'ok';
+  console.log('KeepAlive ping OK - ' + new Date().toLocaleString() + ' | Sheet: ' + name);
+}
+
+function setupKeepAliveTrigger() {
+  // ลบ Trigger เก่าก่อน (ถ้ามี)
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'keepAlive') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+  // ตั้ง Trigger ใหม่: รัน keepAlive ทุก 10 นาที
+  ScriptApp.newTrigger('keepAlive')
+    .timeBased()
+    .everyMinutes(10)
+    .create();
+  console.log('keepAlive Trigger ตั้งค่าเรียบร้อย - ทุก 10 นาที');
+}
+
 function doGet(e) {
   if (!e || !e.parameter) {
     return ContentService.createTextOutput("พร้อมใช้งานแล้ว")

@@ -1,4 +1,4 @@
-﻿    :root {
+    :root {
       /* ===== Brand Palette (Primary Colors for Online) ===== */
       --brand-primary: #265D5A;
       /* Dark Teal #265D5A — สีหลัก */
@@ -77,3 +77,47 @@
       box-shadow: 0 0 0 2px #265D5A55;
       border-color: #265D5A !important;
     }
+
+    /* ===== Skeleton Loading Animation ===== */
+    @keyframes skeleton-shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 800px 100%;
+      animation: skeleton-shimmer 1.4s infinite linear;
+      border-radius: 6px;
+    }
+
+    .skeleton-card {
+      display: flex;
+      gap: 16px;
+      padding: 20px;
+      border-bottom: 1px solid #f1f5f9;
+      align-items: flex-start;
+    }
+
+    .skeleton-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .skeleton-body {
+      flex: 1;
+    }
+
+    .skeleton-line {
+      height: 12px;
+      margin-bottom: 10px;
+    }
+
+    .skeleton-line.w-1\/2 { width: 50%; }
+    .skeleton-line.w-2\/3 { width: 66%; }
+    .skeleton-line.w-3\/4 { width: 75%; }
+    .skeleton-line.w-full { width: 100%; }
+    .skeleton-badge { height: 22px; width: 80px; border-radius: 999px; }
