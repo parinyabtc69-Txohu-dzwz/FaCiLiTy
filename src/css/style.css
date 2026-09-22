@@ -121,3 +121,32 @@
     .skeleton-line.w-3\/4 { width: 75%; }
     .skeleton-line.w-full { width: 100%; }
     .skeleton-badge { height: 22px; width: 80px; border-radius: 999px; }
+
+/* Sidebar Collapsed State */
+.sidebar-collapsed .gmail-nav-item span,
+.sidebar-collapsed .gmail-nav-item div:not(.relative) {
+  display: none !important;
+}
+.sidebar-collapsed .gmail-nav-item i {
+  margin: 0 auto !important;
+  font-size: 1.25rem;
+}
+.sidebar-collapsed .gmail-nav-item {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  justify-content: center;
+}
+.sidebar-collapsed .bg-\[\#265D5A\] span {
+  display: none;
+}
+.sidebar-collapsed .bg-\[\#265D5A\] {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  justify-content: center;
+}
+.sidebar-collapsed .bg-\[\#265D5A\] i {
+  margin: 0;
+}
+.sidebar-collapsed #badge-repair {
+  display: none !important;
+}

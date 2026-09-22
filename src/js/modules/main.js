@@ -60,7 +60,7 @@ console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; fo
 // 1. ตั้งค่าพื้นฐานระบบ (Global Config)
 // ==========================================
 // 🔴 เปลี่ยน URL ตรงนี้เป็น URL ของการ Deploy ล่าสุดจาก Google Apps Script
-const scriptURL = 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec';
+const scriptURL = 'https://script.google.com/macros/s/AKfycbz8v26S7km-uQ5wR2neO9oYs0_UvTJPXGdLhyYHt4pNM6AVZxouW4qiS1REDhlgjU8QPg/exec';
 
 
 // 🔴 โฟลเดอร์ที่เก็บรูป 
@@ -1616,26 +1616,33 @@ async function updateNotificationBadges() {
     const badgeAV = document.getElementById('badge-av');
     if (badgeAV) {
       badgeAV.textContent = avPending;
-      badgeAV.classList.remove('hidden');
+      if(avPending > 0) badgeAV.classList.remove('hidden');
+      else badgeAV.classList.add('hidden');
+    }
+    const badgeAVRepair = document.getElementById('badge-av-repair');
+    if (badgeAVRepair) {
+      badgeAVRepair.textContent = avPending;
+      if(avPending > 0) badgeAVRepair.classList.remove('hidden');
+      else badgeAVRepair.classList.add('hidden');
     }
 
     try {
-      const badgeAdv = document.getElementById('badge-adv');
-      if (badgeAdv) {
-        const advD = await ResourceHubCore.api.get('get_adv_tasks');
-        let pendingAdv = 0;
-        if (advD.it) {
-          pendingAdv += advD.it.filter(r => !['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes((r[4] || '').trim())).length;
-        }
-        if (advD.project) {
-          pendingAdv += advD.project.filter(r => !['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes((r[4] || '').trim())).length;
-        }
-        if (pendingAdv > 0) {
-          badgeAdv.textContent = pendingAdv;
-          badgeAdv.classList.remove('hidden');
-        } else {
-          badgeAdv.classList.add('hidden');
-        }
+      const advD = await ResourceHubCore.api.get('get_adv_tasks');
+      
+      const badgeIt = document.getElementById('badge-it');
+      if (badgeIt && advD.it) {
+        const pendingIt = advD.it.filter(r => !['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes((r[4] || '').trim())).length;
+        badgeIt.textContent = pendingIt;
+        if (pendingIt > 0) badgeIt.classList.remove('hidden');
+        else badgeIt.classList.add('hidden');
+      }
+
+      const badgeProject = document.getElementById('badge-project');
+      if (badgeProject && advD.project) {
+        const pendingProject = advD.project.filter(r => !['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes((r[4] || '').trim())).length;
+        badgeProject.textContent = pendingProject;
+        if (pendingProject > 0) badgeProject.classList.remove('hidden');
+        else badgeProject.classList.add('hidden');
       }
     } catch (e) {
       console.warn('Could not fetch adv tasks for badge', e);
@@ -2979,3 +2986,16 @@ window.renderAdvTableFiltered = function(tbodyId, rows, type) {
     return `<div onclick="updateAdvTask('${type}', ${originalIndex}, '${status}')" class="${rowBg} cursor-pointer p-4 flex gap-4 items-start transition-colors border-b border-slate-100 hover:bg-slate-50"><div class="flex-shrink-0 mt-1"><div class="w-12 h-12 rounded-full ${avatarColor} text-white flex items-center justify-center font-bold text-lg shadow-sm">${getInitials(reporter)}</div></div><div class="flex-1 min-w-0"><div class="flex justify-between items-baseline mb-1"><h4 class="text-base ${isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-700'} truncate pr-2 flex items-center">${reporter} ${urgBadge}</h4><span class="text-xs text-slate-500 whitespace-nowrap">${timestamp}</span></div><div class="text-sm ${isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-600'} mb-1 truncate flex items-center gap-2">${subject}${img ? '<i class="fa-solid fa-paperclip text-slate-400" title="มีแนบ"></i>' : ''}</div><div class="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-3">${detail}</div><div class="flex flex-wrap gap-2 items-center">${statusTagClass(status)}${img}</div></div></div>`;
   }).join('');
 };
+
+function toggleDesktopSidebar() {
+  const sb = document.getElementById('app-sidebar');
+  if (sb) {
+    sb.classList.toggle('sidebar-collapsed');
+    if (sb.classList.contains('sidebar-collapsed')) {
+      sb.classList.replace('w-64', 'w-[4.5rem]');
+    } else {
+      sb.classList.replace('w-[4.5rem]', 'w-64');
+    }
+  }
+}
+window.toggleDesktopSidebar = toggleDesktopSidebar;
