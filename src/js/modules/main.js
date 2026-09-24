@@ -2356,11 +2356,11 @@ window.filterRepairTab = function (tabId, btn) {
     if (container) {
       const btns = container.querySelectorAll('button');
       btns.forEach(b => {
-        b.classList.remove('font-bold', 'text-blue-600', 'border-b-2', 'border-blue-600');
+        b.classList.remove('gmail-tab', 'active');
         b.classList.add('font-semibold', 'text-slate-500', 'hover:text-slate-700');
       });
       btn.classList.remove('font-semibold', 'text-slate-500', 'hover:text-slate-700');
-      btn.classList.add('font-bold', 'text-blue-600', 'border-b-2', 'border-blue-600');
+      btn.classList.add('gmail-tab', 'active');
     }
   }
   window.renderRepairTable();
@@ -2570,27 +2570,24 @@ window.renderAVTable = function () {
     
     const avatarColor = getAvatarColor(r[1] || '');
 
-    return `<div onclick="openAVModal(${originalIndex}, '${st}', '${tech}')" class="${rowBg} cursor-pointer p-4 flex gap-4 items-start transition-colors border-b border-slate-100 hover:bg-slate-50">
-      <div class="flex-shrink-0 mt-1">
-        <div class="w-12 h-12 rounded-full ${avatarColor} text-white flex items-center justify-center font-bold text-lg shadow-sm">
-          ${getInitials(r[1] || '')}
-        </div>
+    return `<div onclick="openAVModal(${originalIndex}, '${st}', '${tech}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
+      <div class="flex items-center gap-3 shrink-0 w-40">
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        ${starIcon.replace(/text-lg/g, 'text-sm').replace(/onclick="[^"]*"/g, (match) => 'onclick="event.stopPropagation(); ' + match.substring(9))}
+        <span class="truncate w-full pl-1">${r[1]}</span>
       </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex justify-between items-baseline mb-1">
-          <h4 class="text-base ${isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-700'} truncate pr-2">${r[1]}</h4>
-          <span class="text-xs text-slate-500 whitespace-nowrap">${r[0]}</span>
+      <div class="flex flex-1 items-center gap-2 overflow-hidden px-2">
+        <span class="truncate max-w-[200px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}">${r[2]}</span>
+        <span class="text-slate-400 truncate">- ใช้วันที่: ${r[3]} | สถานที่: ${r[4]}</span>
+        <div class="shrink-0 scale-75 origin-left">${statusTagClass(st)}</div>
+      </div>
+      <div class="flex items-center gap-4 shrink-0">
+        <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">
+            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
         </div>
-        <div class="text-sm ${isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-600'} mb-1 flex items-center gap-2">
-          <i class="fa-solid fa-microphone-lines text-amber-500"></i> ${r[2]}
-        </div>
-        <div class="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-3">
-          ใช้วันที่: ${r[3]} | สถานที่: ${r[4]} <br> ช่างผู้ดูแล: ${tech}
-        </div>
-        <div class="flex flex-wrap gap-2 items-center">
-          ${starIcon.replace(/onclick="[^"]*"/g, (match) => 'onclick="event.stopPropagation(); ' + match.substring(9))}
-          ${statusTagClass(st)}
-        </div>
+        <span class="text-xs group-hover:hidden ${isUnread ? 'text-slate-900' : 'text-slate-500'}">${r[0].split(' ')[0]}</span>
       </div>
     </div>`;
   }).join('');
@@ -2603,11 +2600,11 @@ window.filterAVTab = function (tabId, btn) {
     if (container) {
       const btns = container.querySelectorAll('button');
       btns.forEach(b => {
-        b.classList.remove('font-bold', 'text-blue-600', 'border-b-2', 'border-blue-600');
+        b.classList.remove('gmail-tab', 'active');
         b.classList.add('font-semibold', 'text-slate-500', 'hover:text-slate-700');
       });
       btn.classList.remove('font-semibold', 'text-slate-500', 'hover:text-slate-700');
-      btn.classList.add('font-bold', 'text-blue-600', 'border-b-2', 'border-blue-600');
+      btn.classList.add('gmail-tab', 'active');
     }
   }
   window.renderAVTable();

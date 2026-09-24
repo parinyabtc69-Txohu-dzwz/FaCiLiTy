@@ -1,0 +1,9 @@
+
+/* ===== Gmail Style Specifics ===== */
+.gmail-row { border-bottom: 1px solid #f2f6fc; transition: box-shadow 0.2s; }
+.gmail-row:hover { box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); z-index: 10; position: relative; border-bottom: transparent; }
+.gmail-tab { border-bottom: 3px solid #fff; margin-bottom: -1px; }
+.gmail-tab.active { border-bottom-color: #0b57d0; color: #0b57d0 !important; }
+.gmail-toolbar-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
+.gmail-toolbar-btn:hover { background-color: rgba(60,64,67,.08); }
+.gmail-label { padding: 0 8px; height: 20px; border-radius: 4px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; }
