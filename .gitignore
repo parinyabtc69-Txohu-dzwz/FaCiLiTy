@@ -1,0 +1,25 @@
+﻿# Dependencies
+node_modules/
+
+# Archives & Backups
+*.zip
+*.rar
+*.tar.gz
+*.7z
+backup_*
+*_backup
+
+# Temporary patch scripts
+patch_*.js
+fix.ps1
+fix.bat
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Log files
+*.log
+
+# Temp files
+*.tmp
