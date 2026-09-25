@@ -3842,7 +3842,26 @@ function renderAdvTable(tbodyId, rows, type) {
     }
 
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60';
-    return '<tr class="border-b ' + rowBg + ' transition-colors"><td class="p-4 text-center">' + urgHtml + '</td><td class="p-4 text-slate-500">' + timestamp + '</td><td class="p-4">' + statusTagClass(status) + '</td><td class="p-4 font-bold text-slate-800">' + subject + '</td><td class="p-4 text-sm text-slate-600 max-w-xs truncate">' + detail + '</td><td class="p-4 font-semibold text-slate-700">' + reporter + '</td><td class="p-4">' + img + '</td><td class="p-4 text-center"><button class="text-blue-500 hover:text-blue-700 font-semibold" onclick="updateAdvTask(\'' + type + '\',' + i + ',\'' + status + '\')"><i class="fa-solid fa-pen-to-square"></i></button></td></tr>';
+    return `<div onclick="updateAdvTask('${type}', ${i}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
+      <div class="flex items-center gap-3 shrink-0 w-48">
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
+        <span class="truncate w-full pl-1 flex items-center">${reporter} ${urgHtml}</span>
+      </div>
+      <div class="flex flex-1 items-center gap-2 overflow-hidden px-2">
+        <span class="truncate max-w-[200px] ${!isDone ? 'text-slate-900' : 'text-slate-700'}">${subject}</span>
+        <span class="text-slate-400 truncate">- ${detail}</span>
+        <div class="shrink-0 scale-75 origin-left flex gap-1">${statusTagClass(status)}${img}</div>
+      </div>
+      <div class="flex items-center gap-4 shrink-0">
+        <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">
+            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
+        </div>
+        <span class="text-xs group-hover:hidden ${!isDone ? 'text-slate-900' : 'text-slate-500'}">${timestamp.split(' ')[0]}</span>
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -4307,20 +4326,26 @@ window.renderRepairTable = function () {
     const subjectFontClass = isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-600';
     const paperclip = img ? '<i class="fa-solid fa-paperclip text-slate-400" title="มีรูปภาพแนบ"></i>' : '';
 
-    const html = '<div onclick="updateTask(' + originalIndex + ')" class="' + rowBg + ' cursor-pointer p-4 md:p-5 flex gap-4 items-start transition-colors border-b border-slate-100 group">'
-      + '<div class="flex-shrink-0 mt-1">'
-      + '<div class="w-12 h-12 rounded-full ' + avatarBg + ' text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">'
-      + initials
-      + '</div></div>'
-      + '<div class="flex-1 min-w-0">'
-      + '<div class="flex flex-col md:flex-row md:justify-between md:items-center mb-1.5 gap-1 md:gap-4">'
-      + '<h4 class="text-base ' + fontClass + ' truncate flex items-center">' + reporter + ' ' + urgBadge + '</h4>'
-      + '<span class="text-xs text-slate-500 whitespace-nowrap font-medium md:order-last order-first">' + timestamp + '</span>'
-      + '</div>'
-      + '<div class="text-sm ' + subjectFontClass + ' mb-1.5 truncate flex items-center gap-2">' + subject + paperclip + '</div>'
-      + '<div class="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-3">' + detail + '</div>'
-      + '<div class="flex flex-wrap gap-2 items-center">' + statusTagClass(status) + img + '</div>'
-      + '</div></div>';
+    const html = `<div onclick="updateTask(${originalIndex})" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
+      <div class="flex items-center gap-3 shrink-0 w-48">
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
+        <span class="truncate w-full pl-1 flex items-center">${reporter} ${urgBadge}</span>
+      </div>
+      <div class="flex flex-1 items-center gap-2 overflow-hidden px-2">
+        <span class="truncate max-w-[200px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}">${subject}</span>
+        <span class="text-slate-400 truncate">- ${detail}</span>
+        <div class="shrink-0 scale-75 origin-left flex gap-1">${statusTagClass(status)}${img}</div>
+      </div>
+      <div class="flex items-center gap-4 shrink-0">
+        <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">
+            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
+        </div>
+        <span class="text-xs group-hover:hidden ${isUnread ? 'text-slate-900' : 'text-slate-500'}">${timestamp.split(' ')[0]}</span>
+      </div>
+    </div>`;
     return html;
   }).join('');
 };
@@ -5009,7 +5034,26 @@ window.renderAdvTableFiltered = function(tbodyId, rows, type) {
     let urgBadge = '';
     if (urgency === 'ด่วน') urgBadge = '<span class="text-rose-500 text-[10px] font-bold px-2 py-0.5 bg-rose-50 rounded-full border border-rose-100 ml-2">ด่วน</span>';
     
-    return `<div onclick="updateAdvTask('${type}', ${originalIndex}, '${status}')" class="${rowBg} cursor-pointer p-4 flex gap-4 items-start transition-colors border-b border-slate-100 hover:bg-slate-50"><div class="flex-shrink-0 mt-1"><div class="w-12 h-12 rounded-full ${avatarColor} text-white flex items-center justify-center font-bold text-lg shadow-sm">${getInitials(reporter)}</div></div><div class="flex-1 min-w-0"><div class="flex justify-between items-baseline mb-1"><h4 class="text-base ${isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-700'} truncate pr-2 flex items-center">${reporter} ${urgBadge}</h4><span class="text-xs text-slate-500 whitespace-nowrap">${timestamp}</span></div><div class="text-sm ${isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-600'} mb-1 truncate flex items-center gap-2">${subject}${img ? '<i class="fa-solid fa-paperclip text-slate-400" title="มีแนบ"></i>' : ''}</div><div class="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-3">${detail}</div><div class="flex flex-wrap gap-2 items-center">${statusTagClass(status)}${img}</div></div></div>`;
+    return `<div onclick="updateAdvTask('${type}', ${originalIndex}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
+      <div class="flex items-center gap-3 shrink-0 w-48">
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
+        <span class="truncate w-full pl-1 flex items-center">${reporter} ${urgBadge}</span>
+      </div>
+      <div class="flex flex-1 items-center gap-2 overflow-hidden px-2">
+        <span class="truncate max-w-[200px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}">${subject}</span>
+        <span class="text-slate-400 truncate">- ${detail}</span>
+        <div class="shrink-0 scale-75 origin-left flex gap-1">${statusTagClass(status)}${img}</div>
+      </div>
+      <div class="flex items-center gap-4 shrink-0">
+        <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">
+            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
+        </div>
+        <span class="text-xs group-hover:hidden ${isUnread ? 'text-slate-900' : 'text-slate-500'}">${timestamp.split(' ')[0]}</span>
+      </div>
+    </div>`;
   }).join('');
 };
 
