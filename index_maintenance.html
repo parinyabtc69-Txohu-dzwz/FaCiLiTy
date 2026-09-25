@@ -1,47 +1,63 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบกำลังปรับปรุง - Under Maintenance</title>
+    <title>ระบบกำลังปรับปรุง - Maintenance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Kanit', sans-serif; }
+        body {
+            font-family: 'Kanit', sans-serif;
+        }
+
         .maintenance-bg {
             background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
         }
+
         .pulse-icon {
             animation: pulse 2s infinite;
         }
+
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
     </style>
 </head>
+
 <body class="maintenance-bg min-h-screen flex items-center justify-center p-4">
     <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden p-8 text-center relative">
         <div class="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
-        
+
         <div class="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
             <i class="fa-solid fa-person-digging text-5xl text-emerald-600 pulse-icon"></i>
         </div>
-        
+
         <h1 class="text-3xl font-bold text-slate-800 mb-2">กำลังปรับปรุงระบบ</h1>
-        <h2 class="text-lg font-semibold text-emerald-600 mb-6">System Under Maintenance</h2>
-        
+        <h2 class="text-lg font-semibold text-emerald-600 mb-6">System Maintenance</h2>
+
         <p class="text-slate-600 mb-8 leading-relaxed">
             ขออภัยในความไม่สะดวก ขณะนี้ระบบกำลังอยู่ในระหว่างการอัปเดตเพื่อเพิ่มฟีเจอร์ใหม่และปรับปรุงประสิทธิภาพ<br>
             <span class="font-medium mt-2 block">กรุณากลับมาใช้งานใหม่อีกครั้งในภายหลังครับ</span>
         </p>
-        
+
         <div class="flex items-center justify-center gap-2 text-sm text-slate-400">
             <i class="fa-solid fa-gear fa-spin"></i>
-            <span>Resource Hub Development Team</span>
+            <span>Facility Development Team</span>
         </div>
     </div>
 </body>
+
 </html>
