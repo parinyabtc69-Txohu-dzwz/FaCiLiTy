@@ -441,14 +441,12 @@ function doPost(e) {
       // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
       case 'update_adv_task':
         let advSheetName = data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : CONFIG.PROJECT_SHEET_NAME;
-        if (data.tabType === 'av' || data.tabType === 'av-repair') advSheetName = CONFIG.AV_REPAIR_SHEET_NAME;
         const sheetAdv = db.getSheetByName(advSheetName);
         if (!sheetAdv) {
           return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
         }
         
-        const advVals = sheetAdv.getDataRange().getValues();
-        const targetAdvRow = advVals.length - data.rowIndex;
+        const targetAdvRow = data.rowIndex + 2;
         sheetAdv.getRange(targetAdvRow, 5).setValue(data.status);
         
         if (data.file) {
@@ -516,37 +514,25 @@ function doPost(e) {
 
       case 'delete_adv_task': {
         let sName = '';
-        let isReversed = true;
         if (data.tabType === 'it') sName = CONFIG.IT_SHEET_NAME;
         else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
-        else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
-        else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
-        else { sName = CONFIG.SHEET_NAME; isReversed = false; }
+        else if (data.tabType === 'av') sName = CONFIG.AV_REPAIR_SHEET_NAME;
+        else sName = CONFIG.SHEET_NAME;
         
         const sheet = db.getSheetByName(sName);
-        if (sheet) {
-          const vals = sheet.getDataRange().getValues();
-          let targetRow = isReversed ? (vals.length - data.rowIndex) : (data.rowIndex + 2);
-          sheet.deleteRow(targetRow);
-        }
+        if (sheet) sheet.deleteRow(data.rowIndex + 2);
         return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
       }
       
       case 'archive_adv_task': {
         let sName = '';
-        let isReversed = true;
         if (data.tabType === 'it') sName = CONFIG.IT_SHEET_NAME;
         else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
-        else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
-        else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
-        else { sName = CONFIG.SHEET_NAME; isReversed = false; }
+        else if (data.tabType === 'av') sName = CONFIG.AV_REPAIR_SHEET_NAME;
+        else sName = CONFIG.SHEET_NAME;
         
         const sheet = db.getSheetByName(sName);
-        if (sheet) {
-          const vals = sheet.getDataRange().getValues();
-          let targetRow = isReversed ? (vals.length - data.rowIndex) : (data.rowIndex + 2);
-          sheet.getRange(targetRow, 5).setValue('เก็บถาวร');
-        }
+        if (sheet) sheet.getRange(data.rowIndex + 2, 5).setValue('เก็บถาวร');
         return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
       }
       case 'update_task_proof':

@@ -3099,56 +3099,30 @@ window.triggerRowAction = function(e, action) {
   if(!row) return;
   const onclickStr = row.getAttribute('onclick');
   if(!onclickStr) return;
-  
-  if (action === 'view') {
-    row.click();
-    return;
-  }
-  
-  let match = onclickStr.match(/updateAdvTask\(['"](.*?)['"],\s*(\d+)/);
-  if (match) {
+  const match = onclickStr.match(/updateAdvTask\(['"](.*?)['"],\s*(\d+)/);
+  if(match) {
     const type = match[1];
     const idx = parseInt(match[2]);
-    if (action === 'delete') deleteAdvTask(type, idx);
-    else if (action === 'archive') archiveAdvTask(type, idx);
-    return;
-  }
-  
-  match = onclickStr.match(/updateTask\((\d+)\)/);
-  if (match) {
-    const idx = parseInt(match[1]);
-    if (action === 'delete') deleteAdvTask('repair', idx);
-    else if (action === 'archive') archiveAdvTask('repair', idx);
-    return;
-  }
-  
-  match = onclickStr.match(/openAVModal\((\d+)/);
-  if (match) {
-    const idx = parseInt(match[1]);
-    if (action === 'delete') deleteAdvTask('av_request', idx);
-    else if (action === 'archive') archiveAdvTask('av_request', idx);
-    return;
+    if(action === 'view') {
+      row.click();
+    } else if (action === 'delete') {
+      deleteAdvTask(type, idx);
+    } else if (action === 'archive') {
+      archiveAdvTask(type, idx);
+    }
   }
 };
 
 window.deleteAdvTask = async function(type, index) {
   const confirm = await Swal.fire({ title: 'ยืนยันการลบ?', text: 'การลบจะไม่สามารถกู้คืนได้', icon: 'warning', showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-trash"></i> ลบ', confirmButtonColor: '#ef4444', cancelButtonText: 'ยกเลิก' });
   if(confirm.isConfirmed) {
-    submitAction(() => ResourceHubCore.api.post({ action: 'delete_adv_task', tabType: type, rowIndex: index }), 'ลบข้อมูลเรียบร้อย', () => {
-      if (type === 'repair') loadTasks();
-      else if (type === 'av_request') loadAVRequests();
-      else loadAdvancedTasks();
-    });
+    submitAction(() => ResourceHubCore.api.post({ action: 'delete_adv_task', tabType: type, rowIndex: index }), 'ลบข้อมูลเรียบร้อย', () => loadAdvancedTasks());
   }
 };
 
 window.archiveAdvTask = async function(type, index) {
   const confirm = await Swal.fire({ title: 'ยืนยันการเก็บถาวร?', text: 'ย้ายข้อมูลไปเก็บถาวร', icon: 'question', showCancelButton: true, confirmButtonText: 'เก็บถาวร', cancelButtonText: 'ยกเลิก' });
   if(confirm.isConfirmed) {
-    submitAction(() => ResourceHubCore.api.post({ action: 'archive_adv_task', tabType: type, rowIndex: index }), 'เก็บถาวรเรียบร้อย', () => {
-      if (type === 'repair') loadTasks();
-      else if (type === 'av_request') loadAVRequests();
-      else loadAdvancedTasks();
-    });
+    submitAction(() => ResourceHubCore.api.post({ action: 'archive_adv_task', tabType: type, rowIndex: index }), 'เก็บถาวรเรียบร้อย', () => loadAdvancedTasks());
   }
 };
