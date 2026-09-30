@@ -511,6 +511,46 @@ function doPost(e) {
         
         // Return success
         return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+
+      case 'delete_adv_task': {
+        let sName = '';
+        let isReversed = true;
+        if (data.tabType === 'it') sName = CONFIG.IT_SHEET_NAME;
+        else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
+        else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
+        else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
+        else { sName = CONFIG.SHEET_NAME; isReversed = false; }
+        
+        const sheet = db.getSheetByName(sName);
+        if (sheet) {
+          const vals = sheet.getDataRange().getValues();
+          let targetRow = isReversed ? (vals.length - data.rowIndex) : (data.rowIndex + 2);
+          sheet.deleteRow(targetRow);
+        }
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      case 'archive_adv_task': {
+        let sName = '';
+        let isReversed = true;
+        if (data.tabType === 'it') sName = CONFIG.IT_SHEET_NAME;
+        else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
+        else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
+        else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
+        else { sName = CONFIG.SHEET_NAME; isReversed = false; }
+        
+        const sheet = db.getSheetByName(sName);
+        if (sheet) {
+          const vals = sheet.getDataRange().getValues();
+          let targetRow = isReversed ? (vals.length - data.rowIndex) : (data.rowIndex + 2);
+          const rowData = sheet.getRange(targetRow, 1, 1, sheet.getLastColumn()).getValues()[0];
+          let archiveSheet = db.getSheetByName("Archive");
+          if (!archiveSheet) archiveSheet = db.insertSheet("Archive");
+          archiveSheet.appendRow(rowData);
+          sheet.deleteRow(targetRow);
+        }
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+      }
       case 'update_task_proof':
         const sheetTaskProof = db.getSheetByName(CONFIG.SHEET_NAME);
         const targetRow = data.rowIndex + 2;
