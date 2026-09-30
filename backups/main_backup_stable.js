@@ -1879,8 +1879,8 @@ function renderAdvTable(tbodyId, rows, type) {
       </div>
       <div class="flex items-center gap-4 shrink-0">
         <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">
-            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="event.stopPropagation()"></i>
-            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="triggerRowAction(event, 'archive')"></i>
+            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="triggerRowAction(event, 'delete')"></i>
             <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
         </div>
         <span class="text-xs group-hover:hidden ${!isDone ? 'text-slate-900' : 'text-slate-500'}">${timestamp.split(' ')[0]}</span>
@@ -2363,8 +2363,8 @@ window.renderRepairTable = function () {
       </div>
       <div class="flex items-center gap-4 shrink-0">
         <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">
-            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="event.stopPropagation()"></i>
-            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="triggerRowAction(event, 'archive')"></i>
+            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="triggerRowAction(event, 'delete')"></i>
             <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
         </div>
         <span class="text-xs group-hover:hidden ${isUnread ? 'text-slate-900' : 'text-slate-500'}">${timestamp.split(' ')[0]}</span>
@@ -2608,8 +2608,8 @@ window.renderAVTable = function () {
       </div>
       <div class="flex items-center gap-4 shrink-0">
         <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">
-            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="event.stopPropagation()"></i>
-            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="triggerRowAction(event, 'archive')"></i>
+            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="triggerRowAction(event, 'delete')"></i>
             <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
         </div>
         <span class="text-xs group-hover:hidden ${isUnread ? 'text-slate-900' : 'text-slate-500'}">${r[0].split(' ')[0]}</span>
@@ -3071,8 +3071,8 @@ window.renderAdvTableFiltered = function(tbodyId, rows, type) {
       </div>
       <div class="flex items-center gap-4 shrink-0">
         <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">
-            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="event.stopPropagation()"></i>
-            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="event.stopPropagation()"></i>
+            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="triggerRowAction(event, 'archive')"></i>
+            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="triggerRowAction(event, 'delete')"></i>
             <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
         </div>
         <span class="text-xs group-hover:hidden ${isUnread ? 'text-slate-900' : 'text-slate-500'}">${timestamp.split(' ')[0]}</span>
