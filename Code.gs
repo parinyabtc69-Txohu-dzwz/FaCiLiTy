@@ -511,6 +511,30 @@ function doPost(e) {
         
         // Return success
         return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+
+      case 'delete_adv_task': {
+        let sName = '';
+        if (data.tabType === 'it') sName = CONFIG.IT_SHEET_NAME;
+        else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
+        else if (data.tabType === 'av') sName = CONFIG.AV_REPAIR_SHEET_NAME;
+        else sName = CONFIG.SHEET_NAME;
+        
+        const sheet = db.getSheetByName(sName);
+        if (sheet) sheet.deleteRow(data.rowIndex + 2);
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      case 'archive_adv_task': {
+        let sName = '';
+        if (data.tabType === 'it') sName = CONFIG.IT_SHEET_NAME;
+        else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
+        else if (data.tabType === 'av') sName = CONFIG.AV_REPAIR_SHEET_NAME;
+        else sName = CONFIG.SHEET_NAME;
+        
+        const sheet = db.getSheetByName(sName);
+        if (sheet) sheet.getRange(data.rowIndex + 2, 5).setValue('เก็บถาวร');
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+      }
       case 'update_task_proof':
         const sheetTaskProof = db.getSheetByName(CONFIG.SHEET_NAME);
         const targetRow = data.rowIndex + 2;

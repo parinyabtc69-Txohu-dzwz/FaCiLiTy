@@ -4558,9 +4558,9 @@ window.renderAVTable = function () {
       </div>
       <div class="flex items-center gap-4 shrink-0">
         <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">
-            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="event.stopPropagation()"></i>
-            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="event.stopPropagation()"></i>
-            <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
+            <i class="fa-solid fa-box-archive hover:text-slate-700" title="เก็บถาวร" onclick="triggerRowAction(event, 'archive')"></i>
+            <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="triggerRowAction(event, 'delete')"></i>
+            <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู" onclick="triggerRowAction(event, 'view')"></i>
         </div>
         <span class="text-xs group-hover:hidden ${isUnread ? 'text-slate-900' : 'text-slate-500'}">${r[0].split(' ')[0]}</span>
       </div>
@@ -5023,6 +5023,40 @@ function toggleDesktopSidebar() {
   }
 }
 window.toggleDesktopSidebar = toggleDesktopSidebar;
+
+window.triggerRowAction = function(e, action) {
+  e.stopPropagation();
+  const row = e.target.closest('.gmail-row') || e.target.closest('.group');
+  if(!row) return;
+  const onclickStr = row.getAttribute('onclick');
+  if(!onclickStr) return;
+  const match = onclickStr.match(/updateAdvTask\(['"](.*?)['"],\s*(\d+)/);
+  if(match) {
+    const type = match[1];
+    const idx = parseInt(match[2]);
+    if(action === 'view') {
+      row.click();
+    } else if (action === 'delete') {
+      deleteAdvTask(type, idx);
+    } else if (action === 'archive') {
+      archiveAdvTask(type, idx);
+    }
+  }
+};
+
+window.deleteAdvTask = async function(type, index) {
+  const confirm = await Swal.fire({ title: 'ยืนยันการลบ?', text: 'การลบจะไม่สามารถกู้คืนได้', icon: 'warning', showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-trash"></i> ลบ', confirmButtonColor: '#ef4444', cancelButtonText: 'ยกเลิก' });
+  if(confirm.isConfirmed) {
+    submitAction(() => ResourceHubCore.api.post({ action: 'delete_adv_task', tabType: type, rowIndex: index }), 'ลบข้อมูลเรียบร้อย', () => loadAdvancedTasks());
+  }
+};
+
+window.archiveAdvTask = async function(type, index) {
+  const confirm = await Swal.fire({ title: 'ยืนยันการเก็บถาวร?', text: 'ย้ายข้อมูลไปเก็บถาวร', icon: 'question', showCancelButton: true, confirmButtonText: 'เก็บถาวร', cancelButtonText: 'ยกเลิก' });
+  if(confirm.isConfirmed) {
+    submitAction(() => ResourceHubCore.api.post({ action: 'archive_adv_task', tabType: type, rowIndex: index }), 'เก็บถาวรเรียบร้อย', () => loadAdvancedTasks());
+  }
+};
 
 
 // === QR Code Scanner ===
