@@ -1389,7 +1389,7 @@ function sendLineMessage(message, targetId) {
     }
 
     // รวม LINE_TARGET_ID (กลุ่มหลัก) เข้าไปด้วยเสมอหากตั้งค่าไว้
-    if (CONFIG.LINE_TARGET_ID && !CONFIG.LINE_TARGET_ID.includes("ใส่_")) {
+    if (typeof ENABLE_LINE_GROUP_NOTIFY !== "undefined" && ENABLE_LINE_GROUP_NOTIFY && CONFIG.LINE_TARGET_ID && !CONFIG.LINE_TARGET_ID.includes("ใส่_")) {
       rawTargets.push(CONFIG.LINE_TARGET_ID.trim());
     }
 
