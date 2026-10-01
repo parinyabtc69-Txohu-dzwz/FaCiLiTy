@@ -1,4 +1,4 @@
-console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
+﻿console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
 console.log("%cDeveloped by Taohx_dz_parinya", "color: #10b981; font-size: 14px; font-weight: bold;");
 console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; font-weight: bold;");
 
