@@ -861,7 +861,18 @@ const post = data => ResourceHubCore.api.post(data);
 const get = (action, params = {}) => ResourceHubCore.api.get(action, params);
 
 document.addEventListener('DOMContentLoaded', () => {
-  updateSessionUI();
+            updateSessionUI();
+          // Handle conditional Google One Tap prompt
+          function checkAndPromptOneTap() {
+            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
+              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+              } else {
+                setTimeout(checkAndPromptOneTap, 500);
+              }
+            }
+          }
+          checkAndPromptOneTap();
   window.addEventListener('click', (e) => {
     const dropdown = $('profile-dropdown');
     if (dropdown && !e.target.closest('#profile-dropdown') && !e.target.closest('button[onclick="toggleProfileDropdown()"]')) {
@@ -935,7 +946,18 @@ function handleLiffLogin() {
         if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
         localStorage.setItem('session_login_time', Date.now().toString());
 
-        updateSessionUI();
+                  updateSessionUI();
+          // Handle conditional Google One Tap prompt
+          function checkAndPromptOneTap() {
+            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
+              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+              } else {
+                setTimeout(checkAndPromptOneTap, 500);
+              }
+            }
+          }
+          checkAndPromptOneTap();
         alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
           .then(() => {
             if (isAdminLoggedIn) nav('page-dashboard');
@@ -980,7 +1002,18 @@ function handleCredentialResponse(response) {
       if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
       localStorage.setItem('session_login_time', Date.now().toString());
 
-      updateSessionUI();
+                updateSessionUI();
+          // Handle conditional Google One Tap prompt
+          function checkAndPromptOneTap() {
+            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
+              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+              } else {
+                setTimeout(checkAndPromptOneTap, 500);
+              }
+            }
+          }
+          checkAndPromptOneTap();
       alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
         .then(() => {
           if (isAdminLoggedIn) nav('page-dashboard');
@@ -999,7 +1032,18 @@ function handleGlobalLogout() {
   currentTeacher = null;
   currentEmail = '';
   isAdminLoggedIn = false;
-  updateSessionUI();
+            updateSessionUI();
+          // Handle conditional Google One Tap prompt
+          function checkAndPromptOneTap() {
+            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
+              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+              } else {
+                setTimeout(checkAndPromptOneTap, 500);
+              }
+            }
+          }
+          checkAndPromptOneTap();
   alertBox('info', 'ออกจากระบบเรียบร้อย', '', { timer: 1000, showConfirmButton: false });
   nav('page-auth');
 }

@@ -517,7 +517,7 @@
           <div id="g_id_onload"
             data-client_id="309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com"
             data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse"
-            data-auto_prompt="true">
+            data-auto_prompt="false">
           </div>
 
           <div class="g_id_signin flex justify-center w-full" data-type="standard" data-shape="rectangular"
@@ -3075,7 +3075,18 @@
         const get = (action, params = {}) => ResourceHubCore.api.get(action, params);
 
         document.addEventListener('DOMContentLoaded', () => {
-          updateSessionUI();
+                    updateSessionUI();
+          // Handle conditional Google One Tap prompt
+          function checkAndPromptOneTap() {
+            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
+              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+              } else {
+                setTimeout(checkAndPromptOneTap, 500);
+              }
+            }
+          }
+          checkAndPromptOneTap();
           window.addEventListener('click', (e) => {
             const dropdown = $('profile-dropdown');
             if (dropdown && !e.target.closest('#profile-dropdown') && !e.target.closest('button[onclick="toggleProfileDropdown()"]')) {
@@ -3149,7 +3160,18 @@
                 if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
                 localStorage.setItem('session_login_time', Date.now().toString());
 
-                updateSessionUI();
+                          updateSessionUI();
+          // Handle conditional Google One Tap prompt
+          function checkAndPromptOneTap() {
+            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
+              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+              } else {
+                setTimeout(checkAndPromptOneTap, 500);
+              }
+            }
+          }
+          checkAndPromptOneTap();
                 alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
                   .then(() => {
                     if (isAdminLoggedIn) nav('page-dashboard');
@@ -3194,7 +3216,18 @@
               if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
               localStorage.setItem('session_login_time', Date.now().toString());
 
-              updateSessionUI();
+                        updateSessionUI();
+          // Handle conditional Google One Tap prompt
+          function checkAndPromptOneTap() {
+            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
+              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+              } else {
+                setTimeout(checkAndPromptOneTap, 500);
+              }
+            }
+          }
+          checkAndPromptOneTap();
               alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
                 .then(() => {
                   if (isAdminLoggedIn) nav('page-dashboard');
@@ -3213,7 +3246,18 @@
           currentTeacher = null;
           currentEmail = '';
           isAdminLoggedIn = false;
-          updateSessionUI();
+                    updateSessionUI();
+          // Handle conditional Google One Tap prompt
+          function checkAndPromptOneTap() {
+            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
+              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+              } else {
+                setTimeout(checkAndPromptOneTap, 500);
+              }
+            }
+          }
+          checkAndPromptOneTap();
           alertBox('info', 'ออกจากระบบเรียบร้อย', '', { timer: 1000, showConfirmButton: false });
           nav('page-auth');
         }
