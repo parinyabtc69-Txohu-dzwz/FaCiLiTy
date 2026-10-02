@@ -434,7 +434,8 @@ const ResourceHubCore = {
       const reporter = $('reporter').value.trim();
       const dept = $('department') ? $('department').value.trim() : '';
       const loc = $('repair_location') ? $('repair_location').value.trim() : '';
-      const urgency = document.querySelector('input[name="urgency"]:checked') ? document.querySelector('input[name="urgency"]:checked').value : '';
+      const urgency = ''; // Set by Supervisor during approval
+
       const contact = $('contact') ? $('contact').value.trim() : '';
       const incidentDate = $('incident_date') ? $('incident_date').value : '';
 
