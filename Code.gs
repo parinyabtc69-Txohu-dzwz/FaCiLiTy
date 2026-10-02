@@ -1,4 +1,4 @@
-﻿// [Optimization] Override Date toJSON to mimic getDisplayValues() output format
+// [Optimization] Override Date toJSON to mimic getDisplayValues() output format
 Date.prototype.toJSON = function() {
   return Utilities.formatDate(this, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
 };
@@ -451,8 +451,8 @@ function doPost(e) {
         
         // Notify Technician via Line
         const approveMsg = createFlexMessageTemplate(
-          มอบหมายงานใหม่:  + approveSubjectStr,
-          🛠️ มอบหมายงาน:  + data.urgency,
+          'มอบหมายงานใหม่: ' + approveSubjectStr,
+          '🛠️ มอบหมายงาน: ' + data.urgency,
           approveSubjectStr,
           data.urgency === 'ด่วน' ? '#ef4444' : (data.urgency === 'ตามคิว' ? '#f59e0b' : '#10b981'),
           [
@@ -462,7 +462,7 @@ function doPost(e) {
           ],
           null
         );
-        notifyTask('building', approveMsg, อัปเดตสถานะงานซ่อมอาคาร (มอบหมายงาน), '#265D5A', {reporter: approveReporterStr, subject: approveSubjectStr, status: data.status}, null);
+        notifyTask('building', approveMsg, 'อัปเดตสถานะงานซ่อมอาคาร (มอบหมายงาน)', '#265D5A', {reporter: approveReporterStr, subject: approveSubjectStr, status: data.status}, null);
         
         break;
 
