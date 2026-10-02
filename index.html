@@ -2533,7 +2533,7 @@ const ResourceHubCore = {
       const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin' || userRole.toLowerCase() === 'executive' || userRole.toLowerCase() === 'director');
       const currentTaskStatus = row ? row[4] : '';
 
-      if (isSupervisor && currentTaskStatus === 'รอรับเรื่อง') {
+      if (isSupervisor && currentTaskStatus === 'รอดำเนินการ') {
         const supHtml = detailsHtml + `
         <div class="text-left space-y-4 text-slate-800 mt-4 border-t pt-4">
           <div>
@@ -2976,7 +2976,7 @@ function handleLiffLogin() {
         currentTeacher = res.name;
         currentRole = res.role;
         currentEmail = res.email || email || '';
-        isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive');
+        isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive' || res.role === 'Supervisor');
 
         localStorage.setItem('logged_teacher', currentTeacher);
         localStorage.setItem('logged_role', currentRole);
@@ -3021,7 +3021,7 @@ function handleCredentialResponse(response) {
       currentTeacher = res.name;
       currentRole = res.role;
       currentEmail = res.email || '';
-      isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive');
+      isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive' || res.role === 'Supervisor');
 
       localStorage.setItem('logged_teacher', currentTeacher);
       localStorage.setItem('logged_role', currentRole);
@@ -3178,9 +3178,15 @@ function updateSessionUI() {
     if (basicNavProject) { basicNavProject.classList.remove('hidden'); basicNavProject.classList.add('flex'); }
     if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
 
-    if ($('dropdown-user-name')) $('dropdown-user-name').textContent = currentRole === 'Executive' ? 'ผู้บริหาร (Executive)' : 'ผู้ดูแลระบบ (Admin)';
+    if ($('dropdown-user-name')) {
+      if (currentRole === 'Executive') $('dropdown-user-name').textContent = 'ผู้บริหาร (Executive)';
+      else if (currentRole === 'Supervisor') $('dropdown-user-name').textContent = 'หัวหน้างาน (Supervisor)';
+      else $('dropdown-user-name').textContent = 'ผู้ดูแลระบบ (Admin)';
+    }
     if ($('dropdown-user-role')) {
-      let textRole = currentRole === 'Executive' ? 'ผู้บริหาร' : 'เจ้าหน้าที่ / Admin';
+      let textRole = 'เจ้าหน้าที่ / Admin';
+      if (currentRole === 'Executive') textRole = 'ผู้บริหาร';
+      if (currentRole === 'Supervisor') textRole = 'หัวหน้างาน';
       $('dropdown-user-role').innerHTML = `สถานะ: ${textRole}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
     }
 
@@ -4311,7 +4317,21 @@ window.renderRepairTable = function () {
   const locFilter = (window.currentRepairLocation || '').toLowerCase().trim();
 
   const filteredList = listWithIndex.filter(({ r }) => {
-    const w = getWeight(r[4]);
+    const statusStr = (r[4] || '').trim();
+    const assignedTech = (r[7] || '').trim();
+    const isPending = (statusStr === 'รอดำเนินการ');
+    
+    // กฎสำหรับช่าง (Tech): 
+    // 1. จะไม่เห็นงานที่ "รอดำเนินการ" (ยังไม่อนุมัติ)
+    // 2. จะเห็นเฉพาะงานที่มอบหมายให้ตัวเอง หรือมอบหมายรวมๆ (ไม่ได้ระบุชื่อ)
+    if (currentRole === 'Tech') {
+      if (isPending) return false;
+      if (assignedTech && assignedTech !== '-' && !assignedTech.includes(currentTeacher)) {
+        return false;
+      }
+    }
+
+    const w = getWeight(statusStr);
     if (window.currentRepairTab === 'pending' && w !== 1) return false;
     if (window.currentRepairTab === 'progress' && w !== 2) return false;
     if (window.currentRepairTab === 'done' && w !== 3) return false;
@@ -5202,12 +5222,16 @@ window.archiveAdvTask = async function(type, index) {
 
 // Handle conditional Google One Tap prompt
 function checkAndPromptOneTap() {
-  if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
-    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-      google.accounts.id.prompt();
-    } else {
-      setTimeout(checkAndPromptOneTap, 500);
-    }
+  // If already logged in, do nothing
+  if (localStorage.getItem('logged_teacher') || localStorage.getItem('logged_admin')) return;
+  
+  // If in LINE app, don't prompt Google One Tap
+  if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) return;
+
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    google.accounts.id.prompt();
+  } else {
+    setTimeout(checkAndPromptOneTap, 1000); // Try again in 1s if Google script is still loading
   }
 }
 document.addEventListener('DOMContentLoaded', checkAndPromptOneTap);

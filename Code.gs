@@ -442,7 +442,7 @@ function doPost(e) {
         const sheetApprove = db.getSheetByName(CONFIG.SHEET_NAME);
         const approveTargetRow = data.rowIndex + 2;
         sheetApprove.getRange(approveTargetRow, 5).setValue(data.status); // Status
-        sheetApprove.getRange(approveTargetRow, 9).setValue(data.technician); // Technician
+        sheetApprove.getRange(approveTargetRow, 8).setValue(data.technician); // Technician
         sheetApprove.getRange(approveTargetRow, 12).setValue(data.urgency); // Urgency
         
         const approveSubjectStr = sheetApprove.getRange(approveTargetRow, 2).getValue();
