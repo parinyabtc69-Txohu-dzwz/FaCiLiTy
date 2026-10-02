@@ -1,4 +1,4 @@
-// [Optimization] Override Date toJSON to mimic getDisplayValues() output format
+﻿// [Optimization] Override Date toJSON to mimic getDisplayValues() output format
 Date.prototype.toJSON = function() {
   return Utilities.formatDate(this, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
 };
@@ -438,6 +438,34 @@ function doPost(e) {
         }
         break;
 
+      case 'approve_task':
+        const sheetApprove = db.getSheetByName(CONFIG.SHEET_NAME);
+        const approveTargetRow = data.rowIndex + 2;
+        sheetApprove.getRange(approveTargetRow, 5).setValue(data.status); // Status
+        sheetApprove.getRange(approveTargetRow, 9).setValue(data.technician); // Technician
+        sheetApprove.getRange(approveTargetRow, 12).setValue(data.urgency); // Urgency
+        
+        const approveSubjectStr = sheetApprove.getRange(approveTargetRow, 2).getValue();
+        const approveDetailStr = sheetApprove.getRange(approveTargetRow, 3).getValue();
+        const approveReporterStr = sheetApprove.getRange(approveTargetRow, 4).getValue();
+        
+        // Notify Technician via Line
+        const approveMsg = createFlexMessageTemplate(
+          มอบหมายงานใหม่:  + approveSubjectStr,
+          🛠️ มอบหมายงาน:  + data.urgency,
+          approveSubjectStr,
+          data.urgency === 'ด่วน' ? '#ef4444' : (data.urgency === 'ตามคิว' ? '#f59e0b' : '#10b981'),
+          [
+            { label: 'รายละเอียด', value: approveDetailStr, flexLabel: 3, flexValue: 5 },
+            { label: 'ผู้แจ้ง', value: approveReporterStr, flexLabel: 3, flexValue: 5 },
+            { label: 'ผู้รับผิดชอบ', value: data.technician, flexLabel: 3, flexValue: 5 }
+          ],
+          null
+        );
+        notifyTask('building', approveMsg, อัปเดตสถานะงานซ่อมอาคาร (มอบหมายงาน), '#265D5A', {reporter: approveReporterStr, subject: approveSubjectStr, status: data.status}, null);
+        
+        break;
+
       // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
       case 'update_adv_task':
         let advSheetName = data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : CONFIG.PROJECT_SHEET_NAME;
@@ -557,7 +585,7 @@ function doPost(e) {
         const proofFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_PROOF);
         const receiptUrl = uploadFileToDrive(data.receiptFile, CONFIG.FOLDER_RECEIPTS);
         
-        sheetTaskProof.getRange(targetRow, 5).setValue("เสร็จสิ้น");
+        sheetTaskProof.getRange(targetRow, 5).setValue(data.status || "เสร็จสิ้น");
         sheetTaskProof.getRange(targetRow, 7).setValue(data.fixDetail);
         sheetTaskProof.getRange(targetRow, 8).setValue(data.technician);
         sheetTaskProof.getRange(targetRow, 9).setValue(proofFileUrl);
@@ -1772,6 +1800,8 @@ function removeDailyTrigger() {
   });
   Logger.log('removeDailyTrigger: ลบ trigger ' + count + ' รายการ');
 }
+
+
 
 
 

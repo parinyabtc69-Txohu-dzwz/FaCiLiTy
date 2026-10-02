@@ -1,4 +1,4 @@
-﻿console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
+console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
 console.log("%cDeveloped by Taohx_dz_parinya", "color: #10b981; font-size: 14px; font-weight: bold;");
 console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; font-weight: bold;");
 
@@ -537,7 +537,7 @@ const ResourceHubCore = {
     },
     // แอดมินกดเปลี่ยนสถานะงานซ่อม หรือ ปิดงาน (อัปโหลดรูปหลักฐาน)
     async updateRepair(index) {
-      const row = window.allRepairTasks ? window.allRepairTasks[index] : null;
+            const row = window.allRepairTasks ? window.allRepairTasks[index] : null;
       let detailsHtml = '';
       if (row) {
         const tStamp = row[0] || '-';
@@ -552,7 +552,80 @@ const ResourceHubCore = {
           + ' &nbsp;|&nbsp; <i class="fa-regular fa-clock text-slate-400"></i> ' + tStamp
           + '</div></div>';
       }
-      const r = await Swal.fire({ title: 'อัปเดตสถานะงาน', html: detailsHtml, showDenyButton: true, showCancelButton: true, confirmButtonText: 'กำลังดำเนินการ', denyButtonText: 'เสร็จสิ้น (แนบรูป)', confirmButtonColor: '#3b82f6', denyButtonColor: '#10b981' });
+
+      const userRole = localStorage.getItem('logged_role') || '';
+      const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin' || userRole.toLowerCase() === 'executive' || userRole.toLowerCase() === 'director');
+      const currentTaskStatus = row ? row[4] : '';
+
+      if (isSupervisor && currentTaskStatus === 'รอรับเรื่อง') {
+        const supHtml = detailsHtml + `
+        <div class="text-left space-y-4 text-slate-800 mt-4 border-t pt-4">
+          <div>
+            <label class="block text-xs font-semibold mb-2">ความเร่งด่วน <span class="text-rose-500">*</span></label>
+            <div class="flex gap-2 justify-between">
+              <label class="flex-1 text-center p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 text-sm has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50 has-[:checked]:text-rose-700"><input type="radio" name="supUrgency" value="ด่วน" class="sr-only" required><span class="block mt-1 mb-1 font-bold">🔴 ด่วน</span></label>
+              <label class="flex-1 text-center p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 text-sm has-[:checked]:border-[#f59e0b] has-[:checked]:bg-[#fef3c7] has-[:checked]:text-[#f59e0b]"><input type="radio" name="supUrgency" value="ตามคิว" checked class="sr-only"><span class="block mt-1 mb-1 font-bold">🔵 ตามคิว</span></label>
+              <label class="flex-1 text-center p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 text-sm has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50 has-[:checked]:text-emerald-700"><input type="radio" name="supUrgency" value="ไม่รีบ" class="sr-only"><span class="block mt-1 mb-1 font-bold">🟢 ไม่รีบ</span></label>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2">มอบหมายช่าง <span class="text-rose-500">*</span></label>
+            <input id="supTechName" type="text" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white" placeholder="ระบุชื่อช่างที่รับผิดชอบ...">
+          </div>
+        </div>`;
+
+        const s = await Swal.fire({
+          title: 'คัดกรองงาน (หัวหน้างาน)',
+          html: supHtml,
+          showCancelButton: true,
+          confirmButtonText: 'อนุมัติ & มอบหมาย',
+          cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: '#265D5A',
+          preConfirm: () => {
+            const urgency = document.querySelector('input[name="supUrgency"]:checked').value;
+            const techName = document.getElementById('supTechName').value.trim();
+            if (!techName) return Swal.showValidationMessage('กรุณาระบุชื่อช่างผู้รับผิดชอบ');
+            return { urgency, techName };
+          }
+        });
+
+        if (s.isConfirmed) {
+          return submitAction(
+            () => ResourceHubCore.api.post({ 
+              action: 'approve_task',
+              rowIndex: index, 
+              status: 'มอบหมายแล้ว',
+              urgency: s.value.urgency,
+              technician: s.value.techName
+            }),
+            'มอบหมายงานเรียบร้อย',
+            () => ResourceHubCore.ui.loadAdminTable('repair')
+          );
+        }
+        return;
+      }
+
+      if (isSupervisor && currentTaskStatus === 'รอตรวจรับ') {
+        const c = await Swal.fire({
+          title: 'ตรวจรับงาน (หัวหน้างาน)',
+          html: detailsHtml + '<div class="mt-4 p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 text-sm font-semibold text-center">ช่างได้แจ้งว่าดำเนินการเสร็จสิ้นแล้ว<br>คุณต้องการตรวจรับและปิดงานนี้หรือไม่?</div>',
+          showCancelButton: true,
+          confirmButtonText: 'ปิดงาน (เสร็จสมบูรณ์)',
+          cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: '#059669'
+        });
+        if (c.isConfirmed) {
+          return submitAction(
+            () => ResourceHubCore.api.post({ action: 'update_task_status', rowIndex: index, status: 'เสร็จสิ้น' }),
+            'ปิดงานเรียบร้อย',
+            () => ResourceHubCore.ui.loadAdminTable('repair')
+          );
+        }
+        return;
+      }
+
+      // If it's a technician or supervisor on an assigned task
+      const r = await Swal.fire({ title: 'อัปเดตสถานะงาน', html: detailsHtml, showDenyButton: true, showCancelButton: true, confirmButtonText: 'กำลังดำเนินการ', denyButtonText: isSupervisor ? 'ปิดงาน (เสร็จสมบูรณ์)' : 'แจ้งเสร็จสิ้น (รอตรวจ)', confirmButtonColor: '#3b82f6', denyButtonColor: '#10b981' });
       if (r.isConfirmed) {
         return submitAction(
           () => ResourceHubCore.api.post({ action: 'update_task_status', rowIndex: index, status: 'กำลังดำเนินการ' }),
@@ -562,7 +635,7 @@ const ResourceHubCore = {
       }
       if (!r.isDenied) return;
       const x = await Swal.fire({
-        title: 'ปิดงานซ่อม',
+        title: isSupervisor ? 'ปิดงานซ่อม' : 'แจ้งเสร็จสิ้น (ส่งมอบงาน)',
         html: `<div class="text-left space-y-3 mt-4 text-slate-900">
                          <input id="techName" class="w-full p-2.5 border rounded-lg" placeholder="ชื่อช่างผู้ซ่อม">
                          <textarea id="fixDetail" rows="2" class="w-full p-2.5 border rounded-lg" placeholder="ซ่อมหรือแก้ไขอะไรไปบ้าง?"></textarea>
@@ -574,13 +647,13 @@ const ResourceHubCore = {
                          <label class="block text-xs font-semibold text-slate-600 mt-2">เอกสารใบเสร็จ / เบิกจ่าย [ไม่บังคับ]</label>
                          <input type="file" id="receiptFile" accept="image/*,application/pdf" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
                        </div>`,
-        focusConfirm: false, showCancelButton: true, confirmButtonText: 'บันทึกปิดงาน', cancelButtonText: 'ยกเลิก',
+        focusConfirm: false, showCancelButton: true, confirmButtonText: isSupervisor ? 'บันทึกปิดงาน' : 'ส่งตรวจรับ', cancelButtonText: 'ยกเลิก',
         preConfirm: () => {
-          const techName = $('techName').value.trim();
-          const fixDetail = $('fixDetail').value.trim();
-          const file = $('proofFile').files[0];
-          const cost = $('repairCost').value.trim();
-          const receipt = $('receiptFile').files[0];
+          const techName = document.getElementById('techName').value.trim();
+          const fixDetail = document.getElementById('fixDetail').value.trim();
+          const file = document.getElementById('proofFile').files[0];
+          const cost = document.getElementById('repairCost').value.trim();
+          const receipt = document.getElementById('receiptFile').files[0];
           if (!techName || !fixDetail || !file) return Swal.showValidationMessage('กรุณากรอกข้อมูลและแนบรูปภาพให้ครบถ้วนครับ');
           return { techName, fixDetail, file, cost, receipt };
         }
@@ -598,14 +671,14 @@ const ResourceHubCore = {
             action: 'update_task_proof',
             rowIndex: index,
             technician: x.value.techName,
-            fixDetail: x.value.fixDetail,
-            file,
-            folderId: REPAIR_DRIVE_FOLDER_ID,
+            detail: x.value.fixDetail,
+            fileData: file,
             cost: x.value.cost,
-            receiptFile
+            receiptData: receiptFile,
+            status: isSupervisor ? 'เสร็จสิ้น' : 'รอตรวจรับ'
           });
         },
-        'ปิดงานสำเร็จ',
+        isSupervisor ? 'ปิดงานสำเร็จ' : 'ส่งงานให้หัวหน้าตรวจรับแล้ว',
         () => ResourceHubCore.ui.loadAdminTable('repair')
       );
     },
@@ -861,18 +934,7 @@ const post = data => ResourceHubCore.api.post(data);
 const get = (action, params = {}) => ResourceHubCore.api.get(action, params);
 
 document.addEventListener('DOMContentLoaded', () => {
-            updateSessionUI();
-          // Handle conditional Google One Tap prompt
-          function checkAndPromptOneTap() {
-            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
-              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                google.accounts.id.prompt();
-              } else {
-                setTimeout(checkAndPromptOneTap, 500);
-              }
-            }
-          }
-          checkAndPromptOneTap();
+  updateSessionUI();
   window.addEventListener('click', (e) => {
     const dropdown = $('profile-dropdown');
     if (dropdown && !e.target.closest('#profile-dropdown') && !e.target.closest('button[onclick="toggleProfileDropdown()"]')) {
@@ -946,18 +1008,7 @@ function handleLiffLogin() {
         if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
         localStorage.setItem('session_login_time', Date.now().toString());
 
-                  updateSessionUI();
-          // Handle conditional Google One Tap prompt
-          function checkAndPromptOneTap() {
-            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
-              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                google.accounts.id.prompt();
-              } else {
-                setTimeout(checkAndPromptOneTap, 500);
-              }
-            }
-          }
-          checkAndPromptOneTap();
+        updateSessionUI();
         alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
           .then(() => {
             if (isAdminLoggedIn) nav('page-dashboard');
@@ -1002,18 +1053,7 @@ function handleCredentialResponse(response) {
       if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
       localStorage.setItem('session_login_time', Date.now().toString());
 
-                updateSessionUI();
-          // Handle conditional Google One Tap prompt
-          function checkAndPromptOneTap() {
-            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
-              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                google.accounts.id.prompt();
-              } else {
-                setTimeout(checkAndPromptOneTap, 500);
-              }
-            }
-          }
-          checkAndPromptOneTap();
+      updateSessionUI();
       alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
         .then(() => {
           if (isAdminLoggedIn) nav('page-dashboard');
@@ -1032,18 +1072,7 @@ function handleGlobalLogout() {
   currentTeacher = null;
   currentEmail = '';
   isAdminLoggedIn = false;
-            updateSessionUI();
-          // Handle conditional Google One Tap prompt
-          function checkAndPromptOneTap() {
-            if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
-              if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                google.accounts.id.prompt();
-              } else {
-                setTimeout(checkAndPromptOneTap, 500);
-              }
-            }
-          }
-          checkAndPromptOneTap();
+  updateSessionUI();
   alertBox('info', 'ออกจากระบบเรียบร้อย', '', { timer: 1000, showConfirmButton: false });
   nav('page-auth');
 }
@@ -3191,3 +3220,17 @@ window.archiveAdvTask = async function(type, index) {
     });
   }
 };
+
+
+
+// Handle conditional Google One Tap prompt
+function checkAndPromptOneTap() {
+  if (!localStorage.getItem('logged_teacher') && !localStorage.getItem('logged_admin')) {
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      google.accounts.id.prompt();
+    } else {
+      setTimeout(checkAndPromptOneTap, 500);
+    }
+  }
+}
+document.addEventListener('DOMContentLoaded', checkAndPromptOneTap);
