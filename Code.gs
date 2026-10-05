@@ -447,7 +447,55 @@ function doPost(e) {
         const archSheet = db.getSheetByName(data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : (data.tabType === 'project' ? CONFIG.PROJECT_SHEET_NAME : CONFIG.AV_REPAIR_SHEET_NAME));
         archSheet.getRange(data.rowIndex + 2, 5).setValue('ยกเลิก');
         break;
-case 'update_adv_task':
+
+      case 'approve_task':
+        const appSheetName = data.sheetName || CONFIG.SHEET_NAME;
+        const sheetApprove = db.getSheetByName(appSheetName);
+        if (!sheetApprove) {
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+        }
+        
+        let approveTargetRow = 0;
+        // Check if data is reversed (AV Request and Building Repairs)
+        let isReversedApprove = true;
+        if (appSheetName === CONFIG.SHEET_NAME || appSheetName === CONFIG.AV_SHEET_NAME) {
+            isReversedApprove = false;
+        }
+        
+        if (isReversedApprove) {
+            const vals = sheetApprove.getDataRange().getValues();
+            approveTargetRow = vals.length - data.rowIndex;
+        } else {
+            approveTargetRow = data.rowIndex + 2;
+        }
+
+        // Update status
+        if (data.status) {
+          sheetApprove.getRange(approveTargetRow, 5).setValue(data.status);
+        }
+
+        // Columns depend on sheet type
+        if (appSheetName === CONFIG.SHEET_NAME || appSheetName === CONFIG.AV_SHEET_NAME) {
+            // General Tasks
+            if (data.technician) {
+                sheetApprove.getRange(approveTargetRow, 8).setValue(data.technician);
+            }
+            if (data.urgency) {
+                sheetApprove.getRange(approveTargetRow, 12).setValue(data.urgency); // Column 12 is urgency in Building
+            }
+        } else {
+            // Advanced Tasks
+            if (data.technician) {
+                sheetApprove.getRange(approveTargetRow, 9).setValue(data.technician);
+            }
+            if (data.urgency) {
+                sheetApprove.getRange(approveTargetRow, 6).setValue(data.urgency); // Column 6 is urgency in IT/Project
+            }
+        }
+
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+
+      case 'update_adv_task':
         let advSheetName = data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : CONFIG.PROJECT_SHEET_NAME;
         const sheetAdv = db.getSheetByName(advSheetName);
         if (!sheetAdv) {
