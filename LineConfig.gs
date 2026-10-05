@@ -5,4 +5,4 @@
 // เปิด-ปิด การแจ้งเตือนไปที่ "LINE กลุ่มหลัก" ของระบบ
 // เปลี่ยนเป็น true  = เปิดแจ้งเตือน
 // เปลี่ยนเป็น false = ปิดแจ้งเตือน
-const ENABLE_LINE_GROUP_NOTIFY = false;
+const ENABLE_LINE_GROUP_NOTIFY = true;
