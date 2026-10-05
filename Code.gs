@@ -1839,9 +1839,6 @@ function checkOverdueTasks() {
   }
 }
 
-
-
-
 // ============================================================
 // Phase B: ฟังก์ชันตัวช่วยนับงานค้าง (helper) + refactored checkOverdueTasks
 // + setupDailyTrigger / removeDailyTrigger
