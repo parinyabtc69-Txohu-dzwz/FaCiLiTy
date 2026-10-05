@@ -439,14 +439,8 @@ function doPost(e) {
         break;
 
       // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
-            case 'delete_adv_task':
-        const delSheet = db.getSheetByName(data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : (data.tabType === 'project' ? CONFIG.PROJECT_SHEET_NAME : CONFIG.AV_REPAIR_SHEET_NAME));
-        delSheet.deleteRow(data.rowIndex + 2);
-        break;
-      case 'archive_adv_task':
-        const archSheet = db.getSheetByName(data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : (data.tabType === 'project' ? CONFIG.PROJECT_SHEET_NAME : CONFIG.AV_REPAIR_SHEET_NAME));
-        archSheet.getRange(data.rowIndex + 2, 5).setValue('ยกเลิก');
-        break;
+
+
 
       case 'approve_task':
         const appSheetName = data.sheetName || CONFIG.SHEET_NAME;
@@ -502,7 +496,8 @@ function doPost(e) {
           return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
         }
         
-        const targetAdvRow = data.rowIndex + 2;
+        const advVals = sheetAdv.getDataRange().getValues();
+        const targetAdvRow = advVals.length - data.rowIndex;
         sheetAdv.getRange(targetAdvRow, 5).setValue(data.status);
         
         if (data.file) {
@@ -575,7 +570,7 @@ function doPost(e) {
         else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
         else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
         else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
-        else { sName = CONFIG.SHEET_NAME; isReversed = false; }
+        else { sName = CONFIG.SHEET_NAME; isReversed = true; }
         
         const sheet = db.getSheetByName(sName);
         if (sheet) {
@@ -593,7 +588,7 @@ function doPost(e) {
         else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
         else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
         else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
-        else { sName = CONFIG.SHEET_NAME; isReversed = false; }
+        else { sName = CONFIG.SHEET_NAME; isReversed = true; }
         
         const sheet = db.getSheetByName(sName);
         if (sheet) {
@@ -609,7 +604,8 @@ function doPost(e) {
       }
       case 'update_task_proof':
         const sheetTaskProof = db.getSheetByName(CONFIG.SHEET_NAME);
-        const targetRow = data.rowIndex + 2;
+        const proofVals = sheetTaskProof.getDataRange().getValues();
+        const targetRow = proofVals.length - data.rowIndex;
         const proofFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_PROOF);
         const receiptUrl = uploadFileToDrive(data.receiptFile, CONFIG.FOLDER_RECEIPTS);
         
