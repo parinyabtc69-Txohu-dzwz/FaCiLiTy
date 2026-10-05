@@ -551,7 +551,7 @@ const ResourceHubCore = {
           + '<div class="text-xs font-semibold text-slate-500 border-t border-slate-200 pt-2 mt-2">'
           + '<i class="fa-solid fa-user text-slate-400"></i> ' + rep
           + ' &nbsp;|&nbsp; <i class="fa-regular fa-clock text-slate-400"></i> ' + tStamp
-          + '</div></div>';
+          + '</div>' + (row[7] && row[7] !== '-' ? '<div class="text-xs font-semibold text-[#265D5A] mt-2"><i class="fa-solid fa-wrench"></i> ช่างที่รับผิดชอบ: ' + row[7] + '</div>' : '') + '</div>';
       }
 
       const userRole = localStorage.getItem('logged_role') || '';
@@ -2010,6 +2010,7 @@ window.updateAdvTask = async function (type, index, currentStatus) {
     const subject = taskData[1] || '-';
     const detail = taskData[2] || '-';
     const reporter = taskData[3] || '-';
+    const technician = taskData[8] || '';
     detailsHtml = `<div class="text-left mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm"><div class="font-bold text-slate-800 mb-1 text-base">${subject}</div><div class="text-sm text-slate-600 mb-3 whitespace-pre-wrap">${detail}</div><div class="text-xs font-semibold text-slate-500 flex items-center gap-1 border-t border-slate-200 pt-2 mt-2"><i class="fa-solid fa-user text-slate-400"></i> ${reporter} &nbsp;&nbsp;|&nbsp;&nbsp;<i class="fa-regular fa-clock text-slate-400"></i> ${timestamp}</div></div>`;
   }
 
