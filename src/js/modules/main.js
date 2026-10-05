@@ -2001,6 +2001,124 @@ function renderAdvTable(tbodyId, rows, type) {
   }).join('');
 }
 
+
+window.reassignAdvTask = async function(type, index) {
+  const allData = window.advTasksData[type === 'av-repair' ? 'av' : type];
+  const row = allData ? allData[index] : null;
+  if (!row) return;
+  
+  let techOptions = '<option value="">-- เลือกช่างผู้รับผิดชอบ --</option>';
+  if (window.cachedUsers && window.cachedUsers.length > 0) {
+    window.cachedUsers.forEach(u => {
+      const email = u[0];
+      const name = u[1];
+      const role = u[2];
+      const status = u[3];
+      if (name && status === 'approved') {
+        const isSelected = name === row[8] ? 'selected' : '';
+        techOptions += `<option value="${name}" ${isSelected}>${name} (${role})</option>`;
+      }
+    });
+  } else {
+    techOptions = '<option value="">โหลดข้อมูลช่างไม่สำเร็จ</option>';
+  }
+
+  const s = await Swal.fire({
+    title: 'แก้ไขการมอบหมายงาน',
+    html: `<div class="text-left space-y-4 text-slate-800 mt-4">
+      <div>
+        <label class="block text-xs font-semibold mb-2">มอบหมายช่าง / ผู้รับผิดชอบ <span class="text-rose-500">*</span></label>
+        <select id="supTechName" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+          ${techOptions}
+        </select>
+      </div>
+    </div>`,
+    showCancelButton: true,
+    confirmButtonText: 'บันทึกการแก้ไข',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#265D5A',
+    preConfirm: () => {
+      const techName = document.getElementById('supTechName').value.trim();
+      if (!techName) return Swal.showValidationMessage('กรุณาระบุชื่อช่างผู้รับผิดชอบ');
+      return { techName };
+    }
+  });
+
+  if (s.isConfirmed) {
+    let targetSheet = '';
+    if (type === 'it') targetSheet = 'IT_Repairs';
+    else if (type === 'av-repair' || type === 'av') targetSheet = 'AV_Repairs';
+    else if (type === 'project') targetSheet = 'Facility_Projects';
+
+    return submitAction(
+      () => ResourceHubCore.api.post({ 
+        action: 'edit_assignment',
+        rowIndex: index, 
+        technician: s.value.techName,
+        sheetName: targetSheet
+      }),
+      'แก้ไขมอบหมายงานเรียบร้อย',
+      () => loadAdvancedTasks()
+    );
+  }
+};
+
+window.reassignRepair = async function(index) {
+  const row = window.allRepairTasks ? window.allRepairTasks[index] : null;
+  if (!row) return;
+  
+  let techOptions = '<option value="">-- เลือกช่างผู้รับผิดชอบ --</option>';
+  if (window.cachedUsers && window.cachedUsers.length > 0) {
+    window.cachedUsers.forEach(u => {
+      const email = u[0];
+      const name = u[1];
+      const role = u[2];
+      const status = u[3];
+      if (name && status === 'approved') {
+        const isSelected = name === row[7] ? 'selected' : '';
+        techOptions += `<option value="${name}" ${isSelected}>${name} (${role})</option>`;
+      }
+    });
+  } else {
+    techOptions = '<option value="">โหลดข้อมูลช่างไม่สำเร็จ</option>';
+  }
+
+  const s = await Swal.fire({
+    title: 'แก้ไขการมอบหมายงาน',
+    html: `<div class="text-left space-y-4 text-slate-800 mt-4">
+      <div>
+        <label class="block text-xs font-semibold mb-2">มอบหมายช่าง / ผู้รับผิดชอบ <span class="text-rose-500">*</span></label>
+        <select id="supTechName" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+          ${techOptions}
+        </select>
+      </div>
+    </div>`,
+    showCancelButton: true,
+    confirmButtonText: 'บันทึกการแก้ไข',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#265D5A',
+    preConfirm: () => {
+      const techName = document.getElementById('supTechName').value.trim();
+      if (!techName) return Swal.showValidationMessage('กรุณาระบุชื่อช่างผู้รับผิดชอบ');
+      return { techName };
+    }
+  });
+
+  if (s.isConfirmed) {
+    return submitAction(
+      () => ResourceHubCore.api.post({ 
+        action: 'edit_assignment',
+        rowIndex: index, 
+        technician: s.value.techName,
+        sheetName: 'Repairs'
+      }),
+      'แก้ไขมอบหมายงานเรียบร้อย',
+      () => ResourceHubCore.ui.loadAdminTable('repair')
+    );
+  }
+};
+
+
 window.updateAdvTask = async function (type, index, currentStatus) {
   const allData = window.advTasksData[type === 'av-repair' ? 'av' : type];
   const taskData = allData ? allData[index] : null;
@@ -2021,6 +2139,14 @@ window.updateAdvTask = async function (type, index, currentStatus) {
     if (isSupervisor && currentStatus === 'รอดำเนินการ') {
       let supHtml = detailsHtml + `
       <div class="text-left space-y-4 text-slate-800 mt-4 border-t pt-4">
+        <div>
+          <label class="block text-xs font-semibold mb-2">ความเร่งด่วน <span class="text-rose-500">*</span></label>
+          <div class="flex gap-2 justify-between">
+            <label class="flex-1 text-center p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 text-sm has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50 has-[:checked]:text-rose-700"><input type="radio" name="supUrgency" value="ด่วน" class="sr-only" required><span class="block mt-1 mb-1 font-bold">🔴 ด่วน</span></label>
+            <label class="flex-1 text-center p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 text-sm has-[:checked]:border-[#f59e0b] has-[:checked]:bg-[#fef3c7] has-[:checked]:text-[#f59e0b]"><input type="radio" name="supUrgency" value="ตามคิว" checked class="sr-only"><span class="block mt-1 mb-1 font-bold">🔵 ตามคิว</span></label>
+            <label class="flex-1 text-center p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 text-sm has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50 has-[:checked]:text-emerald-700"><input type="radio" name="supUrgency" value="ไม่รีบ" class="sr-only"><span class="block mt-1 mb-1 font-bold">🟢 ไม่รีบ</span></label>
+          </div>
+        </div>
         <div>
           <label class="block text-xs font-semibold mb-2">มอบหมายช่าง / ผู้รับผิดชอบ <span class="text-rose-500">*</span></label>
           <select id="supTechName" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">

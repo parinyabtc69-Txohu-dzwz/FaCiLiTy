@@ -486,6 +486,106 @@ function doPost(e) {
                 sheetApprove.getRange(approveTargetRow, 6).setValue(data.urgency); // Column 6 is urgency in IT/Project
             }
         }
+        
+        // Notify Technician via Email & Line Group
+        if (data.technician) {
+          try {
+            const taskSubject = sheetApprove.getRange(approveTargetRow, 2).getValue();
+            const taskReporter = sheetApprove.getRange(approveTargetRow, 4).getValue();
+            
+            const techEmail = getUserEmailByName(data.technician);
+            if (techEmail) {
+              const emailHtml = generateEmailHtml(
+                "👷 แจ้งมอบหมายงาน",
+                "#f59e0b",
+                taskReporter,
+                null,
+                taskSubject,
+                "มีการมอบหมายงานให้คุณ กรุณาตรวจสอบในระบบ<br>ความเร่งด่วน: " + (data.urgency || "-")
+              );
+              MailApp.sendEmail({
+                to: techEmail,
+                subject: "แจ้งมอบหมายงาน: " + taskSubject,
+                htmlBody: emailHtml
+              });
+            }
+            
+            const assignMsg = createFlexMessageTemplate(
+              "มีการมอบหมายงานให้: " + data.technician,
+              "👷 แจ้งมอบหมายงาน",
+              taskSubject,
+              "#f59e0b",
+              [
+                { label: "ช่างที่รับผิดชอบ", value: data.technician, flexLabel: 4, flexValue: 4 },
+                { label: "ความเร่งด่วน", value: data.urgency || "-", flexLabel: 4, flexValue: 4 }
+              ]
+            );
+            notifyTask('building', assignMsg, null, null, null, null);
+          } catch(e) { Logger.log("Error notifying tech: " + e.message); }
+        }
+
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+
+
+      case 'edit_assignment':
+        const editSheetName = data.sheetName || CONFIG.SHEET_NAME;
+        const sheetEdit = db.getSheetByName(editSheetName);
+        if (!sheetEdit) {
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+        }
+        
+        let editTargetRow = 0;
+        let isReversedEdit = true;
+        if (editSheetName === CONFIG.SHEET_NAME || editSheetName === CONFIG.AV_SHEET_NAME) {
+            isReversedEdit = false;
+        }
+        
+        if (isReversedEdit) {
+            const vals = sheetEdit.getDataRange().getValues();
+            editTargetRow = vals.length - data.rowIndex;
+        } else {
+            editTargetRow = data.rowIndex + 2;
+        }
+
+        if (editSheetName === CONFIG.SHEET_NAME || editSheetName === CONFIG.AV_SHEET_NAME) {
+            if (data.technician) sheetEdit.getRange(editTargetRow, 8).setValue(data.technician);
+        } else {
+            if (data.technician) sheetEdit.getRange(editTargetRow, 9).setValue(data.technician);
+        }
+
+        if (data.technician) {
+          try {
+            const taskSubject = sheetEdit.getRange(editTargetRow, 2).getValue();
+            const taskReporter = sheetEdit.getRange(editTargetRow, 4).getValue();
+            const techEmail = getUserEmailByName(data.technician);
+            if (techEmail) {
+              const emailHtml = generateEmailHtml(
+                "👷 มีการอัปเดตช่างผู้รับผิดชอบ",
+                "#f59e0b",
+                taskReporter,
+                null,
+                taskSubject,
+                "มีการแก้ไขและมอบหมายงานให้คุณเป็นผู้รับผิดชอบ"
+              );
+              MailApp.sendEmail({
+                to: techEmail,
+                subject: "อัปเดตช่างผู้รับผิดชอบ: " + taskSubject,
+                htmlBody: emailHtml
+              });
+            }
+            
+            const editAssignMsg = createFlexMessageTemplate(
+              "แก้ไขการมอบหมายงานให้: " + data.technician,
+              "👷 เปลี่ยนแปลงช่างรับผิดชอบ",
+              taskSubject,
+              "#f59e0b",
+              [
+                { label: "ช่างคนใหม่", value: data.technician, flexLabel: 3, flexValue: 5 }
+              ]
+            );
+            notifyTask('building', editAssignMsg, null, null, null, null);
+          } catch(e) { Logger.log("Error notifying tech on edit: " + e.message); }
+        }
 
         return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
 
