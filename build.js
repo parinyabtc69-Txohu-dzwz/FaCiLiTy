@@ -29,7 +29,7 @@ const loadOrder = [
 ];
 
 if (fs.existsSync(jsModulesDir)) {
-  const allFiles = fs.readdirSync(jsModulesDir).filter(f => f.endsWith('.js'));
+  const allFiles = fs.readdirSync(jsModulesDir).filter(f => f.endsWith('.js') && !f.toLowerCase().includes('backup') && !f.toLowerCase().includes('.bak'));
   
   // Load explicitly ordered files first
   for (const file of loadOrder) {
