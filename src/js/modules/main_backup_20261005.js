@@ -1,4 +1,4 @@
-﻿console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
+console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
 console.log("%cDeveloped by Taohx_dz_parinya", "color: #10b981; font-size: 14px; font-weight: bold;");
 console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; font-weight: bold;");
 
@@ -226,7 +226,7 @@ const readFile = file => new Promise((resolve, reject) => {
 // ออบเจ็กต์สำหรับรวมการเรียก API ระหว่างหน้าบ้านกับหลังบ้าน (Google Apps Script) เข้าด้วยกัน
 const ResourceHubCore = {
   _cache: new Map(), // เก็บ Cache ของข้อมูล
-  _cacheTTL: 120 * 1000, // อายุ Cache 120 วินาที (สอดคล้องกับ Backend CacheService)
+  _cacheTTL: 60 * 1000, // อายุ Cache 60 วินาที
 
   api: {
     // โหลดข้อมูลด้วยวิธี GET (อ่านข้อมูล) พร้อมระบบ Cache
@@ -965,26 +965,6 @@ const ResourceHubCore = {
 
 const post = data => ResourceHubCore.api.post(data);
 const get = (action, params = {}) => ResourceHubCore.api.get(action, params);
-// =========================================================
-// prefetchAllData: ดึงข้อมูลสำคัญทั้งหมดพร้อมกันในครั้งเดียว (parallel)
-// เรียกใช้หลัง login สำเร็จ เพื่อให้ข้อมูลอยู่ใน cache
-// พอเปิดหน้า Dashboard จะได้เร็วทันที ไม่ต้องรอโหลดซ้ำ
-// =========================================================
-function prefetchAllData() {
-  const now = new Date();
-  const monthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-  Promise.all([
-    ResourceHubCore.api.get('get_dashboard', { month: monthStr }).catch(() => null),
-    ResourceHubCore.api.get('get_dashboard', {}).catch(() => null),
-    ResourceHubCore.api.get('get_adv_tasks').catch(() => null),
-    ResourceHubCore.api.get('get_tasks').catch(() => null),
-    ResourceHubCore.api.get('get_av_requests').catch(() => null),
-  ]).then(() => {
-    console.log('%c✅ Prefetch เสร็จ: ข้อมูลถูกบันทึกใน cache แล้ว', 'color:#10b981;font-weight:bold');
-  }).catch(err => {
-    console.warn('Prefetch warning:', err);
-  });
-}
 
 document.addEventListener('DOMContentLoaded', () => {
   updateSessionUI();
@@ -1062,8 +1042,6 @@ function handleLiffLogin() {
         localStorage.setItem('session_login_time', Date.now().toString());
 
         updateSessionUI();
-        // ดึงข้อมูลหลักใน background ทันที เพื่อให้ Dashboard โหลดเร็วขึ้น
-        if (isAdminLoggedIn) prefetchAllData();
         alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
           .then(() => {
             if (isAdminLoggedIn) nav('page-dashboard');
@@ -1109,8 +1087,6 @@ function handleCredentialResponse(response) {
       localStorage.setItem('session_login_time', Date.now().toString());
 
       updateSessionUI();
-      // ดึงข้อมูลหลักใน background ทันที เพื่อให้ Dashboard โหลดเร็วขึ้น
-      if (isAdminLoggedIn) prefetchAllData();
       alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
         .then(() => {
           if (isAdminLoggedIn) nav('page-dashboard');

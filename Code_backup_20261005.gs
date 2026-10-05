@@ -97,49 +97,6 @@ function setupKeepAliveTrigger() {
   console.log('keepAlive Trigger ตั้งค่าเรียบร้อย - ทุก 10 นาที');
 }
 
-// ============================================================
-// Cache Helpers: ใช้ CacheService เก็บข้อมูลที่อ่านบ่อย ลด latency
-// ============================================================
-const CACHE_TTL = 120; // วินาที (2 นาที)
-
-function getCachedOrFetch(cacheKey, fetchFn) {
-  try {
-    const cache = CacheService.getScriptCache();
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-    const data = fetchFn();
-    try {
-      const serialized = JSON.stringify(data);
-      if (serialized.length < 100000) { // ไม่เกิน 100KB (ขีดจำกัด CacheService)
-        cache.put(cacheKey, serialized, CACHE_TTL);
-      }
-    } catch(se) { Logger.log('Cache put error: ' + se.message); }
-    return data;
-  } catch(e) {
-    Logger.log('Cache error: ' + e.message);
-    return fetchFn();
-  }
-}
-
-function invalidateDataCaches() {
-  try {
-    const cache = CacheService.getScriptCache();
-    // ล้าง cache ทุก key ที่อาจเปลี่ยนแปลง
-    cache.removeAll(['tasks', 'av_requests', 'adv_tasks', 'master_data',
-      'dashboard_', 'dashboard_2026-10', 'dashboard_2026-09', 'dashboard_2026-08']);
-    // ล้าง dashboard key ทุกเดือนที่อาจมีอยู่
-    const now = new Date();
-    for (let i = 0; i < 3; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = 'dashboard_' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-      cache.remove(key);
-    }
-    cache.remove('dashboard_');
-  } catch(e) { Logger.log('Cache invalidation error: ' + e.message); }
-}
-
 function doGet(e) {
   if (!e || !e.parameter) {
     return ContentService.createTextOutput("พร้อมใช้งานแล้ว")
@@ -150,68 +107,64 @@ function doGet(e) {
   const db = getDB();
   let result = [];
 
-  try {
-    switch (action) {
-      case 'get_tasks':
-        result = getCachedOrFetch('tasks', () => {
-          const sheetTasks = db.getSheetByName(CONFIG.SHEET_NAME);
-          return sheetTasks ? sheetTasks.getDataRange().getValues().slice(1) : [];
-        });
-        break;
-      
-      case 'get_av_requests':
-        result = getCachedOrFetch('av_requests', () => {
-          const sheetAV = db.getSheetByName(CONFIG.AV_SHEET_NAME);
-          return sheetAV ? sheetAV.getDataRange().getValues().slice(1) : [];
-        });
-        break;
+  switch (action) {
+    case 'get_tasks':
+      const sheetTasks = db.getSheetByName(CONFIG.SHEET_NAME);
+      result = sheetTasks ? sheetTasks.getDataRange().getValues().slice(1) : [];
+      break;
+    
+    case 'get_av_requests':
+      const sheetAV = db.getSheetByName(CONFIG.AV_SHEET_NAME);
+      result = sheetAV ? sheetAV.getDataRange().getValues().slice(1) : [];
+      break;
 
-      case 'get_dashboard': {
-        const monthParam = e.parameter.month || '';
-        const dashKey = 'dashboard_' + monthParam;
-        const dashData = getCachedOrFetch(dashKey, () => getDashboardDataInternal(monthParam));
-        return ContentService.createTextOutput(JSON.stringify(dashData))
-          .setMimeType(ContentService.MimeType.JSON);
+    case 'get_dashboard':
+      return ContentService.createTextOutput(JSON.stringify(getDashboardDataInternal(e.parameter.month)))
+        .setMimeType(ContentService.MimeType.JSON);
+
+    case 'get_master_data':
+      return ContentService.createTextOutput(JSON.stringify(getMasterDataInternal()))
+        .setMimeType(ContentService.MimeType.JSON);
+
+    case 'get_documents':
+      const sheetDocs = db.getSheetByName(CONFIG.DOC_SHEET_NAME);
+      result = sheetDocs ? sheetDocs.getDataRange().getValues().slice(1) : [];
+      break;
+
+    case 'get_users':
+      const sheetUsers = db.getSheetByName(CONFIG.USER_SHEET_NAME);
+      result = sheetUsers ? sheetUsers.getDataRange().getValues().slice(1) : [];
+      break;
+
+    case 'get_adv_tasks':
+      let itData = [];
+      let avRepData = [];
+      let projData = [];
+
+      const sIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
+      if (sIt) {
+        const vals = sIt.getDataRange().getValues();
+        if (vals.length > 1) itData = vals.slice(1);
       }
 
-      case 'get_master_data':
-        return ContentService.createTextOutput(
-          JSON.stringify(getCachedOrFetch('master_data', getMasterDataInternal))
-        ).setMimeType(ContentService.MimeType.JSON);
-
-      case 'get_documents': {
-        result = getCachedOrFetch('documents', () => {
-          const sheetDocs = db.getSheetByName(CONFIG.DOC_SHEET_NAME);
-          return sheetDocs ? sheetDocs.getDataRange().getValues().slice(1) : [];
-        });
-        break;
+      const sAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
+      if (sAvRep) {
+        const vals = sAvRep.getDataRange().getValues();
+        if (vals.length > 1) avRepData = vals.slice(1);
       }
 
-      case 'get_users': {
-        const sheetUsers = db.getSheetByName(CONFIG.USER_SHEET_NAME);
-        result = sheetUsers ? sheetUsers.getDataRange().getValues().slice(1) : [];
-        break;
+      const sProj = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
+      if (sProj) {
+        const vals = sProj.getDataRange().getValues();
+        if (vals.length > 1) projData = vals.slice(1);
       }
 
-      case 'get_adv_tasks':
-        result = getCachedOrFetch('adv_tasks', () => {
-          let itData = [], avRepData = [], projData = [];
-          const sIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
-          if (sIt) { const v = sIt.getDataRange().getValues(); if (v.length > 1) itData = v.slice(1); }
-          const sAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
-          if (sAvRep) { const v = sAvRep.getDataRange().getValues(); if (v.length > 1) avRepData = v.slice(1); }
-          const sProj = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
-          if (sProj) { const v = sProj.getDataRange().getValues(); if (v.length > 1) projData = v.slice(1); }
-          return { it: itData.reverse(), av: avRepData.reverse(), project: projData.reverse() };
-        });
-        break;
-
-      default:
-        result = [];
-    }
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ error: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+      result = {
+        it: itData.reverse(),
+        av: avRepData.reverse(),
+        project: projData.reverse()
+      };
+      break;
   }
 
   return ContentService.createTextOutput(JSON.stringify(result))
@@ -240,12 +193,6 @@ function doPost(e) {
         }
       });
       return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
-    }
-    
-    // ── ล้าง Cache ทุกครั้งที่มีการเปลี่ยนแปลงข้อมูล (ยกเว้น google_login) ──
-    const noInvalidateActions = ['google_login', 'link_line_account', 'report_bug'];
-    if (!noInvalidateActions.includes(data.action)) {
-      invalidateDataCaches();
     }
     
     switch (data.action) {
