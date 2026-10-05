@@ -578,7 +578,7 @@
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
     <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
-    <div class="gmail-toolbar-btn" title="รีเฟรช"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="loadAVTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
     <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
     <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
@@ -632,7 +632,7 @@
                   class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-full md:w-64"
                   placeholder="ค้นหาจากรายละเอียดปัญหา...">
               </div>
-              <button onclick="loadAdvancedTasks()"
+              <button onclick="refreshAdvancedTasks()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
                   class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
               <button onclick="exportTableToCSV('avRepairTaskBody', 'รายงานซ่อม_AV.csv')"
@@ -643,7 +643,7 @@
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
     <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
-    <div class="gmail-toolbar-btn" title="รีเฟรช"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
     <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
     <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
@@ -1286,7 +1286,7 @@
                   class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-full md:w-64"
                   placeholder="ค้นหาจากรายละเอียดปัญหา...">
               </div>
-              <button onclick="loadAdvancedTasks()"
+              <button onclick="refreshAdvancedTasks()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
                   class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
               <button onclick="exportTableToCSV('itTaskBody', 'รายงานซ่อม_IT.csv')"
@@ -1297,7 +1297,7 @@
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
     <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
-    <div class="gmail-toolbar-btn" title="รีเฟรช"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
     <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
     <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
@@ -1583,7 +1583,7 @@
                   class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-full md:w-64"
                   placeholder="ค้นหาจากรายละเอียดปัญหา...">
               </div>
-              <button onclick="loadAdvancedTasks()"
+              <button onclick="refreshAdvancedTasks()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
                   class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
               <button onclick="exportTableToCSV('projectBody', 'รายงานโครงการ.csv')"
@@ -1594,7 +1594,7 @@
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
     <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
-    <div class="gmail-toolbar-btn" title="รีเฟรช"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
     <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
     <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
@@ -3729,6 +3729,16 @@ function loadBuildingTasks() {
   ResourceHubCore._cache.clear();
   return ResourceHubCore.ui.loadAdminTable('repair');
 }
+// ปุ่มรีเฟรชหน้าจัดการยืมโสตฯ
+function loadAVTasks() {
+  ResourceHubCore._cache.clear();
+  return ResourceHubCore.ui.loadAdminTable('av');
+}
+// ปุ่มรีเฟรชหน้า IT / ซ่อมโสตฯ / โครงการ
+function refreshAdvancedTasks() {
+  ResourceHubCore._cache.clear();
+  return loadAdvancedTasks();
+}
 
 // ==========================================
 // 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
@@ -3812,7 +3822,7 @@ async function submitProject() {
 async function loadAdvancedTasks() {
   // แสดง Skeleton ในทุก Container ที่เกี่ยวข้อง
   const skeletonHtml = typeof getSkeletonCards === 'function' ? getSkeletonCards(4) : '<div class="p-8 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i></div>';
-  ['it-manage-list', 'av-repair-manage-list', 'project-manage-list'].forEach(id => {
+  ['itTaskBody', 'avRepairTaskBody', 'projectBody'].forEach(id => {
     const el = $(id);
     if (el) el.innerHTML = skeletonHtml;
   });
@@ -3826,7 +3836,7 @@ async function loadAdvancedTasks() {
     }
   } catch (e) {
     console.error('loadAdvancedTasks error:', e);
-    ['it-manage-list', 'av-repair-manage-list', 'project-manage-list'].forEach(id => {
+    ['itTaskBody', 'avRepairTaskBody', 'projectBody'].forEach(id => {
       const el = $(id);
       if (el) el.innerHTML = '<div class="p-8 text-center text-rose-500"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ไม่สามารถโหลดข้อมูลได้ในขณะนี้</div>';
     });
@@ -5371,9 +5381,9 @@ window.deleteAdvTask = async function(type, index) {
   const confirm = await Swal.fire({ title: 'ยืนยันการลบ?', text: 'การลบจะไม่สามารถกู้คืนได้', icon: 'warning', showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-trash"></i> ลบ', confirmButtonColor: '#ef4444', cancelButtonText: 'ยกเลิก' });
   if(confirm.isConfirmed) {
     submitAction(() => ResourceHubCore.api.post({ action: 'delete_adv_task', tabType: type, rowIndex: index }), 'ลบข้อมูลเรียบร้อย', () => {
-      if (type === 'repair') loadTasks();
-      else if (type === 'av_request') loadAVRequests();
-      else loadAdvancedTasks();
+      if (type === 'repair') loadBuildingTasks();
+      else if (type === 'av_request') loadAVTasks();
+      else refreshAdvancedTasks();
     });
   }
 };
@@ -5382,9 +5392,9 @@ window.archiveAdvTask = async function(type, index) {
   const confirm = await Swal.fire({ title: 'ยืนยันการเก็บถาวร?', text: 'ย้ายข้อมูลไปเก็บถาวร', icon: 'question', showCancelButton: true, confirmButtonText: 'เก็บถาวร', cancelButtonText: 'ยกเลิก' });
   if(confirm.isConfirmed) {
     submitAction(() => ResourceHubCore.api.post({ action: 'archive_adv_task', tabType: type, rowIndex: index }), 'เก็บถาวรเรียบร้อย', () => {
-      if (type === 'repair') loadTasks();
-      else if (type === 'av_request') loadAVRequests();
-      else loadAdvancedTasks();
+      if (type === 'repair') loadBuildingTasks();
+      else if (type === 'av_request') loadAVTasks();
+      else refreshAdvancedTasks();
     });
   }
 };

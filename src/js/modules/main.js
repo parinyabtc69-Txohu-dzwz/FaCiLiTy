@@ -1829,6 +1829,16 @@ function loadBuildingTasks() {
   ResourceHubCore._cache.clear();
   return ResourceHubCore.ui.loadAdminTable('repair');
 }
+// ปุ่มรีเฟรชหน้าจัดการยืมโสตฯ
+function loadAVTasks() {
+  ResourceHubCore._cache.clear();
+  return ResourceHubCore.ui.loadAdminTable('av');
+}
+// ปุ่มรีเฟรชหน้า IT / ซ่อมโสตฯ / โครงการ
+function refreshAdvancedTasks() {
+  ResourceHubCore._cache.clear();
+  return loadAdvancedTasks();
+}
 
 // ==========================================
 // 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
@@ -1912,7 +1922,7 @@ async function submitProject() {
 async function loadAdvancedTasks() {
   // แสดง Skeleton ในทุก Container ที่เกี่ยวข้อง
   const skeletonHtml = typeof getSkeletonCards === 'function' ? getSkeletonCards(4) : '<div class="p-8 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i></div>';
-  ['it-manage-list', 'av-repair-manage-list', 'project-manage-list'].forEach(id => {
+  ['itTaskBody', 'avRepairTaskBody', 'projectBody'].forEach(id => {
     const el = $(id);
     if (el) el.innerHTML = skeletonHtml;
   });
@@ -1926,7 +1936,7 @@ async function loadAdvancedTasks() {
     }
   } catch (e) {
     console.error('loadAdvancedTasks error:', e);
-    ['it-manage-list', 'av-repair-manage-list', 'project-manage-list'].forEach(id => {
+    ['itTaskBody', 'avRepairTaskBody', 'projectBody'].forEach(id => {
       const el = $(id);
       if (el) el.innerHTML = '<div class="p-8 text-center text-rose-500"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ไม่สามารถโหลดข้อมูลได้ในขณะนี้</div>';
     });
@@ -3471,9 +3481,9 @@ window.deleteAdvTask = async function(type, index) {
   const confirm = await Swal.fire({ title: 'ยืนยันการลบ?', text: 'การลบจะไม่สามารถกู้คืนได้', icon: 'warning', showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-trash"></i> ลบ', confirmButtonColor: '#ef4444', cancelButtonText: 'ยกเลิก' });
   if(confirm.isConfirmed) {
     submitAction(() => ResourceHubCore.api.post({ action: 'delete_adv_task', tabType: type, rowIndex: index }), 'ลบข้อมูลเรียบร้อย', () => {
-      if (type === 'repair') loadTasks();
-      else if (type === 'av_request') loadAVRequests();
-      else loadAdvancedTasks();
+      if (type === 'repair') loadBuildingTasks();
+      else if (type === 'av_request') loadAVTasks();
+      else refreshAdvancedTasks();
     });
   }
 };
@@ -3482,9 +3492,9 @@ window.archiveAdvTask = async function(type, index) {
   const confirm = await Swal.fire({ title: 'ยืนยันการเก็บถาวร?', text: 'ย้ายข้อมูลไปเก็บถาวร', icon: 'question', showCancelButton: true, confirmButtonText: 'เก็บถาวร', cancelButtonText: 'ยกเลิก' });
   if(confirm.isConfirmed) {
     submitAction(() => ResourceHubCore.api.post({ action: 'archive_adv_task', tabType: type, rowIndex: index }), 'เก็บถาวรเรียบร้อย', () => {
-      if (type === 'repair') loadTasks();
-      else if (type === 'av_request') loadAVRequests();
-      else loadAdvancedTasks();
+      if (type === 'repair') loadBuildingTasks();
+      else if (type === 'av_request') loadAVTasks();
+      else refreshAdvancedTasks();
     });
   }
 };
