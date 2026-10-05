@@ -361,7 +361,7 @@ function doPost(e) {
           [
             { label: "ผู้ยืม", value: data.borrower },
             { label: "วันที่", value: data.useDate },
-            { label: "ส�
+            { label: "ส�
       case 'approve_task':
         const approveSheetName = data.sheetName || CONFIG.SHEET_NAME;
         const sheetApprove = db.getSheetByName(approveSheetName);
@@ -447,7 +447,33 @@ function doPost(e) {
         }
         break;
 
-
+      case 'approve_task':
+        const sheetApprove = db.getSheetByName(CONFIG.SHEET_NAME);
+        const approveTargetRow = data.rowIndex + 2;
+        sheetApprove.getRange(approveTargetRow, 5).setValue(data.status); // Status
+        sheetApprove.getRange(approveTargetRow, 8).setValue(data.technician); // Technician
+        sheetApprove.getRange(approveTargetRow, 12).setValue(data.urgency); // Urgency
+        
+        const approveSubjectStr = sheetApprove.getRange(approveTargetRow, 2).getValue();
+        const approveDetailStr = sheetApprove.getRange(approveTargetRow, 3).getValue();
+        const approveReporterStr = sheetApprove.getRange(approveTargetRow, 4).getValue();
+        
+        // Notify Technician via Line
+        const approveMsg = createFlexMessageTemplate(
+          'มอบหมายงานใหม่: ' + approveSubjectStr,
+          '🛠️ มอบหมายงาน: ' + data.urgency,
+          approveSubjectStr,
+          data.urgency === 'ด่วน' ? '#ef4444' : (data.urgency === 'ตามคิว' ? '#f59e0b' : '#10b981'),
+          [
+            { label: 'รายละเอียด', value: approveDetailStr, flexLabel: 3, flexValue: 5 },
+            { label: 'ผู้แจ้ง', value: approveReporterStr, flexLabel: 3, flexValue: 5 },
+            { label: 'ผู้รับผิดชอบ', value: data.technician, flexLabel: 3, flexValue: 5 }
+          ],
+          null
+        );
+        notifyTask('building', approveMsg, 'อัปเดตสถานะงานซ่อมอาคาร (มอบหมายงาน)', '#265D5A', {reporter: approveReporterStr, subject: approveSubjectStr, status: data.status}, null);
+        
+        break;
 
       // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
       case 'update_adv_task':
