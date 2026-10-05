@@ -1824,7 +1824,11 @@ async function submitRepair() { return ResourceHubCore.ui.submitRepair(); }
 async function submitAVForm() { return ResourceHubCore.ui.submitAV(); }
 async function openAVModal(idx, oldStatus, oldTech) { return ResourceHubCore.ui.updateAV(idx, oldStatus, oldTech); }
 async function updateTask(idx) { return ResourceHubCore.ui.updateRepair(idx); }
-function loadBuildingTasks() { return ResourceHubCore.ui.loadAdminTable('repair'); }
+function loadBuildingTasks() {
+  // ปุ่มรีเฟรช: ล้าง Cache ก่อน เพื่อให้ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์จริง
+  ResourceHubCore._cache.clear();
+  return ResourceHubCore.ui.loadAdminTable('repair');
+}
 
 // ==========================================
 // 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
@@ -1978,6 +1982,8 @@ function renderAdvTable(tbodyId, rows, type) {
     }
 
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60';
+    const advTech = (r[7] || '').toString().trim();
+    const techBadge = advTech && advTech !== '-' ? `<span class="text-[#265D5A] text-[10px] font-bold px-2 py-0.5 bg-teal-50 rounded-full border border-teal-100 ml-2 whitespace-nowrap"><i class="fa-solid fa-wrench text-[8px] mr-0.5"></i>${advTech}</span>` : '';
     return `<div onclick="updateAdvTask('${type}', ${i}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
         <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
@@ -2678,6 +2684,8 @@ window.renderRepairTable = function () {
 
     const initials = getInitials(reporter);
     const avatarBg = avatarColor;
+    const assignedTechName = (r[7] || '').toString().trim();
+    const techBadge = assignedTechName && assignedTechName !== '-' ? `<span class="text-[#265D5A] text-[10px] font-bold px-2 py-0.5 bg-teal-50 rounded-full border border-teal-100 ml-2 whitespace-nowrap"><i class="fa-solid fa-wrench text-[8px] mr-0.5"></i>${assignedTechName}</span>` : '';
     const fontClass = isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-700';
     const subjectFontClass = isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-600';
     const paperclip = img ? '<i class="fa-solid fa-paperclip text-slate-400" title="มีรูปภาพแนบ"></i>' : '';
