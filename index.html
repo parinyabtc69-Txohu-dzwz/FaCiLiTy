@@ -2459,7 +2459,7 @@ const ResourceHubCore = {
       const currentTaskStatus = row ? row[4] : '';
 
       if (isSupervisor && currentTaskStatus === 'รอดำเนินการ') {
-        const supHtml = detailsHtml + `
+        let supHtml = detailsHtml + `
         <div class="text-left space-y-4 text-slate-800 mt-4 border-t pt-4">
           <div>
             <label class="block text-xs font-semibold mb-2">ความเร่งด่วน <span class="text-rose-500">*</span></label>
@@ -2471,40 +2471,43 @@ const ResourceHubCore = {
           </div>
           <div>
             <label class="block text-xs font-semibold mb-2">มอบหมายช่าง <span class="text-rose-500">*</span></label>
-            <input id="supTechName" type="text" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white" placeholder="ระบุชื่อช่างที่รับผิดชอบ...">
+            <select id="supTechName" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+            <option value="">กำลังโหลดรายชื่อช่าง...</option>
+          </select>
           </div>
         </div>`;
 
         
-      // โหลดรายชื่อผู้ใช้งานมาเป็นช่าง
-      if (!window.cachedUsers) {
-        Swal.fire({ title: 'กำลังเตรียมข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        try {
-          window.cachedUsers = await get('get_users');
-        } catch(e) {
-          console.error(e);
-          window.cachedUsers = [];
-        }
-        Swal.close();
-      }
-      
-      let techOptions = '<option value="">-- เลือกช่างผู้รับผิดชอบ --</option>';
-      if (window.cachedUsers && window.cachedUsers.length > 0) {
-        // filter out users if needed, or just list all
-        window.cachedUsers.forEach(u => {
-          const email = u[0];
-          const name = u[1];
-          const role = u[2];
-          const status = u[3];
-          if (name && status === 'approved') {
-            techOptions += `<option value="${name}">${name} (${role})</option>`;
-          }
-        });
-      }
-      
-      supHtml = supHtml.replace('<option value="">กำลังโหลดรายชื่อช่าง...</option>', techOptions);
 
-      const s = await Swal.fire({
+
+      
+        if (!window.cachedUsers) {
+          Swal.fire({ title: 'กำลังเตรียมข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          try {
+            window.cachedUsers = await ResourceHubCore.api.get('get_users');
+          } catch(e) {
+            console.error(e);
+            window.cachedUsers = [];
+          }
+          Swal.close();
+        }
+        
+        let techOptions = '<option value="">-- เลือกช่างผู้รับผิดชอบ --</option>';
+        if (window.cachedUsers && window.cachedUsers.length > 0) {
+          window.cachedUsers.forEach(u => {
+            const email = u[0];
+            const name = u[1];
+            const role = u[2];
+            const status = u[3];
+            if (name && status === 'approved') {
+              techOptions += `<option value="${name}">${name} (${role})</option>`;
+            }
+          });
+        }
+        
+        supHtml = supHtml.replace('<option value="">กำลังโหลดรายชื่อช่าง...</option>', techOptions);
+
+        const s = await Swal.fire({
           title: 'คัดกรองงาน (หัวหน้างาน)',
           html: supHtml,
           showCancelButton: true,
@@ -3933,8 +3936,35 @@ window.updateAdvTask = async function (type, index, currentStatus) {
         </div>
       </div>`;
 
-      const s = await Swal.fire({
-        title: 'คัดกรองงาน (หัวหน้างาน)',
+      
+        if (!window.cachedUsers) {
+          Swal.fire({ title: 'กำลังเตรียมข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          try {
+            window.cachedUsers = await ResourceHubCore.api.get('get_users');
+          } catch(e) {
+            console.error(e);
+            window.cachedUsers = [];
+          }
+          Swal.close();
+        }
+        
+        let techOptions = '<option value="">-- เลือกช่างผู้รับผิดชอบ --</option>';
+        if (window.cachedUsers && window.cachedUsers.length > 0) {
+          window.cachedUsers.forEach(u => {
+            const email = u[0];
+            const name = u[1];
+            const role = u[2];
+            const status = u[3];
+            if (name && status === 'approved') {
+              techOptions += `<option value="${name}">${name} (${role})</option>`;
+            }
+          });
+        }
+        
+        supHtml = supHtml.replace('<option value="">กำลังโหลดรายชื่อช่าง...</option>', techOptions);
+
+        const s = await Swal.fire({
+          title: 'คัดกรองงาน (หัวหน้างาน)',
         html: supHtml,
         showCancelButton: true,
         confirmButtonText: 'อนุมัติ & มอบหมาย',
