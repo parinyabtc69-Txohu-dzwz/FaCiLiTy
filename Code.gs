@@ -261,107 +261,14 @@ function doPost(e) {
           "#265D5A",
           [
             { label: "ผู้แจ้ง", value: data.reporter },
-            { label: "สถานที่", value: data.loc },
-            { label: "ปัญหา", value: data.detail },
-            { label: "ด่วน", value: data.urgency }
-          ]
-        );
-        
-        notifyTask('building', lineRepMsg, `🚨 แจ้งซ่อมอาคารสถานที่ใหม่`, '#265D5A', data, null);
-        
-        break;
-
-      // ── แจ้งซ่อมระบบ IT ──────────────────────────────────────
-      case 'submit_it_repair':
-        let sheetIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
-        if (!sheetIt) {
-          sheetIt = db.insertSheet(CONFIG.IT_SHEET_NAME);
-          sheetIt.appendRow(['Timestamp', 'Subject', 'Detail', 'Reporter', 'Status', 'Image_Report', 'Image_Proof', 'Fix_Detail', 'Technician', 'Cost', 'Receipt', 'Urgency', 'Department', 'Location', 'IncidentDate', 'Contact']);
-        }
-        const itFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_IT_REPORT);
-        sheetIt.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", itFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
-        
-        const lineItMsg = createFlexMessageTemplate(
-          `แจ้งซ่อม IT ใหม่: ${data.subject}`,
-          "💻 แจ้งปัญหาไอทีใหม่",
-          data.subject || "-",
-          "#0ea5e9",
-          [
-            { label: "ผู้แจ้ง", value: data.reporter || "-" },
-            { label: "สถานที่", value: data.loc },
-            { label: "ปัญหา", value: data.detail || "-" }
-          ]
-        );
-        notifyTask('it', lineItMsg, `💻 แจ้งปัญหาไอทีใหม่`, '#0ea5e9', data, null);
-        break;
-
-      // ── แจ้งซ่อมโสตฯ ──────────────────────────────────────
-      case 'submit_av_repair':
-        let sheetAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
-        if (!sheetAvRep) {
-          sheetAvRep = db.insertSheet(CONFIG.AV_REPAIR_SHEET_NAME);
-          sheetAvRep.appendRow(['Timestamp', 'Subject', 'Detail', 'Reporter', 'Status', 'Image_Report', 'Image_Proof', 'Fix_Detail', 'Technician', 'Cost', 'Receipt', 'Urgency', 'Department', 'Location', 'IncidentDate', 'Contact']);
-        }
-        const avRepFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_AV_REPAIR);
-        sheetAvRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", avRepFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
-        
-        const lineAvRepMsg = createFlexMessageTemplate(
-          `แจ้งซ่อมโสตฯ ใหม่: ${data.subject}`,
-          "🎥 แจ้งซ่อมโสตฯใหม่",
-          data.subject || "-",
-          "#f59e0b",
-          [
-            { label: "ผู้แจ้ง", value: data.reporter || "-" },
-            { label: "สถานที่", value: data.loc },
-            { label: "ปัญหา", value: data.detail || "-" }
-          ]
-        );
-        notifyTask('av_repair', lineAvRepMsg, `📷 แจ้งซ่อมอุปกรณ์โสตฯ ใหม่`, '#f59e0b', data, null);
-        break;
-
-      // ── แจ้งโครงการระยะยาว ──────────────────────────────────────
-      case 'submit_project':
-        let sheetProjData = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
-        if (!sheetProjData) {
-          sheetProjData = db.insertSheet(CONFIG.PROJECT_SHEET_NAME);
-          sheetProjData.appendRow(['Timestamp', 'Subject', 'Detail', 'Reporter', 'Status', 'Document_Url', 'Proof_Url', 'Approval_Note', 'Approver', 'Cost', 'Receipt', 'Urgency', 'Department', 'Location', 'TargetDate', 'Contact']);
-        }
-        const projFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_PROJECTS);
-        sheetProjData.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอผู้อำนวยการอนุมัติ", projFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.targetDate || "", data.contact || ""]);
-        
-        const lineProjMsg = createFlexMessageTemplate(
-          `แจ้งโครงการใหม่: ${data.subject}`,
-          "🏗️ โครงการระยะยาวใหม่",
-          data.subject || "-",
-          "#8b5cf6",
-          [
-            { label: "ผู้เสนอ", value: data.reporter || "-" },
-            { label: "สถานที่", value: data.loc },
-            { label: "รายละเอียด", value: data.detail || "-" }
+            { label: "สถานที่", value: data.location }
           ],
-          [
-            { label: "พิจารณาอนุมัติ", url: CONFIG.WEB_APP_URL }
-          ]
+          null
         );
-        notifyTask('project', lineProjMsg, `🏢 เสนอโครงการ / จัดซื้อใหม่`, '#8b5cf6', data, null);
+        notifyTask('av_repair', lineAvMsg, `แจ้งยืมโสตฯ: ${data.borrower}`, '#0d9488', {reporter: data.borrower, subject: data.equipment, status: "รอยืนยันการยืม"}, null);
+        
         break;
 
-      // ── ยืมโสตฯ ─────────────────────────────────────────────
-      case 'submit_av':
-        const sheetAvReq = db.getSheetByName(CONFIG.AV_SHEET_NAME);
-        sheetAvReq.appendRow([timestamp, data.borrower, data.equipment, data.useDate, data.location, "รอยืนยันการยืม", "-", data.signature]);
-        
-        // Email handled by notifyTask
-        
-        const lineAvMsg = createFlexMessageTemplate(
-          `แจ้งยืมโสตฯ: ${data.borrower}`,
-          "📢 ขอยืมอุปกรณ์โสตฯ",
-          data.equipment,
-          "#0d9488",
-          [
-            { label: "ผู้ยืม", value: data.borrower },
-            { label: "วันที่", value: data.useDate },
-            { label: "ส�
       case 'approve_task':
         const approveSheetName = data.sheetName || CONFIG.SHEET_NAME;
         const sheetApprove = db.getSheetByName(approveSheetName);
