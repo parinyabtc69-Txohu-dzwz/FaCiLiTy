@@ -361,37 +361,46 @@ function doPost(e) {
           [
             { label: "ผู้ยืม", value: data.borrower },
             { label: "วันที่", value: data.useDate },
-            { label: "สถานที่", value: data.location }
-          ]
-        );
+            { label: "ส�
+      case 'approve_task':
+        const approveSheetName = data.sheetName || CONFIG.SHEET_NAME;
+        const sheetApprove = db.getSheetByName(approveSheetName);
+        if (!sheetApprove) {
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found: ' + approveSheetName })).setMimeType(ContentService.MimeType.JSON);
+        }
+        const approveTargetRow = data.rowIndex + 2;
+        sheetApprove.getRange(approveTargetRow, 5).setValue(data.status); // Status col 5
+        sheetApprove.getRange(approveTargetRow, 8).setValue(data.technician); // Technician col 8 (Fix_Detail is 7, Technician is 8 for building; same layout for IT/AV)
+        sheetApprove.getRange(approveTargetRow, 12).setValue(data.urgency); // Urgency col 12
         
-        notifyTask('av', lineAvMsg, `🎤 แจ้งยืมอุปกรณ์โสตฯ ใหม่`, '#0d9488', data, null);
+        const approveSubjectStr = sheetApprove.getRange(approveTargetRow, 2).getValue();
+        const approveDetailStr = sheetApprove.getRange(approveTargetRow, 3).getValue();
+        const approveReporterStr = sheetApprove.getRange(approveTargetRow, 4).getValue();
         
-        break;
-
-      // ── แจ้งบั๊ก ─────────────────────────────────────────────
-      case 'report_bug':
-        const sheetBug = db.getSheetByName(CONFIG.BUG_SHEET_NAME);
-        sheetBug.appendRow([timestamp, data.reporter, data.issue, data.page, "รอดำเนินการ"]);
+        // Determine notify type and color based on sheet
+        let approveNotifyType = 'building';
+        let approveColor = '#265D5A';
+        if (approveSheetName === CONFIG.IT_SHEET_NAME) { approveNotifyType = 'it'; approveColor = '#0ea5e9'; }
+        else if (approveSheetName === CONFIG.AV_REPAIR_SHEET_NAME) { approveNotifyType = 'av_repair'; approveColor = '#f59e0b'; }
+        else if (approveSheetName === CONFIG.PROJECT_SHEET_NAME) { approveNotifyType = 'project'; approveColor = '#8b5cf6'; }
         
-        const lineBugMsg = createFlexMessageTemplate(
-          `แจ้งปัญหาใหม่ (Bug): ${data.issue}`,
-          "🐞 แจ้งปัญหาระบบ (Bug)",
-          data.issue,
-          "#dc2626",
+        const approveMsg = createFlexMessageTemplate(
+          'มอบหมายงานใหม่: ' + approveSubjectStr,
+          '🛠️ มอบหมายงาน: ' + data.urgency,
+          approveSubjectStr,
+          data.urgency === 'ด่วน' ? '#ef4444' : (data.urgency === 'ตามคิว' ? '#f59e0b' : '#10b981'),
           [
-            { label: "ผู้แจ้ง", value: data.reporter },
-            { label: "หน้าจอ", value: data.page }
-          ]
+            { label: 'รายละเอียด', value: approveDetailStr, flexLabel: 3, flexValue: 5 },
+            { label: 'ผู้แจ้ง', value: approveReporterStr, flexLabel: 3, flexValue: 5 },
+            { label: 'ผู้รับผิดชอบ', value: data.technician, flexLabel: 3, flexValue: 5 }
+          ],
+          null
         );
-        notifyTask('bug', lineBugMsg, `🐞 แจ้งปัญหาระบบใหม่`, '#ef4444', data, null);
+        notifyTask(approveNotifyType, approveMsg, 'มอบหมายงาน: ' + approveSubjectStr, approveColor, {reporter: approveReporterStr, subject: approveSubjectStr, status: data.status}, null);
         
         break;
 
-      // ── เพิ่มเติมรายละเอียดงานซ่อม ──────────────────────────
-      case 'append_task_details':
-        const sheetTaskDetails = db.getSheetByName(CONFIG.SHEET_NAME);
-        sheetTaskDetails.getRange(data.rowIndex + 2, 3).setValue(data.newDetails);
+ 2, 3).setValue(data.newDetails);
         break;
 
       // ── อัพสถานะงานซ่อม ─────────────────────────────────────
