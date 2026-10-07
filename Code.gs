@@ -123,20 +123,32 @@ function getCachedOrFetch(cacheKey, fetchFn) {
   }
 }
 
-function invalidateDataCaches() {
+function invalidateDataCaches(action) {
   try {
     const cache = CacheService.getScriptCache();
-    // ล้าง cache ทุก key ที่อาจเปลี่ยนแปลง
-    cache.removeAll(['tasks', 'av_requests', 'adv_tasks', 'master_data',
-      'dashboard_', 'dashboard_2026-10', 'dashboard_2026-09', 'dashboard_2026-08']);
-    // ล้าง dashboard key ทุกเดือนที่อาจมีอยู่
+    let keysToRemove = [];
+    
+    if (action) {
+      if (action.includes('master_')) keysToRemove.push('master_data');
+      else if (action.includes('av_status') || action === 'submit_av') keysToRemove.push('av_requests');
+      else if (action.includes('adv_task') || action.includes('_it') || action.includes('_project') || action.includes('_av_repair')) keysToRemove.push('adv_tasks');
+      else if (action.includes('task') || action === 'submit_repair') keysToRemove.push('tasks');
+      else keysToRemove.push('tasks', 'av_requests', 'adv_tasks', 'master_data');
+    } else {
+      keysToRemove.push('tasks', 'av_requests', 'adv_tasks', 'master_data');
+    }
+
+    // เคลียร์ dashboard เสมอเมื่อมีการแก้ไขข้อมูลใดๆ
+    keysToRemove.push('dashboard_', 'dashboard_2026-10', 'dashboard_2026-09', 'dashboard_2026-08');
+    cache.removeAll(keysToRemove);
+    
+    // ล้าง dashboard key ทุกเดือนที่อาจมีอยู่แบบเจาะจง
     const now = new Date();
     for (let i = 0; i < 3; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = 'dashboard_' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
       cache.remove(key);
     }
-    cache.remove('dashboard_');
   } catch(e) { Logger.log('Cache invalidation error: ' + e.message); }
 }
 
@@ -245,7 +257,7 @@ function doPost(e) {
     // ── ล้าง Cache ทุกครั้งที่มีการเปลี่ยนแปลงข้อมูล (ยกเว้น google_login) ──
     const noInvalidateActions = ['google_login', 'link_line_account', 'report_bug'];
     if (!noInvalidateActions.includes(data.action)) {
-      invalidateDataCaches();
+      invalidateDataCaches(data.action);
     }
     
     switch (data.action) {
@@ -1368,8 +1380,7 @@ function handleGoogleLogin(credential) {
         const status = data[i][3];
 
         if (status === 'approved') {
-          sheet.getRange(i + 1, 5).setValue(picture);
-          sheet.getRange(i + 1, 6).setValue(now);
+          sheet.getRange(i + 1, 5, 1, 2).setValues([[picture, now]]);
           
           return ContentService.createTextOutput(JSON.stringify({
             status: 'success',
