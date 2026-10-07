@@ -1173,7 +1173,7 @@ function nav(pageId) {
     'page-teacher-profile': 'gnav-teacher-profile',
     'page-teacher-av-profile': 'gnav-teacher-av-profile',
     'page-dashboard': 'gnav-dash',
-    'page-technician': 'gnav-tech-menu',
+    'page-fb-admin': 'gnav-fb-admin',
     'page-av-manage': 'gnav-av-manage-menu',
     'page-master-data': 'gnav-master-data',
     'page-document': 'gnav-document',
