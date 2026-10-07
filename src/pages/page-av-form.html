@@ -63,11 +63,13 @@
                   <label class="block text-xs font-semibold text-slate-600 mb-1">สถานที่ใช้งาน <span
                       class="text-red-500">*</span></label>
                   <div class="flex gap-2">
+                    <select id="av_inst" class="w-1/3 p-3 border rounded-xl outline-none bg-slate-50 focus:border-[#265D5A] text-sm font-medium">
+                      <option value="" disabled selected>สถาบัน</option>
+                      <option value="วพบ.">วพบ.</option>
+                      <option value="ศษ.">ศษ.</option>
+                    </select>
                     <input type="text" id="av_location" placeholder="เช่น ห้องประชุมใหญ่"
-                      class="w-full p-3 border rounded-xl outline-none bg-slate-50 focus:border-[#265D5A]" required>
-                    <button type="button" onclick="openQrScanner('av_location')" class="bg-[#B0EDE6] hover:bg-[#265D5A] hover:text-white text-[#265D5A] px-4 rounded-xl transition-colors shadow-sm flex items-center justify-center shrink-0">
-                      <i class="fa-solid fa-qrcode text-lg"></i>
-                    </button>
+                      class="w-2/3 p-3 border rounded-xl outline-none bg-slate-50 focus:border-[#265D5A] text-sm" required>
                   </div>
                 </div>
               </div>

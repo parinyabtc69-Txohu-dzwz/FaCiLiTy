@@ -1,4 +1,4 @@
-﻿console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
+console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
 console.log("%cDeveloped by Taohx_dz_parinya", "color: #10b981; font-size: 14px; font-weight: bold;");
 console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; font-weight: bold;");
 
@@ -433,7 +433,9 @@ const ResourceHubCore = {
       let detail = $('detail').value.trim();
       const reporter = $('reporter').value.trim();
       const dept = $('department') ? $('department').value.trim() : '';
-      const loc = $('repair_location') ? $('repair_location').value.trim() : '';
+      const rawLoc = $('repair_location') ? $('repair_location').value.trim() : '';
+      const inst = $('repair_inst') ? $('repair_inst').value : '';
+      const loc = (inst ? `[${inst}] ` : '') + rawLoc;
       const urgency = ''; // Set by Supervisor during approval
 
       const contact = $('contact') ? $('contact').value.trim() : '';
@@ -465,7 +467,9 @@ const ResourceHubCore = {
     async submitAV() {
       const borrower = $('borrower').value.trim();
       const useDate = $('useDate').value;
-      const loc = $('av_location').value.trim();
+      const rawLoc = $('av_location') ? $('av_location').value.trim() : '';
+      const inst = $('av_inst') ? $('av_inst').value : '';
+      const loc = (inst ? `[${inst}] ` : '') + rawLoc;
       const signer = $('signerName').value.trim();
 
       let equipmentList = [];
@@ -1872,7 +1876,9 @@ async function submitGenericForm(config) {
   const detail = $(config.prefix + 'Detail')?.value.trim();
   const reporter = $(config.prefix + 'Reporter')?.value.trim();
   const dept = $(config.prefix + 'Department')?.value.trim() || '';
-  const loc = $(config.prefix + 'Location')?.value.trim() || '';
+  const rawLoc = $(config.prefix + 'Location')?.value.trim() || '';
+  const inst = $(config.prefix + '_inst')?.value || '';
+  const loc = (inst ? `[${inst}] ` : '') + rawLoc;
   const urgency = document.querySelector(`input[name="${config.prefix}Urgency"]:checked`)?.value || 'ตามคิว';
   const contact = $(config.prefix + 'Contact')?.value.trim() || '';
 

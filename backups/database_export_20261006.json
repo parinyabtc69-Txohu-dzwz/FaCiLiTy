@@ -1,0 +1,326 @@
+{
+  "exportedAt": "2026-10-06T01:10:35.809Z",
+  "sourceUrl": "https://script.google.com/macros/s/AKfycbz8v26S7km-uQ5wR2neO9oYs0_UvTJPXGdLhyYHt4pNM6AVZxouW4qiS1REDhlgjU8QPg/exec",
+  "tables": {
+    "get_tasks": [
+      [
+        "02/10/2026 10:59:00",
+        "ประตู / หน้าต่าง / กลอนมือจับ",
+        "ทดสอบการแจ้งซ่อม",
+        "เต้าหู้ ปริญญา",
+        "รอดำเนินการ",
+        "-",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "ด่วน",
+        "ทดสอบการแจ้งซ่อม",
+        203,
+        "02/10/1969 10:59:00",
+        "ทดสอบการแจ้งซ่อม"
+      ],
+      [
+        "02/10/2026 12:17:00",
+        "ประตู / หน้าต่าง / กลอนมือจับ",
+        "ทดสอบการปรับสถานะ",
+        "เต้าหู้ ปริญญา",
+        "รอดำเนินการ",
+        "-",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "ด่วน",
+        "ทดสอบการปรับสถานะ",
+        203,
+        "02/10/1969 12:17:00",
+        "ทดสอบการปรับสถานะ"
+      ],
+      [
+        "05/10/2026 11:53:00",
+        "ประตู / หน้าต่าง / กลอนมือจับ",
+        "ทดสอบการแจ้งเตือนไลน์ Flex Message",
+        "Parinya taohu",
+        "รอดำเนินการ",
+        "-",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "ด่วน",
+        "ทดสอบการแจ้งเตือนไลน์ Flex Message",
+        203,
+        "05/10/1969 11:52:00",
+        "sdaasds"
+      ]
+    ],
+    "get_av_requests": [
+      [
+        "18/09/2026 17:12:00",
+        "Parinya taohu",
+        "ไมโครโฟนไร้สาย (1), ลำโพงบลูทูธพกพา (1), ปลั๊กพ่วงสนาม (1), โน้ตบุ๊ก (1), ทดสอบการแจ้งเตือนไลน์ Flex Message (1)",
+        "18/09/2026 00:00:00",
+        203,
+        "จัดเตรียมแล้ว",
+        "เจ้าหน้าที่โสต",
+        "Parinya taohu"
+      ]
+    ],
+    "get_master_data": {
+      "locations": [],
+      "projects": [],
+      "mechanics": [],
+      "settings": {
+        "overdueDays": 7
+      }
+    },
+    "get_documents": [],
+    "get_users": [
+      [
+        "dzworkbalance.68@gmail.com",
+        "เต้าหู้ ปริญญา",
+        "Supervisor",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocIUpTCIQ-LETusXx3cH6oby8dMbwKM7n5Sm5b8x0yb21AK5a6iJ=s96-c",
+        "06/10/2026 07:52:49",
+        ""
+      ],
+      [
+        "parinya.btc69@gmail.com",
+        "Parinya taohu",
+        "Admin",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocLiOo2WtVO8IixOruAQVqxhpSBPZE8NMNcfSrdZFxjim4zGTQ=s96-c",
+        "05/10/2026 15:39:09",
+        ""
+      ],
+      [
+        "mo055632136@gmail.com",
+        "Suphachai _Ball",
+        "Admin",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocI3Ulr-e4xx94wCNLcJ7PmdD5TLZ9L-Z008o20N6ryM0WHxxsKR=s96-c",
+        "30/09/2026 14:11:06",
+        ""
+      ],
+      [
+        "pai2.kn@gmail.com",
+        "Pond Cash",
+        "Admin",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocLzUrzGQb_nj8Tp02-TTUCYIctxiNtci2nLE4MYeG_KRpSlDRvu=s96-c",
+        "10/09/2026 11:12:13",
+        ""
+      ],
+      [
+        "tuloodz.fivem@gmail.com",
+        "ตู่ลู้ ดีซี",
+        "Tech",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocLiX1uAyIn4_daSoo93NV5XL3HSxRL4fyoSl2moKgMBO-44VA=s96-c",
+        "05/10/2026 15:38:47",
+        ""
+      ],
+      [
+        "suphachai.bss@gmail.com",
+        "Suphachai Saoban",
+        "Admin",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocJ7tONtn9BKByAkGHg67quM35LUYFh4giNKR4nQ4cCJqFQCblk=s96-c",
+        "09/09/2026 10:56:01",
+        ""
+      ],
+      [
+        "test@line.me",
+        "Test User",
+        "Teacher",
+        "approved",
+        "http://example.com/pic.jpg",
+        "03/09/2026 17:07:31",
+        "U1234567890"
+      ],
+      [
+        "614144026.ptk@gmail.com",
+        "KruTaohu",
+        "Admin",
+        "approved",
+        "https://profile.line-scdn.net/0hVZ9BGYL0CXUUOxVfK4t3S2RrCh83SlBnPlpAQCU8AkB7AhohPF1FQHY4VhAvAh0jPltPEik9B0U2VAlfYh8TcFN9BEBQfDchVjsQZlldDBBPbzdhTh0eaEBPCUIqTBQqQiEBUCRkVSZfXg5YbzgccnZwS0RQCgtUPmxlIxEJZ_Z7OX4gOV1GFiA7U0Ch",
+        "18/09/2026 17:12:41",
+        "U52b153816fe2a10531490fee141fb82b"
+      ],
+      [
+        "pondasdss@gmail.com",
+        "Thanawut Kadme",
+        "Admin",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocJ7oPtyfCfsguHeJ5eKdoU1r88q2Ty27znhEeLBaWJ70hvXrPX8=s96-c",
+        "10/09/2026 08:58:50",
+        ""
+      ],
+      [
+        "pondcashbot@gmail.com",
+        "Pond Cash",
+        "Admin",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocKmlO8t8hYYjDIAQYFM_OsbAsZhaSdRzD0dHzFrhB-SJVfp_PY=s96-c",
+        "21/09/2026 14:00:39",
+        ""
+      ],
+      [
+        "seneethailand@gmail.com",
+        "Senee Wong",
+        "Admin",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocJe9LCIbpqRoq1iRV2byGzCHJzztQEV5RubbA4RbHPBNNiua4Te=s96-c",
+        "01/10/2026 12:34:38",
+        ""
+      ],
+      [
+        "lilisaow@gmail.com",
+        "Kantarat Pongpanich",
+        "Teacher",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocJosSajvaO7xF4jPlkH5UR9B6ZWkwOOFy2OsW-XJspNmcptM_lU=s96-c",
+        "30/09/2026 11:35:24",
+        ""
+      ],
+      [
+        "jenbenjamas@gmail.com",
+        "เบญจมาศ พลายยงค์",
+        "Supervisor",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocI4w8o8xKGVBXkVg2hVroK60l_Ww3eK-UiuKtKNBHShjO2A8b8=s96-c",
+        "01/10/2026 16:21:19",
+        ""
+      ],
+      [
+        "614144026ptk@gmail.com",
+        "ปริญญา เต้าหู้",
+        "Teacher",
+        "approved",
+        "https://lh3.googleusercontent.com/a/ACg8ocJefVJsaYMjb8VlA-V6VCjrmJHTineSbaJTXL5lFAeVlP8HVY0u=s96-c",
+        "01/10/2026 14:32:04",
+        ""
+      ]
+    ],
+    "get_adv_tasks": {
+      "it": [
+        [
+          "30/09/2026 11:37:00",
+          "เครื่องพิมพ์ (Printer) / หมึกพิมพ์",
+          "เครื่องปริ้นสี ใช้งานไม่ได้เนื่องจากยังไม่ได้เชื่อมต่อ",
+          "กันตรัตน์",
+          "รอดำเนินการ",
+          "-",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "ด่วน",
+          "วิชาการ",
+          105,
+          "30/09/2026 11:36:00",
+          ""
+        ]
+      ],
+      "av": [
+        [
+          "30/09/2026 11:37:00",
+          "เครื่องพิมพ์ (Printer) / หมึกพิมพ์",
+          "เครื่องปริ้นสี ใช้งานไม่ได้เนื่องจากยังไม่ได้เชื่อมต่อ",
+          "กันตรัตน์",
+          "รอดำเนินการ",
+          "-",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "ด่วน",
+          "วิชาการ",
+          105,
+          "30/09/2026 11:36:00",
+          ""
+        ]
+      ],
+      "project": [
+        [
+          "02/10/2026 12:18:00",
+          "ปรับปรุงอาคาร / ทาสี / ต่อเติม",
+          "ทดสอบการปรับสถานะ",
+          "ทดสอบการปรับสถานะ",
+          "รอดำเนินการ",
+          "-",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "ตามคิว",
+          "ทดสอบการปรับสถานะ",
+          "ทดสอบการปรับสถานะ",
+          "02/10/2026 00:00:00",
+          "ทดสอบการปรับสถานะ"
+        ]
+      ]
+    },
+    "get_dashboard": {
+      "building": {
+        "total": 3,
+        "pending": 3,
+        "inProgress": 0,
+        "completed": 0,
+        "rating": {
+          "avg": "0.0",
+          "count": 0
+        }
+      },
+      "av": {
+        "total": 1,
+        "pending": 0,
+        "active": 1,
+        "completed": 0,
+        "rating": {
+          "avg": "0.0",
+          "count": 0
+        }
+      },
+      "it": {
+        "total": 1,
+        "pending": 1,
+        "inProgress": 0,
+        "completed": 0,
+        "rating": {
+          "avg": "0.0",
+          "count": 0
+        }
+      },
+      "avRep": {
+        "total": 1,
+        "pending": 1,
+        "inProgress": 0,
+        "completed": 0,
+        "rating": {
+          "avg": "0.0",
+          "count": 0
+        }
+      },
+      "proj": {
+        "total": 1,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 0,
+        "rating": {
+          "avg": "0.0",
+          "count": 0
+        }
+      },
+      "bugs": 2
+    }
+  }
+}
