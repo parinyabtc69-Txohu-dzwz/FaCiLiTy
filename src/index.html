@@ -146,7 +146,7 @@
             <i class="fa-solid fa-house w-5 text-center text-slate-500"></i> หน้าแรก
           </button>
           
-          <button onclick="promptTrackTicket()" id="gnav-track-ticket"
+          <button onclick="openTrackModal()" id="gnav-track-ticket"
             class="gmail-nav-item w-full flex items-center gap-4 px-4 py-2.5 rounded-r-full text-slate-700 hover:bg-slate-200/60 transition-colors text-sm font-bold text-purple-600 bg-purple-50">
             <i class="fa-solid fa-magnifying-glass w-5 text-center text-purple-600"></i> ติดตามสถานะงาน (แชทโต้ตอบ)
           </button>
@@ -365,6 +365,27 @@
         <button onclick="downloadQrCode()" class="mt-6 w-full bg-[#265D5A] hover:bg-[#1a3f3d] text-white font-bold py-3 rounded-xl transition-colors shadow-md">
           <i class="fa-solid fa-download mr-2"></i> ดาวน์โหลดรูปภาพ
         </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Track Ticket Modal -->
+  <div id="trackTicketModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-2xl transform transition-all">
+      <div class="p-8 text-center">
+        <h3 class="font-bold text-2xl text-slate-800 mb-2">ติดตามงาน / แชทกับช่าง</h3>
+        <p class="text-slate-500 mb-6">โปรดระบุเลข Ticket ID ของคุณ</p>
+        <input type="text" id="trackTicketInput" placeholder="เช่น REP-A8F2Z" 
+          class="w-full text-center text-lg font-bold p-4 border-2 border-slate-200 rounded-xl focus:border-[#265D5A] focus:outline-none mb-6">
+        <div class="flex gap-4 justify-center">
+          <button onclick="submitTrackModal()" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-md">
+            ค้นหา
+          </button>
+          <button onclick="closeTrackModal()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-md">
+            ยกเลิก
+          </button>
+        </div>
       </div>
     </div>
   </div>

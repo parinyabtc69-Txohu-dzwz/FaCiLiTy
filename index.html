@@ -309,7 +309,7 @@
             <i class="fa-solid fa-house w-5 text-center text-slate-500"></i> หน้าแรก
           </button>
           
-          <button onclick="promptTrackTicket()" id="gnav-track-ticket"
+          <button onclick="openTrackModal()" id="gnav-track-ticket"
             class="gmail-nav-item w-full flex items-center gap-4 px-4 py-2.5 rounded-r-full text-slate-700 hover:bg-slate-200/60 transition-colors text-sm font-bold text-purple-600 bg-purple-50">
             <i class="fa-solid fa-magnifying-glass w-5 text-center text-purple-600"></i> ติดตามสถานะงาน (แชทโต้ตอบ)
           </button>
@@ -1015,25 +1015,14 @@
           <p class="text-sm text-slate-500 font-light">เลือกบริการหรือหน่วยงานที่คุณต้องการติดต่อ</p>
         </div>
         <div class="text-center mb-6">
-          <button onclick="quickScanQr()" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md mx-auto w-full md:w-auto">
-            <i class="fa-solid fa-qrcode text-xl"></i> <span>สแกน QR ด่วน แจ้งซ่อมทันที</span>
+          <button onclick="openTrackModal()" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-8 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 mx-auto w-full md:w-auto">
+            <i class="fa-solid fa-magnifying-glass text-xl"></i> <span>ติดตามงานซ่อม / แชทกับช่าง</span>
           </button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="homeMenuGrid">
 
-          <button onclick="promptTrackTicket()"
-            class="btn-card flex items-center p-5 border border-purple-100 rounded-2xl bg-white hover:bg-purple-50 hover:border-purple-300 transition-all text-left group shadow-sm col-span-1 md:col-span-2">
-            <div
-              class="icon-wrapper w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
-              <i class="fa-solid fa-magnifying-glass"></i>
-            </div>
-            <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">ติดตามสถานะงาน (แชทโต้ตอบ)</span>
-              <span class="block text-xs text-slate-500 font-light">ตรวจสอบสถานะการแจ้งซ่อม และสนทนากับช่างซ่อม</span>
-            </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-purple-600">›</div>
-          </button>
+          
   
           <button onclick="nav('page-repair-form')"
             class="btn-card card-building flex items-center p-5 border border-[#B0EDE6] rounded-2xl bg-white hover:bg-[#E0F7F4] hover:border-[#265D5A]/30 transition-all text-left group shadow-sm">
@@ -5593,27 +5582,60 @@ let currentChatFile = null;
 // You can add a file input listener here if needed
 
 
-window.promptTrackTicket = async function() {
-  const { value: ticketId } = await Swal.fire({
-    title: 'ติดตามงาน / แชทกับช่าง',
-    input: 'text',
-    inputLabel: 'โปรดระบุเลข Ticket ID ของคุณ',
-    inputPlaceholder: 'เช่น REP-A8F2Z',
-    showCancelButton: true,
-    confirmButtonText: 'ค้นหา',
-    cancelButtonText: 'ยกเลิก',
-    confirmButtonColor: '#265D5A'
-  });
-  if (ticketId) {
-    if (typeof loadTicketPage === 'function') {
-      loadTicketPage(ticketId.trim().toUpperCase());
-    } else {
-      alertBox('error', 'ระบบยังไม่พร้อม', 'ฟังก์ชันนี้กำลังอยู่ในช่วงอัปเดต');
+
+window.openTrackModal = function() {
+  const modal = document.getElementById('trackTicketModal');
+  if(modal) {
+    modal.classList.remove('hidden');
+    const input = document.getElementById('trackTicketInput');
+    if(input) {
+      input.value = '';
+      input.focus();
     }
   }
 };
 
+window.closeTrackModal = function() {
+  const modal = document.getElementById('trackTicketModal');
+  if(modal) modal.classList.add('hidden');
+};
 
+window.submitTrackModal = async function() {
+  const input = document.getElementById('trackTicketInput');
+  const btn = event.currentTarget;
+  if(!input) return;
+  const ticketId = input.value.trim().toUpperCase();
+  
+  if(!ticketId) {
+    alert('กรุณาระบุเลขที่ตั๋วงาน');
+    return;
+  }
+  
+  // Show loading
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+  btn.disabled = true;
+  
+  try {
+    const doc = await firestoreDb.collection('tickets').doc(ticketId).get();
+    if (doc.exists) {
+      const token = doc.data().token;
+      if (token) {
+        closeTrackModal();
+        nav('page-ticket', { id: ticketId, token: token });
+      } else {
+        alert('ไม่พบ Token ของตั๋วงานนี้');
+      }
+    } else {
+      alert('ไม่พบเลขที่ตั๋วงานนี้ในระบบ');
+    }
+  } catch (err) {
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+};
 // ==========================================
 // Ticket Admin Controls
 // ==========================================
@@ -5960,6 +5982,27 @@ function closeQrScanner() {
         <button onclick="downloadQrCode()" class="mt-6 w-full bg-[#265D5A] hover:bg-[#1a3f3d] text-white font-bold py-3 rounded-xl transition-colors shadow-md">
           <i class="fa-solid fa-download mr-2"></i> ดาวน์โหลดรูปภาพ
         </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Track Ticket Modal -->
+  <div id="trackTicketModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-2xl transform transition-all">
+      <div class="p-8 text-center">
+        <h3 class="font-bold text-2xl text-slate-800 mb-2">ติดตามงาน / แชทกับช่าง</h3>
+        <p class="text-slate-500 mb-6">โปรดระบุเลข Ticket ID ของคุณ</p>
+        <input type="text" id="trackTicketInput" placeholder="เช่น REP-A8F2Z" 
+          class="w-full text-center text-lg font-bold p-4 border-2 border-slate-200 rounded-xl focus:border-[#265D5A] focus:outline-none mb-6">
+        <div class="flex gap-4 justify-center">
+          <button onclick="submitTrackModal()" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-md">
+            ค้นหา
+          </button>
+          <button onclick="closeTrackModal()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-md">
+            ยกเลิก
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -3693,27 +3693,60 @@ let currentChatFile = null;
 // You can add a file input listener here if needed
 
 
-window.promptTrackTicket = async function() {
-  const { value: ticketId } = await Swal.fire({
-    title: 'ติดตามงาน / แชทกับช่าง',
-    input: 'text',
-    inputLabel: 'โปรดระบุเลข Ticket ID ของคุณ',
-    inputPlaceholder: 'เช่น REP-A8F2Z',
-    showCancelButton: true,
-    confirmButtonText: 'ค้นหา',
-    cancelButtonText: 'ยกเลิก',
-    confirmButtonColor: '#265D5A'
-  });
-  if (ticketId) {
-    if (typeof loadTicketPage === 'function') {
-      loadTicketPage(ticketId.trim().toUpperCase());
-    } else {
-      alertBox('error', 'ระบบยังไม่พร้อม', 'ฟังก์ชันนี้กำลังอยู่ในช่วงอัปเดต');
+
+window.openTrackModal = function() {
+  const modal = document.getElementById('trackTicketModal');
+  if(modal) {
+    modal.classList.remove('hidden');
+    const input = document.getElementById('trackTicketInput');
+    if(input) {
+      input.value = '';
+      input.focus();
     }
   }
 };
 
+window.closeTrackModal = function() {
+  const modal = document.getElementById('trackTicketModal');
+  if(modal) modal.classList.add('hidden');
+};
 
+window.submitTrackModal = async function() {
+  const input = document.getElementById('trackTicketInput');
+  const btn = event.currentTarget;
+  if(!input) return;
+  const ticketId = input.value.trim().toUpperCase();
+  
+  if(!ticketId) {
+    alert('กรุณาระบุเลขที่ตั๋วงาน');
+    return;
+  }
+  
+  // Show loading
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+  btn.disabled = true;
+  
+  try {
+    const doc = await firestoreDb.collection('tickets').doc(ticketId).get();
+    if (doc.exists) {
+      const token = doc.data().token;
+      if (token) {
+        closeTrackModal();
+        nav('page-ticket', { id: ticketId, token: token });
+      } else {
+        alert('ไม่พบ Token ของตั๋วงานนี้');
+      }
+    } else {
+      alert('ไม่พบเลขที่ตั๋วงานนี้ในระบบ');
+    }
+  } catch (err) {
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+};
 // ==========================================
 // Ticket Admin Controls
 // ==========================================
