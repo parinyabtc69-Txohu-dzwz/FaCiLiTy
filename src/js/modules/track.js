@@ -1,0 +1,470 @@
+// ============================================================
+// ระบบติดตามงานซ่อม (Job Tracking)
+// - หน้า page-track        : รายการงานทั้งหมดในระบบ + ค้นหา/กรอง
+// - หน้า page-track-detail : รายละเอียดงาน, ความคืบหน้า, ข้อความจากช่าง
+// ดึงข้อมูลจาก Google Sheets ผ่าน GAS (get_tasks + get_adv_tasks)
+// ============================================================
+
+const TrackUI = (() => {
+  // ---------- สถานะของหน้า ----------
+  const state = {
+    jobs: [],
+    loaded: false,
+    loading: false,
+    search: '',
+    status: 'all',   // all | pending | progress | done
+    type: 'all',     // all | building | it | av | project
+    mineOnly: false,
+    searchTimer: null
+  };
+
+  // ---------- ข้อมูลประเภทงาน ----------
+  const TYPES = {
+    building: { label: 'ซ่อมอาคาร', prefix: 'B', icon: 'fa-wrench', chip: 'bg-[#B0EDE6] text-[#265D5A]' },
+    it: { label: 'ซ่อมไอที', prefix: 'IT', icon: 'fa-desktop', chip: 'bg-sky-100 text-sky-700' },
+    av: { label: 'ซ่อมโสตฯ', prefix: 'AV', icon: 'fa-camera', chip: 'bg-amber-100 text-amber-700' },
+    project: { label: 'โครงการ', prefix: 'PJ', icon: 'fa-building-circle-check', chip: 'bg-violet-100 text-violet-700' }
+  };
+
+  // ---------- ขั้นตอนความคืบหน้า ----------
+  const STEPS = [
+    { label: 'แจ้งเรื่อง', icon: 'fa-paper-plane' },
+    { label: 'รับเรื่อง / มอบหมายช่าง', icon: 'fa-user-check' },
+    { label: 'กำลังดำเนินการ', icon: 'fa-screwdriver-wrench' },
+    { label: 'เสร็จสิ้น', icon: 'fa-flag-checkered' }
+  ];
+
+  const esc = v => (v === null || v === undefined) ? '' : sanitizeHtml(String(v));
+  const str = v => (v === null || v === undefined) ? '' : String(v).trim();
+  const isUrl = v => /^https?:\/\//i.test(str(v));
+  const pad = n => String(n).padStart(3, '0');
+
+  // แปลงสถานะเป็นหมวด + ลำดับขั้นตอน
+  function classify(status, tech) {
+    const s = str(status);
+    if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return { group: 'cancel', step: -1 };
+    if (/เสร็จ|เรียบร้อยแล้ว|ปิดงาน/.test(s)) return { group: 'done', step: 3 };
+    if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return { group: 'progress', step: 2 };
+    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน/.test(s) && !/^รอ/.test(s)) return { group: 'progress', step: 1 };
+    if (tech) return { group: 'progress', step: 1 };
+    return { group: 'pending', step: 0 };
+  }
+
+  // แปลงวันที่จาก Sheet ("dd/MM/yyyy HH:mm[:ss]" หรือ ISO) เป็น Date
+  function parseDate(v) {
+    const s = str(v);
+    if (!s) return null;
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (m) {
+      let y = Number(m[3]);
+      if (y < 100) y += 2000;
+      if (y > 2400) y -= 543;               // ปี พ.ศ. เต็ม
+      else if (y >= 1940 && y < 2000) y += 57; // ปี พ.ศ. 2 หลักที่ Sheet ตีความเป็น 19xx
+      return new Date(y, Number(m[2]) - 1, Number(m[1]), Number(m[4] || 0), Number(m[5] || 0));
+    }
+    const d = new Date(s);
+    return isNaN(d) ? null : d;
+  }
+
+  function fmtDate(d, withTime = true) {
+    if (!d) return '-';
+    const opt = withTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' };
+    return d.toLocaleString('th-TH', opt) + (withTime ? ' น.' : '');
+  }
+
+  function timeAgo(d) {
+    if (!d) return '';
+    const diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 60) return 'เมื่อสักครู่';
+    if (diff < 3600) return Math.floor(diff / 60) + ' นาทีที่แล้ว';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' ชั่วโมงที่แล้ว';
+    if (diff < 86400 * 30) return Math.floor(diff / 86400) + ' วันที่แล้ว';
+    return fmtDate(d, false);
+  }
+
+  function driveThumb(url, size = 'w600') {
+    const u = str(url);
+    const m = u.match(/\/d\/([a-zA-Z0-9_-]+)/) || u.match(/id=([a-zA-Z0-9_-]+)/);
+    return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=${size}` : u;
+  }
+
+  // ---------- แปลงแถวข้อมูลจาก Sheet ให้อยู่ในรูปแบบเดียวกัน ----------
+  // อาคาร (เรียงเก่า→ใหม่): 0 เวลา,1 หัวข้อ,2 รายละเอียด,3 ผู้แจ้ง,4 สถานะ,5 รูปแจ้ง,6 รายละเอียดการแก้ไข,7 ช่าง,8 รูปผลงาน,9 ค่าใช้จ่าย,10 ใบเสร็จ,11 ความเร่งด่วน,12 หน่วยงาน,13 สถานที่,14 วันที่พบปัญหา,15 ติดต่อ
+  function fromBuilding(r, idx) {
+    const tech = str(r[7]);
+    return makeJob('building', idx + 1, r, {
+      image: r[5], fixDetail: r[6], tech, proof: r[8], cost: r[9], urgency: r[11]
+    });
+  }
+
+  // ไอที/โสตฯ/โครงการ (เรียงใหม่→เก่า): 0 เวลา,1 หัวข้อ,2 รายละเอียด,3 ผู้แจ้ง,4 สถานะ,5 รูปแจ้ง/ความเร่งด่วน,6 รูปผลงาน,7 รายละเอียดการแก้ไข,8 ช่าง,9 ค่าใช้จ่าย,10 ใบเสร็จ,11 ความเร่งด่วน,12 หน่วยงาน,13 สถานที่,14 วันที่,15 ติดต่อ
+  function fromAdvanced(type, r, seq) {
+    return makeJob(type, seq, r, {
+      image: isUrl(r[5]) ? r[5] : '',
+      fixDetail: r[7], tech: str(r[8]), proof: r[6], cost: r[9],
+      urgency: str(r[11]) || (!isUrl(r[5]) && str(r[5]) !== '-' ? r[5] : '')
+    });
+  }
+
+  function makeJob(type, seq, r, x) {
+    const status = str(r[4]) || (type === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
+    const created = parseDate(r[0]);
+    const cls = classify(status, x.tech);
+    return {
+      id: `${TYPES[type].prefix}-${pad(seq)}`,
+      type,
+      created,
+      createdRaw: str(r[0]),
+      subject: str(r[1]) || 'ไม่ระบุหัวข้อ',
+      detail: str(r[2]),
+      reporter: str(r[3]),
+      status,
+      group: cls.group,
+      step: cls.step,
+      image: isUrl(x.image) ? str(x.image) : '',
+      fixDetail: str(x.fixDetail) === '-' ? '' : str(x.fixDetail),
+      tech: x.tech,
+      proof: isUrl(x.proof) ? str(x.proof) : '',
+      cost: str(x.cost) === '-' ? '' : str(x.cost),
+      urgency: str(x.urgency) === '-' ? '' : str(x.urgency),
+      dept: str(r[12]),
+      location: str(r[13]),
+      incident: parseDate(r[14]),
+      contact: str(r[15])
+    };
+  }
+
+  // ---------- ตรวจว่าเป็นงานของผู้ใช้ปัจจุบันหรือไม่ ----------
+  const normName = n => str(n).replace(/^(คุณครู|ครู|คุณ|นาย|นางสาว|นาง|อ\.)\s*/, '').replace(/\s+/g, '').toLowerCase();
+  function isMine(job) {
+    if (typeof currentTeacher === 'undefined' || !currentTeacher) return false;
+    const me = normName(currentTeacher);
+    const rep = normName(job.reporter);
+    if (!me || !rep) return false;
+    if (me === rep) return true;
+    return (me.length >= 3 && rep.includes(me)) || (rep.length >= 3 && me.includes(rep));
+  }
+
+  // ---------- โหลดข้อมูล ----------
+  async function load(force = false) {
+    if (state.loading) return;
+    if (state.loaded && !force) { render(); return; }
+
+    state.loading = true;
+    renderSkeleton();
+    const btn = $('track-refresh-btn');
+    if (btn) btn.querySelector('i')?.classList.add('fa-spin');
+
+    try {
+      if (force) {
+        ResourceHubCore._cache.delete('get_tasks{}');
+        ResourceHubCore._cache.delete('get_adv_tasks{}');
+      }
+      const [tasks, adv] = await Promise.all([
+        ResourceHubCore.api.get('get_tasks').catch(() => []),
+        ResourceHubCore.api.get('get_adv_tasks').catch(() => ({}))
+      ]);
+
+      const jobs = [];
+      (Array.isArray(tasks) ? tasks : []).forEach((r, i) => {
+        if (r && (r[0] || r[1])) jobs.push(fromBuilding(r, i));
+      });
+      const addAdv = (list, type) => {
+        const arr = Array.isArray(list) ? list : [];
+        arr.forEach((r, i) => {
+          if (r && (r[0] || r[1])) jobs.push(fromAdvanced(type, r, arr.length - i));
+        });
+      };
+      if (adv && !adv.error) {
+        addAdv(adv.it, 'it');
+        addAdv(adv.av, 'av');
+        addAdv(adv.project, 'project');
+      }
+
+      jobs.sort((a, b) => (b.created ? b.created.getTime() : 0) - (a.created ? a.created.getTime() : 0));
+      state.jobs = jobs;
+      state.loaded = true;
+    } catch (e) {
+      console.error('Track load error:', e);
+      const list = $('track-list');
+      if (list) list.innerHTML = `<div class="col-span-full p-8 text-center text-rose-500 bg-rose-50 rounded-2xl border border-rose-100">
+        <i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i><br>โหลดข้อมูลไม่สำเร็จ: ${esc(e.message)}
+        <br><button onclick="TrackUI.load(true)" class="mt-3 px-4 py-2 bg-white rounded-xl border border-rose-200 text-sm">ลองใหม่</button></div>`;
+      return;
+    } finally {
+      state.loading = false;
+      if (btn) btn.querySelector('i')?.classList.remove('fa-spin');
+    }
+    render();
+  }
+
+  // ---------- กรองข้อมูล ----------
+  function filtered(ignoreStatus = false) {
+    const q = state.search.toLowerCase();
+    return state.jobs.filter(j => {
+      if (state.type !== 'all' && j.type !== state.type) return false;
+      if (state.mineOnly && !isMine(j)) return false;
+      if (!ignoreStatus && state.status !== 'all') {
+        if (state.status === 'progress' && j.group !== 'progress') return false;
+        if (state.status === 'pending' && j.group !== 'pending') return false;
+        if (state.status === 'done' && j.group !== 'done') return false;
+      }
+      if (q) {
+        const hay = [j.id, j.subject, j.detail, j.reporter, j.location, j.dept, j.tech, j.status, TYPES[j.type].label]
+          .join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  // ---------- แสดงผล ----------
+  function statusBadge(job, size = 'text-xs') {
+    const map = {
+      pending: 'bg-rose-50 text-rose-600 border-rose-200',
+      progress: 'bg-amber-50 text-amber-700 border-amber-200',
+      done: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      cancel: 'bg-slate-100 text-slate-500 border-slate-200'
+    };
+    const dot = { pending: 'bg-rose-500 animate-pulse', progress: 'bg-amber-500', done: 'bg-emerald-500', cancel: 'bg-slate-400' };
+    return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${size} font-semibold border ${map[job.group]}">
+      <span class="w-1.5 h-1.5 rounded-full ${dot[job.group]}"></span>${esc(job.status)}</span>`;
+  }
+
+  function miniProgress(job) {
+    if (job.group === 'cancel') return '<div class="h-1.5 rounded-full bg-slate-200"></div>';
+    const pct = ((job.step + 1) / STEPS.length) * 100;
+    const color = job.group === 'done' ? 'bg-emerald-500' : job.group === 'progress' ? 'bg-amber-400' : 'bg-rose-400';
+    return `<div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full ${color} rounded-full transition-all" style="width:${pct}%"></div></div>`;
+  }
+
+  function renderSkeleton() {
+    const list = $('track-list');
+    if (!list) return;
+    list.innerHTML = Array.from({ length: 4 }).map(() => `
+      <div class="p-5 rounded-2xl border border-slate-100 bg-white animate-pulse">
+        <div class="flex justify-between mb-4"><div class="h-4 w-20 bg-slate-100 rounded"></div><div class="h-5 w-24 bg-slate-100 rounded-full"></div></div>
+        <div class="h-5 w-3/4 bg-slate-100 rounded mb-2"></div>
+        <div class="h-4 w-1/2 bg-slate-100 rounded mb-5"></div>
+        <div class="h-1.5 w-full bg-slate-100 rounded-full"></div>
+      </div>`).join('');
+    if ($('track-result-info')) $('track-result-info').textContent = 'กำลังโหลดคิวงาน...';
+  }
+
+  function updateControls() {
+    $$('#track-summary .track-stat').forEach(b => {
+      const on = b.dataset.status === state.status;
+      b.classList.toggle('border-[#265D5A]', on);
+      b.classList.toggle('ring-2', on);
+      b.classList.toggle('ring-[#B0EDE6]', on);
+      b.classList.toggle('border-slate-200', !on);
+    });
+    $$('#track-type-filters .track-type').forEach(b => {
+      const on = b.dataset.type === state.type;
+      b.className = 'track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors ' +
+        (on ? 'bg-[#265D5A] text-white border-[#265D5A]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50');
+    });
+    const mine = $('track-mine-btn');
+    if (mine) {
+      mine.className = 'px-4 py-2 rounded-full text-sm font-medium border transition-colors flex items-center gap-2 ' +
+        (state.mineOnly ? 'bg-[#265D5A] text-white border-[#265D5A]' : 'border-[#265D5A]/30 text-[#265D5A] bg-white hover:bg-[#E0F7F4]');
+    }
+  }
+
+  function render() {
+    updateControls();
+    const list = $('track-list');
+    if (!list) return;
+
+    // ตัวเลขสรุป (ตามประเภท/ค้นหา/งานของฉัน แต่ไม่กรองสถานะ)
+    const base = filtered(true);
+    const count = g => base.filter(j => j.group === g).length;
+    if ($('track-count-all')) $('track-count-all').textContent = base.length;
+    if ($('track-count-pending')) $('track-count-pending').textContent = count('pending');
+    if ($('track-count-progress')) $('track-count-progress').textContent = count('progress');
+    if ($('track-count-done')) $('track-count-done').textContent = count('done');
+
+    const items = filtered();
+    if ($('track-result-info')) {
+      $('track-result-info').textContent = `พบ ${items.length} งาน` + (state.mineOnly ? ' (เฉพาะงานของฉัน)' : '') + ' · เรียงจากล่าสุด';
+    }
+
+    if (!items.length) {
+      list.innerHTML = `<div class="col-span-full p-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+        <i class="fa-regular fa-folder-open text-3xl mb-3 text-slate-300"></i><br>
+        ${state.search || state.mineOnly || state.status !== 'all' || state.type !== 'all' ? 'ไม่พบงานที่ตรงกับเงื่อนไข ลองเปลี่ยนคำค้นหาหรือตัวกรอง' : 'ยังไม่มีงานในระบบ'}
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = items.map(j => {
+      const t = TYPES[j.type];
+      const mine = isMine(j);
+      return `
+      <button onclick="TrackUI.open('${j.id}')" id="track-item-${j.id}"
+        class="text-left p-5 rounded-2xl border ${mine ? 'border-[#265D5A]/40 bg-[#F3FCFA]' : 'border-slate-200 bg-white'} hover:border-[#265D5A]/50 hover:shadow-lg hover:-translate-y-0.5 transition-all group">
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">#${j.id}</span>
+            <span class="text-[11px] px-2 py-0.5 rounded-md ${t.chip}"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
+            ${mine ? '<span class="text-[11px] px-2 py-0.5 rounded-md bg-[#265D5A] text-white">งานของฉัน</span>' : ''}
+          </div>
+          ${statusBadge(j, 'text-[11px]')}
+        </div>
+        <h3 class="font-semibold text-slate-800 text-base leading-snug mb-1 group-hover:text-[#265D5A]">${esc(j.subject)}</h3>
+        <p class="text-sm text-slate-500 line-clamp-2 mb-3">${esc(j.detail) || '<span class="text-slate-300">ไม่มีรายละเอียดเพิ่มเติม</span>'}</p>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 mb-4">
+          ${j.location ? `<span><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${esc(j.location)}</span>` : ''}
+          <span><i class="fa-solid fa-user text-slate-400 mr-1"></i>${esc(j.reporter) || 'ไม่ระบุ'}</span>
+          <span><i class="fa-regular fa-clock text-slate-400 mr-1"></i>${timeAgo(j.created) || esc(j.createdRaw)}</span>
+        </div>
+        ${miniProgress(j)}
+        <div class="flex items-center justify-between mt-3 text-xs">
+          <span class="text-slate-500">${j.tech ? `<i class="fa-solid fa-user-gear text-[#265D5A] mr-1"></i>ช่าง: <b class="text-slate-700 font-medium">${esc(j.tech)}</b>` : '<i class="fa-regular fa-hourglass-half mr-1"></i>รอมอบหมายช่าง'}</span>
+          ${j.fixDetail ? '<span class="text-[#265D5A] font-medium"><i class="fa-solid fa-comment-dots mr-1"></i>มีข้อความจากช่าง</span>' : '<span class="text-slate-300 group-hover:text-[#265D5A]">ดูรายละเอียด ›</span>'}
+        </div>
+      </button>`;
+    }).join('');
+  }
+
+  // ---------- หน้ารายละเอียด ----------
+  function stepper(job) {
+    if (job.group === 'cancel') {
+      return `<div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 text-sm flex items-center gap-3">
+        <i class="fa-solid fa-ban text-slate-400 text-xl"></i> งานนี้ถูก${esc(job.status)}</div>`;
+    }
+    return `<ol class="relative grid grid-cols-4 gap-1">
+      ${STEPS.map((s, i) => {
+        const done = i <= job.step;
+        const current = i === job.step && job.group !== 'done';
+        const circle = done
+          ? (current ? 'bg-amber-400 text-white ring-4 ring-amber-100' : 'bg-[#265D5A] text-white')
+          : 'bg-white text-slate-300 border-2 border-slate-200';
+        const line = i < STEPS.length - 1
+          ? `<span class="absolute top-5 left-1/2 w-full h-1 ${i < job.step ? 'bg-[#265D5A]' : 'bg-slate-200'}"></span>` : '';
+        return `<li class="relative flex flex-col items-center text-center">
+          ${line}
+          <span class="relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${circle} transition-all">
+            <i class="fa-solid ${done && !current ? 'fa-check' : s.icon} text-sm"></i></span>
+          <span class="mt-2 text-[11px] md:text-xs leading-tight ${done ? 'text-slate-800 font-semibold' : 'text-slate-400'}">${s.label}</span>
+          ${current ? '<span class="mt-1 text-[10px] text-amber-600 font-medium">ขั้นตอนปัจจุบัน</span>' : ''}
+        </li>`;
+      }).join('')}
+    </ol>`;
+  }
+
+  function infoRow(icon, label, value) {
+    if (!value) return '';
+    return `<div class="flex gap-3 py-2.5 border-b border-slate-100 last:border-0">
+      <i class="fa-solid ${icon} w-5 text-center text-slate-400 mt-0.5"></i>
+      <div class="flex-1 min-w-0"><div class="text-xs text-slate-400">${label}</div>
+      <div class="text-sm text-slate-700 break-words">${value}</div></div></div>`;
+  }
+
+  function imageBlock(url, caption) {
+    if (!url) return '';
+    return `<button onclick="showImageModal('${esc(url)}')" class="group relative block rounded-xl overflow-hidden border border-slate-200 bg-slate-50 w-full sm:w-56">
+      <img src="${driveThumb(url)}" alt="${caption}" class="w-full h-40 object-cover group-hover:scale-105 transition-transform" loading="lazy"
+        onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'h-40 flex items-center justify-center text-slate-400 text-sm',innerHTML:'<i class=&quot;fa-solid fa-image mr-2&quot;></i>เปิดดูรูปภาพ'}))">
+      <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent text-white text-xs p-2 text-left">
+        <i class="fa-solid fa-magnifying-glass-plus mr-1"></i>${caption}</span></button>`;
+  }
+
+  function techMessage(job) {
+    let body;
+    if (job.fixDetail) {
+      body = `<div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full bg-[#265D5A] text-white flex items-center justify-center shrink-0"><i class="fa-solid fa-user-gear"></i></div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs text-slate-500 mb-1">${esc(job.tech) || 'ช่างผู้รับผิดชอบ'}</div>
+          <div class="bg-white border border-[#B0EDE6] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-slate-700 whitespace-pre-line shadow-sm">${esc(job.fixDetail)}</div>
+        </div></div>`;
+    } else if (job.tech) {
+      body = `<div class="flex items-center gap-3 text-sm text-slate-500">
+        <div class="w-10 h-10 rounded-full bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center shrink-0"><i class="fa-solid fa-user-gear"></i></div>
+        <div><b class="text-slate-700 font-medium">${esc(job.tech)}</b> รับผิดชอบงานนี้แล้ว<br><span class="text-xs">ช่างยังไม่ได้ระบุรายละเอียดสิ่งที่ต้องแก้ไข</span></div></div>`;
+    } else {
+      body = `<div class="flex items-center gap-3 text-sm text-slate-500">
+        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-regular fa-hourglass-half"></i></div>
+        <div>ยังไม่มีช่างรับงาน<br><span class="text-xs">เมื่อมีการมอบหมายช่าง ข้อความจากช่างจะแสดงที่นี่</span></div></div>`;
+    }
+    return `<section class="rounded-2xl border border-[#B0EDE6] bg-[#F3FCFA] p-5 mb-4">
+      <h3 class="font-semibold text-[#265D5A] mb-4 flex items-center gap-2"><i class="fa-solid fa-comments"></i>ข้อความจากช่าง</h3>
+      ${body}
+      ${job.proof || job.cost ? `<div class="mt-4 pt-4 border-t border-[#B0EDE6] flex flex-col sm:flex-row gap-4 sm:items-end">
+        ${imageBlock(job.proof, 'รูปผลการซ่อม')}
+        ${job.cost ? `<div class="text-sm text-slate-600"><span class="text-xs text-slate-400 block">ค่าใช้จ่าย</span>${esc(job.cost)} บาท</div>` : ''}
+      </div>` : ''}
+    </section>`;
+  }
+
+  function open(id) {
+    const job = state.jobs.find(j => j.id === id);
+    if (!job) return alertBox('warning', 'ไม่พบงาน', 'อาจถูกลบหรือย้ายไปแล้ว กรุณารีเฟรชรายการ');
+    nav('page-track-detail');
+    const box = $('track-detail-body');
+    if (!box) return;
+    const t = TYPES[job.type];
+
+    box.innerHTML = `
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 mb-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-mono text-sm font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">#${job.id}</span>
+            <span class="text-xs px-2.5 py-1 rounded-lg ${t.chip}"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
+            ${job.urgency ? `<span class="text-xs px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 border border-rose-100"><i class="fa-solid fa-bolt mr-1"></i>${esc(job.urgency)}</span>` : ''}
+          </div>
+          ${statusBadge(job, 'text-sm')}
+        </div>
+        <h2 class="text-xl md:text-2xl font-semibold text-slate-800 mb-1">${esc(job.subject)}</h2>
+        <p class="text-xs text-slate-400 mb-6"><i class="fa-regular fa-clock mr-1"></i>แจ้งเมื่อ ${job.created ? fmtDate(job.created) : esc(job.createdRaw)}${job.created ? ` (${timeAgo(job.created)})` : ''}</p>
+        <h3 class="text-sm font-semibold text-slate-700 mb-4">ความคืบหน้า</h3>
+        ${stepper(job)}
+      </section>
+
+      ${techMessage(job)}
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
+        <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-[#265D5A]"></i>รายละเอียดที่ผู้ใช้แจ้ง</h3>
+        <div class="bg-slate-50 rounded-xl border border-slate-100 p-4 text-sm text-slate-700 whitespace-pre-line mb-3">${esc(job.detail) || '<span class="text-slate-400">ไม่มีรายละเอียดเพิ่มเติม</span>'}</div>
+        ${infoRow('fa-user', 'ผู้แจ้ง', esc(job.reporter))}
+        ${infoRow('fa-building', 'หน่วยงาน / ฝ่าย', esc(job.dept))}
+        ${infoRow('fa-location-dot', 'สถานที่', esc(job.location))}
+        ${infoRow('fa-calendar-day', job.type === 'project' ? 'วันที่ต้องการ' : 'วันที่พบปัญหา', job.incident ? fmtDate(job.incident) : '')}
+        ${infoRow('fa-phone', 'ช่องทางติดต่อ', esc(job.contact))}
+        ${job.image ? `<div class="mt-4">${imageBlock(job.image, 'รูปที่ผู้แจ้งแนบมา')}</div>` : ''}
+      </section>`;
+  }
+
+  // ---------- Actions ----------
+  return {
+    load,
+    open,
+    onSearch(v) {
+      clearTimeout(state.searchTimer);
+      state.searchTimer = setTimeout(() => { state.search = str(v); render(); }, 150);
+    },
+    setStatus(s) { state.status = s; render(); },
+    setType(t) { state.type = t; render(); },
+    toggleMine() {
+      if (typeof currentTeacher === 'undefined' || !currentTeacher) {
+        return alertBox('info', 'ต้องเข้าสู่ระบบ', 'กรุณาเข้าสู่ระบบเพื่อดูงานของคุณ');
+      }
+      state.mineOnly = !state.mineOnly;
+      render();
+    },
+    // เปิดหน้ารายการพร้อมตั้งค่าเริ่มต้น (เช่น หลังแจ้งซ่อมเสร็จ ให้เห็นงานของตัวเอง)
+    show(opts = {}) {
+      if (opts.mineOnly !== undefined) state.mineOnly = !!opts.mineOnly && !!currentTeacher;
+      if (opts.force) state.loaded = false;
+      nav('page-track');
+      load(opts.force);
+    }
+  };
+})();
+
+window.TrackUI = TrackUI;
+
+// ปุ่ม/ลิงก์เดิมที่เคยเปิด Modal ติดตามงาน ให้มาที่หน้าติดตามงานใหม่แทน
+window.openTrackModal = function () { TrackUI.show(); };
+window.promptTrackTicket = function () { TrackUI.show({ mineOnly: true }); };

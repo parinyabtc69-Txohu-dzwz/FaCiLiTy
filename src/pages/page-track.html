@@ -1,0 +1,96 @@
+<!-- ================= ระบบติดตามงานซ่อม: รายการงานทั้งหมด ================= -->
+<div id="page-track" class="page-section max-w-5xl mx-auto py-2">
+
+  <!-- Header -->
+  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#265D5A] via-[#2f6f6b] to-[#1a3f3d] text-white p-6 md:p-8 mb-6 shadow-lg">
+    <div class="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10"></div>
+    <div class="absolute right-16 -bottom-14 w-32 h-32 rounded-full bg-[#B0EDE6]/20"></div>
+    <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <button onclick="nav('page-home')" id="track-back-home"
+          class="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors shrink-0"
+          title="กลับหน้าแรก">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-semibold">ติดตามงานซ่อม</h1>
+          <p class="text-sm text-white/75 font-light mt-1">ดูคิวงานทั้งหมดในระบบ กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง</p>
+        </div>
+      </div>
+      <button onclick="TrackUI.load(true)" id="track-refresh-btn"
+        class="self-start md:self-auto bg-white/15 hover:bg-white/25 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors">
+        <i class="fa-solid fa-rotate"></i> รีเฟรช
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="relative mt-6">
+      <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+      <input type="search" id="track-search-input" oninput="TrackUI.onSearch(this.value)"
+        placeholder="ค้นหาคิวงาน: เลขคิว, ชื่อผู้แจ้ง, หัวข้อ, สถานที่ หรือชื่อช่าง..."
+        class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white text-slate-800 placeholder-slate-400 text-sm shadow-md outline-none focus:ring-4 focus:ring-[#B0EDE6]/60">
+    </div>
+  </div>
+
+  <!-- Summary counters (กดเพื่อกรองสถานะ) -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5" id="track-summary">
+    <button onclick="TrackUI.setStatus('all')" data-status="all"
+      class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
+      <div class="text-xs text-slate-500">งานทั้งหมด</div>
+      <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-all">-</div>
+    </button>
+    <button onclick="TrackUI.setStatus('pending')" data-status="pending"
+      class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
+      <div class="text-xs text-rose-500 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500"></span>รอรับเรื่อง</div>
+      <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-pending">-</div>
+    </button>
+    <button onclick="TrackUI.setStatus('progress')" data-status="progress"
+      class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
+      <div class="text-xs text-amber-600 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span>กำลังดำเนินการ</div>
+      <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-progress">-</div>
+    </button>
+    <button onclick="TrackUI.setStatus('done')" data-status="done"
+      class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
+      <div class="text-xs text-emerald-600 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>เสร็จสิ้น</div>
+      <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-done">-</div>
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap items-center gap-2 mb-5">
+    <button onclick="TrackUI.toggleMine()" id="track-mine-btn"
+      class="px-4 py-2 rounded-full text-sm font-medium border border-[#265D5A]/30 text-[#265D5A] bg-white hover:bg-[#E0F7F4] transition-colors flex items-center gap-2">
+      <i class="fa-solid fa-user"></i> เฉพาะงานของฉัน
+    </button>
+    <span class="w-px h-6 bg-slate-200 mx-1 hidden md:inline-block"></span>
+    <div class="flex flex-wrap gap-2" id="track-type-filters">
+      <button onclick="TrackUI.setType('all')" data-type="all" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors">ทุกประเภท</button>
+      <button onclick="TrackUI.setType('building')" data-type="building" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-wrench mr-1"></i>อาคาร</button>
+      <button onclick="TrackUI.setType('it')" data-type="it" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-desktop mr-1"></i>ไอที</button>
+      <button onclick="TrackUI.setType('av')" data-type="av" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-camera mr-1"></i>โสตฯ</button>
+      <button onclick="TrackUI.setType('project')" data-type="project" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-building-circle-check mr-1"></i>โครงการ</button>
+    </div>
+  </div>
+
+  <p class="text-xs text-slate-400 mb-3" id="track-result-info"></p>
+
+  <!-- Job list -->
+  <div id="track-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+</div>
+
+<!-- ================= ระบบติดตามงานซ่อม: รายละเอียดงาน ================= -->
+<div id="page-track-detail" class="page-section max-w-3xl mx-auto py-2">
+
+  <div class="flex items-center gap-3 mb-5">
+    <button onclick="nav('page-track')" id="track-detail-back"
+      class="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:border-[#265D5A] transition-all">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div>
+      <h2 class="text-xl font-semibold text-slate-800">รายละเอียดงาน</h2>
+      <p class="text-xs text-slate-500">ติดตามความคืบหน้าและข้อความจากช่าง</p>
+    </div>
+  </div>
+
+  <div id="track-detail-body"></div>
+</div>
