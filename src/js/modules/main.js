@@ -1,4 +1,4 @@
-﻿console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
+console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
 console.log("%cDeveloped by Taohx_dz_parinya", "color: #10b981; font-size: 14px; font-weight: bold;");
 console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; font-weight: bold;");
 
@@ -1039,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (localStorage.getItem('logged_admin') === 'true') {
             nav('page-dashboard');
           } else {
-            nav('page-teacher-profile');
+            nav('page-track');
           }
         }
       }
@@ -1084,7 +1084,7 @@ function handleLiffLogin() {
         alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
           .then(() => {
             if (isAdminLoggedIn) nav('page-dashboard');
-            else nav('page-teacher-profile');
+            else nav('page-track');
           });
       })
       .catch((e) => {
@@ -1131,7 +1131,7 @@ function handleCredentialResponse(response) {
       alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
         .then(() => {
           if (isAdminLoggedIn) nav('page-dashboard');
-          else nav('page-teacher-profile');
+            else nav('page-track');
         });
     })
     .catch((e) => {
@@ -1404,7 +1404,7 @@ function updateSessionUI() {
       $('dropdown-user-role').innerHTML = `สถานะ: ${roleDisplay}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
     }
 
-    if ($('page-auth').classList.contains('active')) nav('page-teacher-profile');
+    if ($('page-auth').classList.contains('active')) nav('page-track');
 
   } else {
     // Guest
@@ -1477,6 +1477,8 @@ function handleGlobalSearch(keyword) {
     if (isAdminLoggedIn) nav('page-dashboard');
   } else if (term.includes('ประวัติ')) {
     if (currentTeacher) nav('page-teacher-profile');
+  } else if (term.includes('ติดตาม')) {
+    if (currentTeacher) nav('page-track');
   }
 }
 
