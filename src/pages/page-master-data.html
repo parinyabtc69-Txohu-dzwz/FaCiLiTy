@@ -1,60 +1,61 @@
-      <div id="page-master-data" class="page-section">
+﻿      <div id="page-master-data" class="page-section">
         <div class="max-w-7xl mx-auto">
           <div class="flex justify-between items-center mb-6">
             <div>
               <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-database text-[#265D5A]"></i> Master
                 Data</h1>
-              <p class="text-sm text-slate-500">ข้อมูลกลางที่ใช้ในแบบฟอร์มและการจัดสรรงาน</p>
+              <p class="text-sm text-slate-500">เธเนเธญเธกเธนเธฅเธเธฅเธฒเธเธ—เธตเนเนเธเนเนเธเนเธเธเธเธญเธฃเนเธกเนเธฅเธฐเธเธฒเธฃเธเธฑเธ”เธชเธฃเธฃเธเธฒเธ</p>
             </div><button onclick="loadMasterData()" class="bg-white border px-4 py-2 rounded-xl text-sm font-bold"><i
-                class="fa-solid fa-rotate"></i> รีเฟรช</button>
+                class="fa-solid fa-rotate"></i> เธฃเธตเน€เธเธฃเธ</button>
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div class="bg-white rounded-2xl border p-5">
-              <h3 class="font-bold mb-3">สถานที่ / ห้อง</h3>
+              <h3 class="font-bold mb-3">เธชเธ–เธฒเธเธ—เธตเน / เธซเนเธญเธ</h3>
               <div class="flex gap-2 mb-3"><input id="md-location-name" class="flex-1 border rounded-xl p-2.5"
-                  placeholder="ชื่อสถานที่"><select id="md-location-dept" class="border rounded-xl p-2.5">
-                  <option>โรงเรียน</option>
-                  <option>วิทยาลัย</option>
+                  placeholder="เธเธทเนเธญเธชเธ–เธฒเธเธ—เธตเน"><select id="md-location-dept" class="border rounded-xl p-2.5">
+                  <option>เนเธฃเธเน€เธฃเธตเธขเธ</option>
+                  <option>เธงเธดเธ—เธขเธฒเธฅเธฑเธข</option>
                 </select></div><button onclick="addMaster('location')"
-                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เพิ่มสถานที่</button>
+                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เน€เธเธดเนเธกเธชเธ–เธฒเธเธ—เธตเน</button>
               <div id="md-locations" class="mt-4 space-y-2 max-h-72 overflow-auto"></div>
             </div>
             <div class="bg-white rounded-2xl border p-5">
-              <h3 class="font-bold mb-3">โครงการ</h3>
+              <h3 class="font-bold mb-3">เนเธเธฃเธเธเธฒเธฃ</h3>
               <div class="flex gap-2 mb-3"><input id="md-project-name" class="flex-1 border rounded-xl p-2.5"
-                  placeholder="ชื่อโครงการ"><select id="md-project-dept" class="border rounded-xl p-2.5">
-                  <option>โรงเรียน</option>
-                  <option>วิทยาลัย</option>
+                  placeholder="เธเธทเนเธญเนเธเธฃเธเธเธฒเธฃ"><select id="md-project-dept" class="border rounded-xl p-2.5">
+                  <option>เนเธฃเธเน€เธฃเธตเธขเธ</option>
+                  <option>เธงเธดเธ—เธขเธฒเธฅเธฑเธข</option>
                 </select></div><button onclick="addMaster('project')"
-                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เพิ่มโครงการ</button>
+                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เน€เธเธดเนเธกเนเธเธฃเธเธเธฒเธฃ</button>
               <div id="md-projects" class="mt-4 space-y-2 max-h-72 overflow-auto"></div>
             </div>
             <div class="bg-white rounded-2xl border p-5">
-              <h3 class="font-bold mb-3">ช่าง / ผู้รับผิดชอบ</h3>
+              <h3 class="font-bold mb-3">เธเนเธฒเธ / เธเธนเนเธฃเธฑเธเธเธดเธ”เธเธญเธ</h3>
               <div class="space-y-2"><input id="md-mechanic-name" class="w-full border rounded-xl p-2.5"
-                  placeholder="ชื่อช่าง"><input id="md-mechanic-phone" class="w-full border rounded-xl p-2.5"
-                  placeholder="โทรศัพท์"><input id="md-mechanic-skills" class="w-full border rounded-xl p-2.5"
-                  placeholder="ทักษะ เช่น ไฟฟ้า, แอร์"></div><button onclick="addMaster('mechanic')"
-                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold mt-3">เพิ่มช่าง</button>
+                  placeholder="เธเธทเนเธญเธเนเธฒเธ"><input id="md-mechanic-phone" class="w-full border rounded-xl p-2.5"
+                  placeholder="เนเธ—เธฃเธจเธฑเธเธ—เน"><input id="md-mechanic-skills" class="w-full border rounded-xl p-2.5"
+                  placeholder="เธ—เธฑเธเธฉเธฐ เน€เธเนเธ เนเธเธเนเธฒ, เนเธญเธฃเน"></div><button onclick="addMaster('mechanic')"
+                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold mt-3">เน€เธเธดเนเธกเธเนเธฒเธ</button>
               <div id="md-mechanics" class="mt-4 space-y-2 max-h-72 overflow-auto"></div>
             </div>
           </div>
           <div class="mt-8 border-t pt-8">
-            <h2 class="text-xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-bell text-[#265D5A]"></i> ตั้งค่าระบบแจ้งเตือน (Notification Settings)</h2>
+            <h2 class="text-xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-bell text-[#265D5A]"></i> เธ•เธฑเนเธเธเนเธฒเธฃเธฐเธเธเนเธเนเธเน€เธ•เธทเธญเธ (Notification Settings)</h2>
             <div class="bg-white rounded-2xl border p-5 max-w-md">
-              <h3 class="font-bold text-slate-700 mb-2">แจ้งเตือนงานค้าง (Overdue Notification)</h3>
-              <p class="text-xs text-slate-500 mb-4">กำหนดจำนวนวันที่งานค้างสถานะ "รอดำเนินการ" ก่อนระบบจะส่ง LINE แจ้งเตือนแอดมิน</p>
+              <h3 class="font-bold text-slate-700 mb-2">เนเธเนเธเน€เธ•เธทเธญเธเธเธฒเธเธเนเธฒเธ (Overdue Notification)</h3>
+              <p class="text-xs text-slate-500 mb-4">เธเธณเธซเธเธ”เธเธณเธเธงเธเธงเธฑเธเธ—เธตเนเธเธฒเธเธเนเธฒเธเธชเธ–เธฒเธเธฐ "เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ" เธเนเธญเธเธฃเธฐเธเธเธเธฐเธชเนเธ LINE เนเธเนเธเน€เธ•เธทเธญเธเนเธญเธ”เธกเธดเธ</p>
               <div class="flex items-center gap-3">
                 <input type="number" id="md-overdue-days" class="w-24 border rounded-xl p-2.5 text-center font-bold text-slate-800" min="1" max="30" value="3">
-                <span class="text-slate-600 font-medium">วัน</span>
+                <span class="text-slate-600 font-medium">เธงเธฑเธ</span>
               </div>
               <button onclick="saveOverdueSettings()" class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold mt-4 shadow-sm">
-                <i class="fa-solid fa-save mr-1"></i> บันทึกการตั้งค่า
+                <i class="fa-solid fa-save mr-1"></i> เธเธฑเธเธ—เธถเธเธเธฒเธฃเธ•เธฑเนเธเธเนเธฒ
               </button>
             </div>
           </div>
         </div>
       </div>
       <!-- ================= PAGE: DOCUMENT MANAGEMENT ================= -->
+
 
 

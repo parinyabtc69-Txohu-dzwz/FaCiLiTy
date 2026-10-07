@@ -2026,7 +2026,7 @@ function renderAdvTable(tbodyId, rows, type) {
     const techBadge = advTech && advTech !== '-' ? `<span class="text-[#265D5A] text-[10px] font-bold px-2 py-0.5 bg-teal-50 rounded-full border border-teal-100 ml-2 whitespace-nowrap"><i class="fa-solid fa-wrench text-[8px] mr-0.5"></i>${advTech}</span>` : '';
     return `<div onclick="updateAdvTask('${type}', ${i}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
         <span class="truncate w-full pl-1 flex items-center">${reporter} ${techBadge} ${urgHtml}</span>
       </div>
@@ -2732,7 +2732,7 @@ window.renderRepairTable = function () {
 
     const html = `<div onclick="updateTask(${originalIndex})" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
         <span class="truncate w-full pl-1 flex items-center">${reporter} ${techBadge} ${urgBadge}</span>
       </div>
@@ -2977,7 +2977,7 @@ window.renderAVTable = function () {
 
     return `<div onclick="openAVModal(${originalIndex}, '${st}', '${tech}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-40">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${starIcon.replace(/text-lg/g, 'text-sm').replace(/onclick="[^"]*"/g, (match) => 'onclick="event.stopPropagation(); ' + match.substring(9))}
         <span class="truncate w-full pl-1">${r[1]}</span>
       </div>
@@ -3441,7 +3441,7 @@ window.renderAdvTableFiltered = function(tbodyId, rows, type) {
     
     return `<div onclick="updateAdvTask('${type}', ${originalIndex}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
         <span class="truncate w-full pl-1 flex items-center">${reporter} ${urgBadge}</span>
       </div>
@@ -3473,6 +3473,24 @@ function toggleDesktopSidebar() {
   }
 }
 window.toggleDesktopSidebar = toggleDesktopSidebar;
+
+window.toggleFakeCheckbox = function(event, el) {
+  event.stopPropagation();
+  if (el.classList.contains('bg-[#265D5A]')) {
+    el.classList.remove('bg-[#265D5A]', 'border-[#265D5A]');
+    el.classList.add('bg-white');
+    if(el.classList.contains('border-slate-500')) {
+      el.classList.add('border-slate-300');
+    } else {
+      el.classList.add('border-slate-400'); 
+    }
+    el.innerHTML = '';
+  } else {
+    el.classList.remove('bg-white', 'border-slate-300', 'border-slate-400');
+    el.classList.add('bg-[#265D5A]', 'border-[#265D5A]');
+    el.innerHTML = '<i class="fa-solid fa-check text-white text-[10px] flex items-center justify-center h-full w-full mt-0.5"></i>';
+  }
+};
 
 window.triggerRowAction = function(e, action) {
   e.stopPropagation();

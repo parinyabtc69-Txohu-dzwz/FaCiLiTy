@@ -460,55 +460,56 @@
         </div>
       </div>
 
+
       <div id="page-av-form" class="page-section">
         <div class="flex items-center justify-center min-h-[70vh]">
           <div class="bg-white w-full max-w-lg rounded-3xl shadow-sm p-8 my-4 border border-slate-200">
             <button onclick="nav('page-home')"
               class="text-[#FF5F5F] font-bold mb-4 hover:text-[#8F1C26] transition-colors text-sm"><i
-                class="fa-solid fa-house"></i> กลับหน้าหลัก</button>
+                class="fa-solid fa-house"></i> เธเธฅเธฑเธเธซเธเนเธฒเธซเธฅเธฑเธ</button>
             <div class="text-center mb-6">
               <div
                 class="w-14 h-14 bg-[#FF5F5F]/10 text-[#FF5F5F] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
                 <i class="fa-solid fa-microphone-lines"></i>
               </div>
-              <h2 class="text-2xl font-bold text-slate-800">ขอยืมอุปกรณ์โสตทัศนูปกรณ์</h2>
-              <p class="text-xs text-slate-500 mt-1">กรุณาเลือกรายการอุปกรณ์และกรอกชื่อผู้ยืม</p>
+              <h2 class="text-2xl font-bold text-slate-800">เธเธญเธขเธทเธกเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธ—เธฑเธจเธเธนเธเธเธฃเธ“เน</h2>
+              <p class="text-xs text-slate-500 mt-1">เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธฃเธฒเธขเธเธฒเธฃเธญเธธเธเธเธฃเธ“เนเนเธฅเธฐเธเธฃเธญเธเธเธทเนเธญเธเธนเนเธขเธทเธก</p>
             </div>
             <form id="avForm" class="space-y-5">
               <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-2">ชื่อผู้แจ้งยืม <span
+                <label class="block text-sm font-semibold text-slate-700 mb-2">เธเธทเนเธญเธเธนเนเนเธเนเธเธขเธทเธก <span
                     class="text-red-500">*</span></label>
                 <input type="text" id="borrower"
                   class="w-full p-3 border rounded-xl outline-none bg-slate-100 font-semibold text-slate-700" readonly
                   required>
               </div>
               <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-2">อุปกรณ์ที่ต้องการ <span
+                <label class="block text-sm font-semibold text-slate-700 mb-2">เธญเธธเธเธเธฃเธ“เนเธ—เธตเนเธ•เนเธญเธเธเธฒเธฃ <span
                     class="text-red-500">*</span></label>
                 <div class="grid grid-cols-1 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" name="equipment" value="ไมโครโฟนไร้สาย" class="w-5 h-5 accent-[#265D5A]" onchange="this.parentElement.querySelector('input[type=number]').disabled = !this.checked"> 
-                    <span class="text-slate-700 flex-1">ไมโครโฟนไร้สาย</span>
+                    <input type="checkbox" name="equipment" value="เนเธกเนเธเธฃเนเธเธเนเธฃเนเธชเธฒเธข" class="w-5 h-5 accent-[#265D5A]" onchange="this.parentElement.querySelector('input[type=number]').disabled = !this.checked"> 
+                    <span class="text-slate-700 flex-1">เนเธกเนเธเธฃเนเธเธเนเธฃเนเธชเธฒเธข</span>
                     <input type="number" min="1" max="99" value="1" disabled class="w-16 p-1 border rounded-lg text-center text-sm disabled:opacity-50">
                   </label>
                   <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" name="equipment" value="ลำโพงบลูทูธพกพา" class="w-5 h-5 accent-[#265D5A]" onchange="this.parentElement.querySelector('input[type=number]').disabled = !this.checked"> 
-                    <span class="text-slate-700 flex-1">ลำโพงบลูทูธพกพา</span>
+                    <input type="checkbox" name="equipment" value="เธฅเธณเนเธเธเธเธฅเธนเธ—เธนเธเธเธเธเธฒ" class="w-5 h-5 accent-[#265D5A]" onchange="this.parentElement.querySelector('input[type=number]').disabled = !this.checked"> 
+                    <span class="text-slate-700 flex-1">เธฅเธณเนเธเธเธเธฅเธนเธ—เธนเธเธเธเธเธฒ</span>
                     <input type="number" min="1" max="99" value="1" disabled class="w-16 p-1 border rounded-lg text-center text-sm disabled:opacity-50">
                   </label>
                   <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" name="equipment" value="ปลั๊กพ่วงสนาม" class="w-5 h-5 accent-[#265D5A]" onchange="this.parentElement.querySelector('input[type=number]').disabled = !this.checked"> 
-                    <span class="text-slate-700 flex-1">ปลั๊กพ่วงสนาม</span>
+                    <input type="checkbox" name="equipment" value="เธเธฅเธฑเนเธเธเนเธงเธเธชเธเธฒเธก" class="w-5 h-5 accent-[#265D5A]" onchange="this.parentElement.querySelector('input[type=number]').disabled = !this.checked"> 
+                    <span class="text-slate-700 flex-1">เธเธฅเธฑเนเธเธเนเธงเธเธชเธเธฒเธก</span>
                     <input type="number" min="1" max="99" value="1" disabled class="w-16 p-1 border rounded-lg text-center text-sm disabled:opacity-50">
                   </label>
                   <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" name="equipment" value="โน้ตบุ๊ก" class="w-5 h-5 accent-[#265D5A]" onchange="this.parentElement.querySelector('input[type=number]').disabled = !this.checked"> 
-                    <span class="text-slate-700 flex-1">โน้ตบุ๊ก</span>
+                    <input type="checkbox" name="equipment" value="เนเธเนเธ•เธเธธเนเธ" class="w-5 h-5 accent-[#265D5A]" onchange="this.parentElement.querySelector('input[type=number]').disabled = !this.checked"> 
+                    <span class="text-slate-700 flex-1">เนเธเนเธ•เธเธธเนเธ</span>
                     <input type="number" min="1" max="99" value="1" disabled class="w-16 p-1 border rounded-lg text-center text-sm disabled:opacity-50">
                   </label>
                   <div class="flex items-center gap-3 mt-1">
-                    <span class="text-slate-400 text-sm">อื่นๆ:</span>
-                    <input type="text" id="other_equip" placeholder="ระบุเพิ่มเติม..."
+                    <span class="text-slate-400 text-sm">เธญเธทเนเธเน:</span>
+                    <input type="text" id="other_equip" placeholder="เธฃเธฐเธเธธเน€เธเธดเนเธกเน€เธ•เธดเธก..."
                       class="flex-1 bg-transparent border-b border-slate-300 outline-none text-sm focus:border-[#265D5A]">
                     <input type="number" id="qty_other" min="1" max="99" value="1" class="w-16 p-1 border rounded-lg text-center text-sm">
                   </div>
@@ -516,41 +517,42 @@
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-600 mb-1">วันที่ใช้งาน <span
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">เธงเธฑเธเธ—เธตเนเนเธเนเธเธฒเธ <span
                       class="text-red-500">*</span></label>
                   <input type="date" id="useDate" class="w-full p-3 border rounded-xl outline-none bg-slate-50"
                     required>
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-slate-600 mb-1">สถานที่ใช้งาน <span
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">เธชเธ–เธฒเธเธ—เธตเนเนเธเนเธเธฒเธ <span
                       class="text-red-500">*</span></label>
                   <div class="flex gap-2">
                     <select id="av_inst" class="w-1/3 p-3 border rounded-xl outline-none bg-slate-50 focus:border-[#265D5A] text-sm font-medium">
-                      <option value="" disabled selected>สถาบัน</option>
-                      <option value="วพบ.">วพบ.</option>
-                      <option value="ศษ.">ศษ.</option>
+                      <option value="" disabled selected>เธชเธ–เธฒเธเธฑเธ</option>
+                      <option value="เธงเธเธ.">เธงเธเธ.</option>
+                      <option value="เธจเธฉ.">เธจเธฉ.</option>
                     </select>
-                    <input type="text" id="av_location" placeholder="เช่น ห้องประชุมใหญ่"
+                    <input type="text" id="av_location" placeholder="เน€เธเนเธ เธซเนเธญเธเธเธฃเธฐเธเธธเธกเนเธซเธเน"
                       class="w-2/3 p-3 border rounded-xl outline-none bg-slate-50 focus:border-[#265D5A] text-sm" required>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">ลงชื่อผู้ยืม (พิมพ์ชื่อ - นามสกุล) <span
+                <label class="block text-sm font-semibold text-slate-700 mb-1">เธฅเธเธเธทเนเธญเธเธนเนเธขเธทเธก (เธเธดเธกเธเนเธเธทเนเธญ - เธเธฒเธกเธชเธเธธเธฅ) <span
                     class="text-red-500">*</span></label>
-                <input type="text" id="signerName" placeholder="ระบุชื่อ-นามสกุลเพื่อยืนยันการรับอุปกรณ์"
+                <input type="text" id="signerName" placeholder="เธฃเธฐเธเธธเธเธทเนเธญ-เธเธฒเธกเธชเธเธธเธฅเน€เธเธทเนเธญเธขเธทเธเธขเธฑเธเธเธฒเธฃเธฃเธฑเธเธญเธธเธเธเธฃเธ“เน"
                   class="w-full p-3 border rounded-xl outline-none bg-slate-50 font-semibold text-slate-700" required>
               </div>
 
               <button type="button" onclick="submitAVForm()" id="btnSubmitAV"
                 class="w-full bg-[#FF5F5F] hover:bg-[#8F1C26] text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm">
-                <i class="fa-solid fa-paper-plane"></i><span>ยืนยันการขอยืมอุปกรณ์</span>
+                <i class="fa-solid fa-paper-plane"></i><span>เธขเธทเธเธขเธฑเธเธเธฒเธฃเธเธญเธขเธทเธกเธญเธธเธเธเธฃเธ“เน</span>
               </button>
             </form>
           </div>
         </div>
       </div>
+
 
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
       <div id="page-av-manage" class="page-section">
@@ -558,50 +560,50 @@
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-sliders text-amber-500"></i>
-                จัดการงาน ยืมคืนอุปกรณ์โสตฯ</h1>
-              <p class="text-xs text-slate-500 mt-1">รายการที่ยังไม่คืนอุปกรณ์จะถูกดันขึ้นด้านบน (ติดดาว ⭐)
-                เรียงตามเวลาเก่าไปใหม่ รายการที่คืนเรียบร้อยจะดันลงด้านล่าง</p>
+                เธเธฑเธ”เธเธฒเธฃเธเธฒเธ เธขเธทเธกเธเธทเธเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธฏ</h1>
+              <p class="text-xs text-slate-500 mt-1">เธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธขเธฑเธเนเธกเนเธเธทเธเธญเธธเธเธเธฃเธ“เนเธเธฐเธ–เธนเธเธ”เธฑเธเธเธถเนเธเธ”เนเธฒเธเธเธ (เธ•เธดเธ”เธ”เธฒเธง โญ)
+                เน€เธฃเธตเธขเธเธ•เธฒเธกเน€เธงเธฅเธฒเน€เธเนเธฒเนเธเนเธซเธกเน เธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธเธทเธเน€เธฃเธตเธขเธเธฃเนเธญเธขเธเธฐเธ”เธฑเธเธฅเธเธ”เนเธฒเธเธฅเนเธฒเธ</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
               <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                 <input type="text" oninput="window.currentAVSearch = this.value; window.renderAVTable();"
                   class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
-                  placeholder="ค้นหาจากรายการอุปกรณ์...">
+                  placeholder="เธเนเธเธซเธฒเธเธฒเธเธฃเธฒเธขเธเธฒเธฃเธญเธธเธเธเธฃเธ“เน...">
               </div>
               <button onclick="loadAVTasks()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
-                  class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
-              <button onclick="exportTableToCSV('avDataView', 'รายงานงานโสตฯ.csv')"
+                  class="fa-solid fa-rotate mr-1"></i> เธฃเธตเน€เธเธฃเธ</button>
+              <button onclick="exportTableToCSV('avDataView', 'เธฃเธฒเธขเธเธฒเธเธเธฒเธเนเธชเธ•เธฏ.csv')"
                 class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold text-emerald-700 hover:bg-emerald-100 shadow-sm transition-colors hidden sm:block"><i
-                  class="fa-solid fa-file-csv mr-1"></i> ส่งออก CSV</button>
+                  class="fa-solid fa-file-csv mr-1"></i> เธชเนเธเธญเธญเธ CSV</button>
             </div>
           </div>
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
-    <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
-    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="loadAVTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
-    <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn ml-1" onclick="toggleFakeCheckbox(event, this.querySelector('div'))"><div class="w-4 h-4 border-2 border-slate-400 rounded transition-colors"></div></div>
+    <div class="gmail-toolbar-btn" title="เธฃเธตเน€เธเธฃเธ" onclick="loadAVTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="เน€เธเธดเนเธกเน€เธ•เธดเธก"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
-    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
+    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of เธซเธฅเธฒเธขเธฃเธฒเธขเธเธฒเธฃ</span>
   </div>
   <div class="flex flex-wrap items-center gap-3 mb-0 bg-transparent p-1 rounded-xl hidden">
-            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> กรองข้อมูล:</span>
+            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> เธเธฃเธญเธเธเนเธญเธกเธนเธฅ:</span>
             <select id="avFilterDate" onchange="window.currentAVDate = this.value; window.renderAVTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-              <option value="">ทุกช่วงเวลา</option>
-              <option value="today">วันนี้</option>
-              <option value="week">สัปดาห์นี้</option>
-              <option value="month">เดือนนี้</option>
+              <option value="">เธ—เธธเธเธเนเธงเธเน€เธงเธฅเธฒ</option>
+              <option value="today">เธงเธฑเธเธเธตเน</option>
+              <option value="week">เธชเธฑเธเธ”เธฒเธซเนเธเธตเน</option>
+              <option value="month">เน€เธ”เธทเธญเธเธเธตเน</option>
             </select>
-            <input type="text" id="avFilterReporter" oninput="window.currentAVReporter = this.value; window.renderAVTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="ชื่อผู้ยืม...">
-            <input type="text" id="avFilterLocation" oninput="window.currentAVLocation = this.value; window.renderAVTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="สถานที่...">
+            <input type="text" id="avFilterReporter" oninput="window.currentAVReporter = this.value; window.renderAVTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="เธเธทเนเธญเธเธนเนเธขเธทเธก...">
+            <input type="text" id="avFilterLocation" oninput="window.currentAVLocation = this.value; window.renderAVTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="เธชเธ–เธฒเธเธ—เธตเน...">
           </div>
           
           <div class="flex gap-2 border-b border-slate-200 mb-4 overflow-x-auto" id="avAdminTabs">
-            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAVTab('all', this)">ทั้งหมด</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAVTab('pending', this)">รอดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAVTab('progress', this)">กำลังดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAVTab('done', this)">เสร็จสิ้น</button>
+            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAVTab('all', this)">เธ—เธฑเนเธเธซเธกเธ”</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAVTab('pending', this)">เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAVTab('progress', this)">เธเธณเธฅเธฑเธเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAVTab('done', this)">เน€เธชเธฃเนเธเธชเธดเนเธ</button>
           </div>
 
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -609,13 +611,14 @@
               <div class="p-8 text-center text-slate-500">
                 <div class="flex flex-col items-center gap-3 text-slate-400">
                   <i class="fa-solid fa-spinner fa-spin text-4xl text-amber-500"></i>
-                  <p class="font-semibold text-slate-500">กำลังโหลดข้อมูล...</p>
+                  <p class="font-semibold text-slate-500">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
 
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
       <div id="page-av-repair-manage" class="page-section hidden">
@@ -623,112 +626,113 @@
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-camera text-sky-600"></i>
-                จัดการงานซ่อมโสตฯ</h1>
-              <p class="text-xs text-slate-500 mt-1">งานที่ยังไม่เสร็จจะถูกดันขึ้นด้านบน (ติดดาว ⭐ และป้ายสีแดง)
-                เรียงตามเวลาเก่าไปใหม่ งานที่เสร็จแล้วจะติดป้ายสีฟ้าและดันลงด้านล่าง</p>
+                เธเธฑเธ”เธเธฒเธฃเธเธฒเธเธเนเธญเธกเนเธชเธ•เธฏ</h1>
+              <p class="text-xs text-slate-500 mt-1">เธเธฒเธเธ—เธตเนเธขเธฑเธเนเธกเนเน€เธชเธฃเนเธเธเธฐเธ–เธนเธเธ”เธฑเธเธเธถเนเธเธ”เนเธฒเธเธเธ (เธ•เธดเธ”เธ”เธฒเธง โญ เนเธฅเธฐเธเนเธฒเธขเธชเธตเนเธ”เธ)
+                เน€เธฃเธตเธขเธเธ•เธฒเธกเน€เธงเธฅเธฒเน€เธเนเธฒเนเธเนเธซเธกเน เธเธฒเธเธ—เธตเนเน€เธชเธฃเนเธเนเธฅเนเธงเธเธฐเธ•เธดเธ”เธเนเธฒเธขเธชเธตเธเนเธฒเนเธฅเธฐเธ”เธฑเธเธฅเธเธ”เนเธฒเธเธฅเนเธฒเธ</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
               <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                 <input type="text" oninput="window.currentAdvFilters['av-repair'].search = this.value; window.applyAdvFilters('av-repair');"
                   class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-full md:w-64"
-                  placeholder="ค้นหาจากรายละเอียดปัญหา...">
+                  placeholder="เธเนเธเธซเธฒเธเธฒเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ...">
               </div>
               <button onclick="refreshAdvancedTasks()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
-                  class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
-              <button onclick="exportTableToCSV('avRepairTaskBody', 'รายงานซ่อม_AV.csv')"
+                  class="fa-solid fa-rotate mr-1"></i> เธฃเธตเน€เธเธฃเธ</button>
+              <button onclick="exportTableToCSV('avRepairTaskBody', 'เธฃเธฒเธขเธเธฒเธเธเนเธญเธก_AV.csv')"
                 class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold text-emerald-700 hover:bg-emerald-100 shadow-sm transition-colors hidden sm:block"><i
-                  class="fa-solid fa-file-csv mr-1"></i> ส่งออก CSV</button>
+                  class="fa-solid fa-file-csv mr-1"></i> เธชเนเธเธญเธญเธ CSV</button>
             </div>
           </div>
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
-    <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
-    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
-    <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn ml-1" onclick="toggleFakeCheckbox(event, this.querySelector('div'))"><div class="w-4 h-4 border-2 border-slate-400 rounded transition-colors"></div></div>
+    <div class="gmail-toolbar-btn" title="เธฃเธตเน€เธเธฃเธ" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="เน€เธเธดเนเธกเน€เธ•เธดเธก"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
-    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
+    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of เธซเธฅเธฒเธขเธฃเธฒเธขเธเธฒเธฃ</span>
   </div>
   <div class="flex flex-wrap items-center gap-3 mb-0 bg-transparent p-1 rounded-xl hidden">
-            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> กรองข้อมูล:</span>
+            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> เธเธฃเธญเธเธเนเธญเธกเธนเธฅ:</span>
             <select onchange="window.currentAdvFilters['av-repair'].date = this.value; window.applyAdvFilters('av-repair');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
-              <option value="">ทุกช่วงเวลา</option>
-              <option value="today">วันนี้</option>
-              <option value="week">สัปดาห์นี้</option>
-              <option value="month">เดือนนี้</option>
+              <option value="">เธ—เธธเธเธเนเธงเธเน€เธงเธฅเธฒ</option>
+              <option value="today">เธงเธฑเธเธเธตเน</option>
+              <option value="week">เธชเธฑเธเธ”เธฒเธซเนเธเธตเน</option>
+              <option value="month">เน€เธ”เธทเธญเธเธเธตเน</option>
             </select>
-            <input type="text" oninput="window.currentAdvFilters['av-repair'].reporter = this.value; window.applyAdvFilters('av-repair');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-32 sm:w-40 bg-white" placeholder="ชื่อผู้แจ้ง...">
+            <input type="text" oninput="window.currentAdvFilters['av-repair'].reporter = this.value; window.applyAdvFilters('av-repair');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-32 sm:w-40 bg-white" placeholder="เธเธทเนเธญเธเธนเนเนเธเนเธ...">
           </div>
           
           <div class="flex gap-2 border-b border-slate-200 mb-4 overflow-x-auto" id="avRepairManageTabs">
-            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAdvTab('av-repair', 'all', this)">ทั้งหมด</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'pending', this)">รอดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'progress', this)">กำลังดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'done', this)">เสร็จสิ้น</button>
+            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAdvTab('av-repair', 'all', this)">เธ—เธฑเนเธเธซเธกเธ”</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'pending', this)">เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'progress', this)">เธเธณเธฅเธฑเธเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'done', this)">เน€เธชเธฃเนเธเธชเธดเนเธ</button>
           </div>
 
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div id="avRepairTaskBody" class="flex flex-col divide-y divide-slate-100">
-              <div class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</div>
+              <div class="p-8 text-center text-slate-500">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</div>
             </div>
           </div>
         </div>
       </div>
+
 
       <div id="page-av-repair" class="page-section hidden">
         <div class="flex items-center justify-center min-h-[70vh] py-6">
           <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
             <button onclick="nav('page-home')"
               class="text-[#f59e0b] font-bold mb-4 hover:text-[#d97706] transition-colors text-sm inline-flex items-center gap-1.5">
-              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+              <i class="fa-solid fa-arrow-left"></i> <span>เธเธฅเธฑเธเธซเธเนเธฒเธซเธฅเธฑเธ</span>
             </button>
             <div class="text-center mb-6">
               <div
                 class="w-14 h-14 bg-[#fef3c7] text-[#f59e0b] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
                 <i class="fa-solid fa-microphone"></i>
               </div>
-              <h2 class="text-2xl font-bold text-slate-800">แจ้งซ่อมอุปกรณ์โสตทัศนศึกษา</h2>
-              <p class="text-xs text-slate-500 mt-1">แจ้งปัญหาเครื่องเสียง โปรเจคเตอร์ หรืออุปกรณ์โสตฯ ที่ชำรุด</p>
+              <h2 class="text-2xl font-bold text-slate-800">เนเธเนเธเธเนเธญเธกเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธ—เธฑเธจเธเธจเธถเธเธฉเธฒ</h2>
+              <p class="text-xs text-slate-500 mt-1">เนเธเนเธเธเธฑเธเธซเธฒเน€เธเธฃเธทเนเธญเธเน€เธชเธตเธขเธ เนเธเธฃเน€เธเธเน€เธ•เธญเธฃเน เธซเธฃเธทเธญเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธฏ เธ—เธตเนเธเธณเธฃเธธเธ”</p>
             </div>
             <form id="avRepForm" class="space-y-4" onsubmit="event.preventDefault(); submitAvRepair();">
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-rose-500">*</span></label>
-                <input type="text" id="avRepReporter" placeholder="เช่น สมชาย ใจดี"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธทเนเธญเธเธนเนเนเธเนเธ <span class="text-rose-500">*</span></label>
+                <input type="text" id="avRepReporter" placeholder="เน€เธเนเธ เธชเธกเธเธฒเธข เนเธเธ”เธต"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm font-medium"
                   required>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
-                  <input type="text" id="avRepDepartment" placeholder="ถ้ามี เช่น ฝ่ายวิชาการ"
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธซเธเนเธงเธขเธเธฒเธ / เนเธเธเธ</label>
+                  <input type="text" id="avRepDepartment" placeholder="เธ–เนเธฒเธกเธต เน€เธเนเธ เธเนเธฒเธขเธงเธดเธเธฒเธเธฒเธฃ"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm">
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ / ห้อง</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธชเธ–เธฒเธเธ—เธตเน / เธซเนเธญเธ</label>
                   <div class="flex gap-2">
                     <select id="avRep_inst" class="w-1/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm font-medium">
-                      <option value="" disabled selected>สถาบัน</option>
-                      <option value="วพบ.">วพบ.</option>
-                      <option value="ศษ.">ศษ.</option>
+                      <option value="" disabled selected>เธชเธ–เธฒเธเธฑเธ</option>
+                      <option value="เธงเธเธ.">เธงเธเธ.</option>
+                      <option value="เธจเธฉ.">เธจเธฉ.</option>
                     </select>
-                    <input type="text" id="avRepLocation" placeholder="เช่น หอประชุมใหญ่"
+                    <input type="text" id="avRepLocation" placeholder="เน€เธเนเธ เธซเธญเธเธฃเธฐเธเธธเธกเนเธซเธเน"
                       class="w-2/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm">
                   </div>
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ปัญหาเกี่ยวกับอะไร <span class="text-rose-500">*</span></label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธฑเธเธซเธฒเน€เธเธตเนเธขเธงเธเธฑเธเธญเธฐเนเธฃ <span class="text-rose-500">*</span></label>
                 <select id="avRepSubject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm font-medium" required>
-                  <option value="ลำโพง / ระบบเสียง">ลำโพง / ระบบเสียง</option>
-                  <option value="ไมโครโฟน (Mic)">ไมโครโฟน (Mic)</option>
-                  <option value="โปรเจคเตอร์ / จอรับภาพ">โปรเจคเตอร์ / จอรับภาพ</option>
-                  <option value="โทรทัศน์ / จอ LED">โทรทัศน์ / จอ LED</option>
-                  <option value="กล้องถ่ายรูป / กล้องวิดีโอ">กล้องถ่ายรูป / กล้องวิดีโอ</option>
-                  <option value="สายสัญญาณ / อุปกรณ์เชื่อมต่อ">สายสัญญาณ / อุปกรณ์เชื่อมต่อ</option>
-                  <option value="อื่นๆ">อื่นๆ</option>
+                  <option value="เธฅเธณเนเธเธ / เธฃเธฐเธเธเน€เธชเธตเธขเธ">เธฅเธณเนเธเธ / เธฃเธฐเธเธเน€เธชเธตเธขเธ</option>
+                  <option value="เนเธกเนเธเธฃเนเธเธ (Mic)">เนเธกเนเธเธฃเนเธเธ (Mic)</option>
+                  <option value="เนเธเธฃเน€เธเธเน€เธ•เธญเธฃเน / เธเธญเธฃเธฑเธเธ เธฒเธ">เนเธเธฃเน€เธเธเน€เธ•เธญเธฃเน / เธเธญเธฃเธฑเธเธ เธฒเธ</option>
+                  <option value="เนเธ—เธฃเธ—เธฑเธจเธเน / เธเธญ LED">เนเธ—เธฃเธ—เธฑเธจเธเน / เธเธญ LED</option>
+                  <option value="เธเธฅเนเธญเธเธ–เนเธฒเธขเธฃเธนเธ / เธเธฅเนเธญเธเธงเธดเธ”เธตเนเธญ">เธเธฅเนเธญเธเธ–เนเธฒเธขเธฃเธนเธ / เธเธฅเนเธญเธเธงเธดเธ”เธตเนเธญ</option>
+                  <option value="เธชเธฒเธขเธชเธฑเธเธเธฒเธ“ / เธญเธธเธเธเธฃเธ“เนเน€เธเธทเนเธญเธกเธ•เนเธญ">เธชเธฒเธขเธชเธฑเธเธเธฒเธ“ / เธญเธธเธเธเธฃเธ“เนเน€เธเธทเนเธญเธกเธ•เนเธญ</option>
+                  <option value="เธญเธทเนเธเน">เธญเธทเนเธเน</option>
                 </select>
               </div>
 
@@ -736,37 +740,38 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="sm:col-span-2">
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่/เวลาที่พบปัญหา <span class="text-slate-400 font-normal">(ถ้าจำได้)</span></label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธงเธฑเธเธ—เธตเน/เน€เธงเธฅเธฒเธ—เธตเนเธเธเธเธฑเธเธซเธฒ <span class="text-slate-400 font-normal">(เธ–เนเธฒเธเธณเนเธ”เน)</span></label>
                   <input type="datetime-local" id="avRepIncidentDate"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm">
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดปัญหา <span class="text-rose-500">*</span></label>
-                <textarea id="avRepDetail" rows="3" placeholder="บอกรายละเอียดเพิ่มเติม เช่น ไมค์หอน ภาพไม่ติด"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ <span class="text-rose-500">*</span></label>
+                <textarea id="avRepDetail" rows="3" placeholder="เธเธญเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เน€เธเธดเนเธกเน€เธ•เธดเธก เน€เธเนเธ เนเธกเธเนเธซเธญเธ เธ เธฒเธเนเธกเนเธ•เธดเธ”"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm" required></textarea>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อกลับ</label>
-                <input type="text" id="avRepContact" placeholder="เช่น 081-234-5678 หรือ LINE ID"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน เธซเธฃเธทเธญเธเนเธญเธเธ—เธฒเธเธ•เธดเธ”เธ•เนเธญเธเธฅเธฑเธ</label>
+                <input type="text" id="avRepContact" placeholder="เน€เธเนเธ 081-234-5678 เธซเธฃเธทเธญ LINE ID"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#f59e0b] bg-slate-50 text-sm">
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รูปภาพประกอบ (ถ้ามี)</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธนเธเธ เธฒเธเธเธฃเธฐเธเธญเธ (เธ–เนเธฒเธกเธต)</label>
                 <input type="file" id="avRepFile" accept="image/*" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#fef3c7] file:text-[#f59e0b] hover:file:bg-[#f59e0b] hover:file:text-white file:transition-colors">
               </div>
 
               <button type="button" onclick="submitAvRepair()" id="btnSubmitAvRepair"
                 class="w-full bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
-                <i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งซ่อมโสตฯ</span>
+                <i class="fa-solid fa-paper-plane"></i> <span>เธชเนเธเนเธเนเธเธเนเธญเธกเนเธชเธ•เธฏ</span>
               </button>
             </form>
           </div>
         </div>
       </div>
+
 
       <div id="page-bug-manage" class="page-section hidden">
         <div class="p-4 md:p-8 max-w-6xl mx-auto pb-32 md:pb-8">
@@ -820,6 +825,7 @@
 
 
 
+
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
       <div id="page-dashboard" class="page-section">
         <div class="max-w-7xl mx-auto space-y-6">
@@ -828,21 +834,21 @@
           <div
             class="bg-gradient-to-r from-[#265D5A] to-[#1a3f3d] text-white p-6 md:p-8 rounded-3xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div class="text-xs uppercase tracking-widest text-[#B0EDE6] font-semibold mb-1">ระบบมอนิเตอร์ภาพรวม</div>
+              <div class="text-xs uppercase tracking-widest text-[#B0EDE6] font-semibold mb-1">เธฃเธฐเธเธเธกเธญเธเธดเน€เธ•เธญเธฃเนเธ เธฒเธเธฃเธงเธก</div>
               <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
                 <i class="fa-solid fa-chart-pie text-[#B0EDE6]"></i>
-                <span>มอนิเตอร์ภาพรวมทรัพยากร</span>
+                <span>เธกเธญเธเธดเน€เธ•เธญเธฃเนเธ เธฒเธเธฃเธงเธกเธ—เธฃเธฑเธเธขเธฒเธเธฃ</span>
               </h1>
-              <p class="text-[#B0EDE6] text-sm mt-1">สรุปภาพรวมงานซ่อมบำรุงอาคารและงานโสตทัศนูปกรณ์แบบ Real-time</p>
+              <p class="text-[#B0EDE6] text-sm mt-1">เธชเธฃเธธเธเธ เธฒเธเธฃเธงเธกเธเธฒเธเธเนเธญเธกเธเธณเธฃเธธเธเธญเธฒเธเธฒเธฃเนเธฅเธฐเธเธฒเธเนเธชเธ•เธ—เธฑเธจเธเธนเธเธเธฃเธ“เนเนเธเธ Real-time</p>
             </div>
             <div class="flex gap-3 items-center flex-wrap">
-              <!-- Dropdown เลือกเดือน/ปี สำหรับ Dashboard ย้อนหลัง -->
+              <!-- Dropdown เน€เธฅเธทเธญเธเน€เธ”เธทเธญเธ/เธเธต เธชเธณเธซเธฃเธฑเธ Dashboard เธขเนเธญเธเธซเธฅเธฑเธ -->
               <input type="month" id="dashboardMonthFilter" onchange="loadDashboard()"
                 class="bg-white text-[#265D5A] px-4 py-2.5 rounded-xl font-bold shadow-sm border-none outline-none focus:ring-2 focus:ring-[#B0EDE6] cursor-pointer"
-                title="เลือกเดือน/ปี">
+                title="เน€เธฅเธทเธญเธเน€เธ”เธทเธญเธ/เธเธต">
               <button onclick="loadDashboard()"
                 class="bg-white text-[#265D5A] px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm hover:bg-[#B0EDE6]">
-                <i class="fa-solid fa-rotate"></i> <span>รีเฟรช</span>
+                <i class="fa-solid fa-rotate"></i> <span>เธฃเธตเน€เธเธฃเธ</span>
               </button>
               <button onclick="exportDashboardToPDF()"
                 class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm">
@@ -850,228 +856,228 @@
               </button>
               <button onclick="nav('page-home')"
                 class="bg-[#265D5A]/40 hover:bg-[#265D5A]/60 text-white px-5 py-2.5 rounded-xl font-bold flex gap-2 transition-colors border border-white/20 items-center">
-                <i class="fa-solid fa-house"></i> <span>หน้าหลัก</span>
+                <i class="fa-solid fa-house"></i> <span>เธซเธเนเธฒเธซเธฅเธฑเธ</span>
               </button>
             </div>
           </div>
 
-          <!-- ส่วนที่ 1: การ์ดยอดรวมระบบทั้งหมด (Unified System KPIs) -->
+          <!-- เธชเนเธงเธเธ—เธตเน 1: เธเธฒเธฃเนเธ”เธขเธญเธ”เธฃเธงเธกเธฃเธฐเธเธเธ—เธฑเนเธเธซเธกเธ” (Unified System KPIs) -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
             <div class="bg-white p-5 md:p-6 rounded-3xl border border-[#B0EDE6] relative overflow-hidden shadow-sm">
-              <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">งานทั้งหมดในระบบ</div>
+              <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">เธเธฒเธเธ—เธฑเนเธเธซเธกเธ”เนเธเธฃเธฐเธเธ</div>
               <div class="text-3xl md:text-4xl font-extrabold text-slate-800" id="dash-total-all">0</div>
-              <div class="text-xs text-slate-400 mt-1">อาคาร + โสตทัศนูปกรณ์</div>
+              <div class="text-xs text-slate-400 mt-1">เธญเธฒเธเธฒเธฃ + เนเธชเธ•เธ—เธฑเธจเธเธนเธเธเธฃเธ“เน</div>
               <i class="fa-solid fa-layer-group absolute right-4 bottom-4 text-4xl md:text-5xl text-[#265D5A]/10"></i>
             </div>
             <div class="bg-white p-5 md:p-6 rounded-3xl border border-amber-200 relative overflow-hidden shadow-sm">
-              <div class="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-1">รอดำเนินการ</div>
+              <div class="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-1">เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ</div>
               <div class="text-3xl md:text-4xl font-extrabold text-amber-500" id="dash-pending-all">0</div>
-              <div class="text-xs text-amber-400 mt-1">รอรับเรื่อง / รอยืนยัน</div>
+              <div class="text-xs text-amber-400 mt-1">เธฃเธญเธฃเธฑเธเน€เธฃเธทเนเธญเธ / เธฃเธญเธขเธทเธเธขเธฑเธ</div>
               <i class="fa-solid fa-clock absolute right-4 bottom-4 text-4xl md:text-5xl text-amber-400/10"></i>
             </div>
             <div class="bg-white p-5 md:p-6 rounded-3xl border border-[#B0EDE6] relative overflow-hidden shadow-sm">
-              <div class="text-xs font-semibold text-[#265D5A] uppercase tracking-wider mb-1">กำลังดำเนินการ</div>
+              <div class="text-xs font-semibold text-[#265D5A] uppercase tracking-wider mb-1">เธเธณเธฅเธฑเธเธ”เธณเน€เธเธดเธเธเธฒเธฃ</div>
               <div class="text-3xl md:text-4xl font-extrabold text-[#265D5A]" id="dash-progress-all">0</div>
-              <div class="text-xs text-[#265D5A]/70 mt-1">กำลังซ่อม / กำลังใช้งาน</div>
+              <div class="text-xs text-[#265D5A]/70 mt-1">เธเธณเธฅเธฑเธเธเนเธญเธก / เธเธณเธฅเธฑเธเนเธเนเธเธฒเธ</div>
               <i
                 class="fa-solid fa-screwdriver-wrench absolute right-4 bottom-4 text-4xl md:text-5xl text-[#265D5A]/10"></i>
             </div>
             <div class="bg-white p-5 md:p-6 rounded-3xl border border-emerald-200 relative overflow-hidden shadow-sm">
-              <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1">เสร็จสิ้นเรียบร้อย</div>
+              <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1">เน€เธชเธฃเนเธเธชเธดเนเธเน€เธฃเธตเธขเธเธฃเนเธญเธข</div>
               <div class="text-3xl md:text-4xl font-extrabold text-emerald-600" id="dash-completed-all">0</div>
-              <div class="text-xs text-emerald-500 mt-1">ซ่อมเสร็จ / คืนของครบ</div>
+              <div class="text-xs text-emerald-500 mt-1">เธเนเธญเธกเน€เธชเธฃเนเธ / เธเธทเธเธเธญเธเธเธฃเธ</div>
               <i
                 class="fa-solid fa-circle-check absolute right-4 bottom-4 text-4xl md:text-5xl text-emerald-500/10"></i>
             </div>
           </div>
 
-          <!-- ส่วนที่ 2: สถิติแยกหมวดหมู่งาน 2 ฝั่ง (อาคาร vs โสตฯ) -->
+          <!-- เธชเนเธงเธเธ—เธตเน 2: เธชเธ–เธดเธ•เธดเนเธขเธเธซเธกเธงเธ”เธซเธกเธนเนเธเธฒเธ 2 เธเธฑเนเธ (เธญเธฒเธเธฒเธฃ vs เนเธชเธ•เธฏ) -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-            <!-- ฝั่งซ้าย: งานซ่อมบำรุงอาคาร -->
+            <!-- เธเธฑเนเธเธเนเธฒเธข: เธเธฒเธเธเนเธญเธกเธเธณเธฃเธธเธเธญเธฒเธเธฒเธฃ -->
             <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm">
               <div class="flex items-center justify-between border-b border-[#B0EDE6] pb-3">
                 <h2 class="text-base font-bold text-[#265D5A] flex items-center gap-2">
-                  <i class="fa-solid fa-building"></i> <span>งานซ่อมบำรุงอาคาร</span>
+                  <i class="fa-solid fa-building"></i> <span>เธเธฒเธเธเนเธญเธกเธเธณเธฃเธธเธเธญเธฒเธเธฒเธฃ</span>
                   <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                     <i class="fa-solid fa-star"></i> <span id="b-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="b-rating-count">0</span>)</span>
                   </span>
                 </h2>
                 <button onclick="nav('page-technician')"
                   class="text-xs text-[#265D5A] hover:text-[#1a3f3d] font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  <span>เธเธฑเธ”เธเธฒเธฃเธเธฒเธ</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="bg-[#edfaf8] p-4 rounded-2xl border border-[#B0EDE6] text-center">
                   <div class="text-2xl font-bold text-slate-800 mb-0.5" id="b-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                  <div class="text-[11px] text-slate-500">เธ—เธฑเนเธเธซเธกเธ”</div>
                 </div>
                 <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
                   <div class="text-2xl font-bold text-amber-500 mb-0.5" id="b-pending">0</div>
-                  <div class="text-[11px] text-amber-500">รอซ่อม</div>
+                  <div class="text-[11px] text-amber-500">เธฃเธญเธเนเธญเธก</div>
                 </div>
                 <div class="bg-[#edfaf8] p-4 rounded-2xl border border-[#B0EDE6] text-center">
                   <div class="text-2xl font-bold text-[#265D5A] mb-0.5" id="b-progress">0</div>
-                  <div class="text-[11px] text-[#265D5A]">กำลังซ่อม</div>
+                  <div class="text-[11px] text-[#265D5A]">เธเธณเธฅเธฑเธเธเนเธญเธก</div>
                 </div>
                 <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
                   <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="b-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">ซ่อมเสร็จ</div>
+                  <div class="text-[11px] text-emerald-600">เธเนเธญเธกเน€เธชเธฃเนเธ</div>
                 </div>
               </div>
             </div>
 
-            <!-- ฝั่งขวา: งานยืม-คืนโสตทัศนูปกรณ์ -->
+            <!-- เธเธฑเนเธเธเธงเธฒ: เธเธฒเธเธขเธทเธก-เธเธทเธเนเธชเธ•เธ—เธฑเธจเธเธนเธเธเธฃเธ“เน -->
             <div class="bg-white p-6 rounded-3xl border border-[#FF5F5F]/20 space-y-4 shadow-sm">
               <div class="flex items-center justify-between border-b border-[#FF5F5F]/20 pb-3">
                 <h2 class="text-base font-bold text-[#FF5F5F] flex items-center gap-2">
-                  <i class="fa-solid fa-microphone-lines"></i> <span>การยืม-คืนโสตทัศนูปกรณ์</span>
+                  <i class="fa-solid fa-microphone-lines"></i> <span>เธเธฒเธฃเธขเธทเธก-เธเธทเธเนเธชเธ•เธ—เธฑเธจเธเธนเธเธเธฃเธ“เน</span>
                   <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                     <i class="fa-solid fa-star"></i> <span id="av-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="av-rating-count">0</span>)</span>
                   </span>
                 </h2>
                 <button onclick="nav('page-av-manage')"
                   class="text-xs text-[#FF5F5F] hover:text-[#8F1C26] font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  <span>เธเธฑเธ”เธเธฒเธฃเธเธฒเธ</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="bg-rose-50 p-4 rounded-2xl border border-[#FF5F5F]/20 text-center">
                   <div class="text-2xl font-bold text-slate-800 mb-0.5" id="av-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                  <div class="text-[11px] text-slate-500">เธ—เธฑเนเธเธซเธกเธ”</div>
                 </div>
                 <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
                   <div class="text-2xl font-bold text-amber-500 mb-0.5" id="av-pending">0</div>
-                  <div class="text-[11px] text-amber-500">รอยืนยัน</div>
+                  <div class="text-[11px] text-amber-500">เธฃเธญเธขเธทเธเธขเธฑเธ</div>
                 </div>
                 <div class="bg-rose-50 p-4 rounded-2xl border border-[#FF5F5F]/20 text-center">
                   <div class="text-2xl font-bold text-[#FF5F5F] mb-0.5" id="av-active">0</div>
-                  <div class="text-[11px] text-[#FF5F5F]">ใช้งานอยู่</div>
+                  <div class="text-[11px] text-[#FF5F5F]">เนเธเนเธเธฒเธเธญเธขเธนเน</div>
                 </div>
                 <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
                   <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="av-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">คืนเรียบร้อย</div>
+                  <div class="text-[11px] text-emerald-600">เธเธทเธเน€เธฃเธตเธขเธเธฃเนเธญเธข</div>
                 </div>
               </div>
             </div>
 
-            <!-- งานซ่อมไอที -->
+            <!-- เธเธฒเธเธเนเธญเธกเนเธญเธ—เธต -->
             <div class="bg-white p-6 rounded-3xl border border-sky-200 space-y-4 shadow-sm">
               <div class="flex items-center justify-between border-b border-sky-200 pb-3">
                 <h2 class="text-base font-bold text-sky-500 flex items-center gap-2">
-                  <i class="fa-solid fa-desktop"></i> <span>งานซ่อมไอที / เครือข่าย</span>
+                  <i class="fa-solid fa-desktop"></i> <span>เธเธฒเธเธเนเธญเธกเนเธญเธ—เธต / เน€เธเธฃเธทเธญเธเนเธฒเธข</span>
                   <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                     <i class="fa-solid fa-star"></i> <span id="it-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="it-rating-count">0</span>)</span>
                   </span>
                 </h2>
                 <button onclick="nav('page-it-manage');"
                   class="text-xs text-sky-500 hover:text-sky-700 font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  <span>เธเธฑเธ”เธเธฒเธฃเธเธฒเธ</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="bg-sky-50 p-4 rounded-2xl border border-sky-200 text-center">
                   <div class="text-2xl font-bold text-slate-800 mb-0.5" id="it-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                  <div class="text-[11px] text-slate-500">เธ—เธฑเนเธเธซเธกเธ”</div>
                 </div>
                 <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
                   <div class="text-2xl font-bold text-amber-500 mb-0.5" id="it-pending">0</div>
-                  <div class="text-[11px] text-amber-500">รอซ่อม</div>
+                  <div class="text-[11px] text-amber-500">เธฃเธญเธเนเธญเธก</div>
                 </div>
                 <div class="bg-sky-50 p-4 rounded-2xl border border-sky-200 text-center">
                   <div class="text-2xl font-bold text-sky-500 mb-0.5" id="it-progress">0</div>
-                  <div class="text-[11px] text-sky-500">กำลังซ่อม</div>
+                  <div class="text-[11px] text-sky-500">เธเธณเธฅเธฑเธเธเนเธญเธก</div>
                 </div>
                 <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
                   <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="it-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">ซ่อมเสร็จ</div>
+                  <div class="text-[11px] text-emerald-600">เธเนเธญเธกเน€เธชเธฃเนเธ</div>
                 </div>
               </div>
             </div>
 
-            <!-- งานซ่อมอุปกรณ์โสตฯ -->
+            <!-- เธเธฒเธเธเนเธญเธกเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธฏ -->
             <div class="bg-white p-6 rounded-3xl border border-amber-200 space-y-4 shadow-sm">
               <div class="flex items-center justify-between border-b border-amber-200 pb-3">
                 <h2 class="text-base font-bold text-amber-500 flex items-center gap-2">
-                  <i class="fa-solid fa-camera"></i> <span>งานซ่อมอุปกรณ์โสตฯ</span>
+                  <i class="fa-solid fa-camera"></i> <span>เธเธฒเธเธเนเธญเธกเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธฏ</span>
                   <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                     <i class="fa-solid fa-star"></i> <span id="avrep-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="avrep-rating-count">0</span>)</span>
                   </span>
                 </h2>
                 <button onclick="nav('page-av-repair-manage');"
                   class="text-xs text-amber-500 hover:text-amber-700 font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  <span>เธเธฑเธ”เธเธฒเธฃเธเธฒเธ</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
                   <div class="text-2xl font-bold text-slate-800 mb-0.5" id="avrep-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                  <div class="text-[11px] text-slate-500">เธ—เธฑเนเธเธซเธกเธ”</div>
                 </div>
                 <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200 text-center">
                   <div class="text-2xl font-bold text-rose-500 mb-0.5" id="avrep-pending">0</div>
-                  <div class="text-[11px] text-rose-500">รอซ่อม</div>
+                  <div class="text-[11px] text-rose-500">เธฃเธญเธเนเธญเธก</div>
                 </div>
                 <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
                   <div class="text-2xl font-bold text-amber-500 mb-0.5" id="avrep-progress">0</div>
-                  <div class="text-[11px] text-amber-500">กำลังซ่อม</div>
+                  <div class="text-[11px] text-amber-500">เธเธณเธฅเธฑเธเธเนเธญเธก</div>
                 </div>
                 <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
                   <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="avrep-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">ซ่อมเสร็จ</div>
+                  <div class="text-[11px] text-emerald-600">เธเนเธญเธกเน€เธชเธฃเนเธ</div>
                 </div>
               </div>
             </div>
 
-            <!-- เสนอโครงการ -->
+            <!-- เน€เธชเธเธญเนเธเธฃเธเธเธฒเธฃ -->
             <div class="bg-white p-6 rounded-3xl border border-violet-200 space-y-4 shadow-sm">
               <div class="flex items-center justify-between border-b border-violet-200 pb-3">
                 <h2 class="text-base font-bold text-violet-500 flex items-center gap-2">
-                  <i class="fa-solid fa-building-circle-check"></i> <span>เสนอโครงการ / จัดซื้อ</span>
+                  <i class="fa-solid fa-building-circle-check"></i> <span>เน€เธชเธเธญเนเธเธฃเธเธเธฒเธฃ / เธเธฑเธ”เธเธทเนเธญ</span>
                   <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                     <i class="fa-solid fa-star"></i> <span id="proj-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="proj-rating-count">0</span>)</span>
                   </span>
                 </h2>
                 <button onclick="nav('page-project-manage');"
                   class="text-xs text-violet-500 hover:text-violet-700 font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  <span>เธเธฑเธ”เธเธฒเธฃเธเธฒเธ</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="bg-violet-50 p-4 rounded-2xl border border-violet-200 text-center">
                   <div class="text-2xl font-bold text-slate-800 mb-0.5" id="proj-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
+                  <div class="text-[11px] text-slate-500">เธ—เธฑเนเธเธซเธกเธ”</div>
                 </div>
                 <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
                   <div class="text-2xl font-bold text-amber-500 mb-0.5" id="proj-pending">0</div>
-                  <div class="text-[11px] text-amber-500">รออนุมัติ</div>
+                  <div class="text-[11px] text-amber-500">เธฃเธญเธญเธเธธเธกเธฑเธ•เธด</div>
                 </div>
                 <div class="bg-violet-50 p-4 rounded-2xl border border-violet-200 text-center">
                   <div class="text-2xl font-bold text-violet-500 mb-0.5" id="proj-progress">0</div>
-                  <div class="text-[11px] text-violet-500">กำลังดำเนินการ</div>
+                  <div class="text-[11px] text-violet-500">เธเธณเธฅเธฑเธเธ”เธณเน€เธเธดเธเธเธฒเธฃ</div>
                 </div>
                 <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
                   <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="proj-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">เสร็จสิ้น</div>
+                  <div class="text-[11px] text-emerald-600">เน€เธชเธฃเนเธเธชเธดเนเธ</div>
                 </div>
               </div>
             </div>
 
           </div>
 
-          <!-- ส่วนที่ 3: สัดส่วนงาน (Analytics) -->
+          <!-- เธชเนเธงเธเธ—เธตเน 3: เธชเธฑเธ”เธชเนเธงเธเธเธฒเธ (Analytics) -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-            <!-- แถบสัดส่วนประเภทงาน -->
+            <!-- เนเธ–เธเธชเธฑเธ”เธชเนเธงเธเธเธฃเธฐเน€เธ เธ—เธเธฒเธ -->
             <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm">
               <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-chart-column text-[#265D5A]"></i> <span>สัดส่วนและอัตราความสำเร็จ</span>
+                <i class="fa-solid fa-chart-column text-[#265D5A]"></i> <span>เธชเธฑเธ”เธชเนเธงเธเนเธฅเธฐเธญเธฑเธ•เธฃเธฒเธเธงเธฒเธกเธชเธณเน€เธฃเนเธ</span>
               </h3>
               <div class="space-y-4 pt-1">
                 <div>
                   <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>งานซ่อมอาคาร (<span id="ratio-building-count">0</span>)</span>
+                    <span>เธเธฒเธเธเนเธญเธกเธญเธฒเธเธฒเธฃ (<span id="ratio-building-count">0</span>)</span>
                     <span id="ratio-building-pct" class="text-[#265D5A] font-bold">50%</span>
                   </div>
                   <div class="h-2.5 bg-[#B0EDE6]/40 rounded-full overflow-hidden">
@@ -1081,7 +1087,7 @@
                 </div>
                 <div>
                   <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>งานบริการโสตฯ (<span id="ratio-av-count">0</span>)</span>
+                    <span>เธเธฒเธเธเธฃเธดเธเธฒเธฃเนเธชเธ•เธฏ (<span id="ratio-av-count">0</span>)</span>
                     <span id="ratio-av-pct" class="text-[#FF5F5F] font-bold">50%</span>
                   </div>
                   <div class="h-2.5 bg-[#FF5F5F]/10 rounded-full overflow-hidden">
@@ -1091,7 +1097,7 @@
                 </div>
                 <div>
                   <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>งานซ่อมไอที (<span id="ratio-it-count">0</span>)</span>
+                    <span>เธเธฒเธเธเนเธญเธกเนเธญเธ—เธต (<span id="ratio-it-count">0</span>)</span>
                     <span id="ratio-it-pct" class="text-sky-500 font-bold">0%</span>
                   </div>
                   <div class="h-2.5 bg-sky-100 rounded-full overflow-hidden">
@@ -1101,7 +1107,7 @@
                 </div>
                 <div>
                   <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>งานซ่อมอุปกรณ์โสตฯ (<span id="ratio-av-repair-count">0</span>)</span>
+                    <span>เธเธฒเธเธเนเธญเธกเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธฏ (<span id="ratio-av-repair-count">0</span>)</span>
                     <span id="ratio-av-repair-pct" class="text-amber-500 font-bold">0%</span>
                   </div>
                   <div class="h-2.5 bg-amber-100 rounded-full overflow-hidden">
@@ -1111,7 +1117,7 @@
                 </div>
                 <div>
                   <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>เสนอโครงการ (<span id="ratio-project-count">0</span>)</span>
+                    <span>เน€เธชเธเธญเนเธเธฃเธเธเธฒเธฃ (<span id="ratio-project-count">0</span>)</span>
                     <span id="ratio-project-pct" class="text-violet-500 font-bold">0%</span>
                   </div>
                   <div class="h-2.5 bg-violet-100 rounded-full overflow-hidden">
@@ -1121,7 +1127,7 @@
                 </div>
                 <div class="pt-2 border-t border-[#B0EDE6]">
                   <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>อัตรางานที่เสร็จสิ้นทั้งหมด (Overall Completion Rate)</span>
+                    <span>เธญเธฑเธ•เธฃเธฒเธเธฒเธเธ—เธตเนเน€เธชเธฃเนเธเธชเธดเนเธเธ—เธฑเนเธเธซเธกเธ” (Overall Completion Rate)</span>
                     <span id="overall-progress-text" class="text-emerald-600 font-bold">0%</span>
                   </div>
                   <div class="h-2.5 bg-emerald-100 rounded-full overflow-hidden">
@@ -1132,10 +1138,10 @@
               </div>
             </div>
 
-            <!-- กราฟสถิติ (Chart.js) -->
+            <!-- เธเธฃเธฒเธเธชเธ–เธดเธ•เธด (Chart.js) -->
             <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm flex flex-col">
               <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-chart-pie text-[#265D5A]"></i> <span>สัดส่วนสถานะงานทั้งหมด</span>
+                <i class="fa-solid fa-chart-pie text-[#265D5A]"></i> <span>เธชเธฑเธ”เธชเนเธงเธเธชเธ–เธฒเธเธฐเธเธฒเธเธ—เธฑเนเธเธซเธกเธ”</span>
               </h3>
               <div class="flex-1 min-h-[200px] flex items-center justify-center relative">
                 <canvas id="dashboardChart"></canvas>
@@ -1148,19 +1154,20 @@
       </div>
 
 
+
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
-﻿      <div id="page-home" class="page-section max-w-4xl mx-auto py-4">
+๏ปฟ      <div id="page-home" class="page-section max-w-4xl mx-auto py-4">
         <div class="text-center mb-8">
           <div
             class="w-20 h-20 bg-[#B0EDE6] text-[#265D5A] rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 shadow-sm border border-[#265D5A]/20">
             <i class="fa-solid fa-building"></i>
           </div>
-          <h1 class="text-3xl font-semibold text-slate-800 mb-2">ระบบบริการทรัพยากร</h1>
-          <p class="text-sm text-slate-500 font-light">เลือกบริการหรือหน่วยงานที่คุณต้องการติดต่อ</p>
+          <h1 class="text-3xl font-semibold text-slate-800 mb-2">เธฃเธฐเธเธเธเธฃเธดเธเธฒเธฃเธ—เธฃเธฑเธเธขเธฒเธเธฃ</h1>
+          <p class="text-sm text-slate-500 font-light">เน€เธฅเธทเธญเธเธเธฃเธดเธเธฒเธฃเธซเธฃเธทเธญเธซเธเนเธงเธขเธเธฒเธเธ—เธตเนเธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธ•เธดเธ”เธ•เนเธญ</p>
         </div>
         <div class="text-center mb-6">
           <button onclick="quickScanQr()" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md mx-auto w-full md:w-auto">
-            <i class="fa-solid fa-qrcode text-xl"></i> <span>สแกน QR ด่วน แจ้งซ่อมทันที</span>
+            <i class="fa-solid fa-qrcode text-xl"></i> <span>เธชเนเธเธ QR เธ”เนเธงเธ เนเธเนเธเธเนเธญเธกเธ—เธฑเธเธ—เธต</span>
           </button>
         </div>
 
@@ -1172,10 +1179,10 @@
               <i class="fa-solid fa-wrench"></i>
             </div>
             <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">แจ้งซ่อม / แจ้งปัญหาอาคาร</span>
-              <span class="block text-xs text-slate-500 font-light">แจ้งซ่อมไฟฟ้า ประปา แอร์ หรือโครงสร้างอาคาร</span>
+              <span class="block text-base font-medium text-slate-800">เนเธเนเธเธเนเธญเธก / เนเธเนเธเธเธฑเธเธซเธฒเธญเธฒเธเธฒเธฃ</span>
+              <span class="block text-xs text-slate-500 font-light">เนเธเนเธเธเนเธญเธกเนเธเธเนเธฒ เธเธฃเธฐเธเธฒ เนเธญเธฃเน เธซเธฃเธทเธญเนเธเธฃเธเธชเธฃเนเธฒเธเธญเธฒเธเธฒเธฃ</span>
             </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-[#1a3f3d]">›</div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-[#1a3f3d]">โ€บ</div>
           </button>
 
           <button onclick="nav('page-av-form')"
@@ -1185,10 +1192,10 @@
               <i class="fa-solid fa-microphone-lines"></i>
             </div>
             <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">ยืม-คืน / จัดเตรียมไมค์-โสตฯ</span>
-              <span class="block text-xs text-slate-500 font-light">ขอใช้เสียง โปรเจกเตอร์ หรือเตรียมห้องประชุม</span>
+              <span class="block text-base font-medium text-slate-800">เธขเธทเธก-เธเธทเธ / เธเธฑเธ”เน€เธ•เธฃเธตเธขเธกเนเธกเธเน-เนเธชเธ•เธฏ</span>
+              <span class="block text-xs text-slate-500 font-light">เธเธญเนเธเนเน€เธชเธตเธขเธ เนเธเธฃเน€เธเธเน€เธ•เธญเธฃเน เธซเธฃเธทเธญเน€เธ•เธฃเธตเธขเธกเธซเนเธญเธเธเธฃเธฐเธเธธเธก</span>
             </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-[#FF5F5F]">›</div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-[#FF5F5F]">โ€บ</div>
           </button>
 
           <button id="home-card-it-repair" onclick="nav('page-it-repair')"
@@ -1198,10 +1205,10 @@
               <i class="fa-solid fa-desktop"></i>
             </div>
             <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">แจ้งซ่อมไอที / เครือข่าย</span>
-              <span class="block text-xs text-slate-500 font-light">ซ่อมคอมพิวเตอร์ อินเทอร์เน็ต กล้องวงจรปิด</span>
+              <span class="block text-base font-medium text-slate-800">เนเธเนเธเธเนเธญเธกเนเธญเธ—เธต / เน€เธเธฃเธทเธญเธเนเธฒเธข</span>
+              <span class="block text-xs text-slate-500 font-light">เธเนเธญเธกเธเธญเธกเธเธดเธงเน€เธ•เธญเธฃเน เธญเธดเธเน€เธ—เธญเธฃเนเน€เธเนเธ• เธเธฅเนเธญเธเธงเธเธเธฃเธเธดเธ”</span>
             </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-sky-500">›</div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-sky-500">โ€บ</div>
           </button>
 
           <button id="home-card-av-repair" onclick="nav('page-av-repair')"
@@ -1211,10 +1218,10 @@
               <i class="fa-solid fa-camera"></i>
             </div>
             <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">แจ้งซ่อมอุปกรณ์โสตฯ</span>
-              <span class="block text-xs text-slate-500 font-light">ซ่อมไมโครโฟน ลำโพง โปรเจคเตอร์ที่ชำรุด</span>
+              <span class="block text-base font-medium text-slate-800">เนเธเนเธเธเนเธญเธกเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธฏ</span>
+              <span class="block text-xs text-slate-500 font-light">เธเนเธญเธกเนเธกเนเธเธฃเนเธเธ เธฅเธณเนเธเธ เนเธเธฃเน€เธเธเน€เธ•เธญเธฃเนเธ—เธตเนเธเธณเธฃเธธเธ”</span>
             </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-amber-500">›</div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-amber-500">โ€บ</div>
           </button>
 
           <button id="home-card-project" onclick="nav('page-project-form')"
@@ -1224,10 +1231,10 @@
               <i class="fa-solid fa-building-circle-check"></i>
             </div>
             <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">เสนอโครงการ / จัดซื้อ</span>
-              <span class="block text-xs text-slate-500 font-light">โครงการปรับปรุงระยะยาวที่ต้องรออนุมัติ</span>
+              <span class="block text-base font-medium text-slate-800">เน€เธชเธเธญเนเธเธฃเธเธเธฒเธฃ / เธเธฑเธ”เธเธทเนเธญ</span>
+              <span class="block text-xs text-slate-500 font-light">เนเธเธฃเธเธเธฒเธฃเธเธฃเธฑเธเธเธฃเธธเธเธฃเธฐเธขเธฐเธขเธฒเธงเธ—เธตเนเธ•เนเธญเธเธฃเธญเธญเธเธธเธกเธฑเธ•เธด</span>
             </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-violet-500">›</div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-violet-500">โ€บ</div>
           </button>
 
           <button id="home-card-teacher-profile" onclick="nav('page-teacher-profile')"
@@ -1237,10 +1244,10 @@
               <i class="fa-solid fa-clock-rotate-left"></i>
             </div>
             <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">ประวัติแจ้งซ่อมอาคาร</span>
-              <span class="block text-xs text-slate-500 font-light">ติดตามสถานะงานซ่อมอาคารที่คุณได้ส่งเรื่องไว้</span>
+              <span class="block text-base font-medium text-slate-800">เธเธฃเธฐเธงเธฑเธ•เธดเนเธเนเธเธเนเธญเธกเธญเธฒเธเธฒเธฃ</span>
+              <span class="block text-xs text-slate-500 font-light">เธ•เธดเธ”เธ•เธฒเธกเธชเธ–เธฒเธเธฐเธเธฒเธเธเนเธญเธกเธญเธฒเธเธฒเธฃเธ—เธตเนเธเธธเธ“เนเธ”เนเธชเนเธเน€เธฃเธทเนเธญเธเนเธงเน</span>
             </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-emerald-600">›</div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-emerald-600">โ€บ</div>
           </button>
 
           <button id="home-card-teacher-av-profile" onclick="nav('page-teacher-av-profile')"
@@ -1250,10 +1257,10 @@
               <i class="fa-solid fa-list-check"></i>
             </div>
             <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">ประวัติยืมอุปกรณ์โสตฯ</span>
-              <span class="block text-xs text-slate-500 font-light">ติดตามสถานะการขอยืมและคืนอุปกรณ์โสตทัศนูปกรณ์</span>
+              <span class="block text-base font-medium text-slate-800">เธเธฃเธฐเธงเธฑเธ•เธดเธขเธทเธกเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธฏ</span>
+              <span class="block text-xs text-slate-500 font-light">เธ•เธดเธ”เธ•เธฒเธกเธชเธ–เธฒเธเธฐเธเธฒเธฃเธเธญเธขเธทเธกเนเธฅเธฐเธเธทเธเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธ—เธฑเธจเธเธนเธเธเธฃเธ“เน</span>
             </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-amber-600">›</div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-amber-600">โ€บ</div>
           </button>
 
           <button id="home-card-dash" onclick="nav('page-dashboard')"
@@ -1263,15 +1270,16 @@
               <i class="fa-solid fa-chart-pie"></i>
             </div>
             <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">มอนิเตอร์ภาพรวมทรัพยากร</span>
-              <span class="block text-xs text-slate-500 font-light">ดูสถิติภาพรวมงานซ่อมอาคารและงานบริการโสตฯ แบบ
+              <span class="block text-base font-medium text-slate-800">เธกเธญเธเธดเน€เธ•เธญเธฃเนเธ เธฒเธเธฃเธงเธกเธ—เธฃเธฑเธเธขเธฒเธเธฃ</span>
+              <span class="block text-xs text-slate-500 font-light">เธ”เธนเธชเธ–เธดเธ•เธดเธ เธฒเธเธฃเธงเธกเธเธฒเธเธเนเธญเธกเธญเธฒเธเธฒเธฃเนเธฅเธฐเธเธฒเธเธเธฃเธดเธเธฒเธฃเนเธชเธ•เธฏ เนเธเธ
                 Real-time</span>
             </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-sky-600">›</div>
+            <div class="text-slate-300 font-bold text-lg group-hover:text-sky-600">โ€บ</div>
           </button>
 
         </div>
       </div>
+
 
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
       <div id="page-it-manage" class="page-section hidden">
@@ -1279,113 +1287,114 @@
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-desktop text-sky-600"></i>
-                จัดการงานซ่อม IT</h1>
-              <p class="text-xs text-slate-500 mt-1">งานที่ยังไม่เสร็จจะถูกดันขึ้นด้านบน (ติดดาว ⭐ และป้ายสีแดง)
-                เรียงตามเวลาเก่าไปใหม่ งานที่เสร็จแล้วจะติดป้ายสีฟ้าและดันลงด้านล่าง</p>
+                เธเธฑเธ”เธเธฒเธฃเธเธฒเธเธเนเธญเธก IT</h1>
+              <p class="text-xs text-slate-500 mt-1">เธเธฒเธเธ—เธตเนเธขเธฑเธเนเธกเนเน€เธชเธฃเนเธเธเธฐเธ–เธนเธเธ”เธฑเธเธเธถเนเธเธ”เนเธฒเธเธเธ (เธ•เธดเธ”เธ”เธฒเธง โญ เนเธฅเธฐเธเนเธฒเธขเธชเธตเนเธ”เธ)
+                เน€เธฃเธตเธขเธเธ•เธฒเธกเน€เธงเธฅเธฒเน€เธเนเธฒเนเธเนเธซเธกเน เธเธฒเธเธ—เธตเนเน€เธชเธฃเนเธเนเธฅเนเธงเธเธฐเธ•เธดเธ”เธเนเธฒเธขเธชเธตเธเนเธฒเนเธฅเธฐเธ”เธฑเธเธฅเธเธ”เนเธฒเธเธฅเนเธฒเธ</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
               <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                 <input type="text" oninput="window.currentAdvFilters['it'].search = this.value; window.applyAdvFilters('it');"
                   class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-full md:w-64"
-                  placeholder="ค้นหาจากรายละเอียดปัญหา...">
+                  placeholder="เธเนเธเธซเธฒเธเธฒเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ...">
               </div>
               <button onclick="refreshAdvancedTasks()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
-                  class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
-              <button onclick="exportTableToCSV('itTaskBody', 'รายงานซ่อม_IT.csv')"
+                  class="fa-solid fa-rotate mr-1"></i> เธฃเธตเน€เธเธฃเธ</button>
+              <button onclick="exportTableToCSV('itTaskBody', 'เธฃเธฒเธขเธเธฒเธเธเนเธญเธก_IT.csv')"
                 class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold text-emerald-700 hover:bg-emerald-100 shadow-sm transition-colors hidden sm:block"><i
-                  class="fa-solid fa-file-csv mr-1"></i> ส่งออก CSV</button>
+                  class="fa-solid fa-file-csv mr-1"></i> เธชเนเธเธญเธญเธ CSV</button>
             </div>
           </div>
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
-    <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
-    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
-    <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn ml-1" onclick="toggleFakeCheckbox(event, this.querySelector('div'))"><div class="w-4 h-4 border-2 border-slate-400 rounded transition-colors"></div></div>
+    <div class="gmail-toolbar-btn" title="เธฃเธตเน€เธเธฃเธ" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="เน€เธเธดเนเธกเน€เธ•เธดเธก"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
-    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
+    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of เธซเธฅเธฒเธขเธฃเธฒเธขเธเธฒเธฃ</span>
   </div>
   <div class="flex flex-wrap items-center gap-3 mb-0 bg-transparent p-1 rounded-xl hidden">
-            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> กรองข้อมูล:</span>
+            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> เธเธฃเธญเธเธเนเธญเธกเธนเธฅ:</span>
             <select onchange="window.currentAdvFilters['it'].date = this.value; window.applyAdvFilters('it');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
-              <option value="">ทุกช่วงเวลา</option>
-              <option value="today">วันนี้</option>
-              <option value="week">สัปดาห์นี้</option>
-              <option value="month">เดือนนี้</option>
+              <option value="">เธ—เธธเธเธเนเธงเธเน€เธงเธฅเธฒ</option>
+              <option value="today">เธงเธฑเธเธเธตเน</option>
+              <option value="week">เธชเธฑเธเธ”เธฒเธซเนเธเธตเน</option>
+              <option value="month">เน€เธ”เธทเธญเธเธเธตเน</option>
             </select>
-            <input type="text" oninput="window.currentAdvFilters['it'].reporter = this.value; window.applyAdvFilters('it');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-32 sm:w-40 bg-white" placeholder="ชื่อผู้แจ้ง...">
+            <input type="text" oninput="window.currentAdvFilters['it'].reporter = this.value; window.applyAdvFilters('it');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-32 sm:w-40 bg-white" placeholder="เธเธทเนเธญเธเธนเนเนเธเนเธ...">
           </div>
           
           <div class="flex gap-2 border-b border-slate-200 mb-4 overflow-x-auto" id="itManageTabs">
-            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAdvTab('it', 'all', this)">ทั้งหมด</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('it', 'pending', this)">รอดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('it', 'progress', this)">กำลังดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('it', 'done', this)">เสร็จสิ้น</button>
+            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAdvTab('it', 'all', this)">เธ—เธฑเนเธเธซเธกเธ”</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('it', 'pending', this)">เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('it', 'progress', this)">เธเธณเธฅเธฑเธเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('it', 'done', this)">เน€เธชเธฃเนเธเธชเธดเนเธ</button>
           </div>
 
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div id="itTaskBody" class="flex flex-col divide-y divide-slate-100">
-              <div class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</div>
+              <div class="p-8 text-center text-slate-500">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</div>
             </div>
           </div>
         </div>
       </div>
+
 
       <div id="page-it-repair" class="page-section hidden">
         <div class="flex items-center justify-center min-h-[70vh] py-6">
           <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
             <button onclick="nav('page-home')"
               class="text-[#0ea5e9] font-bold mb-4 hover:text-[#0284c7] transition-colors text-sm inline-flex items-center gap-1.5">
-              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+              <i class="fa-solid fa-arrow-left"></i> <span>เธเธฅเธฑเธเธซเธเนเธฒเธซเธฅเธฑเธ</span>
             </button>
             <div class="text-center mb-6">
               <div
                 class="w-14 h-14 bg-[#e0f2fe] text-[#0ea5e9] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
                 <i class="fa-solid fa-desktop"></i>
               </div>
-              <h2 class="text-2xl font-bold text-slate-800">แจ้งปัญหาด้านไอที</h2>
-              <p class="text-xs text-slate-500 mt-1">แจ้งซ่อมคอมพิวเตอร์ อินเทอร์เน็ต กล้องวงจรปิด หรือระบบสารสนเทศอื่นๆ</p>
+              <h2 class="text-2xl font-bold text-slate-800">เนเธเนเธเธเธฑเธเธซเธฒเธ”เนเธฒเธเนเธญเธ—เธต</h2>
+              <p class="text-xs text-slate-500 mt-1">เนเธเนเธเธเนเธญเธกเธเธญเธกเธเธดเธงเน€เธ•เธญเธฃเน เธญเธดเธเน€เธ—เธญเธฃเนเน€เธเนเธ• เธเธฅเนเธญเธเธงเธเธเธฃเธเธดเธ” เธซเธฃเธทเธญเธฃเธฐเธเธเธชเธฒเธฃเธชเธเน€เธ—เธจเธญเธทเนเธเน</p>
             </div>
             <form id="itRepairForm" class="space-y-4" onsubmit="event.preventDefault(); submitItRepair();">
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-rose-500">*</span></label>
-                <input type="text" id="itReporter" placeholder="เช่น สมชาย ใจดี"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธทเนเธญเธเธนเนเนเธเนเธ <span class="text-rose-500">*</span></label>
+                <input type="text" id="itReporter" placeholder="เน€เธเนเธ เธชเธกเธเธฒเธข เนเธเธ”เธต"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm font-medium"
                   required>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
-                  <input type="text" id="itDepartment" placeholder="ถ้ามี เช่น ฝ่ายวิชาการ"
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธซเธเนเธงเธขเธเธฒเธ / เนเธเธเธ</label>
+                  <input type="text" id="itDepartment" placeholder="เธ–เนเธฒเธกเธต เน€เธเนเธ เธเนเธฒเธขเธงเธดเธเธฒเธเธฒเธฃ"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ / ห้อง</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธชเธ–เธฒเธเธ—เธตเน / เธซเนเธญเธ</label>
                   <div class="flex gap-2">
                     <select id="it_inst" class="w-1/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm font-medium">
-                      <option value="" disabled selected>สถาบัน</option>
-                      <option value="วพบ.">วพบ.</option>
-                      <option value="ศษ.">ศษ.</option>
+                      <option value="" disabled selected>เธชเธ–เธฒเธเธฑเธ</option>
+                      <option value="เธงเธเธ.">เธงเธเธ.</option>
+                      <option value="เธจเธฉ.">เธจเธฉ.</option>
                     </select>
-                    <input type="text" id="itLocation" placeholder="เช่น ห้องพักครู 3"
+                    <input type="text" id="itLocation" placeholder="เน€เธเนเธ เธซเนเธญเธเธเธฑเธเธเธฃเธน 3"
                       class="w-2/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
                   </div>
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ปัญหาเรื่องอะไร <span class="text-rose-500">*</span></label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธฑเธเธซเธฒเน€เธฃเธทเนเธญเธเธญเธฐเนเธฃ <span class="text-rose-500">*</span></label>
                 <select id="itSubject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm font-medium" required>
-                  <option value="คอมพิวเตอร์ / โน้ตบุ๊ก">คอมพิวเตอร์ / โน้ตบุ๊ก</option>
-                  <option value="ระบบเครือข่าย / อินเทอร์เน็ต">ระบบเครือข่าย / อินเทอร์เน็ต</option>
-                  <option value="เครื่องพิมพ์ (Printer) / หมึกพิมพ์">เครื่องพิมพ์ (Printer) / หมึกพิมพ์</option>
-                  <option value="โปรเจคเตอร์ (Projector)">โปรเจคเตอร์ (Projector)</option>
-                  <option value="กล้องวงจรปิด (CCTV) / ระบบบันทึกภาพ">กล้องวงจรปิด (CCTV) / ระบบบันทึกภาพ</option>
-                  <option value="ซอฟต์แวร์ / โปรแกรม">ซอฟต์แวร์ / โปรแกรม</option>
-                  <option value="อุปกรณ์เสริม (เมาส์ คีย์บอร์ด ฯลฯ)">อุปกรณ์เสริม (เมาส์ คีย์บอร์ด ฯลฯ)</option>
-                  <option value="อื่นๆ">อื่นๆ</option>
+                  <option value="เธเธญเธกเธเธดเธงเน€เธ•เธญเธฃเน / เนเธเนเธ•เธเธธเนเธ">เธเธญเธกเธเธดเธงเน€เธ•เธญเธฃเน / เนเธเนเธ•เธเธธเนเธ</option>
+                  <option value="เธฃเธฐเธเธเน€เธเธฃเธทเธญเธเนเธฒเธข / เธญเธดเธเน€เธ—เธญเธฃเนเน€เธเนเธ•">เธฃเธฐเธเธเน€เธเธฃเธทเธญเธเนเธฒเธข / เธญเธดเธเน€เธ—เธญเธฃเนเน€เธเนเธ•</option>
+                  <option value="เน€เธเธฃเธทเนเธญเธเธเธดเธกเธเน (Printer) / เธซเธกเธถเธเธเธดเธกเธเน">เน€เธเธฃเธทเนเธญเธเธเธดเธกเธเน (Printer) / เธซเธกเธถเธเธเธดเธกเธเน</option>
+                  <option value="เนเธเธฃเน€เธเธเน€เธ•เธญเธฃเน (Projector)">เนเธเธฃเน€เธเธเน€เธ•เธญเธฃเน (Projector)</option>
+                  <option value="เธเธฅเนเธญเธเธงเธเธเธฃเธเธดเธ” (CCTV) / เธฃเธฐเธเธเธเธฑเธเธ—เธถเธเธ เธฒเธ">เธเธฅเนเธญเธเธงเธเธเธฃเธเธดเธ” (CCTV) / เธฃเธฐเธเธเธเธฑเธเธ—เธถเธเธ เธฒเธ</option>
+                  <option value="เธเธญเธเธ•เนเนเธงเธฃเน / เนเธเธฃเนเธเธฃเธก">เธเธญเธเธ•เนเนเธงเธฃเน / เนเธเธฃเนเธเธฃเธก</option>
+                  <option value="เธญเธธเธเธเธฃเธ“เนเน€เธชเธฃเธดเธก (เน€เธกเธฒเธชเน เธเธตเธขเนเธเธญเธฃเนเธ” เธฏเธฅเธฏ)">เธญเธธเธเธเธฃเธ“เนเน€เธชเธฃเธดเธก (เน€เธกเธฒเธชเน เธเธตเธขเนเธเธญเธฃเนเธ” เธฏเธฅเธฏ)</option>
+                  <option value="เธญเธทเนเธเน">เธญเธทเนเธเน</option>
                 </select>
               </div>
 
@@ -1393,37 +1402,38 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="sm:col-span-2">
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่/เวลาที่พบปัญหา <span class="text-slate-400 font-normal">(ถ้าจำได้)</span></label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธงเธฑเธเธ—เธตเน/เน€เธงเธฅเธฒเธ—เธตเนเธเธเธเธฑเธเธซเธฒ <span class="text-slate-400 font-normal">(เธ–เนเธฒเธเธณเนเธ”เน)</span></label>
                   <input type="datetime-local" id="itIncidentDate"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดปัญหา <span class="text-rose-500">*</span></label>
-                <textarea id="itDetail" rows="3" placeholder="บอกรายละเอียดเพิ่มเติม เช่น อาการที่พบ หรือข้อความ Error"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ <span class="text-rose-500">*</span></label>
+                <textarea id="itDetail" rows="3" placeholder="เธเธญเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เน€เธเธดเนเธกเน€เธ•เธดเธก เน€เธเนเธ เธญเธฒเธเธฒเธฃเธ—เธตเนเธเธ เธซเธฃเธทเธญเธเนเธญเธเธงเธฒเธก Error"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm" required></textarea>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อกลับ</label>
-                <input type="text" id="itContact" placeholder="เช่น 081-234-5678 หรือ LINE ID"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน เธซเธฃเธทเธญเธเนเธญเธเธ—เธฒเธเธ•เธดเธ”เธ•เนเธญเธเธฅเธฑเธ</label>
+                <input type="text" id="itContact" placeholder="เน€เธเนเธ 081-234-5678 เธซเธฃเธทเธญ LINE ID"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รูปภาพประกอบ (ถ้ามี)</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธนเธเธ เธฒเธเธเธฃเธฐเธเธญเธ (เธ–เนเธฒเธกเธต)</label>
                 <input type="file" id="itFile" accept="image/*" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#e0f2fe] file:text-[#0ea5e9] hover:file:bg-[#0ea5e9] hover:file:text-white file:transition-colors">
               </div>
 
               <button type="button" onclick="submitItRepair()" id="btnSubmitItRepair"
                 class="w-full bg-[#0ea5e9] hover:bg-[#0284c7] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
-                <i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหาไอที</span>
+                <i class="fa-solid fa-paper-plane"></i> <span>เธชเนเธเนเธเนเธเธเธฑเธเธซเธฒเนเธญเธ—เธต</span>
               </button>
             </form>
           </div>
         </div>
       </div>
+
 
       <div id="page-master-data" class="page-section">
         <div class="max-w-7xl mx-auto">
@@ -1431,52 +1441,52 @@
             <div>
               <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-database text-[#265D5A]"></i> Master
                 Data</h1>
-              <p class="text-sm text-slate-500">ข้อมูลกลางที่ใช้ในแบบฟอร์มและการจัดสรรงาน</p>
+              <p class="text-sm text-slate-500">เธเนเธญเธกเธนเธฅเธเธฅเธฒเธเธ—เธตเนเนเธเนเนเธเนเธเธเธเธญเธฃเนเธกเนเธฅเธฐเธเธฒเธฃเธเธฑเธ”เธชเธฃเธฃเธเธฒเธ</p>
             </div><button onclick="loadMasterData()" class="bg-white border px-4 py-2 rounded-xl text-sm font-bold"><i
-                class="fa-solid fa-rotate"></i> รีเฟรช</button>
+                class="fa-solid fa-rotate"></i> เธฃเธตเน€เธเธฃเธ</button>
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div class="bg-white rounded-2xl border p-5">
-              <h3 class="font-bold mb-3">สถานที่ / ห้อง</h3>
+              <h3 class="font-bold mb-3">เธชเธ–เธฒเธเธ—เธตเน / เธซเนเธญเธ</h3>
               <div class="flex gap-2 mb-3"><input id="md-location-name" class="flex-1 border rounded-xl p-2.5"
-                  placeholder="ชื่อสถานที่"><select id="md-location-dept" class="border rounded-xl p-2.5">
-                  <option>โรงเรียน</option>
-                  <option>วิทยาลัย</option>
+                  placeholder="เธเธทเนเธญเธชเธ–เธฒเธเธ—เธตเน"><select id="md-location-dept" class="border rounded-xl p-2.5">
+                  <option>เนเธฃเธเน€เธฃเธตเธขเธ</option>
+                  <option>เธงเธดเธ—เธขเธฒเธฅเธฑเธข</option>
                 </select></div><button onclick="addMaster('location')"
-                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เพิ่มสถานที่</button>
+                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เน€เธเธดเนเธกเธชเธ–เธฒเธเธ—เธตเน</button>
               <div id="md-locations" class="mt-4 space-y-2 max-h-72 overflow-auto"></div>
             </div>
             <div class="bg-white rounded-2xl border p-5">
-              <h3 class="font-bold mb-3">โครงการ</h3>
+              <h3 class="font-bold mb-3">เนเธเธฃเธเธเธฒเธฃ</h3>
               <div class="flex gap-2 mb-3"><input id="md-project-name" class="flex-1 border rounded-xl p-2.5"
-                  placeholder="ชื่อโครงการ"><select id="md-project-dept" class="border rounded-xl p-2.5">
-                  <option>โรงเรียน</option>
-                  <option>วิทยาลัย</option>
+                  placeholder="เธเธทเนเธญเนเธเธฃเธเธเธฒเธฃ"><select id="md-project-dept" class="border rounded-xl p-2.5">
+                  <option>เนเธฃเธเน€เธฃเธตเธขเธ</option>
+                  <option>เธงเธดเธ—เธขเธฒเธฅเธฑเธข</option>
                 </select></div><button onclick="addMaster('project')"
-                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เพิ่มโครงการ</button>
+                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เน€เธเธดเนเธกเนเธเธฃเธเธเธฒเธฃ</button>
               <div id="md-projects" class="mt-4 space-y-2 max-h-72 overflow-auto"></div>
             </div>
             <div class="bg-white rounded-2xl border p-5">
-              <h3 class="font-bold mb-3">ช่าง / ผู้รับผิดชอบ</h3>
+              <h3 class="font-bold mb-3">เธเนเธฒเธ / เธเธนเนเธฃเธฑเธเธเธดเธ”เธเธญเธ</h3>
               <div class="space-y-2"><input id="md-mechanic-name" class="w-full border rounded-xl p-2.5"
-                  placeholder="ชื่อช่าง"><input id="md-mechanic-phone" class="w-full border rounded-xl p-2.5"
-                  placeholder="โทรศัพท์"><input id="md-mechanic-skills" class="w-full border rounded-xl p-2.5"
-                  placeholder="ทักษะ เช่น ไฟฟ้า, แอร์"></div><button onclick="addMaster('mechanic')"
-                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold mt-3">เพิ่มช่าง</button>
+                  placeholder="เธเธทเนเธญเธเนเธฒเธ"><input id="md-mechanic-phone" class="w-full border rounded-xl p-2.5"
+                  placeholder="เนเธ—เธฃเธจเธฑเธเธ—เน"><input id="md-mechanic-skills" class="w-full border rounded-xl p-2.5"
+                  placeholder="เธ—เธฑเธเธฉเธฐ เน€เธเนเธ เนเธเธเนเธฒ, เนเธญเธฃเน"></div><button onclick="addMaster('mechanic')"
+                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold mt-3">เน€เธเธดเนเธกเธเนเธฒเธ</button>
               <div id="md-mechanics" class="mt-4 space-y-2 max-h-72 overflow-auto"></div>
             </div>
           </div>
           <div class="mt-8 border-t pt-8">
-            <h2 class="text-xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-bell text-[#265D5A]"></i> ตั้งค่าระบบแจ้งเตือน (Notification Settings)</h2>
+            <h2 class="text-xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-bell text-[#265D5A]"></i> เธ•เธฑเนเธเธเนเธฒเธฃเธฐเธเธเนเธเนเธเน€เธ•เธทเธญเธ (Notification Settings)</h2>
             <div class="bg-white rounded-2xl border p-5 max-w-md">
-              <h3 class="font-bold text-slate-700 mb-2">แจ้งเตือนงานค้าง (Overdue Notification)</h3>
-              <p class="text-xs text-slate-500 mb-4">กำหนดจำนวนวันที่งานค้างสถานะ "รอดำเนินการ" ก่อนระบบจะส่ง LINE แจ้งเตือนแอดมิน</p>
+              <h3 class="font-bold text-slate-700 mb-2">เนเธเนเธเน€เธ•เธทเธญเธเธเธฒเธเธเนเธฒเธ (Overdue Notification)</h3>
+              <p class="text-xs text-slate-500 mb-4">เธเธณเธซเธเธ”เธเธณเธเธงเธเธงเธฑเธเธ—เธตเนเธเธฒเธเธเนเธฒเธเธชเธ–เธฒเธเธฐ "เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ" เธเนเธญเธเธฃเธฐเธเธเธเธฐเธชเนเธ LINE เนเธเนเธเน€เธ•เธทเธญเธเนเธญเธ”เธกเธดเธ</p>
               <div class="flex items-center gap-3">
                 <input type="number" id="md-overdue-days" class="w-24 border rounded-xl p-2.5 text-center font-bold text-slate-800" min="1" max="30" value="3">
-                <span class="text-slate-600 font-medium">วัน</span>
+                <span class="text-slate-600 font-medium">เธงเธฑเธ</span>
               </div>
               <button onclick="saveOverdueSettings()" class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold mt-4 shadow-sm">
-                <i class="fa-solid fa-save mr-1"></i> บันทึกการตั้งค่า
+                <i class="fa-solid fa-save mr-1"></i> เธเธฑเธเธ—เธถเธเธเธฒเธฃเธ•เธฑเนเธเธเนเธฒ
               </button>
             </div>
           </div>
@@ -1486,53 +1496,54 @@
 
 
 
+
       <div id="page-project-form" class="page-section hidden">
         <div class="flex items-center justify-center min-h-[70vh] py-6">
           <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
             <button onclick="nav('page-home')"
               class="text-[#8b5cf6] font-bold mb-4 hover:text-[#7c3aed] transition-colors text-sm inline-flex items-center gap-1.5">
-              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+              <i class="fa-solid fa-arrow-left"></i> <span>เธเธฅเธฑเธเธซเธเนเธฒเธซเธฅเธฑเธ</span>
             </button>
             <div class="text-center mb-6">
               <div
                 class="w-14 h-14 bg-[#ede9fe] text-[#8b5cf6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
                 <i class="fa-solid fa-building-circle-check"></i>
               </div>
-              <h2 class="text-2xl font-bold text-slate-800">แจ้งโครงการระยะยาว / จัดซื้อ</h2>
-              <p class="text-xs text-slate-500 mt-1">เสนอโครงการปรับปรุงสถานที่ จัดซื้อ หรือโครงการที่ต้องรอผู้อำนวยการอนุมัติ</p>
+              <h2 class="text-2xl font-bold text-slate-800">เนเธเนเธเนเธเธฃเธเธเธฒเธฃเธฃเธฐเธขเธฐเธขเธฒเธง / เธเธฑเธ”เธเธทเนเธญ</h2>
+              <p class="text-xs text-slate-500 mt-1">เน€เธชเธเธญเนเธเธฃเธเธเธฒเธฃเธเธฃเธฑเธเธเธฃเธธเธเธชเธ–เธฒเธเธ—เธตเน เธเธฑเธ”เธเธทเนเธญ เธซเธฃเธทเธญเนเธเธฃเธเธเธฒเธฃเธ—เธตเนเธ•เนเธญเธเธฃเธญเธเธนเนเธญเธณเธเธงเธขเธเธฒเธฃเธญเธเธธเธกเธฑเธ•เธด</p>
             </div>
             <form id="projectForm" class="space-y-4" onsubmit="event.preventDefault(); submitProject();">
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้เสนอโครงการ <span class="text-rose-500">*</span></label>
-                <input type="text" id="projReporter" placeholder="เช่น สมชาย ใจดี"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธทเนเธญเธเธนเนเน€เธชเธเธญเนเธเธฃเธเธเธฒเธฃ <span class="text-rose-500">*</span></label>
+                <input type="text" id="projReporter" placeholder="เน€เธเนเธ เธชเธกเธเธฒเธข เนเธเธ”เธต"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm font-medium"
                   required>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
-                  <input type="text" id="projDepartment" placeholder="ถ้ามี เช่น ฝ่ายบริหารทั่วไป"
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธซเธเนเธงเธขเธเธฒเธ / เนเธเธเธ</label>
+                  <input type="text" id="projDepartment" placeholder="เธ–เนเธฒเธกเธต เน€เธเนเธ เธเนเธฒเธขเธเธฃเธดเธซเธฒเธฃเธ—เธฑเนเธงเนเธ"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm">
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ดำเนินการ</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธชเธ–เธฒเธเธ—เธตเนเธ”เธณเน€เธเธดเธเธเธฒเธฃ</label>
                   <div class="flex gap-2">
-                    <input type="text" id="projLocation" placeholder="เช่น อาคาร 2 หรือ ทั้งโรงเรียน"
+                    <input type="text" id="projLocation" placeholder="เน€เธเนเธ เธญเธฒเธเธฒเธฃ 2 เธซเธฃเธทเธญ เธ—เธฑเนเธเนเธฃเธเน€เธฃเธตเธขเธ"
                       class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm">
                   </div>
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ประเภทโครงการ <span class="text-rose-500">*</span></label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธฃเธฐเน€เธ เธ—เนเธเธฃเธเธเธฒเธฃ <span class="text-rose-500">*</span></label>
                 <select id="projSubject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm font-medium" required>
-                  <option value="ปรับปรุงอาคาร / ทาสี / ต่อเติม">ปรับปรุงอาคาร / ทาสี / ต่อเติม</option>
-                  <option value="ห้องน้ำ / ระบบประปาขนาดใหญ่">ห้องน้ำ / ระบบประปาขนาดใหญ่</option>
-                  <option value="จัดซื้อครุภัณฑ์ / อุปกรณ์ล็อตใหญ่">จัดซื้อครุภัณฑ์ / อุปกรณ์ล็อตใหญ่</option>
-                  <option value="ปรับภูมิทัศน์ / สวน">ปรับภูมิทัศน์ / สวน</option>
-                  <option value="โครงการพิเศษ">โครงการพิเศษ</option>
-                  <option value="อื่นๆ">อื่นๆ</option>
+                  <option value="เธเธฃเธฑเธเธเธฃเธธเธเธญเธฒเธเธฒเธฃ / เธ—เธฒเธชเธต / เธ•เนเธญเน€เธ•เธดเธก">เธเธฃเธฑเธเธเธฃเธธเธเธญเธฒเธเธฒเธฃ / เธ—เธฒเธชเธต / เธ•เนเธญเน€เธ•เธดเธก</option>
+                  <option value="เธซเนเธญเธเธเนเธณ / เธฃเธฐเธเธเธเธฃเธฐเธเธฒเธเธเธฒเธ”เนเธซเธเน">เธซเนเธญเธเธเนเธณ / เธฃเธฐเธเธเธเธฃเธฐเธเธฒเธเธเธฒเธ”เนเธซเธเน</option>
+                  <option value="เธเธฑเธ”เธเธทเนเธญเธเธฃเธธเธ เธฑเธ“เธ‘เน / เธญเธธเธเธเธฃเธ“เนเธฅเนเธญเธ•เนเธซเธเน">เธเธฑเธ”เธเธทเนเธญเธเธฃเธธเธ เธฑเธ“เธ‘เน / เธญเธธเธเธเธฃเธ“เนเธฅเนเธญเธ•เนเธซเธเน</option>
+                  <option value="เธเธฃเธฑเธเธ เธนเธกเธดเธ—เธฑเธจเธเน / เธชเธงเธ">เธเธฃเธฑเธเธ เธนเธกเธดเธ—เธฑเธจเธเน / เธชเธงเธ</option>
+                  <option value="เนเธเธฃเธเธเธฒเธฃเธเธดเน€เธจเธฉ">เนเธเธฃเธเธเธฒเธฃเธเธดเน€เธจเธฉ</option>
+                  <option value="เธญเธทเนเธเน">เธญเธทเนเธเน</option>
                 </select>
               </div>
 
@@ -1540,37 +1551,38 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="sm:col-span-2">
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่ต้องการให้แล้วเสร็จ <span class="text-slate-400 font-normal">(Target Date)</span></label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธงเธฑเธเธ—เธตเนเธ•เนเธญเธเธเธฒเธฃเนเธซเนเนเธฅเนเธงเน€เธชเธฃเนเธ <span class="text-slate-400 font-normal">(Target Date)</span></label>
                   <input type="date" id="projTargetDate"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm">
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดโครงการ / เหตุผลความจำเป็น <span class="text-rose-500">*</span></label>
-                <textarea id="projDetail" rows="3" placeholder="อธิบายสิ่งที่ต้องการทำ เหตุผล และงบประมาณคร่าวๆ (ถ้ามี)"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เนเธเธฃเธเธเธฒเธฃ / เน€เธซเธ•เธธเธเธฅเธเธงเธฒเธกเธเธณเน€เธเนเธ <span class="text-rose-500">*</span></label>
+                <textarea id="projDetail" rows="3" placeholder="เธญเธเธดเธเธฒเธขเธชเธดเนเธเธ—เธตเนเธ•เนเธญเธเธเธฒเธฃเธ—เธณ เน€เธซเธ•เธธเธเธฅ เนเธฅเธฐเธเธเธเธฃเธฐเธกเธฒเธ“เธเธฃเนเธฒเธงเน (เธ–เนเธฒเธกเธต)"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm" required></textarea>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อ</label>
-                <input type="text" id="projContact" placeholder="เช่น 081-234-5678"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน เธซเธฃเธทเธญเธเนเธญเธเธ—เธฒเธเธ•เธดเธ”เธ•เนเธญ</label>
+                <input type="text" id="projContact" placeholder="เน€เธเนเธ 081-234-5678"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#8b5cf6] bg-slate-50 text-sm">
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">เอกสารโครงการ / รูปภาพประกอบ (ถ้ามี)</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เน€เธญเธเธชเธฒเธฃเนเธเธฃเธเธเธฒเธฃ / เธฃเธนเธเธ เธฒเธเธเธฃเธฐเธเธญเธ (เธ–เนเธฒเธกเธต)</label>
                 <input type="file" id="projFile" accept=".pdf,image/*,.doc,.docx" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#ede9fe] file:text-[#8b5cf6] hover:file:bg-[#8b5cf6] hover:file:text-white file:transition-colors">
               </div>
 
               <button type="button" onclick="submitProject()" id="btnSubmitProject"
                 class="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
-                <i class="fa-solid fa-paper-plane"></i> <span>ส่งเสนอโครงการ</span>
+                <i class="fa-solid fa-paper-plane"></i> <span>เธชเนเธเน€เธชเธเธญเนเธเธฃเธเธเธฒเธฃ</span>
               </button>
             </form>
           </div>
         </div>
       </div>
+
 
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
       <div id="page-project-manage" class="page-section hidden">
@@ -1578,125 +1590,126 @@
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-building-circle-check text-sky-600"></i>
-                พิจารณาโครงการระยะยาว</h1>
-              <p class="text-xs text-slate-500 mt-1">งานที่ยังไม่เสร็จจะถูกดันขึ้นด้านบน (ติดดาว ⭐ และป้ายสีแดง)
-                เรียงตามเวลาเก่าไปใหม่ งานที่เสร็จแล้วจะติดป้ายสีฟ้าและดันลงด้านล่าง</p>
+                เธเธดเธเธฒเธฃเธ“เธฒเนเธเธฃเธเธเธฒเธฃเธฃเธฐเธขเธฐเธขเธฒเธง</h1>
+              <p class="text-xs text-slate-500 mt-1">เธเธฒเธเธ—เธตเนเธขเธฑเธเนเธกเนเน€เธชเธฃเนเธเธเธฐเธ–เธนเธเธ”เธฑเธเธเธถเนเธเธ”เนเธฒเธเธเธ (เธ•เธดเธ”เธ”เธฒเธง โญ เนเธฅเธฐเธเนเธฒเธขเธชเธตเนเธ”เธ)
+                เน€เธฃเธตเธขเธเธ•เธฒเธกเน€เธงเธฅเธฒเน€เธเนเธฒเนเธเนเธซเธกเน เธเธฒเธเธ—เธตเนเน€เธชเธฃเนเธเนเธฅเนเธงเธเธฐเธ•เธดเธ”เธเนเธฒเธขเธชเธตเธเนเธฒเนเธฅเธฐเธ”เธฑเธเธฅเธเธ”เนเธฒเธเธฅเนเธฒเธ</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
               <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                 <input type="text" oninput="window.currentAdvFilters['project'].search = this.value; window.applyAdvFilters('project');"
                   class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-full md:w-64"
-                  placeholder="ค้นหาจากรายละเอียดปัญหา...">
+                  placeholder="เธเนเธเธซเธฒเธเธฒเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ...">
               </div>
               <button onclick="refreshAdvancedTasks()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
-                  class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
-              <button onclick="exportTableToCSV('projectBody', 'รายงานโครงการ.csv')"
+                  class="fa-solid fa-rotate mr-1"></i> เธฃเธตเน€เธเธฃเธ</button>
+              <button onclick="exportTableToCSV('projectBody', 'เธฃเธฒเธขเธเธฒเธเนเธเธฃเธเธเธฒเธฃ.csv')"
                 class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold text-emerald-700 hover:bg-emerald-100 shadow-sm transition-colors hidden sm:block"><i
-                  class="fa-solid fa-file-csv mr-1"></i> ส่งออก CSV</button>
+                  class="fa-solid fa-file-csv mr-1"></i> เธชเนเธเธญเธญเธ CSV</button>
             </div>
           </div>
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
-    <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
-    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
-    <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn ml-1" onclick="toggleFakeCheckbox(event, this.querySelector('div'))"><div class="w-4 h-4 border-2 border-slate-400 rounded transition-colors"></div></div>
+    <div class="gmail-toolbar-btn" title="เธฃเธตเน€เธเธฃเธ" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="เน€เธเธดเนเธกเน€เธ•เธดเธก"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
-    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
+    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of เธซเธฅเธฒเธขเธฃเธฒเธขเธเธฒเธฃ</span>
   </div>
   <div class="flex flex-wrap items-center gap-3 mb-0 bg-transparent p-1 rounded-xl hidden">
-            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> กรองข้อมูล:</span>
+            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> เธเธฃเธญเธเธเนเธญเธกเธนเธฅ:</span>
             <select onchange="window.currentAdvFilters['project'].date = this.value; window.applyAdvFilters('project');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
-              <option value="">ทุกช่วงเวลา</option>
-              <option value="today">วันนี้</option>
-              <option value="week">สัปดาห์นี้</option>
-              <option value="month">เดือนนี้</option>
+              <option value="">เธ—เธธเธเธเนเธงเธเน€เธงเธฅเธฒ</option>
+              <option value="today">เธงเธฑเธเธเธตเน</option>
+              <option value="week">เธชเธฑเธเธ”เธฒเธซเนเธเธตเน</option>
+              <option value="month">เน€เธ”เธทเธญเธเธเธตเน</option>
             </select>
-            <input type="text" oninput="window.currentAdvFilters['project'].reporter = this.value; window.applyAdvFilters('project');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-32 sm:w-40 bg-white" placeholder="ชื่อผู้แจ้ง...">
+            <input type="text" oninput="window.currentAdvFilters['project'].reporter = this.value; window.applyAdvFilters('project');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-32 sm:w-40 bg-white" placeholder="เธเธทเนเธญเธเธนเนเนเธเนเธ...">
           </div>
           
           <div class="flex gap-2 border-b border-slate-200 mb-4 overflow-x-auto" id="projectManageTabs">
-            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAdvTab('project', 'all', this)">ทั้งหมด</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('project', 'pending', this)">รอดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('project', 'progress', this)">กำลังดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('project', 'done', this)">เสร็จสิ้น</button>
+            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAdvTab('project', 'all', this)">เธ—เธฑเนเธเธซเธกเธ”</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('project', 'pending', this)">เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('project', 'progress', this)">เธเธณเธฅเธฑเธเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('project', 'done', this)">เน€เธชเธฃเนเธเธชเธดเนเธ</button>
           </div>
 
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div id="projectBody" class="flex flex-col divide-y divide-slate-100">
-              <div class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</div>
+              <div class="p-8 text-center text-slate-500">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</div>
             </div>
           </div>
         </div>
       </div>
+
 
       <div id="page-repair-form" class="page-section">
         <div class="flex items-center justify-center min-h-[70vh] py-6">
           <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
             <button onclick="nav('page-home')"
               class="text-[#265D5A] font-bold mb-4 hover:text-[#1a3f3d] transition-colors text-sm inline-flex items-center gap-1.5">
-              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+              <i class="fa-solid fa-arrow-left"></i> <span>เธเธฅเธฑเธเธซเธเนเธฒเธซเธฅเธฑเธ</span>
             </button>
             <div class="text-center mb-6">
               <div
                 class="w-14 h-14 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
                 <i class="fa-solid fa-screwdriver-wrench"></i>
               </div>
-              <h2 class="text-2xl font-bold text-slate-800">แจ้งปัญหาอาคารสถานที่</h2>
-              <p class="text-xs text-slate-500 mt-1">กรอกข้อมูลสั้น ๆ เจ้าหน้าที่จะได้รับแจ้งและเข้าดำเนินการทันที</p>
+              <h2 class="text-2xl font-bold text-slate-800">เนเธเนเธเธเธฑเธเธซเธฒเธญเธฒเธเธฒเธฃเธชเธ–เธฒเธเธ—เธตเน</h2>
+              <p class="text-xs text-slate-500 mt-1">เธเธฃเธญเธเธเนเธญเธกเธนเธฅเธชเธฑเนเธ เน เน€เธเนเธฒเธซเธเนเธฒเธ—เธตเนเธเธฐเนเธ”เนเธฃเธฑเธเนเธเนเธเนเธฅเธฐเน€เธเนเธฒเธ”เธณเน€เธเธดเธเธเธฒเธฃเธ—เธฑเธเธ—เธต</p>
             </div>
             <form id="repairForm" class="space-y-4" onsubmit="event.preventDefault(); submitRepair();">
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-rose-500">*</span></label>
-                <input type="text" id="reporter" placeholder="เช่น สมชาย ใจดี"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธทเนเธญเธเธนเนเนเธเนเธ <span class="text-rose-500">*</span></label>
+                <input type="text" id="reporter" placeholder="เน€เธเนเธ เธชเธกเธเธฒเธข เนเธเธ”เธต"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm font-medium"
                   required>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
-                  <input type="text" id="department" placeholder="ถ้ามี เช่น ฝ่ายวิชาการ"
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธซเธเนเธงเธขเธเธฒเธ / เนเธเธเธ</label>
+                  <input type="text" id="department" placeholder="เธ–เนเธฒเธกเธต เน€เธเนเธ เธเนเธฒเธขเธงเธดเธเธฒเธเธฒเธฃ"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ / ห้อง</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธชเธ–เธฒเธเธ—เธตเน / เธซเนเธญเธ</label>
                   <div class="flex gap-2">
                     <select id="repair_inst" class="w-1/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm font-medium">
-                      <option value="" disabled selected>สถาบัน</option>
-                      <option value="วพบ.">วพบ.</option>
-                      <option value="ศษ.">ศษ.</option>
+                      <option value="" disabled selected>เธชเธ–เธฒเธเธฑเธ</option>
+                      <option value="เธงเธเธ.">เธงเธเธ.</option>
+                      <option value="เธจเธฉ.">เธจเธฉ.</option>
                     </select>
-                    <input type="text" id="repair_location" placeholder="เช่น ห้อง 202, อาคาร 3"
+                    <input type="text" id="repair_location" placeholder="เน€เธเนเธ เธซเนเธญเธ 202, เธญเธฒเธเธฒเธฃ 3"
                       class="w-2/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
                   </div>
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ปัญหาเรื่องอะไร <span class="text-rose-500">*</span></label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธฑเธเธซเธฒเน€เธฃเธทเนเธญเธเธญเธฐเนเธฃ <span class="text-rose-500">*</span></label>
                 <select id="subject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm font-medium" required>
-                  <!-- หมวดสถาปัตย์ / โครงสร้าง -->
-                  <option value="ประตู / หน้าต่าง / กลอนมือจับ">ประตู / หน้าต่าง / กลอนมือจับ</option>
-                  <option value="ม่าน / ราวม่าน">ม่าน / ราวม่าน</option>
-                  <option value="หลังคา / มีน้ำรั่วซึม">หลังคา / มีน้ำรั่วซึม</option>
-                  <option value="งานโครงสร้าง / ผนัง / เพดาน">งานโครงสร้าง / ผนัง / เพดาน</option>
+                  <!-- เธซเธกเธงเธ”เธชเธ–เธฒเธเธฑเธ•เธขเน / เนเธเธฃเธเธชเธฃเนเธฒเธ -->
+                  <option value="เธเธฃเธฐเธ•เธน / เธซเธเนเธฒเธ•เนเธฒเธ / เธเธฅเธญเธเธกเธทเธญเธเธฑเธ">เธเธฃเธฐเธ•เธน / เธซเธเนเธฒเธ•เนเธฒเธ / เธเธฅเธญเธเธกเธทเธญเธเธฑเธ</option>
+                  <option value="เธกเนเธฒเธ / เธฃเธฒเธงเธกเนเธฒเธ">เธกเนเธฒเธ / เธฃเธฒเธงเธกเนเธฒเธ</option>
+                  <option value="เธซเธฅเธฑเธเธเธฒ / เธกเธตเธเนเธณเธฃเธฑเนเธงเธเธถเธก">เธซเธฅเธฑเธเธเธฒ / เธกเธตเธเนเธณเธฃเธฑเนเธงเธเธถเธก</option>
+                  <option value="เธเธฒเธเนเธเธฃเธเธชเธฃเนเธฒเธ / เธเธเธฑเธ / เน€เธเธ”เธฒเธ">เธเธฒเธเนเธเธฃเธเธชเธฃเนเธฒเธ / เธเธเธฑเธ / เน€เธเธ”เธฒเธ</option>
                   
-                  <!-- หมวดไฟฟ้า -->
-                  <option value="สวิตช์ / ปลั๊กไฟ / สายไฟ">สวิตช์ / ปลั๊กไฟ / สายไฟ</option>
-                  <option value="หลอดไฟ / โคมไฟแสงสว่าง">หลอดไฟ / โคมไฟแสงสว่าง</option>
-                  <option value="พัดลม / พัดลมดูดอากาศ">พัดลม / พัดลมดูดอากาศ</option>
-                  <option value="แอร์ / ระบบปรับอากาศ">แอร์ / ระบบปรับอากาศ</option>
+                  <!-- เธซเธกเธงเธ”เนเธเธเนเธฒ -->
+                  <option value="เธชเธงเธดเธ•เธเน / เธเธฅเธฑเนเธเนเธ / เธชเธฒเธขเนเธ">เธชเธงเธดเธ•เธเน / เธเธฅเธฑเนเธเนเธ / เธชเธฒเธขเนเธ</option>
+                  <option value="เธซเธฅเธญเธ”เนเธ / เนเธเธกเนเธเนเธชเธเธชเธงเนเธฒเธ">เธซเธฅเธญเธ”เนเธ / เนเธเธกเนเธเนเธชเธเธชเธงเนเธฒเธ</option>
+                  <option value="เธเธฑเธ”เธฅเธก / เธเธฑเธ”เธฅเธกเธ”เธนเธ”เธญเธฒเธเธฒเธจ">เธเธฑเธ”เธฅเธก / เธเธฑเธ”เธฅเธกเธ”เธนเธ”เธญเธฒเธเธฒเธจ</option>
+                  <option value="เนเธญเธฃเน / เธฃเธฐเธเธเธเธฃเธฑเธเธญเธฒเธเธฒเธจ">เนเธญเธฃเน / เธฃเธฐเธเธเธเธฃเธฑเธเธญเธฒเธเธฒเธจ</option>
                   
-                  <!-- หมวดห้องน้ำ และประปา -->
-                  <option value="ระบบประปา / ท่อน้ำรั่ว">ระบบประปา / ท่อน้ำรั่ว</option>
-                  <option value="ชักโครก / สุขภัณฑ์อุดตัน">ชักโครก / สุขภัณฑ์อุดตัน</option>
-                  <option value="หัวฉีดชำระ / สายฉีด">หัวฉีดชำระ / สายฉีด</option>
-                  <option value="อ่างล้างหน้า / ก๊อกน้ำ">อ่างล้างหน้า / ก๊อกน้ำ</option>
-                  <option value="พื้น / ผนัง / ความสะอาดห้องน้ำ">พื้น / ผนัง / ความสะอาดห้องน้ำ</option>
+                  <!-- เธซเธกเธงเธ”เธซเนเธญเธเธเนเธณ เนเธฅเธฐเธเธฃเธฐเธเธฒ -->
+                  <option value="เธฃเธฐเธเธเธเธฃเธฐเธเธฒ / เธ—เนเธญเธเนเธณเธฃเธฑเนเธง">เธฃเธฐเธเธเธเธฃเธฐเธเธฒ / เธ—เนเธญเธเนเธณเธฃเธฑเนเธง</option>
+                  <option value="เธเธฑเธเนเธเธฃเธ / เธชเธธเธเธ เธฑเธ“เธ‘เนเธญเธธเธ”เธ•เธฑเธ">เธเธฑเธเนเธเธฃเธ / เธชเธธเธเธ เธฑเธ“เธ‘เนเธญเธธเธ”เธ•เธฑเธ</option>
+                  <option value="เธซเธฑเธงเธเธตเธ”เธเธณเธฃเธฐ / เธชเธฒเธขเธเธตเธ”">เธซเธฑเธงเธเธตเธ”เธเธณเธฃเธฐ / เธชเธฒเธขเธเธตเธ”</option>
+                  <option value="เธญเนเธฒเธเธฅเนเธฒเธเธซเธเนเธฒ / เธเนเธญเธเธเนเธณ">เธญเนเธฒเธเธฅเนเธฒเธเธซเธเนเธฒ / เธเนเธญเธเธเนเธณ</option>
+                  <option value="เธเธทเนเธ / เธเธเธฑเธ / เธเธงเธฒเธกเธชเธฐเธญเธฒเธ”เธซเนเธญเธเธเนเธณ">เธเธทเนเธ / เธเธเธฑเธ / เธเธงเธฒเธกเธชเธฐเธญเธฒเธ”เธซเนเธญเธเธเนเธณ</option>
                   
-                  <option value="อื่นๆ">อื่นๆ</option>
+                  <option value="เธญเธทเนเธเน">เธญเธทเนเธเน</option>
                 </select>
               </div>
 
@@ -1704,32 +1717,32 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="sm:col-span-2">
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่/เวลาที่พบปัญหา <span class="text-slate-400 font-normal">(ถ้าจำได้)</span></label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธงเธฑเธเธ—เธตเน/เน€เธงเธฅเธฒเธ—เธตเนเธเธเธเธฑเธเธซเธฒ <span class="text-slate-400 font-normal">(เธ–เนเธฒเธเธณเนเธ”เน)</span></label>
                   <input type="datetime-local" id="incident_date"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดปัญหา <span class="text-rose-500">*</span></label>
-                <textarea id="detail" rows="3" placeholder="บอกรายละเอียดเพิ่มเติม เช่น อาการที่พบ หรือจุดสังเกต"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ <span class="text-rose-500">*</span></label>
+                <textarea id="detail" rows="3" placeholder="เธเธญเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เน€เธเธดเนเธกเน€เธ•เธดเธก เน€เธเนเธ เธญเธฒเธเธฒเธฃเธ—เธตเนเธเธ เธซเธฃเธทเธญเธเธธเธ”เธชเธฑเธเน€เธเธ•"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm" required></textarea>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อกลับ</label>
-                <input type="text" id="contact" placeholder="เช่น 081-234-5678 หรือ LINE ID"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน เธซเธฃเธทเธญเธเนเธญเธเธ—เธฒเธเธ•เธดเธ”เธ•เนเธญเธเธฅเธฑเธ</label>
+                <input type="text" id="contact" placeholder="เน€เธเนเธ 081-234-5678 เธซเธฃเธทเธญ LINE ID"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รูปภาพประกอบ (ถ้ามี)</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธนเธเธ เธฒเธเธเธฃเธฐเธเธญเธ (เธ–เนเธฒเธกเธต)</label>
                 <input type="file" id="file" accept="image/*" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#B0EDE6] file:text-[#265D5A] hover:file:bg-[#265D5A] hover:file:text-white file:transition-colors">
               </div>
 
               <button type="button" onclick="submitRepair()" id="btnSubmitRepair"
                 class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
-                <i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหา</span>
+                <i class="fa-solid fa-paper-plane"></i> <span>เธชเนเธเนเธเนเธเธเธฑเธเธซเธฒ</span>
               </button>
             </form>
           </div>
@@ -1737,32 +1750,33 @@
       </div>
 
 
+
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
-﻿      <div id="page-teacher-av-profile" class="page-section">
+๏ปฟ      <div id="page-teacher-av-profile" class="page-section">
         <div class="max-w-6xl mx-auto">
           <div
             class="bg-gradient-to-r from-[#FF5F5F] to-[#8F1C26] text-white p-6 md:p-8 rounded-3xl shadow-sm mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div class="text-xs uppercase tracking-widest text-white/70 font-semibold mb-1">ระบบสมาชิกครูผู้สอน</div>
-              <h1 class="text-3xl font-bold" id="profile-teacher-av-name">ประวัติการขอยืมอุปกรณ์โสตฯ</h1>
-              <p class="text-white/80 text-sm mt-1">ติดตามสถานะคำขอยืมอุปกรณ์ และประวัติการคืนอุปกรณ์โสตทัศนูปกรณ์</p>
+              <div class="text-xs uppercase tracking-widest text-white/70 font-semibold mb-1">เธฃเธฐเธเธเธชเธกเธฒเธเธดเธเธเธฃเธนเธเธนเนเธชเธญเธ</div>
+              <h1 class="text-3xl font-bold" id="profile-teacher-av-name">เธเธฃเธฐเธงเธฑเธ•เธดเธเธฒเธฃเธเธญเธขเธทเธกเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธฏ</h1>
+              <p class="text-white/80 text-sm mt-1">เธ•เธดเธ”เธ•เธฒเธกเธชเธ–เธฒเธเธฐเธเธณเธเธญเธขเธทเธกเธญเธธเธเธเธฃเธ“เน เนเธฅเธฐเธเธฃเธฐเธงเธฑเธ•เธดเธเธฒเธฃเธเธทเธเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธ—เธฑเธจเธเธนเธเธเธฃเธ“เน</p>
             </div>
             <div class="flex gap-2">
               <button onclick="nav('page-av-form')"
                 class="bg-white text-[#FF5F5F] px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#FF5F5F]/10 transition-colors"><i
-                  class="fa-solid fa-microphone-lines mr-1"></i> ยืมอุปกรณ์เพิ่ม</button>
+                  class="fa-solid fa-microphone-lines mr-1"></i> เธขเธทเธกเธญเธธเธเธเธฃเธ“เนเน€เธเธดเนเธก</button>
               <button onclick="handleGlobalLogout()"
                 class="bg-[#1a3f3d] text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#0c2422] transition-colors"><i
-                  class="fa-solid fa-right-from-bracket mr-1"></i> ออกจากระบบ</button>
+                  class="fa-solid fa-right-from-bracket mr-1"></i> เธญเธญเธเธเธฒเธเธฃเธฐเธเธ</button>
             </div>
           </div>
 
           <div class="bg-white rounded-3xl shadow-sm p-6 border border-slate-200">
             <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i
-                class="fa-solid fa-list-check text-[#FF5F5F]"></i> ประวัติรายการขอยืมอุปกรณ์โสตฯ ของคุณครู</h2>
+                class="fa-solid fa-list-check text-[#FF5F5F]"></i> เธเธฃเธฐเธงเธฑเธ•เธดเธฃเธฒเธขเธเธฒเธฃเธเธญเธขเธทเธกเธญเธธเธเธเธฃเธ“เนเนเธชเธ•เธฏ เธเธญเธเธเธธเธ“เธเธฃเธน</h2>
             <div class="overflow-x-auto">
               <div id="teacherAVTaskBody" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="col-span-full p-8 text-center text-slate-500">กำลังโหลดข้อมูลประวัติการยืม...</div>
+                <div class="col-span-full p-8 text-center text-slate-500">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธเธฃเธฐเธงเธฑเธ•เธดเธเธฒเธฃเธขเธทเธก...</div>
               </div>
             </div>
           </div>
@@ -1770,40 +1784,42 @@
       </div>
 
 
+
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
-﻿      <div id="page-teacher-profile" class="page-section">
+๏ปฟ      <div id="page-teacher-profile" class="page-section">
         <div class="max-w-6xl mx-auto">
           <div
             class="bg-gradient-to-r from-[#265D5A] to-[#1a3f3d] text-white p-6 md:p-8 rounded-3xl shadow-sm mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div class="text-xs uppercase tracking-widest text-[#B0EDE6] font-semibold mb-1">ระบบสมาชิกครูผู้สอน
+              <div class="text-xs uppercase tracking-widest text-[#B0EDE6] font-semibold mb-1">เธฃเธฐเธเธเธชเธกเธฒเธเธดเธเธเธฃเธนเธเธนเนเธชเธญเธ
               </div>
-              <h1 class="text-3xl font-bold" id="profile-teacher-name">ยินดีต้อนรับ, คุณครู</h1>
-              <p class="text-[#B0EDE6] text-sm mt-1">ตรวจสอบประวัติการแจ้งซ่อม และติดตามสถานะความคืบหน้าแบบ Real-time
+              <h1 class="text-3xl font-bold" id="profile-teacher-name">เธขเธดเธเธ”เธตเธ•เนเธญเธเธฃเธฑเธ, เธเธธเธ“เธเธฃเธน</h1>
+              <p class="text-[#B0EDE6] text-sm mt-1">เธ•เธฃเธงเธเธชเธญเธเธเธฃเธฐเธงเธฑเธ•เธดเธเธฒเธฃเนเธเนเธเธเนเธญเธก เนเธฅเธฐเธ•เธดเธ”เธ•เธฒเธกเธชเธ–เธฒเธเธฐเธเธงเธฒเธกเธเธทเธเธซเธเนเธฒเนเธเธ Real-time
               </p>
             </div>
             <div class="flex gap-2">
               <button onclick="nav('page-repair-form')"
                 class="bg-white text-[#265D5A] px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#B0EDE6] transition-colors"><i
-                  class="fa-solid fa-wrench mr-1"></i> แจ้งซ่อมใหม่</button>
+                  class="fa-solid fa-wrench mr-1"></i> เนเธเนเธเธเนเธญเธกเนเธซเธกเน</button>
               <button onclick="handleGlobalLogout()"
                 class="bg-[#1a3f3d] text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#0c2422] transition-colors"><i
-                  class="fa-solid fa-right-from-bracket mr-1"></i> ออกจากระบบ</button>
+                  class="fa-solid fa-right-from-bracket mr-1"></i> เธญเธญเธเธเธฒเธเธฃเธฐเธเธ</button>
             </div>
           </div>
 
           <div class="bg-white rounded-3xl shadow-sm p-6 border border-slate-200">
             <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i
-                class="fa-solid fa-clock-rotate-left text-[#265D5A]"></i> ประวัติและสถานะเรื่องแจ้งซ่อมอาคารของคุณครู
+                class="fa-solid fa-clock-rotate-left text-[#265D5A]"></i> เธเธฃเธฐเธงเธฑเธ•เธดเนเธฅเธฐเธชเธ–เธฒเธเธฐเน€เธฃเธทเนเธญเธเนเธเนเธเธเนเธญเธกเธญเธฒเธเธฒเธฃเธเธญเธเธเธธเธ“เธเธฃเธน
             </h2>
             <div class="overflow-x-auto">
               <div id="teacherTaskBody" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="col-span-full p-8 text-center text-slate-500">กำลังโหลดข้อมูลประวัติของคุณครู...</div>
+                <div class="col-span-full p-8 text-center text-slate-500">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธเธฃเธฐเธงเธฑเธ•เธดเธเธญเธเธเธธเธ“เธเธฃเธน...</div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
 
 
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
@@ -1812,59 +1828,60 @@
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-toolbox text-blue-600"></i>
-                จัดการงานซ่อม</h1>
-              <p class="text-xs text-slate-500 mt-1">งานที่ยังไม่เสร็จจะถูกดันขึ้นด้านบน (ติดดาว ⭐ และป้ายสีแดง)
-                เรียงตามเวลาเก่าไปใหม่ งานที่เสร็จแล้วจะติดป้ายสีฟ้าและดันลงด้านล่าง</p>
+                เธเธฑเธ”เธเธฒเธฃเธเธฒเธเธเนเธญเธก</h1>
+              <p class="text-xs text-slate-500 mt-1">เธเธฒเธเธ—เธตเนเธขเธฑเธเนเธกเนเน€เธชเธฃเนเธเธเธฐเธ–เธนเธเธ”เธฑเธเธเธถเนเธเธ”เนเธฒเธเธเธ (เธ•เธดเธ”เธ”เธฒเธง โญ เนเธฅเธฐเธเนเธฒเธขเธชเธตเนเธ”เธ)
+                เน€เธฃเธตเธขเธเธ•เธฒเธกเน€เธงเธฅเธฒเน€เธเนเธฒเนเธเนเธซเธกเน เธเธฒเธเธ—เธตเนเน€เธชเธฃเนเธเนเธฅเนเธงเธเธฐเธ•เธดเธ”เธเนเธฒเธขเธชเธตเธเนเธฒเนเธฅเธฐเธ”เธฑเธเธฅเธเธ”เนเธฒเธเธฅเนเธฒเธ</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
               <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                 <input type="text" oninput="window.currentRepairSearch = this.value; window.renderRepairTable();"
                   class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
-                  placeholder="ค้นหาจากรายละเอียดปัญหา...">
+                  placeholder="เธเนเธเธซเธฒเธเธฒเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ...">
               </div>
               <button onclick="loadBuildingTasks()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
-                  class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
-              <button onclick="exportTableToCSV('taskBody', 'รายงานงานซ่อม.csv')"
+                  class="fa-solid fa-rotate mr-1"></i> เธฃเธตเน€เธเธฃเธ</button>
+              <button onclick="exportTableToCSV('taskBody', 'เธฃเธฒเธขเธเธฒเธเธเธฒเธเธเนเธญเธก.csv')"
                 class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold text-emerald-700 hover:bg-emerald-100 shadow-sm transition-colors hidden sm:block"><i
-                  class="fa-solid fa-file-csv mr-1"></i> ส่งออก CSV</button>
+                  class="fa-solid fa-file-csv mr-1"></i> เธชเนเธเธญเธญเธ CSV</button>
             </div>
           </div>
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
-    <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
-    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="loadBuildingTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
-    <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn ml-1" onclick="toggleFakeCheckbox(event, this.querySelector('div'))"><div class="w-4 h-4 border-2 border-slate-400 rounded transition-colors"></div></div>
+    <div class="gmail-toolbar-btn" title="เธฃเธตเน€เธเธฃเธ" onclick="loadBuildingTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="เน€เธเธดเนเธกเน€เธ•เธดเธก"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
-    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
+    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of เธซเธฅเธฒเธขเธฃเธฒเธขเธเธฒเธฃ</span>
   </div>
   <div class="flex flex-wrap items-center gap-3 mb-0 bg-transparent p-1 rounded-xl hidden">
-            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> กรองข้อมูล:</span>
+            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> เธเธฃเธญเธเธเนเธญเธกเธนเธฅ:</span>
             <select id="repairFilterDate" onchange="window.currentRepairDate = this.value; window.renderRepairTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-              <option value="">ทุกช่วงเวลา</option>
-              <option value="today">วันนี้</option>
-              <option value="week">สัปดาห์นี้</option>
-              <option value="month">เดือนนี้</option>
+              <option value="">เธ—เธธเธเธเนเธงเธเน€เธงเธฅเธฒ</option>
+              <option value="today">เธงเธฑเธเธเธตเน</option>
+              <option value="week">เธชเธฑเธเธ”เธฒเธซเนเธเธตเน</option>
+              <option value="month">เน€เธ”เธทเธญเธเธเธตเน</option>
             </select>
-            <input type="text" id="repairFilterReporter" oninput="window.currentRepairReporter = this.value; window.renderRepairTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="ชื่อผู้แจ้ง...">
-            <input type="text" id="repairFilterLocation" oninput="window.currentRepairLocation = this.value; window.renderRepairTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="สถานที่...">
+            <input type="text" id="repairFilterReporter" oninput="window.currentRepairReporter = this.value; window.renderRepairTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="เธเธทเนเธญเธเธนเนเนเธเนเธ...">
+            <input type="text" id="repairFilterLocation" oninput="window.currentRepairLocation = this.value; window.renderRepairTable();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 sm:w-40 bg-white" placeholder="เธชเธ–เธฒเธเธ—เธตเน...">
           </div>
           
           <div class="flex gap-2 border-b border-slate-200 mb-4 overflow-x-auto" id="repairAdminTabs">
-            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterRepairTab('all', this)">ทั้งหมด</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterRepairTab('pending', this)">รอดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterRepairTab('progress', this)">กำลังดำเนินการ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterRepairTab('done', this)">เสร็จสิ้น</button>
+            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterRepairTab('all', this)">เธ—เธฑเนเธเธซเธกเธ”</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterRepairTab('pending', this)">เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterRepairTab('progress', this)">เธเธณเธฅเธฑเธเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterRepairTab('done', this)">เน€เธชเธฃเนเธเธชเธดเนเธ</button>
           </div>
 
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div id="taskBody" class="flex flex-col divide-y divide-slate-100">
-              <div class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</div>
+              <div class="p-8 text-center text-slate-500">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</div>
             </div>
           </div>
         </div>
       </div>
+
 
 <!-- ================= PAGE: USER MANAGE (Admin) ================= -->
 <div id="page-user-manage" class="page-section hidden">
@@ -1872,11 +1889,11 @@
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-users-gear text-[#265D5A] mr-2"></i>จัดการผู้ใช้ระบบ</h2>
-          <p class="text-sm text-slate-500 mt-1">อนุมัติ, เปลี่ยนสิทธิ์, หรือระงับการใช้งาน</p>
+          <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-users-gear text-[#265D5A] mr-2"></i>เธเธฑเธ”เธเธฒเธฃเธเธนเนเนเธเนเธฃเธฐเธเธ</h2>
+          <p class="text-sm text-slate-500 mt-1">เธญเธเธธเธกเธฑเธ•เธด, เน€เธเธฅเธตเนเธขเธเธชเธดเธ—เธเธดเน, เธซเธฃเธทเธญเธฃเธฐเธเธฑเธเธเธฒเธฃเนเธเนเธเธฒเธ</p>
         </div>
         <button onclick="fetchUsers()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium">
-          <i class="fa-solid fa-rotate-right mr-2"></i>รีเฟรชข้อมูล
+          <i class="fa-solid fa-rotate-right mr-2"></i>เธฃเธตเน€เธเธฃเธเธเนเธญเธกเธนเธฅ
         </button>
       </div>
 
@@ -1884,17 +1901,17 @@
         <table class="w-full text-left text-sm text-slate-600">
           <thead class="bg-slate-50 border-b border-slate-200 text-slate-700">
             <tr>
-              <th class="px-4 py-3 font-semibold">รูป/ชื่อ</th>
-              <th class="px-4 py-3 font-semibold">อีเมล</th>
-              <th class="px-4 py-3 font-semibold">บทบาท (Role)</th>
-              <th class="px-4 py-3 font-semibold">เข้าสู่ระบบล่าสุด</th>
-              <th class="px-4 py-3 font-semibold text-center">จัดการ</th>
+              <th class="px-4 py-3 font-semibold">เธฃเธนเธ/เธเธทเนเธญ</th>
+              <th class="px-4 py-3 font-semibold">เธญเธตเน€เธกเธฅ</th>
+              <th class="px-4 py-3 font-semibold">เธเธ—เธเธฒเธ— (Role)</th>
+              <th class="px-4 py-3 font-semibold">เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเธฅเนเธฒเธชเธธเธ”</th>
+              <th class="px-4 py-3 font-semibold text-center">เธเธฑเธ”เธเธฒเธฃ</th>
             </tr>
           </thead>
           <tbody id="user-manage-tbody" class="divide-y divide-slate-200">
             <tr>
               <td colspan="5" class="px-4 py-8 text-center text-slate-500">
-                <i class="fa-solid fa-spinner fa-spin text-[#265D5A] text-2xl mb-2"></i><br>กำลังโหลดข้อมูล...
+                <i class="fa-solid fa-spinner fa-spin text-[#265D5A] text-2xl mb-2"></i><br>เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...
               </td>
             </tr>
           </tbody>
@@ -1903,6 +1920,7 @@
     </div>
   </div>
 </div>
+
 
 
       <script>
@@ -3934,7 +3952,7 @@ function renderAdvTable(tbodyId, rows, type) {
     const techBadge = advTech && advTech !== '-' ? `<span class="text-[#265D5A] text-[10px] font-bold px-2 py-0.5 bg-teal-50 rounded-full border border-teal-100 ml-2 whitespace-nowrap"><i class="fa-solid fa-wrench text-[8px] mr-0.5"></i>${advTech}</span>` : '';
     return `<div onclick="updateAdvTask('${type}', ${i}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
         <span class="truncate w-full pl-1 flex items-center">${reporter} ${techBadge} ${urgHtml}</span>
       </div>
@@ -4640,7 +4658,7 @@ window.renderRepairTable = function () {
 
     const html = `<div onclick="updateTask(${originalIndex})" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
         <span class="truncate w-full pl-1 flex items-center">${reporter} ${techBadge} ${urgBadge}</span>
       </div>
@@ -4885,7 +4903,7 @@ window.renderAVTable = function () {
 
     return `<div onclick="openAVModal(${originalIndex}, '${st}', '${tech}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-40">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${starIcon.replace(/text-lg/g, 'text-sm').replace(/onclick="[^"]*"/g, (match) => 'onclick="event.stopPropagation(); ' + match.substring(9))}
         <span class="truncate w-full pl-1">${r[1]}</span>
       </div>
@@ -5349,7 +5367,7 @@ window.renderAdvTableFiltered = function(tbodyId, rows, type) {
     
     return `<div onclick="updateAdvTask('${type}', ${originalIndex}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
         <span class="truncate w-full pl-1 flex items-center">${reporter} ${urgBadge}</span>
       </div>
@@ -5381,6 +5399,24 @@ function toggleDesktopSidebar() {
   }
 }
 window.toggleDesktopSidebar = toggleDesktopSidebar;
+
+window.toggleFakeCheckbox = function(event, el) {
+  event.stopPropagation();
+  if (el.classList.contains('bg-[#265D5A]')) {
+    el.classList.remove('bg-[#265D5A]', 'border-[#265D5A]');
+    el.classList.add('bg-white');
+    if(el.classList.contains('border-slate-500')) {
+      el.classList.add('border-slate-300');
+    } else {
+      el.classList.add('border-slate-400'); 
+    }
+    el.innerHTML = '';
+  } else {
+    el.classList.remove('bg-white', 'border-slate-300', 'border-slate-400');
+    el.classList.add('bg-[#265D5A]', 'border-[#265D5A]');
+    el.innerHTML = '<i class="fa-solid fa-check text-white text-[10px] flex items-center justify-center h-full w-full mt-0.5"></i>';
+  }
+};
 
 window.triggerRowAction = function(e, action) {
   e.stopPropagation();

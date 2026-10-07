@@ -1,57 +1,57 @@
-      <div id="page-it-repair" class="page-section hidden">
+﻿      <div id="page-it-repair" class="page-section hidden">
         <div class="flex items-center justify-center min-h-[70vh] py-6">
           <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
             <button onclick="nav('page-home')"
               class="text-[#0ea5e9] font-bold mb-4 hover:text-[#0284c7] transition-colors text-sm inline-flex items-center gap-1.5">
-              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+              <i class="fa-solid fa-arrow-left"></i> <span>เธเธฅเธฑเธเธซเธเนเธฒเธซเธฅเธฑเธ</span>
             </button>
             <div class="text-center mb-6">
               <div
                 class="w-14 h-14 bg-[#e0f2fe] text-[#0ea5e9] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
                 <i class="fa-solid fa-desktop"></i>
               </div>
-              <h2 class="text-2xl font-bold text-slate-800">แจ้งปัญหาด้านไอที</h2>
-              <p class="text-xs text-slate-500 mt-1">แจ้งซ่อมคอมพิวเตอร์ อินเทอร์เน็ต กล้องวงจรปิด หรือระบบสารสนเทศอื่นๆ</p>
+              <h2 class="text-2xl font-bold text-slate-800">เนเธเนเธเธเธฑเธเธซเธฒเธ”เนเธฒเธเนเธญเธ—เธต</h2>
+              <p class="text-xs text-slate-500 mt-1">เนเธเนเธเธเนเธญเธกเธเธญเธกเธเธดเธงเน€เธ•เธญเธฃเน เธญเธดเธเน€เธ—เธญเธฃเนเน€เธเนเธ• เธเธฅเนเธญเธเธงเธเธเธฃเธเธดเธ” เธซเธฃเธทเธญเธฃเธฐเธเธเธชเธฒเธฃเธชเธเน€เธ—เธจเธญเธทเนเธเน</p>
             </div>
             <form id="itRepairForm" class="space-y-4" onsubmit="event.preventDefault(); submitItRepair();">
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-rose-500">*</span></label>
-                <input type="text" id="itReporter" placeholder="เช่น สมชาย ใจดี"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธทเนเธญเธเธนเนเนเธเนเธ <span class="text-rose-500">*</span></label>
+                <input type="text" id="itReporter" placeholder="เน€เธเนเธ เธชเธกเธเธฒเธข เนเธเธ”เธต"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm font-medium"
                   required>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
-                  <input type="text" id="itDepartment" placeholder="ถ้ามี เช่น ฝ่ายวิชาการ"
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธซเธเนเธงเธขเธเธฒเธ / เนเธเธเธ</label>
+                  <input type="text" id="itDepartment" placeholder="เธ–เนเธฒเธกเธต เน€เธเนเธ เธเนเธฒเธขเธงเธดเธเธฒเธเธฒเธฃ"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ / ห้อง</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธชเธ–เธฒเธเธ—เธตเน / เธซเนเธญเธ</label>
                   <div class="flex gap-2">
                     <select id="it_inst" class="w-1/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm font-medium">
-                      <option value="" disabled selected>สถาบัน</option>
-                      <option value="วพบ.">วพบ.</option>
-                      <option value="ศษ.">ศษ.</option>
+                      <option value="" disabled selected>เธชเธ–เธฒเธเธฑเธ</option>
+                      <option value="เธงเธเธ.">เธงเธเธ.</option>
+                      <option value="เธจเธฉ.">เธจเธฉ.</option>
                     </select>
-                    <input type="text" id="itLocation" placeholder="เช่น ห้องพักครู 3"
+                    <input type="text" id="itLocation" placeholder="เน€เธเนเธ เธซเนเธญเธเธเธฑเธเธเธฃเธน 3"
                       class="w-2/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
                   </div>
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ปัญหาเรื่องอะไร <span class="text-rose-500">*</span></label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธฑเธเธซเธฒเน€เธฃเธทเนเธญเธเธญเธฐเนเธฃ <span class="text-rose-500">*</span></label>
                 <select id="itSubject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm font-medium" required>
-                  <option value="คอมพิวเตอร์ / โน้ตบุ๊ก">คอมพิวเตอร์ / โน้ตบุ๊ก</option>
-                  <option value="ระบบเครือข่าย / อินเทอร์เน็ต">ระบบเครือข่าย / อินเทอร์เน็ต</option>
-                  <option value="เครื่องพิมพ์ (Printer) / หมึกพิมพ์">เครื่องพิมพ์ (Printer) / หมึกพิมพ์</option>
-                  <option value="โปรเจคเตอร์ (Projector)">โปรเจคเตอร์ (Projector)</option>
-                  <option value="กล้องวงจรปิด (CCTV) / ระบบบันทึกภาพ">กล้องวงจรปิด (CCTV) / ระบบบันทึกภาพ</option>
-                  <option value="ซอฟต์แวร์ / โปรแกรม">ซอฟต์แวร์ / โปรแกรม</option>
-                  <option value="อุปกรณ์เสริม (เมาส์ คีย์บอร์ด ฯลฯ)">อุปกรณ์เสริม (เมาส์ คีย์บอร์ด ฯลฯ)</option>
-                  <option value="อื่นๆ">อื่นๆ</option>
+                  <option value="เธเธญเธกเธเธดเธงเน€เธ•เธญเธฃเน / เนเธเนเธ•เธเธธเนเธ">เธเธญเธกเธเธดเธงเน€เธ•เธญเธฃเน / เนเธเนเธ•เธเธธเนเธ</option>
+                  <option value="เธฃเธฐเธเธเน€เธเธฃเธทเธญเธเนเธฒเธข / เธญเธดเธเน€เธ—เธญเธฃเนเน€เธเนเธ•">เธฃเธฐเธเธเน€เธเธฃเธทเธญเธเนเธฒเธข / เธญเธดเธเน€เธ—เธญเธฃเนเน€เธเนเธ•</option>
+                  <option value="เน€เธเธฃเธทเนเธญเธเธเธดเธกเธเน (Printer) / เธซเธกเธถเธเธเธดเธกเธเน">เน€เธเธฃเธทเนเธญเธเธเธดเธกเธเน (Printer) / เธซเธกเธถเธเธเธดเธกเธเน</option>
+                  <option value="เนเธเธฃเน€เธเธเน€เธ•เธญเธฃเน (Projector)">เนเธเธฃเน€เธเธเน€เธ•เธญเธฃเน (Projector)</option>
+                  <option value="เธเธฅเนเธญเธเธงเธเธเธฃเธเธดเธ” (CCTV) / เธฃเธฐเธเธเธเธฑเธเธ—เธถเธเธ เธฒเธ">เธเธฅเนเธญเธเธงเธเธเธฃเธเธดเธ” (CCTV) / เธฃเธฐเธเธเธเธฑเธเธ—เธถเธเธ เธฒเธ</option>
+                  <option value="เธเธญเธเธ•เนเนเธงเธฃเน / เนเธเธฃเนเธเธฃเธก">เธเธญเธเธ•เนเนเธงเธฃเน / เนเธเธฃเนเธเธฃเธก</option>
+                  <option value="เธญเธธเธเธเธฃเธ“เนเน€เธชเธฃเธดเธก (เน€เธกเธฒเธชเน เธเธตเธขเนเธเธญเธฃเนเธ” เธฏเธฅเธฏ)">เธญเธธเธเธเธฃเธ“เนเน€เธชเธฃเธดเธก (เน€เธกเธฒเธชเน เธเธตเธขเนเธเธญเธฃเนเธ” เธฏเธฅเธฏ)</option>
+                  <option value="เธญเธทเนเธเน">เธญเธทเนเธเน</option>
                 </select>
               </div>
 
@@ -59,34 +59,35 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="sm:col-span-2">
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่/เวลาที่พบปัญหา <span class="text-slate-400 font-normal">(ถ้าจำได้)</span></label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธงเธฑเธเธ—เธตเน/เน€เธงเธฅเธฒเธ—เธตเนเธเธเธเธฑเธเธซเธฒ <span class="text-slate-400 font-normal">(เธ–เนเธฒเธเธณเนเธ”เน)</span></label>
                   <input type="datetime-local" id="itIncidentDate"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดปัญหา <span class="text-rose-500">*</span></label>
-                <textarea id="itDetail" rows="3" placeholder="บอกรายละเอียดเพิ่มเติม เช่น อาการที่พบ หรือข้อความ Error"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ <span class="text-rose-500">*</span></label>
+                <textarea id="itDetail" rows="3" placeholder="เธเธญเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เน€เธเธดเนเธกเน€เธ•เธดเธก เน€เธเนเธ เธญเธฒเธเธฒเธฃเธ—เธตเนเธเธ เธซเธฃเธทเธญเธเนเธญเธเธงเธฒเธก Error"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm" required></textarea>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อกลับ</label>
-                <input type="text" id="itContact" placeholder="เช่น 081-234-5678 หรือ LINE ID"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน เธซเธฃเธทเธญเธเนเธญเธเธ—เธฒเธเธ•เธดเธ”เธ•เนเธญเธเธฅเธฑเธ</label>
+                <input type="text" id="itContact" placeholder="เน€เธเนเธ 081-234-5678 เธซเธฃเธทเธญ LINE ID"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0ea5e9] bg-slate-50 text-sm">
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รูปภาพประกอบ (ถ้ามี)</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธนเธเธ เธฒเธเธเธฃเธฐเธเธญเธ (เธ–เนเธฒเธกเธต)</label>
                 <input type="file" id="itFile" accept="image/*" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#e0f2fe] file:text-[#0ea5e9] hover:file:bg-[#0ea5e9] hover:file:text-white file:transition-colors">
               </div>
 
               <button type="button" onclick="submitItRepair()" id="btnSubmitItRepair"
                 class="w-full bg-[#0ea5e9] hover:bg-[#0284c7] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
-                <i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหาไอที</span>
+                <i class="fa-solid fa-paper-plane"></i> <span>เธชเนเธเนเธเนเธเธเธฑเธเธซเธฒเนเธญเธ—เธต</span>
               </button>
             </form>
           </div>
         </div>
       </div>
+

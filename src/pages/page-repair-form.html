@@ -1,69 +1,69 @@
-      <div id="page-repair-form" class="page-section">
+﻿      <div id="page-repair-form" class="page-section">
         <div class="flex items-center justify-center min-h-[70vh] py-6">
           <div class="bg-white w-full max-w-2xl rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200">
             <button onclick="nav('page-home')"
               class="text-[#265D5A] font-bold mb-4 hover:text-[#1a3f3d] transition-colors text-sm inline-flex items-center gap-1.5">
-              <i class="fa-solid fa-arrow-left"></i> <span>กลับหน้าหลัก</span>
+              <i class="fa-solid fa-arrow-left"></i> <span>เธเธฅเธฑเธเธซเธเนเธฒเธซเธฅเธฑเธ</span>
             </button>
             <div class="text-center mb-6">
               <div
                 class="w-14 h-14 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
                 <i class="fa-solid fa-screwdriver-wrench"></i>
               </div>
-              <h2 class="text-2xl font-bold text-slate-800">แจ้งปัญหาอาคารสถานที่</h2>
-              <p class="text-xs text-slate-500 mt-1">กรอกข้อมูลสั้น ๆ เจ้าหน้าที่จะได้รับแจ้งและเข้าดำเนินการทันที</p>
+              <h2 class="text-2xl font-bold text-slate-800">เนเธเนเธเธเธฑเธเธซเธฒเธญเธฒเธเธฒเธฃเธชเธ–เธฒเธเธ—เธตเน</h2>
+              <p class="text-xs text-slate-500 mt-1">เธเธฃเธญเธเธเนเธญเธกเธนเธฅเธชเธฑเนเธ เน เน€เธเนเธฒเธซเธเนเธฒเธ—เธตเนเธเธฐเนเธ”เนเธฃเธฑเธเนเธเนเธเนเธฅเธฐเน€เธเนเธฒเธ”เธณเน€เธเธดเธเธเธฒเธฃเธ—เธฑเธเธ—เธต</p>
             </div>
             <form id="repairForm" class="space-y-4" onsubmit="event.preventDefault(); submitRepair();">
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-rose-500">*</span></label>
-                <input type="text" id="reporter" placeholder="เช่น สมชาย ใจดี"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธทเนเธญเธเธนเนเนเธเนเธ <span class="text-rose-500">*</span></label>
+                <input type="text" id="reporter" placeholder="เน€เธเนเธ เธชเธกเธเธฒเธข เนเธเธ”เธต"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm font-medium"
                   required>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยงาน / แผนก</label>
-                  <input type="text" id="department" placeholder="ถ้ามี เช่น ฝ่ายวิชาการ"
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธซเธเนเธงเธขเธเธฒเธ / เนเธเธเธ</label>
+                  <input type="text" id="department" placeholder="เธ–เนเธฒเธกเธต เน€เธเนเธ เธเนเธฒเธขเธงเธดเธเธฒเธเธฒเธฃ"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">สถานที่ / ห้อง</label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธชเธ–เธฒเธเธ—เธตเน / เธซเนเธญเธ</label>
                   <div class="flex gap-2">
                     <select id="repair_inst" class="w-1/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm font-medium">
-                      <option value="" disabled selected>สถาบัน</option>
-                      <option value="วพบ.">วพบ.</option>
-                      <option value="ศษ.">ศษ.</option>
+                      <option value="" disabled selected>เธชเธ–เธฒเธเธฑเธ</option>
+                      <option value="เธงเธเธ.">เธงเธเธ.</option>
+                      <option value="เธจเธฉ.">เธจเธฉ.</option>
                     </select>
-                    <input type="text" id="repair_location" placeholder="เช่น ห้อง 202, อาคาร 3"
+                    <input type="text" id="repair_location" placeholder="เน€เธเนเธ เธซเนเธญเธ 202, เธญเธฒเธเธฒเธฃ 3"
                       class="w-2/3 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
                   </div>
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">ปัญหาเรื่องอะไร <span class="text-rose-500">*</span></label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธฑเธเธซเธฒเน€เธฃเธทเนเธญเธเธญเธฐเนเธฃ <span class="text-rose-500">*</span></label>
                 <select id="subject" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm font-medium" required>
-                  <!-- หมวดสถาปัตย์ / โครงสร้าง -->
-                  <option value="ประตู / หน้าต่าง / กลอนมือจับ">ประตู / หน้าต่าง / กลอนมือจับ</option>
-                  <option value="ม่าน / ราวม่าน">ม่าน / ราวม่าน</option>
-                  <option value="หลังคา / มีน้ำรั่วซึม">หลังคา / มีน้ำรั่วซึม</option>
-                  <option value="งานโครงสร้าง / ผนัง / เพดาน">งานโครงสร้าง / ผนัง / เพดาน</option>
+                  <!-- เธซเธกเธงเธ”เธชเธ–เธฒเธเธฑเธ•เธขเน / เนเธเธฃเธเธชเธฃเนเธฒเธ -->
+                  <option value="เธเธฃเธฐเธ•เธน / เธซเธเนเธฒเธ•เนเธฒเธ / เธเธฅเธญเธเธกเธทเธญเธเธฑเธ">เธเธฃเธฐเธ•เธน / เธซเธเนเธฒเธ•เนเธฒเธ / เธเธฅเธญเธเธกเธทเธญเธเธฑเธ</option>
+                  <option value="เธกเนเธฒเธ / เธฃเธฒเธงเธกเนเธฒเธ">เธกเนเธฒเธ / เธฃเธฒเธงเธกเนเธฒเธ</option>
+                  <option value="เธซเธฅเธฑเธเธเธฒ / เธกเธตเธเนเธณเธฃเธฑเนเธงเธเธถเธก">เธซเธฅเธฑเธเธเธฒ / เธกเธตเธเนเธณเธฃเธฑเนเธงเธเธถเธก</option>
+                  <option value="เธเธฒเธเนเธเธฃเธเธชเธฃเนเธฒเธ / เธเธเธฑเธ / เน€เธเธ”เธฒเธ">เธเธฒเธเนเธเธฃเธเธชเธฃเนเธฒเธ / เธเธเธฑเธ / เน€เธเธ”เธฒเธ</option>
                   
-                  <!-- หมวดไฟฟ้า -->
-                  <option value="สวิตช์ / ปลั๊กไฟ / สายไฟ">สวิตช์ / ปลั๊กไฟ / สายไฟ</option>
-                  <option value="หลอดไฟ / โคมไฟแสงสว่าง">หลอดไฟ / โคมไฟแสงสว่าง</option>
-                  <option value="พัดลม / พัดลมดูดอากาศ">พัดลม / พัดลมดูดอากาศ</option>
-                  <option value="แอร์ / ระบบปรับอากาศ">แอร์ / ระบบปรับอากาศ</option>
+                  <!-- เธซเธกเธงเธ”เนเธเธเนเธฒ -->
+                  <option value="เธชเธงเธดเธ•เธเน / เธเธฅเธฑเนเธเนเธ / เธชเธฒเธขเนเธ">เธชเธงเธดเธ•เธเน / เธเธฅเธฑเนเธเนเธ / เธชเธฒเธขเนเธ</option>
+                  <option value="เธซเธฅเธญเธ”เนเธ / เนเธเธกเนเธเนเธชเธเธชเธงเนเธฒเธ">เธซเธฅเธญเธ”เนเธ / เนเธเธกเนเธเนเธชเธเธชเธงเนเธฒเธ</option>
+                  <option value="เธเธฑเธ”เธฅเธก / เธเธฑเธ”เธฅเธกเธ”เธนเธ”เธญเธฒเธเธฒเธจ">เธเธฑเธ”เธฅเธก / เธเธฑเธ”เธฅเธกเธ”เธนเธ”เธญเธฒเธเธฒเธจ</option>
+                  <option value="เนเธญเธฃเน / เธฃเธฐเธเธเธเธฃเธฑเธเธญเธฒเธเธฒเธจ">เนเธญเธฃเน / เธฃเธฐเธเธเธเธฃเธฑเธเธญเธฒเธเธฒเธจ</option>
                   
-                  <!-- หมวดห้องน้ำ และประปา -->
-                  <option value="ระบบประปา / ท่อน้ำรั่ว">ระบบประปา / ท่อน้ำรั่ว</option>
-                  <option value="ชักโครก / สุขภัณฑ์อุดตัน">ชักโครก / สุขภัณฑ์อุดตัน</option>
-                  <option value="หัวฉีดชำระ / สายฉีด">หัวฉีดชำระ / สายฉีด</option>
-                  <option value="อ่างล้างหน้า / ก๊อกน้ำ">อ่างล้างหน้า / ก๊อกน้ำ</option>
-                  <option value="พื้น / ผนัง / ความสะอาดห้องน้ำ">พื้น / ผนัง / ความสะอาดห้องน้ำ</option>
+                  <!-- เธซเธกเธงเธ”เธซเนเธญเธเธเนเธณ เนเธฅเธฐเธเธฃเธฐเธเธฒ -->
+                  <option value="เธฃเธฐเธเธเธเธฃเธฐเธเธฒ / เธ—เนเธญเธเนเธณเธฃเธฑเนเธง">เธฃเธฐเธเธเธเธฃเธฐเธเธฒ / เธ—เนเธญเธเนเธณเธฃเธฑเนเธง</option>
+                  <option value="เธเธฑเธเนเธเธฃเธ / เธชเธธเธเธ เธฑเธ“เธ‘เนเธญเธธเธ”เธ•เธฑเธ">เธเธฑเธเนเธเธฃเธ / เธชเธธเธเธ เธฑเธ“เธ‘เนเธญเธธเธ”เธ•เธฑเธ</option>
+                  <option value="เธซเธฑเธงเธเธตเธ”เธเธณเธฃเธฐ / เธชเธฒเธขเธเธตเธ”">เธซเธฑเธงเธเธตเธ”เธเธณเธฃเธฐ / เธชเธฒเธขเธเธตเธ”</option>
+                  <option value="เธญเนเธฒเธเธฅเนเธฒเธเธซเธเนเธฒ / เธเนเธญเธเธเนเธณ">เธญเนเธฒเธเธฅเนเธฒเธเธซเธเนเธฒ / เธเนเธญเธเธเนเธณ</option>
+                  <option value="เธเธทเนเธ / เธเธเธฑเธ / เธเธงเธฒเธกเธชเธฐเธญเธฒเธ”เธซเนเธญเธเธเนเธณ">เธเธทเนเธ / เธเธเธฑเธ / เธเธงเธฒเธกเธชเธฐเธญเธฒเธ”เธซเนเธญเธเธเนเธณ</option>
                   
-                  <option value="อื่นๆ">อื่นๆ</option>
+                  <option value="เธญเธทเนเธเน">เธญเธทเนเธเน</option>
                 </select>
               </div>
 
@@ -71,34 +71,35 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="sm:col-span-2">
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่/เวลาที่พบปัญหา <span class="text-slate-400 font-normal">(ถ้าจำได้)</span></label>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เธงเธฑเธเธ—เธตเน/เน€เธงเธฅเธฒเธ—เธตเนเธเธเธเธฑเธเธซเธฒ <span class="text-slate-400 font-normal">(เธ–เนเธฒเธเธณเนเธ”เน)</span></label>
                   <input type="datetime-local" id="incident_date"
                     class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดปัญหา <span class="text-rose-500">*</span></label>
-                <textarea id="detail" rows="3" placeholder="บอกรายละเอียดเพิ่มเติม เช่น อาการที่พบ หรือจุดสังเกต"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ <span class="text-rose-500">*</span></label>
+                <textarea id="detail" rows="3" placeholder="เธเธญเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เน€เธเธดเนเธกเน€เธ•เธดเธก เน€เธเนเธ เธญเธฒเธเธฒเธฃเธ—เธตเนเธเธ เธซเธฃเธทเธญเธเธธเธ”เธชเธฑเธเน€เธเธ•"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm" required></textarea>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ หรือช่องทางติดต่อกลับ</label>
-                <input type="text" id="contact" placeholder="เช่น 081-234-5678 หรือ LINE ID"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน เธซเธฃเธทเธญเธเนเธญเธเธ—เธฒเธเธ•เธดเธ”เธ•เนเธญเธเธฅเธฑเธ</label>
+                <input type="text" id="contact" placeholder="เน€เธเนเธ 081-234-5678 เธซเธฃเธทเธญ LINE ID"
                   class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#265D5A] bg-slate-50 text-sm">
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">รูปภาพประกอบ (ถ้ามี)</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธนเธเธ เธฒเธเธเธฃเธฐเธเธญเธ (เธ–เนเธฒเธกเธต)</label>
                 <input type="file" id="file" accept="image/*" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#B0EDE6] file:text-[#265D5A] hover:file:bg-[#265D5A] hover:file:text-white file:transition-colors">
               </div>
 
               <button type="button" onclick="submitRepair()" id="btnSubmitRepair"
                 class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all shadow-md active:scale-[0.99] mt-2">
-                <i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหา</span>
+                <i class="fa-solid fa-paper-plane"></i> <span>เธชเนเธเนเธเนเธเธเธฑเธเธซเธฒ</span>
               </button>
             </form>
           </div>
         </div>
       </div>
+
