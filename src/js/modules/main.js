@@ -3842,6 +3842,6 @@ window.loadFbAdminTickets = async function() {
     
   } catch (err) {
     console.error(err);
-    container.innerHTML = '<div class="col-span-full text-center p-8 text-rose-400"><i class="fa-solid fa-triangle-exclamation text-3xl mb-3"></i><br>เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+    container.innerHTML = `<div class="col-span-full text-center p-8 text-rose-400"><i class="fa-solid fa-triangle-exclamation text-3xl mb-3"></i><br>เกิดข้อผิดพลาด: ${err.message}</div>`;
   }
 };
