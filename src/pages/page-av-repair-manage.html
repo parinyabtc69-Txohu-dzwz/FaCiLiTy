@@ -1,59 +1,58 @@
-﻿<!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
+<!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
       <div id="page-av-repair-manage" class="page-section hidden">
         <div class="max-w-7xl mx-auto">
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-camera text-sky-600"></i>
-                เธเธฑเธ”เธเธฒเธฃเธเธฒเธเธเนเธญเธกเนเธชเธ•เธฏ</h1>
-              <p class="text-xs text-slate-500 mt-1">เธเธฒเธเธ—เธตเนเธขเธฑเธเนเธกเนเน€เธชเธฃเนเธเธเธฐเธ–เธนเธเธ”เธฑเธเธเธถเนเธเธ”เนเธฒเธเธเธ (เธ•เธดเธ”เธ”เธฒเธง โญ เนเธฅเธฐเธเนเธฒเธขเธชเธตเนเธ”เธ)
-                เน€เธฃเธตเธขเธเธ•เธฒเธกเน€เธงเธฅเธฒเน€เธเนเธฒเนเธเนเธซเธกเน เธเธฒเธเธ—เธตเนเน€เธชเธฃเนเธเนเธฅเนเธงเธเธฐเธ•เธดเธ”เธเนเธฒเธขเธชเธตเธเนเธฒเนเธฅเธฐเธ”เธฑเธเธฅเธเธ”เนเธฒเธเธฅเนเธฒเธ</p>
+                จัดการงานซ่อมโสตฯ</h1>
+              <p class="text-xs text-slate-500 mt-1">งานที่ยังไม่เสร็จจะถูกดันขึ้นด้านบน (ติดดาว ⭐ และป้ายสีแดง)
+                เรียงตามเวลาเก่าไปใหม่ งานที่เสร็จแล้วจะติดป้ายสีฟ้าและดันลงด้านล่าง</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
               <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                 <input type="text" oninput="window.currentAdvFilters['av-repair'].search = this.value; window.applyAdvFilters('av-repair');"
                   class="pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-full md:w-64"
-                  placeholder="เธเนเธเธซเธฒเธเธฒเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฑเธเธซเธฒ...">
+                  placeholder="ค้นหาจากรายละเอียดปัญหา...">
               </div>
               <button onclick="refreshAdvancedTasks()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
-                  class="fa-solid fa-rotate mr-1"></i> เธฃเธตเน€เธเธฃเธ</button>
-              <button onclick="exportTableToCSV('avRepairTaskBody', 'เธฃเธฒเธขเธเธฒเธเธเนเธญเธก_AV.csv')"
+                  class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
+              <button onclick="exportTableToCSV('avRepairTaskBody', 'รายงานซ่อม_AV.csv')"
                 class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold text-emerald-700 hover:bg-emerald-100 shadow-sm transition-colors hidden sm:block"><i
-                  class="fa-solid fa-file-csv mr-1"></i> เธชเนเธเธญเธญเธ CSV</button>
+                  class="fa-solid fa-file-csv mr-1"></i> ส่งออก CSV</button>
             </div>
           </div>
           
           <div class="flex items-center gap-2 mb-2 p-1 border-b border-slate-200">
-    <div class="gmail-toolbar-btn ml-1" onclick="toggleFakeCheckbox(event, this.querySelector('div'))"><div class="w-4 h-4 border-2 border-slate-400 rounded transition-colors"></div></div>
-    <div class="gmail-toolbar-btn" title="เธฃเธตเน€เธเธฃเธ" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
-    <div class="gmail-toolbar-btn" title="เน€เธเธดเนเธกเน€เธ•เธดเธก"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn ml-1"><div class="w-4 h-4 border-2 border-slate-400 rounded"></div></div>
+    <div class="gmail-toolbar-btn" title="รีเฟรช" onclick="refreshAdvancedTasks()"><i class="fa-solid fa-rotate text-slate-600"></i></div>
+    <div class="gmail-toolbar-btn" title="เพิ่มเติม"><i class="fa-solid fa-ellipsis-vertical text-slate-600"></i></div>
     <div class="flex-1"></div>
-    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of เธซเธฅเธฒเธขเธฃเธฒเธขเธเธฒเธฃ</span>
+    <span class="text-xs text-slate-500 mr-2 font-medium">1-50 of หลายรายการ</span>
   </div>
   <div class="flex flex-wrap items-center gap-3 mb-0 bg-transparent p-1 rounded-xl hidden">
-            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> เธเธฃเธญเธเธเนเธญเธกเธนเธฅ:</span>
+            <span class="text-sm font-semibold text-slate-600"><i class="fa-solid fa-filter mr-1"></i> กรองข้อมูล:</span>
             <select onchange="window.currentAdvFilters['av-repair'].date = this.value; window.applyAdvFilters('av-repair');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
-              <option value="">เธ—เธธเธเธเนเธงเธเน€เธงเธฅเธฒ</option>
-              <option value="today">เธงเธฑเธเธเธตเน</option>
-              <option value="week">เธชเธฑเธเธ”เธฒเธซเนเธเธตเน</option>
-              <option value="month">เน€เธ”เธทเธญเธเธเธตเน</option>
+              <option value="">ทุกช่วงเวลา</option>
+              <option value="today">วันนี้</option>
+              <option value="week">สัปดาห์นี้</option>
+              <option value="month">เดือนนี้</option>
             </select>
-            <input type="text" oninput="window.currentAdvFilters['av-repair'].reporter = this.value; window.applyAdvFilters('av-repair');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-32 sm:w-40 bg-white" placeholder="เธเธทเนเธญเธเธนเนเนเธเนเธ...">
+            <input type="text" oninput="window.currentAdvFilters['av-repair'].reporter = this.value; window.applyAdvFilters('av-repair');" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-32 sm:w-40 bg-white" placeholder="ชื่อผู้แจ้ง...">
           </div>
           
           <div class="flex gap-2 border-b border-slate-200 mb-4 overflow-x-auto" id="avRepairManageTabs">
-            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAdvTab('av-repair', 'all', this)">เธ—เธฑเนเธเธซเธกเธ”</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'pending', this)">เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'progress', this)">เธเธณเธฅเธฑเธเธ”เธณเน€เธเธดเธเธเธฒเธฃ</button>
-            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'done', this)">เน€เธชเธฃเนเธเธชเธดเนเธ</button>
+            <button class="px-4 py-3 font-semibold text-slate-600 gmail-tab active whitespace-nowrap" onclick="filterAdvTab('av-repair', 'all', this)">ทั้งหมด</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'pending', this)">รอดำเนินการ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'progress', this)">กำลังดำเนินการ</button>
+            <button class="px-4 py-3 font-semibold text-slate-500 hover:bg-slate-50 gmail-tab whitespace-nowrap" onclick="filterAdvTab('av-repair', 'done', this)">เสร็จสิ้น</button>
           </div>
 
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div id="avRepairTaskBody" class="flex flex-col divide-y divide-slate-100">
-              <div class="p-8 text-center text-slate-500">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</div>
+              <div class="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</div>
             </div>
           </div>
         </div>
       </div>
-
