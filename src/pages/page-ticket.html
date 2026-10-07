@@ -1,0 +1,94 @@
+<!-- Ticket Tracking and Chat Page -->
+<div id="page-ticket" class="page-section hidden">
+  <div class="max-w-2xl mx-auto p-4 md:p-6 pb-24">
+    
+    <!-- Header -->
+    <div class="flex items-center gap-4 mb-6 relative z-10">
+      <button onclick="nav('page-teacher-profile')" class="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:border-[#265D5A] transition-all">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <div>
+        <h2 class="text-xl font-bold text-slate-800">ติดตามงานซ่อม</h2>
+        <p class="text-xs text-slate-500" id="ticket-id-display">Ticket ID: -</p>
+      </div>
+    </div>
+
+    <!-- Ticket Status Timeline -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-6 relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-[#265D5A]"></div>
+      
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h3 class="font-bold text-slate-800 text-lg" id="ticket-subject">หัวข้องานซ่อม</h3>
+          <p class="text-sm text-slate-500" id="ticket-detail">รายละเอียดปัญหา</p>
+        </div>
+        <div id="ticket-status-badge" class="px-3 py-1 rounded-full text-xs font-bold border">
+          สถานะ
+        </div>
+      </div>
+
+      <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
+            <i class="fa-solid fa-wrench"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500">ช่างผู้รับผิดชอบ</p>
+            <p class="text-sm font-bold text-slate-700" id="ticket-tech">ยังไม่มีผู้รับงาน</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Admin / Tech Controls (Hidden by default) -->
+    <div id="ticket-admin-panel" class="bg-amber-50 rounded-2xl shadow-sm border border-amber-200 p-5 mb-6 hidden">
+      <h3 class="font-bold text-amber-800 text-sm mb-3"><i class="fa-solid fa-user-shield mr-2"></i>ส่วนจัดการสำหรับเจ้าหน้าที่</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-amber-700 mb-1">อัปเดตสถานะงาน</label>
+          <select id="admin-status-select" class="w-full p-2 rounded-lg border-amber-300 text-sm bg-white outline-none">
+            <option value="รอมอบหมาย">รอมอบหมาย</option>
+            <option value="รอช่างรับงาน">รอช่างรับงาน</option>
+            <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
+            <option value="เสร็จสิ้น">เสร็จสิ้น</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-amber-700 mb-1">มอบหมายช่าง</label>
+          <input type="text" id="admin-tech-input" placeholder="ระบุชื่อช่าง..." class="w-full p-2 rounded-lg border-amber-300 text-sm bg-white outline-none">
+        </div>
+        <div class="col-span-full">
+          <button onclick="updateTicketAdmin()" class="w-full py-2 bg-amber-500 text-white rounded-lg font-bold text-sm hover:bg-amber-600 shadow-sm transition-colors">
+            <i class="fa-solid fa-floppy-disk mr-1"></i> บันทึกการเปลี่ยนแปลง
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[500px]">
+      <div class="bg-slate-50 border-b border-slate-100 p-3 flex justify-between items-center">
+        <span class="font-bold text-slate-700"><i class="fa-solid fa-comments text-[#265D5A] mr-2"></i>ข้อความสนทนา</span>
+      </div>
+      
+      <div id="chat-messages" class="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-slate-50/50">
+        <!-- Messages will be injected here -->
+        <div class="text-center text-slate-400 text-sm mt-4">
+          <i class="fa-regular fa-message text-2xl mb-2"></i><br>
+          ไม่มีข้อความสนทนา
+        </div>
+      </div>
+
+      <div class="p-3 bg-white border-t border-slate-100 flex gap-2">
+        <button class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors">
+          <i class="fa-solid fa-paperclip"></i>
+        </button>
+        <input type="text" id="chat-input" placeholder="พิมพ์ข้อความที่นี่..." class="flex-1 px-4 rounded-full bg-slate-100 border-none focus:ring-2 focus:ring-[#265D5A] outline-none text-sm">
+        <button onclick="sendChatMessage()" class="w-10 h-10 rounded-full bg-[#265D5A] flex items-center justify-center text-white hover:bg-[#1a3f3d] shadow-md transition-all">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

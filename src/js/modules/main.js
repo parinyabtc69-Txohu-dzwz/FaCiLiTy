@@ -1,4 +1,4 @@
-console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
+﻿console.log("%cFaCiLiTy System", "color: #4f46e5; font-size: 20px; font-weight: bold;");
 console.log("%cDeveloped by Taohx_dz_parinya", "color: #10b981; font-size: 14px; font-weight: bold;");
 console.log("%cUI Design By Dream_Patipat", "color: #f59e0b; font-size: 14px; font-weight: bold;");
 
@@ -433,9 +433,7 @@ const ResourceHubCore = {
       let detail = $('detail').value.trim();
       const reporter = $('reporter').value.trim();
       const dept = $('department') ? $('department').value.trim() : '';
-      const rawLoc = $('repair_location') ? $('repair_location').value.trim() : '';
-      const inst = $('repair_inst') ? $('repair_inst').value : '';
-      const loc = (inst ? `[${inst}] ` : '') + rawLoc;
+      const loc = $('repair_location') ? $('repair_location').value.trim() : '';
       const urgency = ''; // Set by Supervisor during approval
 
       const contact = $('contact') ? $('contact').value.trim() : '';
@@ -451,25 +449,40 @@ const ResourceHubCore = {
       if (!subject || !reporter) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณากรอกหัวข้อปัญหา');
       setBusy(btn, true);
       try {
-        const file = await readFile($('file').files[0]);
-        if (file) file.folderId = REPAIR_DRIVE_FOLDER_ID;
-        await ResourceHubCore.api.post({ action: 'submit_repair', subject, detail, reporter, file, folderId: REPAIR_DRIVE_FOLDER_ID, urgency, dept, loc, incidentDate: formattedIncidentDate, contact });
+        const fileInput = $('file').files[0];
+        const data = {
+          subject, detail, reporterName: reporter, 
+          reporterEmail: typeof currentUserEmail !== 'undefined' ? currentUserEmail : '',
+          department: dept, location: loc, 
+          incidentDate: formattedIncidentDate, contact, urgency
+        };
+
+        const ticketId = await FirestoreDB.createTicket('building', data, fileInput);
+
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเรื่องแจ้งซ่อม</span>');
-        await alertBox('success', 'สำเร็จ', 'ส่งเรื่องแจ้งซ่อมเรียบร้อยแล้ว', { timer: 2000, showConfirmButton: false });
+        await Swal.fire({
+          icon: 'success',
+          title: 'แจ้งซ่อมสำเร็จ!',
+          html: `เลขติดตามงานของคุณคือ <br><strong class="text-2xl text-[#265D5A] mt-2 block">${ticketId}</strong><br><span class="text-sm text-slate-500 block mt-2">โปรดใช้เลขนี้ในการติดตามสถานะและแชทกับช่างได้ที่หน้า "ติดตามงาน"</span>`,
+          confirmButtonColor: '#265D5A',
+          confirmButtonText: 'รับทราบ',
+          allowOutsideClick: false
+        });
         $('repairForm').reset();
-        nav('page-teacher-profile');
+        
+        nav('page-ticket');
+        if ($('ticket-id-display')) $('ticket-id-display').textContent = 'Ticket ID: ' + ticketId;
+        
       } catch (e) {
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเรื่องแจ้งซ่อม</span>');
-        alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+        alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถบันทึกข้อมูลได้');
       }
     },
     // ฟังก์ชันเก่า (ยังเหลือไว้): ระบบขอยืมอุปกรณ์โสตฯ
     async submitAV() {
       const borrower = $('borrower').value.trim();
       const useDate = $('useDate').value;
-      const rawLoc = $('av_location') ? $('av_location').value.trim() : '';
-      const inst = $('av_inst') ? $('av_inst').value : '';
-      const loc = (inst ? `[${inst}] ` : '') + rawLoc;
+      const loc = $('av_location').value.trim();
       const signer = $('signerName').value.trim();
 
       let equipmentList = [];
@@ -975,9 +988,19 @@ const get = (action, params = {}) => ResourceHubCore.api.get(action, params);
 // พอเปิดหน้า Dashboard จะได้เร็วทันที ไม่ต้องรอโหลดซ้ำ
 // =========================================================
 function prefetchAllData() {
-  // ยกเลิกการดึงข้อมูลพร้อมกันตอนล็อกอิน (Lazy Loading) 
-  // เพื่อแก้ปัญหา Google Sheets ค้าง 34 วินาที
-  console.log('%c⚡ Lazy Loading Enabled: ข้อมูลจะถูกดึงเมื่อเปิดหน้านั้นๆ', 'color:#3b82f6;font-weight:bold');
+  const now = new Date();
+  const monthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  Promise.all([
+    ResourceHubCore.api.get('get_dashboard', { month: monthStr }).catch(() => null),
+    ResourceHubCore.api.get('get_dashboard', {}).catch(() => null),
+    ResourceHubCore.api.get('get_adv_tasks').catch(() => null),
+    ResourceHubCore.api.get('get_tasks').catch(() => null),
+    ResourceHubCore.api.get('get_av_requests').catch(() => null),
+  ]).then(() => {
+    console.log('%c✅ Prefetch เสร็จ: ข้อมูลถูกบันทึกใน cache แล้ว', 'color:#10b981;font-weight:bold');
+  }).catch(err => {
+    console.warn('Prefetch warning:', err);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1866,9 +1889,7 @@ async function submitGenericForm(config) {
   const detail = $(config.prefix + 'Detail')?.value.trim();
   const reporter = $(config.prefix + 'Reporter')?.value.trim();
   const dept = $(config.prefix + 'Department')?.value.trim() || '';
-  const rawLoc = $(config.prefix + 'Location')?.value.trim() || '';
-  const inst = $(config.prefix + '_inst')?.value || '';
-  const loc = (inst ? `[${inst}] ` : '') + rawLoc;
+  const loc = $(config.prefix + 'Location')?.value.trim() || '';
   const urgency = document.querySelector(`input[name="${config.prefix}Urgency"]:checked`)?.value || 'ตามคิว';
   const contact = $(config.prefix + 'Contact')?.value.trim() || '';
 
@@ -2016,7 +2037,7 @@ function renderAdvTable(tbodyId, rows, type) {
     const techBadge = advTech && advTech !== '-' ? `<span class="text-[#265D5A] text-[10px] font-bold px-2 py-0.5 bg-teal-50 rounded-full border border-teal-100 ml-2 whitespace-nowrap"><i class="fa-solid fa-wrench text-[8px] mr-0.5"></i>${advTech}</span>` : '';
     return `<div onclick="updateAdvTask('${type}', ${i}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
         <span class="truncate w-full pl-1 flex items-center">${reporter} ${techBadge} ${urgHtml}</span>
       </div>
@@ -2722,7 +2743,7 @@ window.renderRepairTable = function () {
 
     const html = `<div onclick="updateTask(${originalIndex})" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
         <span class="truncate w-full pl-1 flex items-center">${reporter} ${techBadge} ${urgBadge}</span>
       </div>
@@ -2967,7 +2988,7 @@ window.renderAVTable = function () {
 
     return `<div onclick="openAVModal(${originalIndex}, '${st}', '${tech}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-40">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
         ${starIcon.replace(/text-lg/g, 'text-sm').replace(/onclick="[^"]*"/g, (match) => 'onclick="event.stopPropagation(); ' + match.substring(9))}
         <span class="truncate w-full pl-1">${r[1]}</span>
       </div>
@@ -3431,7 +3452,7 @@ window.renderAdvTableFiltered = function(tbodyId, rows, type) {
     
     return `<div onclick="updateAdvTask('${type}', ${originalIndex}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
-        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
+        <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="event.stopPropagation()"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
         <span class="truncate w-full pl-1 flex items-center">${reporter} ${urgBadge}</span>
       </div>
@@ -3463,24 +3484,6 @@ function toggleDesktopSidebar() {
   }
 }
 window.toggleDesktopSidebar = toggleDesktopSidebar;
-
-window.toggleFakeCheckbox = function(event, el) {
-  event.stopPropagation();
-  if (el.classList.contains('bg-[#265D5A]')) {
-    el.classList.remove('bg-[#265D5A]', 'border-[#265D5A]');
-    el.classList.add('bg-white');
-    if(el.classList.contains('border-slate-500')) {
-      el.classList.add('border-slate-300');
-    } else {
-      el.classList.add('border-slate-400'); 
-    }
-    el.innerHTML = '';
-  } else {
-    el.classList.remove('bg-white', 'border-slate-300', 'border-slate-400');
-    el.classList.add('bg-[#265D5A]', 'border-[#265D5A]');
-    el.innerHTML = '<i class="fa-solid fa-check text-white text-[10px] flex items-center justify-center h-full w-full mt-0.5"></i>';
-  }
-};
 
 window.triggerRowAction = function(e, action) {
   e.stopPropagation();
@@ -3554,3 +3557,291 @@ function checkAndPromptOneTap() {
   }
 }
 document.addEventListener('DOMContentLoaded', checkAndPromptOneTap);
+
+
+// ==========================================
+// Ticket Tracking & Chat Logic
+// ==========================================
+let currentChatUnsubscribe = null;
+let currentTicketId = null;
+
+async function loadTicketPage(ticketId) {
+  nav('page-ticket');
+  currentTicketId = ticketId;
+  $('ticket-id-display').textContent = 'Ticket ID: ' + ticketId;
+  
+  // Clear previous chat
+  if (currentChatUnsubscribe) currentChatUnsubscribe();
+  $('chat-messages').innerHTML = '<div class="text-center text-slate-400 text-sm mt-4"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>กำลังโหลดข้อความ...</div>';
+
+  try {
+    const ticket = await FirestoreDB.getTicketById(ticketId);
+    if (!ticket) {
+      alertBox('error', 'ไม่พบข้อมูล', 'ไม่พบรหัสติดตามงานนี้ในระบบ');
+      return;
+    }
+    
+    renderTicketHeader(ticket);
+    
+    // Subscribe to chat
+    currentChatUnsubscribe = FirestoreDB.listenForChatMessages(ticketId, (messages) => {
+      renderChatMessages(messages);
+    });
+    
+  } catch (err) {
+    console.error(err);
+    alertBox('error', 'ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูล Ticket ได้');
+  }
+}
+
+function renderTicketHeader(ticket) {
+  $('ticket-subject').textContent = ticket.subject || 'แจ้งซ่อม';
+  $('ticket-detail').textContent = ticket.detail || (ticket.useDate ? 'วันที่ใช้งาน: ' + ticket.useDate : '-');
+  
+  const statusColors = {
+    'รอมอบหมาย': 'bg-amber-100 text-amber-700 border-amber-200',
+    'รอช่างรับงาน': 'bg-blue-100 text-blue-700 border-blue-200',
+    'กำลังดำเนินการ': 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    'เสร็จสิ้น': 'bg-emerald-100 text-emerald-700 border-emerald-200'
+  };
+  
+  const badge = $('ticket-status-badge');
+  badge.className = 'px-3 py-1 rounded-full text-xs font-bold border ' + (statusColors[ticket.status] || 'bg-slate-100 text-slate-700');
+  badge.textContent = ticket.status;
+  
+  $('ticket-tech').textContent = (ticket.assignedTech && ticket.assignedTech.name) ? ticket.assignedTech.name : 'ยังไม่มีผู้รับงาน';
+  
+  // Check role for admin panel
+  if (typeof currentUserRole !== 'undefined' && (currentUserRole === 'Admin' || currentUserRole === 'Technician')) {
+    const adminPanel = $('ticket-admin-panel');
+    if (adminPanel) {
+      adminPanel.classList.remove('hidden');
+      $('admin-status-select').value = ticket.status;
+      if (ticket.assignedTech && ticket.assignedTech.name) {
+        $('admin-tech-input').value = ticket.assignedTech.name;
+      }
+    }
+  }
+}
+
+function renderChatMessages(messages) {
+  const container = $('chat-messages');
+  if (!messages || messages.length === 0) {
+    container.innerHTML = '<div class="text-center text-slate-400 text-sm mt-4"><i class="fa-regular fa-message text-2xl mb-2"></i><br>ยังไม่มีข้อความสนทนา</div>';
+    return;
+  }
+  
+  container.innerHTML = '';
+  const myEmail = typeof currentUserEmail !== 'undefined' ? currentUserEmail : '';
+  
+  messages.forEach(msg => {
+    const isMe = msg.senderEmail === myEmail;
+    
+    let timeStr = '';
+    if (msg.timestamp) {
+      const d = msg.timestamp.toDate();
+      timeStr = d.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'});
+    }
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex flex-col ' + (isMe ? 'items-end' : 'items-start');
+    
+    let html = `<div class="text-xs text-slate-500 mb-1 ${isMe ? 'mr-2' : 'ml-2'}">${msg.senderName || 'ผู้ใช้'} ${timeStr}</div>`;
+    
+    let contentHtml = `<div class="px-4 py-2 rounded-2xl max-w-[85%] shadow-sm ${isMe ? 'bg-[#265D5A] text-white rounded-tr-sm' : 'bg-white text-slate-700 border border-slate-100 rounded-tl-sm'}">`;
+    
+    if (msg.message) contentHtml += `<p class="text-sm">${msg.message}</p>`;
+    if (msg.fileUrl) {
+      if (msg.fileUrl.match(/\.(jpeg|jpg|gif|png)$/i)) {
+         contentHtml += `<img src="${msg.fileUrl}" class="mt-2 rounded-lg max-w-full h-auto cursor-pointer hover:opacity-90" onclick="window.open('${msg.fileUrl}', '_blank')">`;
+      } else {
+         contentHtml += `<a href="${msg.fileUrl}" target="_blank" class="block mt-2 text-xs underline ${isMe ? 'text-emerald-200' : 'text-blue-500'}"><i class="fa-solid fa-file"></i> ดูไฟล์แนบ</a>`;
+      }
+    }
+    contentHtml += `</div>`;
+    
+    wrapper.innerHTML = html + contentHtml;
+    container.appendChild(wrapper);
+  });
+  
+  // Scroll to bottom
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendChatMessage() {
+  const input = $('chat-input');
+  const msg = input.value.trim();
+  if (!msg && !currentChatFile) return;
+  
+  if (!currentTicketId) return;
+  
+  const myEmail = typeof currentUserEmail !== 'undefined' ? currentUserEmail : '';
+  const myName = typeof currentUserName !== 'undefined' ? currentUserName : 'ผู้ใช้ระบบ';
+  
+  input.value = '';
+  // Optional: Add loading state to send button
+  
+  try {
+    await FirestoreDB.sendChatMessage(currentTicketId, myName, myEmail, msg, currentChatFile);
+    currentChatFile = null; // reset file
+  } catch(e) {
+    alertBox('error', 'ส่งข้อความไม่สำเร็จ', e.message);
+  }
+}
+
+let currentChatFile = null;
+// You can add a file input listener here if needed
+
+
+window.promptTrackTicket = async function() {
+  const { value: ticketId } = await Swal.fire({
+    title: 'ติดตามงาน / แชทกับช่าง',
+    input: 'text',
+    inputLabel: 'โปรดระบุเลข Ticket ID ของคุณ',
+    inputPlaceholder: 'เช่น REP-A8F2Z',
+    showCancelButton: true,
+    confirmButtonText: 'ค้นหา',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#265D5A'
+  });
+  if (ticketId) {
+    if (typeof loadTicketPage === 'function') {
+      loadTicketPage(ticketId.trim().toUpperCase());
+    } else {
+      alertBox('error', 'ระบบยังไม่พร้อม', 'ฟังก์ชันนี้กำลังอยู่ในช่วงอัปเดต');
+    }
+  }
+};
+
+
+// ==========================================
+// Ticket Admin Controls
+// ==========================================
+window.updateTicketAdmin = async function() {
+  if (!currentTicketId) return;
+  const newStatus = $('admin-status-select').value;
+  const newTech = $('admin-tech-input').value.trim();
+  
+  const btn = event.currentTarget;
+  setBusy(btn, true);
+  
+  try {
+    await firestoreDb.collection('tickets').doc(currentTicketId).update({
+      status: newStatus,
+      'assignedTech.name': newTech,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Also push a system message to chat
+    const sysMsg = {
+      senderName: 'System',
+      senderEmail: 'system@facility',
+      message: `[อัปเดตระบบ] เปลี่ยนสถานะเป็น: ${newStatus} ${newTech ? 'ช่างรับผิดชอบ: '+newTech : ''}`,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await firestoreDb.collection('tickets').doc(currentTicketId).collection('messages').add(sysMsg);
+    
+    setBusy(btn, false, '<i class="fa-solid fa-floppy-disk mr-1"></i> บันทึกการเปลี่ยนแปลง');
+    alertBox('success', 'บันทึกสำเร็จ', 'อัปเดตข้อมูลงานเรียบร้อยแล้ว');
+  } catch(e) {
+    setBusy(btn, false, '<i class="fa-solid fa-floppy-disk mr-1"></i> บันทึกการเปลี่ยนแปลง');
+    alertBox('error', 'ข้อผิดพลาด', e.message);
+  }
+};
+
+
+// ==========================================
+// Firebase Unified Admin Dashboard
+// ==========================================
+window.loadFbAdminTickets = async function() {
+  const container = $('fb-admin-ticket-container');
+  if (!container) return;
+  
+  container.innerHTML = '<div class="col-span-full text-center p-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-3xl mb-3"></i><br>กำลังโหลดข้อมูล...</div>';
+  
+  const filterType = $('fb-admin-filter-type').value;
+  const filterStatus = $('fb-admin-filter-status').value;
+  
+  try {
+    let query = firestoreDb.collection('tickets');
+    
+    if (filterType !== 'all') {
+      query = query.where('type', '==', filterType);
+    }
+    if (filterStatus !== 'all') {
+      query = query.where('status', '==', filterStatus);
+    }
+    
+    // orderBy requires an index if combined with where(), so we sort in memory for simplicity
+    const snapshot = await query.get();
+    
+    let tickets = [];
+    snapshot.forEach(doc => {
+      tickets.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Sort descending by createdAt
+    tickets.sort((a, b) => {
+      const ta = a.createdAt ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+    
+    if (tickets.length === 0) {
+      container.innerHTML = '<div class="col-span-full text-center p-8 text-slate-400"><i class="fa-solid fa-folder-open text-3xl mb-3"></i><br>ไม่พบข้อมูลงาน</div>';
+      return;
+    }
+    
+    container.innerHTML = '';
+    
+    const typeNames = {
+      'building': '<span class="text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-xs">อาคารสถานที่</span>',
+      'av': '<span class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs">โสตทัศนูปกรณ์</span>',
+      'it': '<span class="text-purple-600 bg-purple-50 px-2 py-0.5 rounded text-xs">ไอที/ซอฟต์แวร์</span>',
+      'project': '<span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-xs">โครงการ</span>'
+    };
+    
+    const statusColors = {
+      'รอมอบหมาย': 'bg-amber-100 text-amber-700',
+      'รอช่างรับงาน': 'bg-blue-100 text-blue-700',
+      'กำลังดำเนินการ': 'bg-indigo-100 text-indigo-700',
+      'เสร็จสิ้น': 'bg-emerald-100 text-emerald-700'
+    };
+    
+    tickets.forEach(t => {
+      const d = t.createdAt ? t.createdAt.toDate().toLocaleString('th-TH', {dateStyle:'short', timeStyle:'short'}) : '-';
+      const statusClass = statusColors[t.status] || 'bg-slate-100 text-slate-700';
+      
+      const card = document.createElement('div');
+      card.className = 'bg-white rounded-2xl shadow-sm border border-slate-100 p-5 hover:shadow-md transition-shadow cursor-pointer relative';
+      card.onclick = () => loadTicketPage(t.ticketId);
+      
+      card.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+          <div class="font-mono text-xs font-bold text-slate-400">${t.ticketId}</div>
+          ${typeNames[t.type] || ''}
+        </div>
+        <h3 class="font-bold text-slate-800 text-lg mb-1 truncate">${t.subject || 'แจ้งซ่อม'}</h3>
+        <p class="text-sm text-slate-500 mb-4 line-clamp-2">${t.detail || '-'}</p>
+        
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <span class="text-xs text-slate-600">${t.reporterName || 'ไม่ระบุ'}</span>
+        </div>
+        
+        <div class="flex justify-between items-center border-t border-slate-100 pt-3">
+          <span class="text-[10px] text-slate-400"><i class="fa-regular fa-clock"></i> ${d}</span>
+          <span class="px-2 py-1 rounded-full text-[10px] font-bold ${statusClass}">${t.status}</span>
+        </div>
+      `;
+      
+      container.appendChild(card);
+    });
+    
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<div class="col-span-full text-center p-8 text-rose-400"><i class="fa-solid fa-triangle-exclamation text-3xl mb-3"></i><br>เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+  }
+};
