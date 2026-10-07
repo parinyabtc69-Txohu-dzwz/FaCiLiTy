@@ -265,6 +265,13 @@ function doPost(e) {
       case 'google_login':
         return handleGoogleLogin(data.credential);
         
+      case 'upload_chat_image':
+        const chatFileUrl = uploadFileToDrive(data.file, "รูปภาพแชท");
+        return ContentService.createTextOutput(JSON.stringify({
+          status: 'success',
+          fileUrl: chatFileUrl
+        })).setMimeType(ContentService.MimeType.JSON);
+        
       // ── ผูกบัญชี LINE ────────────────────────
       case 'link_line_account':
         return handleLinkLineAccount(data.email, data.lineId, data.name, data.picture);
@@ -334,7 +341,11 @@ function doPost(e) {
         
         notifyTask('building', lineRepMsg, `🚨 แจ้งซ่อมอาคารสถานที่ใหม่`, '#265D5A', data, null);
         
-        break;
+        return ContentService.createTextOutput(JSON.stringify({
+          status: 'success',
+          fileUrl: repFileUrl,
+          originalIndex: sheetRep.getLastRow() - 2
+        })).setMimeType(ContentService.MimeType.JSON);
 
       // ── แจ้งซ่อมระบบ IT ──────────────────────────────────────
       case 'submit_it_repair':
@@ -358,7 +369,12 @@ function doPost(e) {
           ]
         );
         notifyTask('it', lineItMsg, `💻 แจ้งปัญหาไอทีใหม่`, '#0ea5e9', data, null);
-        break;
+        
+        return ContentService.createTextOutput(JSON.stringify({
+          status: 'success',
+          fileUrl: itFileUrl,
+          originalIndex: sheetIt.getLastRow() - 2
+        })).setMimeType(ContentService.MimeType.JSON);
 
       // ── แจ้งซ่อมโสตฯ ──────────────────────────────────────
       case 'submit_av_repair':
@@ -382,7 +398,12 @@ function doPost(e) {
           ]
         );
         notifyTask('av_repair', lineAvRepMsg, `📷 แจ้งซ่อมอุปกรณ์โสตฯ ใหม่`, '#f59e0b', data, null);
-        break;
+        
+        return ContentService.createTextOutput(JSON.stringify({
+          status: 'success',
+          fileUrl: avRepFileUrl,
+          originalIndex: sheetAvRep.getLastRow() - 2
+        })).setMimeType(ContentService.MimeType.JSON);
 
       // ── แจ้งโครงการระยะยาว ──────────────────────────────────────
       case 'submit_project':
@@ -409,7 +430,12 @@ function doPost(e) {
           ]
         );
         notifyTask('project', lineProjMsg, `🏢 เสนอโครงการ / จัดซื้อใหม่`, '#8b5cf6', data, null);
-        break;
+        
+        return ContentService.createTextOutput(JSON.stringify({
+          status: 'success',
+          fileUrl: projFileUrl,
+          originalIndex: sheetProjData.getLastRow() - 2
+        })).setMimeType(ContentService.MimeType.JSON);
 
       // ── ยืมโสตฯ ─────────────────────────────────────────────
       case 'submit_av':
@@ -991,7 +1017,7 @@ function uploadFileToDrive(fileData, folderName) {
   const blob = Utilities.newBlob(Utilities.base64Decode(fileData.data), fileData.type, fileData.name);
   const file = folder.createFile(blob);
   try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
-  return file.getUrl();
+  return `https://drive.google.com/uc?export=view&id=${file.getId()}`;
 }
 
 function getContactsByRoles(targetRoles) {
@@ -1116,15 +1142,16 @@ function generateEmailHtml(title, color, reporter, loc, subject, detail) {
 }
 
 function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporterNameOverride) {
-  let targetRoles = [];
+  let targetRoles = ['admin', 'executive', 'supervisor'];
   
-  if (taskType === 'project') {
-    targetRoles = ['admin', 'executive'];
-  } else if (taskType === 'bug') {
-    targetRoles = ['admin', 'executive'];
-  } else {
-    // building, it, av, av_repair
-    targetRoles = ['admin', 'executive', 'tech', 'av'];
+  if (taskType === 'building') {
+    targetRoles.push('tech_building', 'tech'); // ส่งให้ช่างอาคาร และช่างทั่วไป (ของเก่า)
+  } else if (taskType === 'it') {
+    targetRoles.push('tech_it', 'tech'); // ส่งให้ช่างไอที
+  } else if (taskType === 'av' || taskType === 'av_repair') {
+    targetRoles.push('tech_av', 'av', 'tech'); // ส่งให้ช่างโสตฯ
+  } else if (taskType === 'project') {
+    targetRoles.push('tech_project');
   }
   
   const contacts = getContactsByRoles(targetRoles);

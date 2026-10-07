@@ -19,7 +19,7 @@ let jsApp = '';
 
 // Explicit load order to prevent reference errors for global variables
 const loadOrder = [
-  'firebase-config.js',
+  'firebase-chat.js',
   'api.js',
   'auth.js',
   'user.js',

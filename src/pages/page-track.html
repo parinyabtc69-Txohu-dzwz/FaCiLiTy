@@ -17,10 +17,16 @@
           <p class="text-sm text-white/75 font-light mt-1">ดูคิวงานทั้งหมดในระบบ กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง</p>
         </div>
       </div>
-      <button onclick="TrackUI.load(true)" id="track-refresh-btn"
-        class="self-start md:self-auto bg-white/15 hover:bg-white/25 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors">
-        <i class="fa-solid fa-rotate"></i> รีเฟรช
-      </button>
+      <div class="flex flex-col md:flex-row items-start md:items-center gap-3">
+        <button onclick="TrackUI.load(true)" id="track-refresh-btn"
+          class="bg-white/15 hover:bg-white/25 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors">
+          <i class="fa-solid fa-rotate"></i> รีเฟรช
+        </button>
+        <button onclick="TrackUI.migrateToFirebase()" id="track-migrate-btn"
+          class="hidden bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center gap-2 transition-colors">
+          <i class="fa-solid fa-cloud-arrow-up"></i> ย้ายข้อมูลเข้า Firebase
+        </button>
+      </div>
     </div>
 
     <!-- Search -->
@@ -93,4 +99,52 @@
   </div>
 
   <div id="track-detail-body"></div>
+
+  <!-- Chat System (Firebase) -->
+  <div id="track-chat-section" class="mt-8 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden hidden">
+    <!-- Chat Header -->
+    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+        <i class="fa-solid fa-comments"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-800">แชทสอบถามช่าง / ผู้แจ้ง</h3>
+        <p class="text-xs text-slate-500">ข้อความแบบ Real-time</p>
+      </div>
+    </div>
+    
+    <!-- Chat Messages -->
+    <div id="track-chat-messages" class="p-5 h-80 overflow-y-auto flex flex-col gap-4 bg-slate-50/50">
+      <!-- Messages will be injected here -->
+      <div class="text-center text-slate-400 text-sm mt-10">กำลังโหลดข้อความ...</div>
+    </div>
+    
+    <!-- Chat Input -->
+    <div class="p-4 bg-white border-t border-slate-200">
+      <form id="track-chat-form" onsubmit="TrackUI.submitChat(event)" class="flex items-end gap-2">
+        <button type="button" onclick="document.getElementById('track-chat-image').click()" 
+          class="shrink-0 w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-image"></i>
+        </button>
+        <input type="file" id="track-chat-image" accept="image/*" class="hidden" onchange="TrackUI.previewChatImage(this)">
+        
+        <div class="flex-1 relative">
+          <div id="track-chat-preview" class="hidden absolute bottom-full left-0 mb-2 bg-slate-100 p-2 rounded-lg border shadow-sm">
+            <img src="" id="track-chat-preview-img" class="h-16 w-auto rounded object-cover">
+            <button type="button" onclick="TrackUI.clearChatImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+          <input type="text" id="track-chat-input" placeholder="พิมพ์ข้อความที่นี่..." required
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+        </div>
+        
+        <button type="submit" id="track-chat-submit"
+          class="shrink-0 w-12 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors shadow-md">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
 </div>

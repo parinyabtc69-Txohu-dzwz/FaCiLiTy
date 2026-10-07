@@ -449,15 +449,40 @@ const ResourceHubCore = {
       if (!subject || !reporter) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณากรอกหัวข้อปัญหา');
       setBusy(btn, true);
       try {
-        const fileInput = $('file').files[0];
-        const data = {
-          subject, detail, reporterName: reporter, 
-          reporterEmail: typeof currentUserEmail !== 'undefined' ? currentUserEmail : '',
-          department: dept, location: loc, 
-          incidentDate: formattedIncidentDate, contact, urgency
-        };
-
-        const ticketId = await FirestoreDB.createTicket('building', data, fileInput);
+        const fileInput = await readFile($('file').files[0]);
+        
+        // 1. ส่งให้ Apps Script เซฟลง Sheets และอัปโหลดเข้า Drive
+        const payload = { action: 'submit_repair', subject, detail, reporter, dept, loc, urgency, contact, file: fileInput, incidentDate: formattedIncidentDate };
+        const response = await ResourceHubCore.api.post(payload);
+        
+        // 2. เซฟลง Firebase แบบ Real-time
+        let ticketId = window.FirestoreDB ? window.FirestoreDB.generateTicketId('REP') : `REP-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        if (window.firestoreDb) {
+          let createdDate = firebase.firestore.FieldValue.serverTimestamp();
+          let incidentDateFb = incidentDate ? firebase.firestore.Timestamp.fromDate(new Date(incidentDate)) : null;
+          
+          await window.firestoreDb.collection('tickets').doc(ticketId).set({
+            ticketId: ticketId,
+            type: 'building',
+            status: 'รอดำเนินการ',
+            createdAt: createdDate,
+            updatedAt: createdDate,
+            subject: subject,
+            detail: detail,
+            reporterName: reporter,
+            fileUrl: response.fileUrl || '',
+            fixDetail: '',
+            techName: '',
+            proofUrl: '',
+            cost: '',
+            urgency: urgency,
+            dept: dept,
+            location: loc,
+            incidentDate: incidentDateFb,
+            contact: contact,
+            originalIndex: response.originalIndex || 0
+          });
+        }
 
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเรื่องแจ้งซ่อม</span>');
         await Swal.fire({
@@ -1036,11 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
           handleLiffLogin();
         } else {
           // ถ้ามี session อยู่แล้ว และเป็นแอดมิน ให้เด้งไป Dashboard หรือถอยไป Profile
-          if (localStorage.getItem('logged_admin') === 'true') {
-            nav('page-dashboard');
-          } else {
-            nav('page-track');
-          }
+          nav('page-home');
         }
       }
     }).catch(err => {
@@ -1083,8 +1104,7 @@ function handleLiffLogin() {
         if (isAdminLoggedIn) prefetchAllData();
         alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
           .then(() => {
-            if (isAdminLoggedIn) nav('page-dashboard');
-            else nav('page-track');
+            nav('page-home');
           });
       })
       .catch((e) => {
@@ -1130,8 +1150,7 @@ function handleCredentialResponse(response) {
       if (isAdminLoggedIn) prefetchAllData();
       alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
         .then(() => {
-          if (isAdminLoggedIn) nav('page-dashboard');
-            else nav('page-track');
+          nav('page-home');
         });
     })
     .catch((e) => {
@@ -1288,7 +1307,7 @@ function updateSessionUI() {
       $('dropdown-user-role').innerHTML = `สถานะ: ${textRole}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
     }
 
-    if ($('page-auth').classList.contains('active')) nav('page-dashboard');
+    if ($('page-auth').classList.contains('active')) nav('page-home');
 
   } else if (currentTeacher) {
     if (dashNav) dashNav.classList.add('hidden');
@@ -1404,7 +1423,7 @@ function updateSessionUI() {
       $('dropdown-user-role').innerHTML = `สถานะ: ${roleDisplay}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
     }
 
-    if ($('page-auth').classList.contains('active')) nav('page-track');
+    if ($('page-auth').classList.contains('active')) nav('page-home');
 
   } else {
     // Guest
@@ -1912,7 +1931,41 @@ async function submitGenericForm(config) {
     if (incidentDate) payload.incidentDate = incidentDate;
     if (targetDate) payload.targetDate = targetDate;
 
-    await ResourceHubCore.api.post(payload);
+    const response = await ResourceHubCore.api.post(payload);
+    
+    // 2. เซฟลง Firebase แบบ Real-time
+    if (window.firestoreDb) {
+      let typeMap = { 'submit_it_repair': 'it', 'submit_av_repair': 'av', 'submit_project': 'project' };
+      let type = typeMap[config.action] || 'building';
+      let prefixMap = { 'it': 'IT', 'av': 'AV', 'project': 'PROJ' };
+      let ticketId = window.FirestoreDB ? window.FirestoreDB.generateTicketId(prefixMap[type] || 'REP') : `${prefixMap[type] || 'REP'}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      
+      let createdDate = firebase.firestore.FieldValue.serverTimestamp();
+      let incidentDateFb = incidentDate ? firebase.firestore.Timestamp.fromDate(new Date(incidentDate)) : null;
+      let targetDateFb = targetDate ? firebase.firestore.Timestamp.fromDate(new Date(targetDate)) : null;
+      
+      await window.firestoreDb.collection('tickets').doc(ticketId).set({
+        ticketId: ticketId,
+        type: type,
+        status: type === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ',
+        createdAt: createdDate,
+        updatedAt: createdDate,
+        subject: subject,
+        detail: detail,
+        reporterName: reporter,
+        fileUrl: response.fileUrl || '',
+        fixDetail: '',
+        techName: '',
+        proofUrl: '',
+        cost: '',
+        urgency: urgency,
+        dept: dept,
+        location: loc,
+        incidentDate: incidentDateFb || targetDateFb,
+        contact: contact,
+        originalIndex: response.originalIndex || 0
+      });
+    }
     setBusy(btn, false, config.btnOriginalHtml);
     await alertBox('success', 'ส่งเรื่องสำเร็จ!', config.successText, { timer: 2000, showConfirmButton: false });
     $(config.formId)?.reset();
