@@ -2356,7 +2356,26 @@ const ResourceHubCore = {
       if (nameEl) nameEl.textContent = isRepair ? `ยินดีต้อนรับ, ${sanitizeHtml(currentTeacher)}` : `ประวัติการขอยืมอุปกรณ์โสตฯ ของคุณ ${sanitizeHtml(currentTeacher)}`;
 
       const dataP = isRepair
-        ? ResourceHubCore.work.repairs().then(d => (d || []).filter(r => r[3]?.toString().trim() === currentTeacher.trim()))
+        ? (window.firestoreDb ? window.firestoreDb.collection('tickets').orderBy('createdAt', 'desc').get().then(snap => {
+            const arr = [];
+            snap.forEach(doc => {
+              const d = doc.data();
+              if (d.reporterName && d.reporterName.trim() === currentTeacher.trim()) {
+                // Map Firebase object to the expected array format for rendering
+                arr.push([
+                  d.createdAt ? d.createdAt.toDate().toLocaleString('th-TH') : '',
+                  d.subject || 'ไม่ระบุ',
+                  d.detail || '',
+                  d.reporterName,
+                  d.status || 'รอดำเนินการ',
+                  d.fileUrl || '-',
+                  d.techName || '',
+                  d.fixDetail || ''
+                ]);
+              }
+            });
+            return arr;
+          }) : ResourceHubCore.work.repairs().then(d => (d || []).filter(r => r[3]?.toString().trim() === currentTeacher.trim())))
         : ResourceHubCore.av.list().then(d => (d || []).filter(r => r[1]?.toString().trim() === currentTeacher.trim() || r[7]?.toString().trim() === currentTeacher.trim()));
 
       const containerId = isRepair ? 'teacherTaskBody' : 'teacherAVTaskBody';
@@ -2499,17 +2518,19 @@ const ResourceHubCore = {
       try {
         const file = await readFile($('file').files[0]);
         if (file) file.folderId = REPAIR_DRIVE_FOLDER_ID;
-        await ResourceHubCore.api.post({ action: 'submit_repair', subject, detail, reporter, file, folderId: REPAIR_DRIVE_FOLDER_ID, urgency, dept, loc, incidentDate: formattedIncidentDate, contact });
-        if (window.TrackUI && window.TrackUI.migrateToFirebase) {
-          window.TrackUI.migrateToFirebase(true); // Silent sync to push new data to Firebase
-        }
+        
+        backgroundSubmitAndSync(
+          { action: 'submit_repair', subject, detail, reporter, file, folderId: REPAIR_DRIVE_FOLDER_ID, urgency, dept, loc, incidentDate: formattedIncidentDate, contact },
+          'building', subject, detail, reporter, dept, loc, contact, incidentDate
+        );
+        
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเรื่องแจ้งซ่อม</span>');
         await alertBox('success', 'สำเร็จ', 'ส่งเรื่องแจ้งซ่อมเรียบร้อยแล้ว', { timer: 2000, showConfirmButton: false });
         $('repairForm').reset();
-        nav('page-teacher-profile');
+        nav('page-home');
       } catch (e) {
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเรื่องแจ้งซ่อม</span>');
-        alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+        alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถดำเนินการได้');
       }
     },
     // ฟังก์ชันเก่า (ยังเหลือไว้): ระบบขอยืมอุปกรณ์โสตฯ
@@ -2543,24 +2564,18 @@ const ResourceHubCore = {
       const btn = $('btnSubmitAV');
       setBusy(btn, true);
       try {
-        await ResourceHubCore.api.post({
-          action: 'submit_av',
-          borrower: borrower,
-          equipment: equipmentStr,
-          useDate: useDate,
-          location: loc,
-          signature: signer
-        });
-        if (window.TrackUI && window.TrackUI.migrateToFirebase) {
-          window.TrackUI.migrateToFirebase(true); // Silent sync to push new data to Firebase
-        }
+        backgroundSubmitAndSync(
+          { action: 'submit_av', borrower: borrower, equipment: equipmentStr, useDate: useDate, location: loc, signature: signer },
+          'av', 'ขอยืม-คืนโสตทัศนูปกรณ์', equipmentStr, borrower, '', loc, '', useDate
+        );
+        
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ยืนยันการขอยืมอุปกรณ์</span>');
         await alertBox('success', 'สำเร็จ', 'ส่งเรื่องขอยืมอุปกรณ์เรียบร้อยแล้ว', { timer: 2000, showConfirmButton: false });
         $('avForm').reset();
-        nav('page-teacher-profile');
+        nav('page-home');
       } catch (e) {
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ยืนยันการขอยืมอุปกรณ์</span>');
-        alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+        alertBox('error', 'ข้อผิดพลาด', e.message || 'ไม่สามารถดำเนินการได้');
       }
     },
     // โหลดตารางงานทั้งหมดมาให้แอดมินดู (แจ้งซ่อม/ยืมโสตฯ)
@@ -2760,10 +2775,10 @@ const ResourceHubCore = {
             action: 'update_task_proof',
             rowIndex: index,
             technician: x.value.techName,
-            detail: x.value.fixDetail,
-            fileData: file,
+            fixDetail: x.value.fixDetail,
+            file: file,
             cost: x.value.cost,
-            receiptData: receiptFile,
+            receiptFile: receiptFile,
             status: isSupervisor ? 'เสร็จสิ้น' : 'รอตรวจรับ'
           });
         },
@@ -2825,31 +2840,51 @@ const ResourceHubCore = {
         });
 
         const monthFilter = $('dashboardMonthFilter') ? $('dashboardMonthFilter').value : '';
-        const d = await ResourceHubCore.dashboard.legacy({ month: monthFilter });
-        const bTotal = Number(d?.building?.total) || 0;
-        const bPending = Number(d?.building?.pending) || 0;
-        const bProgress = Number(d?.building?.inProgress) || 0;
-        const bCompleted = Number(d?.building?.completed) || 0;
+        let bTotal=0, bPending=0, bProgress=0, bCompleted=0;
+        let avTotal=0, avPending=0, avActive=0, avCompleted=0;
+        let itTotal=0, itPending=0, itProgress=0, itCompleted=0;
+        let avRepTotal=0, avRepPending=0, avRepProgress=0, avRepCompleted=0;
+        let projTotal=0, projPending=0, projProgress=0, projCompleted=0;
 
-        const avTotal = Number(d?.av?.total) || 0;
-        const avPending = Number(d?.av?.pending) || 0;
-        const avActive = Number(d?.av?.active) || 0;
-        const avCompleted = Number(d?.av?.completed) || 0;
-
-        const itTotal = Number(d?.it?.total) || 0;
-        const itPending = Number(d?.it?.pending) || 0;
-        const itProgress = Number(d?.it?.inProgress) || 0;
-        const itCompleted = Number(d?.it?.completed) || 0;
-
-        const avRepTotal = Number(d?.avRep?.total) || 0;
-        const avRepPending = Number(d?.avRep?.pending) || 0;
-        const avRepProgress = Number(d?.avRep?.inProgress) || 0;
-        const avRepCompleted = Number(d?.avRep?.completed) || 0;
-
-        const projTotal = Number(d?.proj?.total) || 0;
-        const projPending = Number(d?.proj?.pending) || 0;
-        const projProgress = Number(d?.proj?.inProgress) || 0;
-        const projCompleted = Number(d?.proj?.completed) || 0;
+        if (window.firestoreDb) {
+           const snap = await window.firestoreDb.collection('tickets').get();
+           snap.forEach(doc => {
+              const data = doc.data();
+              if (!data) return;
+              
+              if (monthFilter && data.createdAt && data.createdAt.toDate) {
+                 const date = data.createdAt.toDate();
+                 const mStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+                 if (mStr !== monthFilter) return;
+              }
+              
+              const type = data.type;
+              const status = data.status || '';
+              const ticketId = data.ticketId || doc.id || '';
+              
+              let cat = '';
+              if (type === 'building') cat = 'b';
+              else if (type === 'it') cat = 'it';
+              else if (type === 'project') cat = 'proj';
+              else if (type === 'av') {
+                 if (ticketId.includes('AV-REQ')) cat = 'av';
+                 else cat = 'avRep';
+              }
+              
+              if (cat === 'b') { bTotal++; if (status === 'รอดำเนินการ' || status === 'รอรับเรื่อง') bPending++; else if (status === 'กำลังดำเนินการ') bProgress++; else if (status === 'เสร็จสิ้น') bCompleted++; }
+              else if (cat === 'it') { itTotal++; if (status === 'รอดำเนินการ' || status === 'รอรับเรื่อง') itPending++; else if (status === 'กำลังดำเนินการ' || status === 'กำลังซ่อม') itProgress++; else if (status === 'เสร็จสิ้น') itCompleted++; }
+              else if (cat === 'proj') { projTotal++; if (status === 'รอพิจารณาอนุมัติ' || status === 'รอดำเนินการ') projPending++; else if (status === 'กำลังดำเนินการ' || status === 'อนุมัติ') projProgress++; else if (status === 'เสร็จสิ้น') projCompleted++; }
+              else if (cat === 'avRep') { avRepTotal++; if (status === 'รอดำเนินการ' || status === 'รอรับเรื่อง') avRepPending++; else if (status === 'กำลังดำเนินการ' || status === 'กำลังซ่อม') avRepProgress++; else if (status === 'เสร็จสิ้น') avRepCompleted++; }
+              else if (cat === 'av') { avTotal++; if (status === 'จัดเตรียมแล้ว') avPending++; else if (status === 'ใช้งานอยู่') avActive++; else if (status === 'คืนเรียบร้อย' || status === 'เสร็จสิ้น/คืนเรียบร้อย') avCompleted++; }
+           });
+        } else {
+           const d = await ResourceHubCore.dashboard.legacy({ month: monthFilter });
+           bTotal = Number(d?.building?.total) || 0; bPending = Number(d?.building?.pending) || 0; bProgress = Number(d?.building?.inProgress) || 0; bCompleted = Number(d?.building?.completed) || 0;
+           avTotal = Number(d?.av?.total) || 0; avPending = Number(d?.av?.pending) || 0; avActive = Number(d?.av?.active) || 0; avCompleted = Number(d?.av?.completed) || 0;
+           itTotal = Number(d?.it?.total) || 0; itPending = Number(d?.it?.pending) || 0; itProgress = Number(d?.it?.inProgress) || 0; itCompleted = Number(d?.it?.completed) || 0;
+           avRepTotal = Number(d?.avRep?.total) || 0; avRepPending = Number(d?.avRep?.pending) || 0; avRepProgress = Number(d?.avRep?.inProgress) || 0; avRepCompleted = Number(d?.avRep?.completed) || 0;
+           projTotal = Number(d?.proj?.total) || 0; projPending = Number(d?.proj?.pending) || 0; projProgress = Number(d?.proj?.inProgress) || 0; projCompleted = Number(d?.proj?.completed) || 0;
+        }
 
         const totalAll = bTotal + avTotal + itTotal + avRepTotal + projTotal;
         const pendingAll = bPending + avPending + itPending + avRepPending + projPending;
@@ -3361,11 +3396,11 @@ function updateSessionUI() {
     if ($('gnav-user-manage')) { $('gnav-user-manage').classList.remove('hidden'); $('gnav-user-manage').classList.add('flex'); }
     if (docNav) { docNav.classList.remove('hidden'); docNav.classList.add('flex'); }
     if (homeCardDocument) { homeCardDocument.classList.remove('hidden'); homeCardDocument.classList.add('flex'); }
-    if (teacherProfileNav) teacherProfileNav.classList.add('hidden');
-    if (teacherAVProfileNav) teacherAVProfileNav.classList.add('hidden');
+    if (teacherProfileNav) { teacherProfileNav.classList.remove('hidden'); teacherProfileNav.classList.add('flex'); }
+    if (teacherAVProfileNav) { teacherAVProfileNav.classList.remove('hidden'); teacherAVProfileNav.classList.add('flex'); }
     if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
-    if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
-    if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
+    if (homeCardTeacherProfile) { homeCardTeacherProfile.classList.remove('hidden'); homeCardTeacherProfile.classList.add('flex'); }
+    if (homeCardTeacherAVProfile) { homeCardTeacherAVProfile.classList.remove('hidden'); homeCardTeacherAVProfile.classList.add('flex'); }
 
     // New Admin menus
     if ($('gnav-it-manage')) { $('gnav-it-manage').classList.remove('hidden'); $('gnav-it-manage').classList.add('flex'); }
@@ -3407,11 +3442,11 @@ function updateSessionUI() {
     if ($('gnav-user-manage')) $('gnav-user-manage').classList.add('hidden');
     if (docNav) docNav.classList.add('hidden');
     if (homeCardDocument) homeCardDocument.classList.add('hidden');
-    if (teacherProfileNav) teacherProfileNav.classList.add('hidden');
-    if (teacherAVProfileNav) teacherAVProfileNav.classList.add('hidden');
+    if (teacherProfileNav) { teacherProfileNav.classList.remove('hidden'); teacherProfileNav.classList.add('flex'); }
+    if (teacherAVProfileNav) { teacherAVProfileNav.classList.remove('hidden'); teacherAVProfileNav.classList.add('flex'); }
     if (homeCardDash) homeCardDash.classList.add('hidden');
-    if (homeCardTeacherProfile) homeCardTeacherProfile.classList.add('hidden');
-    if (homeCardTeacherAVProfile) homeCardTeacherAVProfile.classList.add('hidden');
+    if (homeCardTeacherProfile) { homeCardTeacherProfile.classList.remove('hidden'); homeCardTeacherProfile.classList.add('flex'); }
+    if (homeCardTeacherAVProfile) { homeCardTeacherAVProfile.classList.remove('hidden'); homeCardTeacherAVProfile.classList.add('flex'); }
 
     // Hide admin-only menus for regular teachers
     if ($('gnav-it-manage')) $('gnav-it-manage').classList.add('hidden');
@@ -3992,6 +4027,40 @@ function refreshAdvancedTasks() {
 // ==========================================
 // 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
 // ==========================================
+function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate) {
+  let docRef = null;
+  if (window.firestoreDb) {
+     try {
+       const initialStatus = (typeForFirebase === 'av' && payload.action === 'submit_av') ? 'จัดเตรียมแล้ว' : (typeForFirebase === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
+       window.firestoreDb.collection('tickets').add({
+          ticketId: 'กำลังบันทึก...',
+          type: typeForFirebase,
+          subject: subject || '',
+          detail: detail || '',
+          reporterName: reporter || '',
+          dept: dept || '',
+          location: loc || '',
+          contact: contact || '',
+          incidentDate: incidentDate ? new Date(incidentDate) : null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          status: initialStatus
+       }).then(ref => docRef = ref);
+     } catch (e) { console.error("Firebase preview add error:", e); }
+  }
+  
+  ResourceHubCore.api.post(payload)
+    .then(async () => {
+       if (docRef) { await docRef.delete().catch(e=>console.error(e)); }
+       if (window.TrackUI && window.TrackUI.migrateToFirebase) {
+          window.TrackUI.migrateToFirebase(true);
+       }
+    })
+    .catch(async (e) => {
+       console.error("Background Submit error", e);
+       if (docRef) { await docRef.delete().catch(e=>console.error(e)); }
+    });
+}
+
 async function submitGenericForm(config) {
   const subject = $(config.prefix + 'Subject')?.value.trim();
   const detail = $(config.prefix + 'Detail')?.value.trim();
@@ -4020,10 +4089,12 @@ async function submitGenericForm(config) {
     if (incidentDate) payload.incidentDate = incidentDate;
     if (targetDate) payload.targetDate = targetDate;
 
-    await ResourceHubCore.api.post(payload);
-    if (window.TrackUI && window.TrackUI.migrateToFirebase) {
-      window.TrackUI.migrateToFirebase(true); // Silent sync to push new data to Firebase
-    }
+    let typeForFirebase = 'it';
+    if (config.action === 'submit_project') typeForFirebase = 'project';
+    if (config.action === 'submit_av_repair') typeForFirebase = 'av';
+    
+    backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate || targetDate);
+
     setBusy(btn, false, config.btnOriginalHtml);
     await alertBox('success', 'ส่งเรื่องสำเร็จ!', config.successText, { timer: 2000, showConfirmButton: false });
     $(config.formId)?.reset();
@@ -6286,8 +6357,16 @@ const TrackUI = (() => {
     }
     
     let extra = '';
-    if (job.tech && (isAdminLoggedIn || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor')))) {
-      extra = `<div class="mt-3 text-right"><button onclick="TrackUI.assignTech('${job.id}')" class="text-[#265D5A] hover:text-[#1a3f3d] text-xs font-bold underline"><i class="fa-solid fa-user-pen mr-1"></i>เปลี่ยนช่างที่รับผิดชอบ</button></div>`;
+    const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : '';
+    const isMyJob = job.tech && myNameStr === job.tech.trim();
+    const canManage = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor')) || isMyJob;
+    
+    if (job.tech && job.group !== 'done' && job.group !== 'cancel' && canManage) {
+      extra = `<div class="mt-4 flex flex-wrap gap-2 justify-end border-t border-[#B0EDE6]/50 pt-3">
+        <button onclick="TrackUI.closeJob('${job.id}')" class="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"><i class="fa-solid fa-check-circle mr-1"></i>อัปเดต / ปิดงาน</button>
+        ${(typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor')) ? 
+          `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-white border border-[#265D5A] text-[#265D5A] hover:bg-[#F3FCFA] px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"><i class="fa-solid fa-user-pen mr-1"></i>เปลี่ยนช่าง</button>` : ''}
+      </div>`;
     }
 
     return `<section class="rounded-2xl border border-[#B0EDE6] bg-[#F3FCFA] p-5 mb-4">
@@ -6354,43 +6433,186 @@ const TrackUI = (() => {
     }
   }
 
+  // ---------- ฟังก์ชันปิดงาน (สำหรับช่าง/หัวหน้า) ----------
+  async function closeJob(jobId) {
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const isSupervisor = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor'));
+
+    const x = await Swal.fire({
+      title: 'อัปเดต / ปิดงาน',
+      html: `<div class="text-left space-y-3 mt-4 text-slate-900">
+               <input id="techName" class="w-full p-2.5 border rounded-lg bg-slate-50" placeholder="ชื่อช่างผู้ซ่อม" value="${job.tech || ''}" readonly>
+               <textarea id="fixDetail" rows="2" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none" placeholder="ซ่อมหรือแก้ไขอะไรไปบ้าง?">${job.fixDetail || ''}</textarea>
+               <label class="block text-xs font-semibold text-slate-600 mt-2">รูปภาพผลการซ่อม (บังคับ)</label>
+               <input type="file" id="proofFile" accept="image/*" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+               <hr class="my-2 border-slate-200">
+               <label class="block text-xs font-semibold text-slate-600">ค่าใช้จ่ายในการซ่อม (บาท) [ไม่บังคับ]</label>
+               <input type="number" id="repairCost" min="0" class="w-full p-2.5 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-[#265D5A] outline-none" placeholder="0" value="${job.cost || ''}">
+               <label class="block text-xs font-semibold text-slate-600 mt-2">เอกสารใบเสร็จ / เบิกจ่าย [ไม่บังคับ]</label>
+               <input type="file" id="receiptFile" accept="image/*,application/pdf" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+             </div>`,
+      focusConfirm: false, showCancelButton: true, confirmButtonText: isSupervisor ? 'บันทึกปิดงาน' : 'ส่งงาน (เสร็จสิ้น)', cancelButtonText: 'ยกเลิก',
+      preConfirm: () => {
+        const techName = document.getElementById('techName').value.trim();
+        const fixDetail = document.getElementById('fixDetail').value.trim();
+        const file = document.getElementById('proofFile').files[0];
+        const cost = document.getElementById('repairCost').value.trim();
+        const receipt = document.getElementById('receiptFile').files[0];
+        if (!fixDetail || !file) return Swal.showValidationMessage('กรุณากรอกรายละเอียดการแก้ไข และแนบรูปภาพผลการซ่อมให้ครบถ้วนครับ');
+        return { techName, fixDetail, file, cost, receipt };
+      }
+    });
+
+    if (!x.isConfirmed) return;
+
+    if (typeof submitAction === 'function' && typeof readFile === 'function') {
+      submitAction(
+        async () => {
+          const file = await readFile(x.value.file);
+          let receiptFile = null;
+          if (x.value.receipt) {
+            receiptFile = await readFile(x.value.receipt);
+          }
+
+          const action = job.type === 'building' ? 'update_task_proof' : 'update_adv_task';
+          const tabType = job.type === 'project' ? 'project' : (job.type === 'it' ? 'it' : (job.type === 'av' ? 'av-repair' : ''));
+          const newStatus = isSupervisor ? 'เสร็จสิ้น' : 'เสร็จสิ้น';
+
+          // Update Firebase first for snappy UI
+          if (window.firestoreDb) {
+            await window.firestoreDb.collection('tickets').doc(jobId).set({
+              status: newStatus,
+              fixDetail: x.value.fixDetail,
+              cost: x.value.cost,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+          }
+          
+          return ResourceHubCore.api.post({
+            action: action,
+            tabType: tabType,
+            rowIndex: job.originalIndex,
+            technician: x.value.techName,
+            fixDetail: x.value.fixDetail,
+            file: file,
+            cost: x.value.cost,
+            receiptFile: receiptFile,
+            status: newStatus
+          });
+        },
+        'อัปเดตและปิดงานเรียบร้อย!',
+        () => {
+          // Firebase Snapshot will handle the reload
+        }
+      );
+    } else {
+      Swal.fire('Error', 'ไม่พบฟังก์ชันที่จำเป็น กรุณารีเฟรชหน้าเว็บ', 'error');
+    }
+  }
+
   // ---------- แชทแบบ Real-time ----------
   async function assignTech(jobId) {
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
     
-    const { value: techName } = await Swal.fire({
+    Swal.fire({title: 'กำลังโหลดรายชื่อช่าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    let users = window.cachedUsers;
+    if (!users) {
+      try {
+        users = await ResourceHubCore.api.get('get_users');
+        window.cachedUsers = users;
+      } catch (e) {
+        Swal.fire('Error', 'ไม่สามารถโหลดรายชื่อช่างได้', 'error');
+        return;
+      }
+    }
+    Swal.close();
+
+    const techOptions = {};
+    users.forEach(u => {
+      const role = u[2] ? u[2].toString().trim() : '';
+      if (role === 'Tech' || role === 'IT') {
+        techOptions[u[1]] = u[1]; // Value is the name
+      }
+    });
+
+    if (Object.keys(techOptions).length === 0) {
+      Swal.fire('Info', 'ไม่พบรายชื่อช่างหรือไอทีในระบบ', 'info');
+      return;
+    }
+
+    const urgencyArr = ['ด่วนที่สุด (ภายใน 2 ชม.)', 'ด่วน (ภายใน 24 ชม.)', 'ปานกลาง (2-3 วัน)', 'ตามคิว (ทั่วไป)'];
+    let urgencyHtml = '<option value="">ไม่ระบุความเร่งด่วน</option>';
+    urgencyArr.forEach(u => {
+      const selected = (job.urgency === u) ? 'selected' : '';
+      urgencyHtml += `<option value="${u}" ${selected}>${u}</option>`;
+    });
+
+    let techOptionsHtml = '<option value="">ยังไม่มอบหมาย</option>';
+    Object.keys(techOptions).forEach(t => {
+      const selected = (job.tech === t) ? 'selected' : '';
+      techOptionsHtml += `<option value="${t}" ${selected}>${t}</option>`;
+    });
+
+    const formHtml = `
+      <div class="text-left space-y-4 text-slate-800 mt-4 border-t pt-4">
+        <div>
+          <label class="block text-xs font-semibold mb-2">ช่างที่รับผิดชอบ</label>
+          <select id="assignTechName" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none">
+            ${techOptionsHtml}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-2">ความเร่งด่วน</label>
+          <select id="assignUrgency" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none">
+            ${urgencyHtml}
+          </select>
+        </div>
+      </div>
+    `;
+
+    const { value: formValues } = await Swal.fire({
       title: 'มอบหมายช่างซ่อม',
-      input: 'text',
-      inputLabel: 'ระบุชื่อช่างที่รับผิดชอบ',
-      inputValue: job.tech || '',
+      html: formHtml,
       showCancelButton: true,
       confirmButtonText: 'บันทึก',
-      cancelButtonText: 'ยกเลิก'
+      cancelButtonText: 'ยกเลิก',
+      preConfirm: () => {
+        const techName = document.getElementById('assignTechName').value;
+        const urgency = document.getElementById('assignUrgency').value;
+        return { techName, urgency };
+      }
     });
     
-    if (techName) {
+    if (formValues) {
+      const techName = formValues.techName;
+      const urgency = formValues.urgency;
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
       let sheetMap = { 'building': 'Task', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
       let sheetName = sheetMap[job.type] || 'Task';
       
       try {
-        // อัปเดตลง Firebase เพื่อให้ UI ทุกคนเปลี่ยนทันที (Real-time)
-        if (window.firestoreDb) {
-           await window.firestoreDb.collection('tickets').doc(jobId).set({
-             techName: techName,
-             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-           }, { merge: true });
-        }
+         // อัปเดตลง Firebase เพื่อให้ UI ทุกคนเปลี่ยนทันที (Real-time)
+         if (window.firestoreDb) {
+            let updateData = {
+              techName: techName,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            if (urgency) updateData.urgency = urgency;
+            await window.firestoreDb.collection('tickets').doc(jobId).set(updateData, { merge: true });
+         }
       
-        // อัปเดตลง Google Sheets เป็น Backup
-        await ResourceHubCore.api.post({
-          action: 'edit_assignment',
-          sheetName: sheetName,
-          rowIndex: job.originalIndex,
-          technician: techName
-        });
+         // อัปเดตลง Google Sheets เป็น Backup
+         await ResourceHubCore.api.post({
+           action: 'edit_assignment',
+           sheetName: sheetName,
+           rowIndex: job.originalIndex,
+           technician: techName,
+           urgency: urgency
+         });
         
         Swal.fire({icon: 'success', title: 'มอบหมายช่างสำเร็จ!', showConfirmButton: false, timer: 1500});
         // ไม่ต้องเรียก open(jobId) เองแล้ว เพราะ Firebase .onSnapshot จะทำงานและรีเฟรช UI ให้เอง
@@ -6737,6 +6959,7 @@ const TrackUI = (() => {
     load,
     open,
     assignTech,
+    closeJob,
     submitChat,
     previewChatImage,
     clearChatImage,

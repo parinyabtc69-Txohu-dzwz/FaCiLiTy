@@ -612,10 +612,14 @@ function doPost(e) {
             editTargetRow = data.rowIndex + 2;
         }
 
-        if (editSheetName === CONFIG.SHEET_NAME || editSheetName === CONFIG.AV_SHEET_NAME) {
+        if (editSheetName === CONFIG.SHEET_NAME) {
             if (data.technician) sheetEdit.getRange(editTargetRow, 8).setValue(data.technician);
+            if (data.urgency) sheetEdit.getRange(editTargetRow, 12).setValue(data.urgency);
+        } else if (editSheetName === CONFIG.AV_SHEET_NAME) {
+            if (data.technician) sheetEdit.getRange(editTargetRow, 7).setValue(data.technician);
         } else {
             if (data.technician) sheetEdit.getRange(editTargetRow, 9).setValue(data.technician);
+            if (data.urgency) sheetEdit.getRange(editTargetRow, 7).setValue(data.urgency);
         }
 
         if (data.technician) {

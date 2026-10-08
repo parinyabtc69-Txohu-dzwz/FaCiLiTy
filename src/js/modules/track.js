@@ -453,8 +453,16 @@ const TrackUI = (() => {
     }
     
     let extra = '';
-    if (job.tech && (isAdminLoggedIn || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor')))) {
-      extra = `<div class="mt-3 text-right"><button onclick="TrackUI.assignTech('${job.id}')" class="text-[#265D5A] hover:text-[#1a3f3d] text-xs font-bold underline"><i class="fa-solid fa-user-pen mr-1"></i>เปลี่ยนช่างที่รับผิดชอบ</button></div>`;
+    const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : '';
+    const isMyJob = job.tech && myNameStr === job.tech.trim();
+    const canManage = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor')) || isMyJob;
+    
+    if (job.tech && job.group !== 'done' && job.group !== 'cancel' && canManage) {
+      extra = `<div class="mt-4 flex flex-wrap gap-2 justify-end border-t border-[#B0EDE6]/50 pt-3">
+        <button onclick="TrackUI.closeJob('${job.id}')" class="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"><i class="fa-solid fa-check-circle mr-1"></i>อัปเดต / ปิดงาน</button>
+        ${(typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor')) ? 
+          `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-white border border-[#265D5A] text-[#265D5A] hover:bg-[#F3FCFA] px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"><i class="fa-solid fa-user-pen mr-1"></i>เปลี่ยนช่าง</button>` : ''}
+      </div>`;
     }
 
     return `<section class="rounded-2xl border border-[#B0EDE6] bg-[#F3FCFA] p-5 mb-4">
@@ -521,43 +529,186 @@ const TrackUI = (() => {
     }
   }
 
+  // ---------- ฟังก์ชันปิดงาน (สำหรับช่าง/หัวหน้า) ----------
+  async function closeJob(jobId) {
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const isSupervisor = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor'));
+
+    const x = await Swal.fire({
+      title: 'อัปเดต / ปิดงาน',
+      html: `<div class="text-left space-y-3 mt-4 text-slate-900">
+               <input id="techName" class="w-full p-2.5 border rounded-lg bg-slate-50" placeholder="ชื่อช่างผู้ซ่อม" value="${job.tech || ''}" readonly>
+               <textarea id="fixDetail" rows="2" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none" placeholder="ซ่อมหรือแก้ไขอะไรไปบ้าง?">${job.fixDetail || ''}</textarea>
+               <label class="block text-xs font-semibold text-slate-600 mt-2">รูปภาพผลการซ่อม (บังคับ)</label>
+               <input type="file" id="proofFile" accept="image/*" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+               <hr class="my-2 border-slate-200">
+               <label class="block text-xs font-semibold text-slate-600">ค่าใช้จ่ายในการซ่อม (บาท) [ไม่บังคับ]</label>
+               <input type="number" id="repairCost" min="0" class="w-full p-2.5 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-[#265D5A] outline-none" placeholder="0" value="${job.cost || ''}">
+               <label class="block text-xs font-semibold text-slate-600 mt-2">เอกสารใบเสร็จ / เบิกจ่าย [ไม่บังคับ]</label>
+               <input type="file" id="receiptFile" accept="image/*,application/pdf" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+             </div>`,
+      focusConfirm: false, showCancelButton: true, confirmButtonText: isSupervisor ? 'บันทึกปิดงาน' : 'ส่งงาน (เสร็จสิ้น)', cancelButtonText: 'ยกเลิก',
+      preConfirm: () => {
+        const techName = document.getElementById('techName').value.trim();
+        const fixDetail = document.getElementById('fixDetail').value.trim();
+        const file = document.getElementById('proofFile').files[0];
+        const cost = document.getElementById('repairCost').value.trim();
+        const receipt = document.getElementById('receiptFile').files[0];
+        if (!fixDetail || !file) return Swal.showValidationMessage('กรุณากรอกรายละเอียดการแก้ไข และแนบรูปภาพผลการซ่อมให้ครบถ้วนครับ');
+        return { techName, fixDetail, file, cost, receipt };
+      }
+    });
+
+    if (!x.isConfirmed) return;
+
+    if (typeof submitAction === 'function' && typeof readFile === 'function') {
+      submitAction(
+        async () => {
+          const file = await readFile(x.value.file);
+          let receiptFile = null;
+          if (x.value.receipt) {
+            receiptFile = await readFile(x.value.receipt);
+          }
+
+          const action = job.type === 'building' ? 'update_task_proof' : 'update_adv_task';
+          const tabType = job.type === 'project' ? 'project' : (job.type === 'it' ? 'it' : (job.type === 'av' ? 'av-repair' : ''));
+          const newStatus = isSupervisor ? 'เสร็จสิ้น' : 'เสร็จสิ้น';
+
+          // Update Firebase first for snappy UI
+          if (window.firestoreDb) {
+            await window.firestoreDb.collection('tickets').doc(jobId).set({
+              status: newStatus,
+              fixDetail: x.value.fixDetail,
+              cost: x.value.cost,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+          }
+          
+          return ResourceHubCore.api.post({
+            action: action,
+            tabType: tabType,
+            rowIndex: job.originalIndex,
+            technician: x.value.techName,
+            fixDetail: x.value.fixDetail,
+            file: file,
+            cost: x.value.cost,
+            receiptFile: receiptFile,
+            status: newStatus
+          });
+        },
+        'อัปเดตและปิดงานเรียบร้อย!',
+        () => {
+          // Firebase Snapshot will handle the reload
+        }
+      );
+    } else {
+      Swal.fire('Error', 'ไม่พบฟังก์ชันที่จำเป็น กรุณารีเฟรชหน้าเว็บ', 'error');
+    }
+  }
+
   // ---------- แชทแบบ Real-time ----------
   async function assignTech(jobId) {
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
     
-    const { value: techName } = await Swal.fire({
+    Swal.fire({title: 'กำลังโหลดรายชื่อช่าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    let users = window.cachedUsers;
+    if (!users) {
+      try {
+        users = await ResourceHubCore.api.get('get_users');
+        window.cachedUsers = users;
+      } catch (e) {
+        Swal.fire('Error', 'ไม่สามารถโหลดรายชื่อช่างได้', 'error');
+        return;
+      }
+    }
+    Swal.close();
+
+    const techOptions = {};
+    users.forEach(u => {
+      const role = u[2] ? u[2].toString().trim() : '';
+      if (role === 'Tech' || role === 'IT') {
+        techOptions[u[1]] = u[1]; // Value is the name
+      }
+    });
+
+    if (Object.keys(techOptions).length === 0) {
+      Swal.fire('Info', 'ไม่พบรายชื่อช่างหรือไอทีในระบบ', 'info');
+      return;
+    }
+
+    const urgencyArr = ['ด่วนที่สุด (ภายใน 2 ชม.)', 'ด่วน (ภายใน 24 ชม.)', 'ปานกลาง (2-3 วัน)', 'ตามคิว (ทั่วไป)'];
+    let urgencyHtml = '<option value="">ไม่ระบุความเร่งด่วน</option>';
+    urgencyArr.forEach(u => {
+      const selected = (job.urgency === u) ? 'selected' : '';
+      urgencyHtml += `<option value="${u}" ${selected}>${u}</option>`;
+    });
+
+    let techOptionsHtml = '<option value="">ยังไม่มอบหมาย</option>';
+    Object.keys(techOptions).forEach(t => {
+      const selected = (job.tech === t) ? 'selected' : '';
+      techOptionsHtml += `<option value="${t}" ${selected}>${t}</option>`;
+    });
+
+    const formHtml = `
+      <div class="text-left space-y-4 text-slate-800 mt-4 border-t pt-4">
+        <div>
+          <label class="block text-xs font-semibold mb-2">ช่างที่รับผิดชอบ</label>
+          <select id="assignTechName" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none">
+            ${techOptionsHtml}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-2">ความเร่งด่วน</label>
+          <select id="assignUrgency" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none">
+            ${urgencyHtml}
+          </select>
+        </div>
+      </div>
+    `;
+
+    const { value: formValues } = await Swal.fire({
       title: 'มอบหมายช่างซ่อม',
-      input: 'text',
-      inputLabel: 'ระบุชื่อช่างที่รับผิดชอบ',
-      inputValue: job.tech || '',
+      html: formHtml,
       showCancelButton: true,
       confirmButtonText: 'บันทึก',
-      cancelButtonText: 'ยกเลิก'
+      cancelButtonText: 'ยกเลิก',
+      preConfirm: () => {
+        const techName = document.getElementById('assignTechName').value;
+        const urgency = document.getElementById('assignUrgency').value;
+        return { techName, urgency };
+      }
     });
     
-    if (techName) {
+    if (formValues) {
+      const techName = formValues.techName;
+      const urgency = formValues.urgency;
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
       let sheetMap = { 'building': 'Task', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
       let sheetName = sheetMap[job.type] || 'Task';
       
       try {
-        // อัปเดตลง Firebase เพื่อให้ UI ทุกคนเปลี่ยนทันที (Real-time)
-        if (window.firestoreDb) {
-           await window.firestoreDb.collection('tickets').doc(jobId).set({
-             techName: techName,
-             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-           }, { merge: true });
-        }
+         // อัปเดตลง Firebase เพื่อให้ UI ทุกคนเปลี่ยนทันที (Real-time)
+         if (window.firestoreDb) {
+            let updateData = {
+              techName: techName,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            if (urgency) updateData.urgency = urgency;
+            await window.firestoreDb.collection('tickets').doc(jobId).set(updateData, { merge: true });
+         }
       
-        // อัปเดตลง Google Sheets เป็น Backup
-        await ResourceHubCore.api.post({
-          action: 'edit_assignment',
-          sheetName: sheetName,
-          rowIndex: job.originalIndex,
-          technician: techName
-        });
+         // อัปเดตลง Google Sheets เป็น Backup
+         await ResourceHubCore.api.post({
+           action: 'edit_assignment',
+           sheetName: sheetName,
+           rowIndex: job.originalIndex,
+           technician: techName,
+           urgency: urgency
+         });
         
         Swal.fire({icon: 'success', title: 'มอบหมายช่างสำเร็จ!', showConfirmButton: false, timer: 1500});
         // ไม่ต้องเรียก open(jobId) เองแล้ว เพราะ Firebase .onSnapshot จะทำงานและรีเฟรช UI ให้เอง
@@ -904,6 +1055,7 @@ const TrackUI = (() => {
     load,
     open,
     assignTech,
+    closeJob,
     submitChat,
     previewChatImage,
     clearChatImage,
