@@ -1090,34 +1090,100 @@ function toggleAuthMode() {
   $('toggle-auth-btn').textContent = reg ? 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ' : 'ยังไม่มีบัญชี? สมัครสมาชิกใหม่';
 }
 
-function handleCredentialResponse(response) {
+async function handleCredentialResponse(response) {
   Swal.fire({ title: 'กำลังตรวจสอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-  post({ action: 'google_login', credential: response.credential })
-    .then((res) => {
-      // res.role = 'Teacher' | 'Admin' | 'Staff'
-      currentTeacher = res.name;
-      currentRole = res.role;
-      currentEmail = res.email || '';
-      isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive' || res.role === 'Supervisor');
+  try {
+    if (!window.firebaseAuth || !window.firestoreDb) throw new Error('Firebase_Not_Ready');
 
-      localStorage.setItem('logged_teacher', currentTeacher);
-      localStorage.setItem('logged_role', currentRole);
-      localStorage.setItem('logged_email', currentEmail);
-      if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
-      localStorage.setItem('session_login_time', Date.now().toString());
+    // 1. ลองล็อกอินด้วย Firebase Auth ตรงๆ
+    const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+    const userCredential = await window.firebaseAuth.signInWithCredential(credential);
+    const user = userCredential.user;
 
-      updateSessionUI();
-      // ดึงข้อมูลหลักใน background ทันที เพื่อให้ Dashboard โหลดเร็วขึ้น
-      if (isAdminLoggedIn) prefetchAllData();
-      alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
-        .then(() => {
-          if (isAdminLoggedIn) nav('page-dashboard');
-          else nav('page-teacher-profile');
+    // 2. เช็คข้อมูลผู้ใช้ใน Firestore 'users' collection
+    const userDoc = await window.firestoreDb.collection('users').doc(user.email).get();
+    let userData = {};
+
+    if (userDoc.exists) {
+      userData = userDoc.data();
+      if (userData.status === 'banned') throw new Error('บัญชีของคุณถูกระงับการใช้งาน');
+      if (userData.status !== 'approved') throw new Error('บัญชีของคุณกำลังรอการอนุมัติ');
+      
+      // อัปเดตเวลาเข้าสู่ระบบ
+      await window.firestoreDb.collection('users').doc(user.email).update({
+        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+        picture: user.photoURL,
+        name: user.displayName
+      });
+    } else {
+      // 3. ถ้าไม่มีใน Firebase -> ดึงจาก Google Sheets เพื่อ Migrate Role ให้ถูกต้องแบบไร้รอยต่อ
+      let gasRole = 'Teacher';
+      let gasStatus = 'approved';
+      try {
+        const allUsers = await ResourceHubCore.api.get('get_users');
+        const found = allUsers.find(u => u[0].toLowerCase() === user.email.toLowerCase());
+        if (found) {
+           gasRole = found[2] || 'Teacher';
+           gasStatus = found[3] || 'approved';
+        }
+      } catch (e) {
+        console.warn("Migration fetch failed, defaulting to Teacher", e);
+      }
+      
+      if (gasStatus === 'banned') throw new Error('บัญชีถูกระงับการใช้งาน');
+
+      userData = {
+        email: user.email,
+        name: user.displayName,
+        role: gasRole,
+        status: gasStatus,
+        picture: user.photoURL,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      await window.firestoreDb.collection('users').doc(user.email).set(userData);
+    }
+    
+    finalizeLogin(userData.name, userData.role, userData.email);
+
+  } catch (error) {
+    // 4. FALLBACK: ถ้าระบบ Firebase Auth ยังไม่เปิด หรือเกิดข้อผิดพลาด ให้กลับไปใช้ระบบเก่า Google Sheets
+    if (error.message === 'Firebase_Not_Ready' || error.code === 'auth/operation-not-allowed') {
+      console.warn("Firebase Auth not enabled or ready. Falling back to Google Sheets login.");
+      ResourceHubCore.api.post({ action: 'google_login', credential: response.credential })
+        .then((res) => {
+          finalizeLogin(res.name, res.role, res.email);
+        })
+        .catch((e) => {
+          alertBox('error', 'เข้าสู่ระบบไม่สำเร็จ', e.message || 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์จากเซิร์ฟเวอร์');
         });
-    })
-    .catch((e) => {
-      alertBox('error', 'เข้าสู่ระบบไม่สำเร็จ', e.message || 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์');
+    } else {
+      alertBox('error', 'เข้าสู่ระบบไม่สำเร็จ', error.message || 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์');
+    }
+  }
+}
+
+function finalizeLogin(name, role, email) {
+  currentTeacher = name;
+  currentRole = role;
+  currentEmail = email || '';
+  isAdminLoggedIn = (role === 'Admin' || role === 'Executive' || role === 'Supervisor');
+
+  localStorage.setItem('logged_teacher', currentTeacher);
+  localStorage.setItem('logged_role', currentRole);
+  localStorage.setItem('logged_email', currentEmail);
+  if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
+  localStorage.setItem('session_login_time', Date.now().toString());
+
+  updateSessionUI();
+  // ดึงข้อมูลหลักใน background ทันที เพื่อให้ Dashboard โหลดเร็วขึ้น
+  if (isAdminLoggedIn) prefetchAllData();
+  
+  alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
+    .then(() => {
+      if (isAdminLoggedIn) nav('page-dashboard');
+      else nav('page-teacher-profile');
     });
 }
 
