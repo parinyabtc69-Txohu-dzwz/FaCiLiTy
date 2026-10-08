@@ -32,6 +32,12 @@ function initFirebase() {
     firestoreDb = firebase.firestore();
     firebaseStorage = firebase.storage();
     firebaseAuth = firebase.auth();
+    
+    // Attach to window for global access (some modules like track.js use window.firestoreDb)
+    window.firebaseApp = firebaseApp;
+    window.firestoreDb = firestoreDb;
+    window.firebaseStorage = firebaseStorage;
+    window.firebaseAuth = firebaseAuth;
     console.log('🔥 Firebase Services initialized successfully');
     return true;
   } catch (err) {
