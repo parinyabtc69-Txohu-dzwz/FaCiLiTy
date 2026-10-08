@@ -459,6 +459,9 @@ const ResourceHubCore = {
         const file = await readFile($('file').files[0]);
         if (file) file.folderId = REPAIR_DRIVE_FOLDER_ID;
         await ResourceHubCore.api.post({ action: 'submit_repair', subject, detail, reporter, file, folderId: REPAIR_DRIVE_FOLDER_ID, urgency, dept, loc, incidentDate: formattedIncidentDate, contact });
+        if (window.TrackUI && window.TrackUI.migrateToFirebase) {
+          window.TrackUI.migrateToFirebase(true); // Silent sync to push new data to Firebase
+        }
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ส่งเรื่องแจ้งซ่อม</span>');
         await alertBox('success', 'สำเร็จ', 'ส่งเรื่องแจ้งซ่อมเรียบร้อยแล้ว', { timer: 2000, showConfirmButton: false });
         $('repairForm').reset();
@@ -507,6 +510,9 @@ const ResourceHubCore = {
           location: loc,
           signature: signer
         });
+        if (window.TrackUI && window.TrackUI.migrateToFirebase) {
+          window.TrackUI.migrateToFirebase(true); // Silent sync to push new data to Firebase
+        }
         setBusy(btn, false, '<i class="fa-solid fa-paper-plane"></i> <span>ยืนยันการขอยืมอุปกรณ์</span>');
         await alertBox('success', 'สำเร็จ', 'ส่งเรื่องขอยืมอุปกรณ์เรียบร้อยแล้ว', { timer: 2000, showConfirmButton: false });
         $('avForm').reset();
@@ -1974,6 +1980,9 @@ async function submitGenericForm(config) {
     if (targetDate) payload.targetDate = targetDate;
 
     await ResourceHubCore.api.post(payload);
+    if (window.TrackUI && window.TrackUI.migrateToFirebase) {
+      window.TrackUI.migrateToFirebase(true); // Silent sync to push new data to Firebase
+    }
     setBusy(btn, false, config.btnOriginalHtml);
     await alertBox('success', 'ส่งเรื่องสำเร็จ!', config.successText, { timer: 2000, showConfirmButton: false });
     $(config.formId)?.reset();

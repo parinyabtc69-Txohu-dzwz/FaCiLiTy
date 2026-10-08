@@ -680,16 +680,21 @@ const TrackUI = (() => {
   }
 
   // ---------- Migration Script ----------
-  async function migrateToFirebase() {
-    if (!window.firestoreDb) return alertBox('error', 'ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Firebase');
-    if (!confirm('ยืนยันการย้ายข้อมูลทั้งหมดจากระบบเดิม (Google Sheets) ไปยัง Firebase ใช่หรือไม่?')) return;
+  async function migrateToFirebase(silent = false) {
+    if (!window.firestoreDb) {
+      if (!silent) alertBox('error', 'ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Firebase');
+      return;
+    }
+    if (!silent && !confirm('ยืนยันการย้ายข้อมูลทั้งหมดจากระบบเดิม (Google Sheets) ไปยัง Firebase ใช่หรือไม่?')) return;
     
-    Swal.fire({
-      title: 'กำลังดึงข้อมูลจากระบบเดิม...',
-      html: 'กำลังติดต่อ Google Apps Script เพื่อดึงข้อมูลทุกหมวด<br>กรุณารอสักครู่ (ประมาณ 5-15 วินาที)',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
+    if (!silent) {
+      Swal.fire({
+        title: 'กำลังดึงข้อมูลจากระบบเดิม...',
+        html: 'กำลังติดต่อ Google Apps Script เพื่อดึงข้อมูลทุกหมวด<br>กรุณารอสักครู่ (ประมาณ 5-15 วินาที)',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+    }
     
     try {
       // ดึงข้อมูลจาก GAS ทุกหมวด: อาคาร, ยืมโสต, และงานขั้นสูง (IT, ซ่อมโสต, โครงการ)
@@ -841,12 +846,14 @@ const TrackUI = (() => {
         throw new Error('ไม่พบข้อมูลจากระบบเดิม หรือไม่สามารถดึงข้อมูลได้');
       }
 
-      Swal.fire({
-        title: 'กำลังย้ายข้อมูลเข้า Firebase...',
-        html: `พบข้อมูลเดิมทั้งหมด <b>${tasksToMigrate.length}</b> รายการ<br>กำลังบันทึกลง Cloud Firestore...`,
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
+      if (!silent) {
+        Swal.fire({
+          title: 'กำลังย้ายข้อมูลเข้า Firebase...',
+          html: `พบข้อมูลเดิมทั้งหมด <b>${tasksToMigrate.length}</b> รายการ<br>กำลังบันทึกลง Cloud Firestore...`,
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading()
+        });
+      }
 
       let count = 0;
       for (const item of tasksToMigrate) {
@@ -863,21 +870,27 @@ const TrackUI = (() => {
       state.loaded = false;
       await load(true);
 
-      Swal.fire({
-        icon: 'success',
-        title: 'ย้ายข้อมูลสำเร็จ!',
-        html: `ย้ายข้อมูลเข้า Firebase เรียบร้อยแล้ว<br>เพิ่มรายการใหม่ <b>${count}</b> รายการ (จากทั้งหมด ${tasksToMigrate.length} รายการ)`,
-        confirmButtonColor: '#265D5A'
-      });
+      if (!silent) {
+        Swal.fire({
+          icon: 'success',
+          title: 'ย้ายข้อมูลสำเร็จ!',
+          html: `ย้ายข้อมูลเข้า Firebase เรียบร้อยแล้ว<br>เพิ่มรายการใหม่ <b>${count}</b> รายการ (จากทั้งหมด ${tasksToMigrate.length} รายการ)`,
+          confirmButtonColor: '#265D5A'
+        });
+      } else {
+        console.log(`[SilentSync] Migrated ${count}/${tasksToMigrate.length} items to Firebase.`);
+      }
 
     } catch (e) {
       console.error(e);
-      Swal.fire({
-        icon: 'error',
-        title: 'ข้อผิดพลาด',
-        text: 'การย้ายข้อมูลล้มเหลว: ' + e.message,
-        confirmButtonColor: '#e11d48'
-      });
+      if (!silent) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ข้อผิดพลาด',
+          text: 'การย้ายข้อมูลล้มเหลว: ' + e.message,
+          confirmButtonColor: '#e11d48'
+        });
+      }
     }
   }
 
