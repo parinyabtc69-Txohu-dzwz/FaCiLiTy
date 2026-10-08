@@ -841,7 +841,6 @@ const TrackUI = (() => {
     submitChat,
     previewChatImage,
     clearChatImage,
-    migrateToFirebase,
     onSearch(v) {
       clearTimeout(state.searchTimer);
       state.searchTimer = setTimeout(() => { state.search = str(v); render(); }, 150);
