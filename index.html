@@ -6512,10 +6512,23 @@ const TrackUI = (() => {
       Swal.fire({title: 'กำลังย้ายข้อมูลเข้า Firebase...', html: `พบข้อมูลรวม ${allRows.length} รายการ`, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
       let count = 0;
+      let rowIndex = 0;
       for (const row of allRows) {
+        rowIndex++;
         const isArray = Array.isArray(row);
-        const ticketId = isArray ? row[16] : row.ticketId;
-        if (!ticketId) continue;
+        let ticketId = isArray ? row[16] : row.ticketId;
+        
+        let type = 'repair';
+        const typeStr = (isArray ? row[1] : row.type) || '';
+        const typeLow = typeStr.toLowerCase();
+        if (typeLow.includes('โสต')) type = 'av';
+        else if (typeLow.includes('ไอที') || typeLow.includes('it')) type = 'it';
+        else if (typeLow.includes('โครงการ')) type = 'project';
+
+        if (!ticketId) {
+          const prefix = type === 'av' ? 'AV' : type === 'it' ? 'IT' : type === 'project' ? 'PJ' : 'B';
+          ticketId = `${prefix}-${String(rowIndex).padStart(3, '0')}`;
+        }
         
         const docRef = firestoreDb.collection('tickets').doc(ticketId);
         const docSnap = await docRef.get();
