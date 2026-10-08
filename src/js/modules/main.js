@@ -3553,4 +3553,7 @@ function checkAndPromptOneTap() {
     setTimeout(checkAndPromptOneTap, 1000); // Try again in 1s if Google script is still loading
   }
 }
-document.addEventListener('DOMContentLoaded', checkAndPromptOneTap);
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof initFirebase === 'function') initFirebase();
+  checkAndPromptOneTap();
+});

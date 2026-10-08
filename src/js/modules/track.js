@@ -195,7 +195,7 @@ const TrackUI = (() => {
     if (state.loading) return;
     if (state.loaded && !force) { render(); return; }
     
-    if (typeof initFirebaseChat === 'function') initFirebaseChat();
+
 
     state.loading = true;
     renderSkeleton();
