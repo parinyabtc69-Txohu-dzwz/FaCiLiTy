@@ -868,6 +868,11 @@ const TrackUI = (() => {
 
       // รีเฟรชข้อมูลหน้าเว็บทันที
       state.loaded = false;
+      if (!silent) {
+        state.mineOnly = false; // ปิด filter เฉพาะงานของฉัน
+        state.type = 'all';
+        state.status = 'all';
+      }
       await load(true);
 
       if (!silent) {
