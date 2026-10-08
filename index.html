@@ -756,7 +756,7 @@
                     <i class="fa-solid fa-star"></i> <span id="b-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="b-rating-count">0</span>)</span>
                   </span>
                 </h2>
-                <button onclick="nav('page-fb-admin')"
+                <button onclick="TrackUI.show({ type: 'building' })"
                   class="text-xs text-[#265D5A] hover:text-[#1a3f3d] font-semibold flex items-center gap-1">
                   <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -824,7 +824,7 @@
                     <i class="fa-solid fa-star"></i> <span id="it-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="it-rating-count">0</span>)</span>
                   </span>
                 </h2>
-                <button onclick="nav('page-it-manage');"
+                <button onclick="TrackUI.show({ type: 'it' });"
                   class="text-xs text-sky-500 hover:text-sky-700 font-semibold flex items-center gap-1">
                   <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -858,7 +858,7 @@
                     <i class="fa-solid fa-star"></i> <span id="avrep-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="avrep-rating-count">0</span>)</span>
                   </span>
                 </h2>
-                <button onclick="nav('page-av-repair-manage');"
+                <button onclick="TrackUI.show({ type: 'av' });"
                   class="text-xs text-amber-500 hover:text-amber-700 font-semibold flex items-center gap-1">
                   <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -892,7 +892,7 @@
                     <i class="fa-solid fa-star"></i> <span id="proj-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="proj-rating-count">0</span>)</span>
                   </span>
                 </h2>
-                <button onclick="nav('page-project-manage');"
+                <button onclick="TrackUI.show({ type: 'project' });"
                   class="text-xs text-violet-500 hover:text-violet-700 font-semibold flex items-center gap-1">
                   <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -6498,14 +6498,21 @@ const TrackUI = (() => {
     Swal.fire({title: 'กำลังดึงข้อมูลจากระบบเก่า...', html: 'กรุณารอสักครู่ (อาจใช้เวลา 1-2 นาที)', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
     
     try {
-      // ดึงข้อมูลจาก GAS
-      const res = await ResourceHubCore.api.get('get_tasks');
-      if (!res || !Array.isArray(res)) throw new Error('ไม่สามารถดึงข้อมูลจากระบบเก่าได้');
+      // ดึงข้อมูลจาก GAS ทุกหมวด
+      const [b, a, i, p] = await Promise.all([
+        ResourceHubCore.api.get('get_tasks').catch(()=>[]),
+        ResourceHubCore.api.get('get_av_requests').catch(()=>[]),
+        ResourceHubCore.api.get('get_it_tasks').catch(()=>[]),
+        ResourceHubCore.api.get('get_project_tasks').catch(()=>[])
+      ]);
       
-      Swal.fire({title: 'กำลังย้ายข้อมูลเข้า Firebase...', html: `พบข้อมูล ${res.length} รายการ`, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      const allRows = [...(b||[]), ...(a||[]), ...(i||[]), ...(p||[])];
+      if (!allRows.length) throw new Error('ไม่พบข้อมูลจากระบบเก่า หรือไม่สามารถดึงข้อมูลได้');
+      
+      Swal.fire({title: 'กำลังย้ายข้อมูลเข้า Firebase...', html: `พบข้อมูลรวม ${allRows.length} รายการ`, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
       let count = 0;
-      for (const row of res) {
+      for (const row of allRows) {
         const isArray = Array.isArray(row);
         const ticketId = isArray ? row[16] : row.ticketId;
         if (!ticketId) continue;
@@ -6596,9 +6603,13 @@ const TrackUI = (() => {
     // เปิดหน้ารายการพร้อมตั้งค่าเริ่มต้น (เช่น หลังแจ้งซ่อมเสร็จ ให้เห็นงานของตัวเอง)
     show(opts = {}) {
       if (opts.mineOnly !== undefined) state.mineOnly = !!opts.mineOnly && !!currentTeacher;
+      if (opts.type !== undefined) state.type = opts.type;
+      if (opts.status !== undefined) state.status = opts.status;
       if (opts.force) state.loaded = false;
       nav('page-track');
       load(opts.force);
+      // Ensure UI buttons update
+      setTimeout(render, 50);
     }
   };
 })();

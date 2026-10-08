@@ -687,14 +687,21 @@ const TrackUI = (() => {
     Swal.fire({title: 'กำลังดึงข้อมูลจากระบบเก่า...', html: 'กรุณารอสักครู่ (อาจใช้เวลา 1-2 นาที)', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
     
     try {
-      // ดึงข้อมูลจาก GAS
-      const res = await ResourceHubCore.api.get('get_tasks');
-      if (!res || !Array.isArray(res)) throw new Error('ไม่สามารถดึงข้อมูลจากระบบเก่าได้');
+      // ดึงข้อมูลจาก GAS ทุกหมวด
+      const [b, a, i, p] = await Promise.all([
+        ResourceHubCore.api.get('get_tasks').catch(()=>[]),
+        ResourceHubCore.api.get('get_av_requests').catch(()=>[]),
+        ResourceHubCore.api.get('get_it_tasks').catch(()=>[]),
+        ResourceHubCore.api.get('get_project_tasks').catch(()=>[])
+      ]);
       
-      Swal.fire({title: 'กำลังย้ายข้อมูลเข้า Firebase...', html: `พบข้อมูล ${res.length} รายการ`, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      const allRows = [...(b||[]), ...(a||[]), ...(i||[]), ...(p||[])];
+      if (!allRows.length) throw new Error('ไม่พบข้อมูลจากระบบเก่า หรือไม่สามารถดึงข้อมูลได้');
+      
+      Swal.fire({title: 'กำลังย้ายข้อมูลเข้า Firebase...', html: `พบข้อมูลรวม ${allRows.length} รายการ`, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
       let count = 0;
-      for (const row of res) {
+      for (const row of allRows) {
         const isArray = Array.isArray(row);
         const ticketId = isArray ? row[16] : row.ticketId;
         if (!ticketId) continue;
@@ -785,9 +792,13 @@ const TrackUI = (() => {
     // เปิดหน้ารายการพร้อมตั้งค่าเริ่มต้น (เช่น หลังแจ้งซ่อมเสร็จ ให้เห็นงานของตัวเอง)
     show(opts = {}) {
       if (opts.mineOnly !== undefined) state.mineOnly = !!opts.mineOnly && !!currentTeacher;
+      if (opts.type !== undefined) state.type = opts.type;
+      if (opts.status !== undefined) state.status = opts.status;
       if (opts.force) state.loaded = false;
       nav('page-track');
       load(opts.force);
+      // Ensure UI buttons update
+      setTimeout(render, 50);
     }
   };
 })();
