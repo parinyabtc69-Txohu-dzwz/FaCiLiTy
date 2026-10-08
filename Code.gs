@@ -655,7 +655,9 @@ function doPost(e) {
         return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
 
       case 'update_adv_task':
-        let advSheetName = data.tabType === 'it' ? CONFIG.IT_SHEET_NAME : CONFIG.PROJECT_SHEET_NAME;
+        let advSheetName = CONFIG.PROJECT_SHEET_NAME;
+        if (data.tabType === 'it') advSheetName = CONFIG.IT_SHEET_NAME;
+        else if (data.tabType === 'av-repair' || data.tabType === 'av_repair' || data.tabType === 'av') advSheetName = CONFIG.AV_REPAIR_SHEET_NAME;
         const sheetAdv = db.getSheetByName(advSheetName);
         if (!sheetAdv) {
           return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
@@ -691,14 +693,15 @@ function doPost(e) {
           const advReporter = sheetAdv.getRange(targetAdvRow, 4).getValue();
           const advReporterEmail = getUserEmailByName(advReporter);
           const isIT = data.tabType === 'it';
-          const surveyType = isIT ? 'it_repair' : 'project';
-          const taskLabel = isIT ? '💻 งานซ่อมไอที' : '📋 โครงการ';
-          const advColor = isIT ? '#0ea5e9' : '#8b5cf6';
+          const isAVRep = data.tabType === 'av-repair' || data.tabType === 'av_repair' || data.tabType === 'av';
+          const surveyType = isIT ? 'it_repair' : (isAVRep ? 'av_repair' : 'project');
+          const taskLabel = isIT ? '💻 งานซ่อมไอที' : (isAVRep ? '📷 งานซ่อมโสตฯ' : '📋 โครงการ');
+          const advColor = isIT ? '#0ea5e9' : (isAVRep ? '#f59e0b' : '#8b5cf6');
           
           if (advReporterEmail) {
             const advBodyHtml = generateEmailHtml(
               `✅ ${taskLabel}เสร็จสิ้น: ${advSubject}`,
-              isIT ? "#0ea5e9" : "#8b5cf6",
+              advColor,
               advReporter,
               null,
               advSubject,
@@ -722,7 +725,7 @@ function doPost(e) {
               { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=" + surveyType + "&row=" + targetAdvRow, color: "#f59e0b" }
             ]
           );
-          notifyTask(isIT ? 'it' : 'admin', advDoneMsg, `${taskLabel}เสร็จสิ้น`, advColor, {reporter: advReporter, subject: advSubject, status: data.status}, null);
+          notifyTask(isIT ? 'it' : (isAVRep ? 'av_repair' : 'admin'), advDoneMsg, `${taskLabel}เสร็จสิ้น`, advColor, {reporter: advReporter, subject: advSubject, status: data.status}, null);
         }
         
         // Return success
