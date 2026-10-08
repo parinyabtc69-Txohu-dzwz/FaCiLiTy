@@ -1754,6 +1754,10 @@
           class="bg-white/15 hover:bg-white/25 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors">
           <i class="fa-solid fa-rotate"></i> รีเฟรช
         </button>
+        <button onclick="TrackUI.migrateFromSheets()" id="track-migrate-btn"
+          class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center gap-2 transition-colors">
+          <i class="fa-solid fa-cloud-arrow-up"></i> ดึงข้อมูลจาก Sheet
+        </button>
       </div>
     </div>
 
@@ -6732,6 +6736,184 @@ const TrackUI = (() => {
 
 
 
+
+  // ---------- ดึงข้อมูลจาก Google Sheets เข้า Firebase ----------
+  async function migrateFromSheets() {
+    if (!window.firestoreDb) {
+      return alertBox('error', 'ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Firebase');
+    }
+
+    const confirm = await Swal.fire({
+      title: 'ดึงข้อมูลจาก Google Sheet?',
+      html: 'ระบบจะดึงข้อมูลทั้งหมดจาก Google Sheets และบันทึกเข้า Firebase<br><b>รายการที่มีอยู่แล้วจะไม่ถูกทับ</b>',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'ดึงข้อมูล',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#f59e0b'
+    });
+    if (!confirm.isConfirmed) return;
+
+    Swal.fire({
+      title: 'กำลังดึงข้อมูลจาก Sheet...',
+      html: 'กำลังติดต่อ Google Apps Script เพื่อดึงข้อมูลทุกหมวด<br>กรุณารอสักครู่ (ประมาณ 5-15 วินาที)',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    try {
+      const [buildingData, avData, advData] = await Promise.all([
+        ResourceHubCore.api.get('get_tasks').catch(() => []),
+        ResourceHubCore.api.get('get_av_requests').catch(() => []),
+        ResourceHubCore.api.get('get_adv_tasks').catch(() => ({ it: [], av: [], project: [] }))
+      ]);
+
+      const parseDateToTs = (v) => {
+        if (!v) return null;
+        if (v instanceof Date) return firebase.firestore.Timestamp.fromDate(v);
+        const parsed = parseDate(v);
+        if (parsed && !isNaN(parsed)) return firebase.firestore.Timestamp.fromDate(parsed);
+        const d = new Date(v);
+        return isNaN(d) ? null : firebase.firestore.Timestamp.fromDate(d);
+      };
+
+      const items = [];
+
+      // 1. อาคาร
+      if (Array.isArray(buildingData)) {
+        buildingData.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          items.push({
+            ticketId: row[16] || `BLD-LEG-${String(idx+1).padStart(3,'0')}`,
+            type: 'building',
+            subject: row[1] || row[2] || 'แจ้ซ่อมบำรุงอาคาร',
+            detail: row[2] || '',
+            reporterName: row[3] || '',
+            status: row[4] || 'รอดำเนินการ',
+            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
+            fixDetail: row[6] || '',
+            techName: row[7] || '',
+            proofUrl: (row[8] && row[8] !== '-') ? row[8] : '',
+            cost: row[9] || '',
+            urgency: row[11] || '',
+            dept: row[12] || '',
+            location: row[13] || '',
+            incidentDate: parseDateToTs(row[14]),
+            contact: row[15] || '',
+            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
+        });
+      }
+
+      // 2. ยืมโสต์
+      if (Array.isArray(avData)) {
+        avData.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          items.push({
+            ticketId: `AV-REQ-${String(idx+1).padStart(3,'0')}`,
+            type: 'av',
+            subject: 'ขอยืม-คืนโสตทัศนูปกรณ์',
+            detail: row[2] || '',
+            reporterName: row[1] || '',
+            status: row[5] || 'จัดเตรียมแล้ว',
+            location: row[4] ? String(row[4]) : '',
+            techName: row[6] || '',
+            incidentDate: parseDateToTs(row[3]),
+            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
+        });
+      }
+
+      // 3. IT
+      if (advData && Array.isArray(advData.it)) {
+        advData.it.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          items.push({
+            ticketId: `IT-LEG-${String(idx+1).padStart(3,'0')}`,
+            type: 'it',
+            subject: row[1] || 'แจ้ซ่อมไอที',
+            detail: row[2] || '',
+            reporterName: row[3] || '',
+            status: row[4] || 'รอดำเนินการ',
+            urgency: row[6] || '',
+            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
+        });
+      }
+
+      // 4. ซ่อมโสต์
+      if (advData && Array.isArray(advData.av)) {
+        advData.av.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          items.push({
+            ticketId: `AV-REP-${String(idx+1).padStart(3,'0')}`,
+            type: 'av',
+            subject: row[1] || 'แจ้ซ่อมอุปกรณ์โสต์ฯ',
+            detail: row[2] || '',
+            reporterName: row[3] || '',
+            status: row[4] || 'รอดำเนินการ',
+            urgency: row[6] || '',
+            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
+        });
+      }
+
+      // 5. โครงการ
+      if (advData && Array.isArray(advData.project)) {
+        advData.project.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          items.push({
+            ticketId: `PRJ-LEG-${String(idx+1).padStart(3,'0')}`,
+            type: 'project',
+            subject: row[1] || 'เสนอโครงการ/จัดซื้อ',
+            detail: row[2] || '',
+            reporterName: row[3] || '',
+            status: row[4] || 'รอพิจารณาอนุมัติ',
+            urgency: row[6] || '',
+            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
+        });
+      }
+
+      if (!items.length) throw new Error('ไม่พบข้อมูลจาก Google Sheet');
+
+      Swal.update({
+        html: `พบข้อมูล <b>${items.length}</b> รายการ<br>กำลังบันทึกเข้า Firebase...`
+      });
+
+      let added = 0;
+      for (const item of items) {
+        const ref = window.firestoreDb.collection('tickets').doc(item.ticketId);
+        const snap = await ref.get();
+        if (!snap.exists) { await ref.set(item); added++; }
+      }
+
+      state.loaded = false;
+      await load(true);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ดึงข้อมูลสำเร็จ!',
+        html: `เพิ่มรายการใหม่ <b>${added}</b> รายการ (จากทั้งหมด ${items.length} รายการ)`,
+        confirmButtonColor: '#265D5A'
+      });
+
+    } catch (e) {
+      console.error(e);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, confirmButtonColor: '#e11d48' });
+    }
+  }
+
   // ---------- Actions ----------
   return {
     load,
@@ -6741,6 +6923,7 @@ const TrackUI = (() => {
     submitChat,
     previewChatImage,
     clearChatImage,
+    migrateFromSheets,
     onSearch(v) {
       clearTimeout(state.searchTimer);
       state.searchTimer = setTimeout(() => { state.search = str(v); render(); }, 150);
