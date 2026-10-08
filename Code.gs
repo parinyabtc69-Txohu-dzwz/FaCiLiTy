@@ -1,4 +1,4 @@
-
+// [Optimization] Override Date toJSON to mimic getDisplayValues() output format
 Date.prototype.toJSON = function() {
   return Utilities.formatDate(this, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
 };
@@ -8,11 +8,11 @@ Date.prototype.toJSON = function() {
  */
 const CLIENT_ID = '309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com';
 
-const CONFIG = {
+const CONFIG = { 
   SHEET_ID: "1i-XQ0lO571tIX7RvQR51V2AjuXrEwLfJP7Z7b8xuYDM",
-  SHEET_NAME: "Tasks",
-  AV_SHEET_NAME: "AV_Requests",
-  BUG_SHEET_NAME: "System_Reports",
+  SHEET_NAME: "Tasks",             
+  AV_SHEET_NAME: "AV_Requests",    
+  BUG_SHEET_NAME: "System_Reports", 
   USER_SHEET_NAME: "Users",
   MASTER_LOC_SHEET: "Master_Locations",
   MASTER_PROJ_SHEET: "Master_Projects",
@@ -22,8 +22,10 @@ const CONFIG = {
   AV_REPAIR_SHEET_NAME: "AV_Repairs",
   PROJECT_SHEET_NAME: "Facility_Projects",
 
+  // โฟลเดอร์หลักของระบบ (parent)
   ROOT_FOLDER_ID: "1tkOHFwH4MC-eA_eNLThTcLVF3CRHQUXT",
 
+  // ชื่อโฟลเดอร์ย่อยที่จะสร้างอัตโนมัติใน Google Drive
   FOLDER_REPAIR_REPORT: "รูปภาพแจ้งซ่อม",       // รูปที่ผู้แจ้งส่งมา
   FOLDER_REPAIR_PROOF:  "รูปภาพผลการซ่อม",       // รูปที่ช่างส่งตอนปิดงาน
   FOLDER_DOCUMENTS:     "เอกสารระบบ",             // เอกสารจากระบบจัดการเอกสาร
@@ -43,24 +45,37 @@ function getDB() {
   return _globalDB;
 }
 
+// ============================================================
+// Helper: ดึงโฟลเดอร์จากชื่อ ถ้าไม่มีจะสร้างให้อัตโนมัติ
+// ============================================================
 function getOrCreateSubFolder(folderName) {
   const root = DriveApp.getFolderById(CONFIG.ROOT_FOLDER_ID);
   const existing = root.getFoldersByName(folderName);
   if (existing.hasNext()) return existing.next();
-
+  // ยังไม่มี → สร้างใหม่
   const newFolder = root.createFolder(folderName);
   Logger.log("สร้างโฟลเดอร์ใหม่: " + folderName + " | ID: " + newFolder.getId());
   return newFolder;
 }
 
+// ============================================================
+// รองรับ CORS Preflight
+// ============================================================
 function doOptions(e) {
   const _x = "RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5";
   return ContentService.createTextOutput("")
     .setMimeType(ContentService.MimeType.TEXT);
 }
 
+// ============================================================
+// GET Requests
+// ============================================================
+// ============================================================
+// Keep-Alive: ป้องกัน GAS Cold Start โดยการ Ping ตัวเอง
+// วิธีใช้: รัน setupKeepAliveTrigger() ครั้งเดียวใน GAS Editor
+// ============================================================
 function keepAlive() {
-
+  // แค่เรียกใช้ SpreadsheetApp เพื่อให้ GAS ตื่นอยู่เสมอ
   const db = getDB();
   const sheet = db.getSheets()[0];
   const name = sheet ? sheet.getName() : 'ok';
@@ -68,13 +83,13 @@ function keepAlive() {
 }
 
 function setupKeepAliveTrigger() {
-
+  // ลบ Trigger เก่าก่อน (ถ้ามี)
   ScriptApp.getProjectTriggers().forEach(t => {
     if (t.getHandlerFunction() === 'keepAlive') {
       ScriptApp.deleteTrigger(t);
     }
   });
-
+  // ตั้ง Trigger ใหม่: รัน keepAlive ทุก 10 นาที
   ScriptApp.newTrigger('keepAlive')
     .timeBased()
     .everyMinutes(10)
@@ -82,6 +97,9 @@ function setupKeepAliveTrigger() {
   console.log('keepAlive Trigger ตั้งค่าเรียบร้อย - ทุก 10 นาที');
 }
 
+// ============================================================
+// Cache Helpers: ใช้ CacheService เก็บข้อมูลที่อ่านบ่อย ลด latency
+// ============================================================
 const CACHE_TTL = 120; // วินาที (2 นาที)
 
 function getCachedOrFetch(cacheKey, fetchFn) {
@@ -109,7 +127,7 @@ function invalidateDataCaches(action) {
   try {
     const cache = CacheService.getScriptCache();
     let keysToRemove = [];
-
+    
     if (action) {
       if (action.includes('master_')) keysToRemove.push('master_data');
       else if (action.includes('av_status') || action === 'submit_av') keysToRemove.push('av_requests');
@@ -120,9 +138,11 @@ function invalidateDataCaches(action) {
       keysToRemove.push('tasks', 'av_requests', 'adv_tasks', 'master_data');
     }
 
+    // เคลียร์ dashboard เสมอเมื่อมีการแก้ไขข้อมูลใดๆ
     keysToRemove.push('dashboard_', 'dashboard_2026-10', 'dashboard_2026-09', 'dashboard_2026-08');
     cache.removeAll(keysToRemove);
-
+    
+    // ล้าง dashboard key ทุกเดือนที่อาจมีอยู่แบบเจาะจง
     const now = new Date();
     for (let i = 0; i < 3; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -150,7 +170,7 @@ function doGet(e) {
           return sheetTasks ? sheetTasks.getDataRange().getValues().slice(1) : [];
         });
         break;
-
+      
       case 'get_av_requests':
         result = getCachedOrFetch('av_requests', () => {
           const sheetAV = db.getSheetByName(CONFIG.AV_SHEET_NAME);
@@ -210,6 +230,9 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// ============================================================
+// POST Requests
+// ============================================================
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) {
@@ -220,7 +243,8 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const db = getDB();
     const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
-
+    
+    // ── ตรวจสอบว่าเป็น Webhook จาก LINE หรือไม่ ────────────────────────
     if (data.events && Array.isArray(data.events)) {
       data.events.forEach(event => {
         if (event.type === 'message' && event.source && (event.source.type === 'group' || event.source.type === 'room') && event.message.text === 'id') {
@@ -229,27 +253,23 @@ function doPost(e) {
       });
       return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
     }
-
+    
+    // ── ล้าง Cache ทุกครั้งที่มีการเปลี่ยนแปลงข้อมูล (ยกเว้น google_login) ──
     const noInvalidateActions = ['google_login', 'link_line_account', 'report_bug'];
     if (!noInvalidateActions.includes(data.action)) {
       invalidateDataCaches(data.action);
     }
-
+    
     switch (data.action) {
-
+      // ── ระบบ Login ใหม่ (Google OAuth) ────────────────────────
       case 'google_login':
         return handleGoogleLogin(data.credential);
-
-      case 'upload_chat_image':
-        const chatFileUrl = uploadFileToDrive(data.file, "รูปภาพแชท");
-        return ContentService.createTextOutput(JSON.stringify({
-          status: 'success',
-          fileUrl: chatFileUrl
-        })).setMimeType(ContentService.MimeType.JSON);
-
+        
+      // ── ผูกบัญชี LINE ────────────────────────
       case 'link_line_account':
         return handleLinkLineAccount(data.email, data.lineId, data.name, data.picture);
 
+      // ── ประเมินความพึงพอใจ ────────────────────────
       case 'submit_survey':
         let surveySheetName = '';
         let surveyTypeLabel = '';
@@ -266,13 +286,14 @@ function doPost(e) {
           surveySheetName = CONFIG.AV_REPAIR_SHEET_NAME;
           surveyTypeLabel = 'งานซ่อมโสตฯ';
         }
-
+        
         if (surveySheetName) {
           const surveySheet = db.getSheetByName(surveySheetName);
           if (surveySheet) {
             surveySheet.getRange(data.row, 19).setValue(data.rating); // Col S = Rating
             surveySheet.getRange(data.row, 20).setValue(data.comment || ""); // Col T = Comment
-
+            
+            // แจ้งเตือน Admin ว่ามีการประเมิน
             const starText = '⭐'.repeat(Number(data.rating) || 0);
             const surveyNotifMsg = createFlexMessageTemplate(
               `ผลประเมิน: ${surveyTypeLabel}`,
@@ -290,11 +311,14 @@ function doPost(e) {
         return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'บันทึกการประเมินสำเร็จ' }))
           .setMimeType(ContentService.MimeType.JSON);
 
+      // ── แจ้งซ่อม: เก็บรูปใน "รูปภาพแจ้งซ่อม" ──────────────
       case 'submit_repair':
         const sheetRep = db.getSheetByName(CONFIG.SHEET_NAME);
         const repFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_REPORT);
         sheetRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", repFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
-
+        
+        // Email handled by notifyTask
+        
         const lineRepMsg = createFlexMessageTemplate(
           `แจ้งซ่อมใหม่: ${data.subject}`,
           "🔔 แจ้งปัญหาใหม่",
@@ -307,15 +331,12 @@ function doPost(e) {
             { label: "ด่วน", value: data.urgency }
           ]
         );
-
+        
         notifyTask('building', lineRepMsg, `🚨 แจ้งซ่อมอาคารสถานที่ใหม่`, '#265D5A', data, null);
+        
+        break;
 
-        return ContentService.createTextOutput(JSON.stringify({
-          status: 'success',
-          fileUrl: repFileUrl,
-          originalIndex: sheetRep.getLastRow() - 2
-        })).setMimeType(ContentService.MimeType.JSON);
-
+      // ── แจ้งซ่อมระบบ IT ──────────────────────────────────────
       case 'submit_it_repair':
         let sheetIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
         if (!sheetIt) {
@@ -324,7 +345,7 @@ function doPost(e) {
         }
         const itFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_IT_REPORT);
         sheetIt.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", itFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
-
+        
         const lineItMsg = createFlexMessageTemplate(
           `แจ้งซ่อม IT ใหม่: ${data.subject}`,
           "💻 แจ้งปัญหาไอทีใหม่",
@@ -337,13 +358,9 @@ function doPost(e) {
           ]
         );
         notifyTask('it', lineItMsg, `💻 แจ้งปัญหาไอทีใหม่`, '#0ea5e9', data, null);
+        break;
 
-        return ContentService.createTextOutput(JSON.stringify({
-          status: 'success',
-          fileUrl: itFileUrl,
-          originalIndex: sheetIt.getLastRow() - 2
-        })).setMimeType(ContentService.MimeType.JSON);
-
+      // ── แจ้งซ่อมโสตฯ ──────────────────────────────────────
       case 'submit_av_repair':
         let sheetAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
         if (!sheetAvRep) {
@@ -352,7 +369,7 @@ function doPost(e) {
         }
         const avRepFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_AV_REPAIR);
         sheetAvRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", avRepFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
-
+        
         const lineAvRepMsg = createFlexMessageTemplate(
           `แจ้งซ่อมโสตฯ ใหม่: ${data.subject}`,
           "🎥 แจ้งซ่อมโสตฯใหม่",
@@ -365,13 +382,9 @@ function doPost(e) {
           ]
         );
         notifyTask('av_repair', lineAvRepMsg, `📷 แจ้งซ่อมอุปกรณ์โสตฯ ใหม่`, '#f59e0b', data, null);
+        break;
 
-        return ContentService.createTextOutput(JSON.stringify({
-          status: 'success',
-          fileUrl: avRepFileUrl,
-          originalIndex: sheetAvRep.getLastRow() - 2
-        })).setMimeType(ContentService.MimeType.JSON);
-
+      // ── แจ้งโครงการระยะยาว ──────────────────────────────────────
       case 'submit_project':
         let sheetProjData = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
         if (!sheetProjData) {
@@ -380,7 +393,7 @@ function doPost(e) {
         }
         const projFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_PROJECTS);
         sheetProjData.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอผู้อำนวยการอนุมัติ", projFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.targetDate || "", data.contact || ""]);
-
+        
         const lineProjMsg = createFlexMessageTemplate(
           `แจ้งโครงการใหม่: ${data.subject}`,
           "🏗️ โครงการระยะยาวใหม่",
@@ -396,17 +409,15 @@ function doPost(e) {
           ]
         );
         notifyTask('project', lineProjMsg, `🏢 เสนอโครงการ / จัดซื้อใหม่`, '#8b5cf6', data, null);
+        break;
 
-        return ContentService.createTextOutput(JSON.stringify({
-          status: 'success',
-          fileUrl: projFileUrl,
-          originalIndex: sheetProjData.getLastRow() - 2
-        })).setMimeType(ContentService.MimeType.JSON);
-
+      // ── ยืมโสตฯ ─────────────────────────────────────────────
       case 'submit_av':
         const sheetAvReq = db.getSheetByName(CONFIG.AV_SHEET_NAME);
         sheetAvReq.appendRow([timestamp, data.borrower, data.equipment, data.useDate, data.location, "รอยืนยันการยืม", "-", data.signature]);
-
+        
+        // Email handled by notifyTask
+        
         const lineAvMsg = createFlexMessageTemplate(
           `แจ้งยืมโสตฯ: ${data.borrower}`,
           "📢 ขอยืมอุปกรณ์โสตฯ",
@@ -418,15 +429,16 @@ function doPost(e) {
             { label: "สถานที่", value: data.location }
           ]
         );
-
+        
         notifyTask('av', lineAvMsg, `🎤 แจ้งยืมอุปกรณ์โสตฯ ใหม่`, '#0d9488', data, null);
-
+        
         break;
 
+      // ── แจ้งบั๊ก ─────────────────────────────────────────────
       case 'report_bug':
         const sheetBug = db.getSheetByName(CONFIG.BUG_SHEET_NAME);
         sheetBug.appendRow([timestamp, data.reporter, data.issue, data.page, "รอดำเนินการ"]);
-
+        
         const lineBugMsg = createFlexMessageTemplate(
           `แจ้งปัญหาใหม่ (Bug): ${data.issue}`,
           "🐞 แจ้งปัญหาระบบ (Bug)",
@@ -438,26 +450,28 @@ function doPost(e) {
           ]
         );
         notifyTask('bug', lineBugMsg, `🐞 แจ้งปัญหาระบบใหม่`, '#ef4444', data, null);
-
+        
         break;
 
+      // ── เพิ่มเติมรายละเอียดงานซ่อม ──────────────────────────
       case 'append_task_details':
         const sheetTaskDetails = db.getSheetByName(CONFIG.SHEET_NAME);
         sheetTaskDetails.getRange(data.rowIndex + 2, 3).setValue(data.newDetails);
         break;
 
+      // ── อัพสถานะงานซ่อม ─────────────────────────────────────
       case 'update_task_status':
         const sheetTaskStatus = db.getSheetByName(CONFIG.SHEET_NAME);
         const statusTargetRow = data.rowIndex + 2;
         sheetTaskStatus.getRange(statusTargetRow, 5).setValue(data.status);
-
+        
         if (data.status === 'เสร็จสิ้น') {
           const subjectStr = sheetTaskStatus.getRange(statusTargetRow, 2).getValue();
           const detailStr = sheetTaskStatus.getRange(statusTargetRow, 3).getValue();
           const reporterNameStr = sheetTaskStatus.getRange(statusTargetRow, 4).getValue();
           const reporterEmail = getUserEmailByName(reporterNameStr);
           const reporterLineId = getUserLineIdByName(reporterNameStr);
-
+          
           if (reporterEmail) {
             const bodyHtml = generateEmailHtml(
               `✅ งานซ่อมเสร็จสิ้น: ${subjectStr}`,
@@ -468,10 +482,10 @@ function doPost(e) {
               `อาการ: ${detailStr}<br>สถานะ: เสร็จสิ้น`
             );
             try {
-
+              // MailApp block disabled
             } catch (e) { Logger.log(e.message); }
           }
-
+          
           const statusMsg = createFlexMessageTemplate(
             `งานซ่อมเสร็จสิ้น: ${subjectStr}`,
             "✅ งานซ่อมเสร็จสิ้น",
@@ -489,20 +503,24 @@ function doPost(e) {
         }
         break;
 
+      // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
+
+
+
       case 'approve_task':
         const appSheetName = data.sheetName || CONFIG.SHEET_NAME;
         const sheetApprove = db.getSheetByName(appSheetName);
         if (!sheetApprove) {
           return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
         }
-
+        
         let approveTargetRow = 0;
-
+        // Check if data is reversed (AV Request and Building Repairs)
         let isReversedApprove = true;
         if (appSheetName === CONFIG.SHEET_NAME || appSheetName === CONFIG.AV_SHEET_NAME) {
             isReversedApprove = false;
         }
-
+        
         if (isReversedApprove) {
             const vals = sheetApprove.getDataRange().getValues();
             approveTargetRow = vals.length - data.rowIndex;
@@ -510,12 +528,14 @@ function doPost(e) {
             approveTargetRow = data.rowIndex + 2;
         }
 
+        // Update status
         if (data.status) {
           sheetApprove.getRange(approveTargetRow, 5).setValue(data.status);
         }
 
+        // Columns depend on sheet type
         if (appSheetName === CONFIG.SHEET_NAME || appSheetName === CONFIG.AV_SHEET_NAME) {
-
+            // General Tasks
             if (data.technician) {
                 sheetApprove.getRange(approveTargetRow, 8).setValue(data.technician);
             }
@@ -523,7 +543,7 @@ function doPost(e) {
                 sheetApprove.getRange(approveTargetRow, 12).setValue(data.urgency); // Column 12 is urgency in Building
             }
         } else {
-
+            // Advanced Tasks
             if (data.technician) {
                 sheetApprove.getRange(approveTargetRow, 9).setValue(data.technician);
             }
@@ -531,12 +551,13 @@ function doPost(e) {
                 sheetApprove.getRange(approveTargetRow, 6).setValue(data.urgency); // Column 6 is urgency in IT/Project
             }
         }
-
+        
+        // Notify Technician via Email & Line Group
         if (data.technician) {
           try {
             const taskSubject = sheetApprove.getRange(approveTargetRow, 2).getValue();
             const taskReporter = sheetApprove.getRange(approveTargetRow, 4).getValue();
-
+            
             const techEmail = getUserEmailByName(data.technician);
             if (techEmail) {
               const emailHtml = generateEmailHtml(
@@ -553,7 +574,7 @@ function doPost(e) {
                 htmlBody: emailHtml
               });
             }
-
+            
             const assignMsg = createFlexMessageTemplate(
               "มีการมอบหมายงานให้: " + data.technician,
               "👷 แจ้งมอบหมายงาน",
@@ -570,19 +591,20 @@ function doPost(e) {
 
         return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
 
+
       case 'edit_assignment':
         const editSheetName = data.sheetName || CONFIG.SHEET_NAME;
         const sheetEdit = db.getSheetByName(editSheetName);
         if (!sheetEdit) {
           return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
         }
-
+        
         let editTargetRow = 0;
         let isReversedEdit = true;
         if (editSheetName === CONFIG.SHEET_NAME || editSheetName === CONFIG.AV_SHEET_NAME) {
             isReversedEdit = false;
         }
-
+        
         if (isReversedEdit) {
             const vals = sheetEdit.getDataRange().getValues();
             editTargetRow = vals.length - data.rowIndex;
@@ -616,7 +638,7 @@ function doPost(e) {
                 htmlBody: emailHtml
               });
             }
-
+            
             const editAssignMsg = createFlexMessageTemplate(
               "แก้ไขการมอบหมายงานให้: " + data.technician,
               "👷 เปลี่ยนแปลงช่างรับผิดชอบ",
@@ -638,11 +660,11 @@ function doPost(e) {
         if (!sheetAdv) {
           return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
         }
-
+        
         const advVals = sheetAdv.getDataRange().getValues();
         const targetAdvRow = advVals.length - data.rowIndex;
         sheetAdv.getRange(targetAdvRow, 5).setValue(data.status);
-
+        
         if (data.file) {
           const proofUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_PROOF);
           sheetAdv.getRange(targetAdvRow, 7).setValue(proofUrl);
@@ -661,7 +683,8 @@ function doPost(e) {
           const receiptUrlAdv = uploadFileToDrive(data.receiptFile, CONFIG.FOLDER_RECEIPTS);
           sheetAdv.getRange(targetAdvRow, 11).setValue(receiptUrlAdv);
         }
-
+        
+        // ส่งแจ้งเตือนกลับไปยังผู้แจ้ง (เฉพาะตอนปิดงาน)
         const isDoneStatus = data.status === 'เสร็จสิ้น' || data.status === 'อนุมัติ';
         if (isDoneStatus && data.technician) {
           const advSubject = sheetAdv.getRange(targetAdvRow, 2).getValue();
@@ -671,7 +694,7 @@ function doPost(e) {
           const surveyType = isIT ? 'it_repair' : 'project';
           const taskLabel = isIT ? '💻 งานซ่อมไอที' : '📋 โครงการ';
           const advColor = isIT ? '#0ea5e9' : '#8b5cf6';
-
+          
           if (advReporterEmail) {
             const advBodyHtml = generateEmailHtml(
               `✅ ${taskLabel}เสร็จสิ้น: ${advSubject}`,
@@ -682,10 +705,10 @@ function doPost(e) {
               `การดำเนินการ: ${data.fixDetail}<br>ผู้รับผิดชอบ: ${data.technician}`
             );
             try {
-
+              // MailApp block disabled
             } catch (e) { Logger.log(e.message); }
           }
-
+          
           const advDoneMsg = createFlexMessageTemplate(
             `${taskLabel}เสร็จสิ้น: ${advSubject}`,
             `✅ ${taskLabel}เสร็จสิ้น`,
@@ -701,7 +724,8 @@ function doPost(e) {
           );
           notifyTask(isIT ? 'it' : 'admin', advDoneMsg, `${taskLabel}เสร็จสิ้น`, advColor, {reporter: advReporter, subject: advSubject, status: data.status}, null);
         }
-
+        
+        // Return success
         return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
 
       case 'delete_adv_task': {
@@ -712,7 +736,7 @@ function doPost(e) {
         else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
         else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
         else { sName = CONFIG.SHEET_NAME; isReversed = true; }
-
+        
         const sheet = db.getSheetByName(sName);
         if (sheet) {
           const vals = sheet.getDataRange().getValues();
@@ -730,7 +754,7 @@ function doPost(e) {
         else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
         else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
         else { sName = CONFIG.SHEET_NAME; isReversed = true; }
-
+        
         const sheet = db.getSheetByName(sName);
         if (sheet) {
           const vals = sheet.getDataRange().getValues();
@@ -749,22 +773,23 @@ function doPost(e) {
         const targetRow = proofVals.length - data.rowIndex;
         const proofFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_PROOF);
         const receiptUrl = uploadFileToDrive(data.receiptFile, CONFIG.FOLDER_RECEIPTS);
-
+        
         sheetTaskProof.getRange(targetRow, 5).setValue("เสร็จสิ้น");
         sheetTaskProof.getRange(targetRow, 7).setValue(data.fixDetail);
         sheetTaskProof.getRange(targetRow, 8).setValue(data.technician);
         sheetTaskProof.getRange(targetRow, 9).setValue(proofFileUrl);
-
+        
         const cost = (data.cost && !isNaN(data.cost)) ? Number(data.cost) : 0;
         sheetTaskProof.getRange(targetRow, 10).setValue(cost > 0 ? cost : "-");
         sheetTaskProof.getRange(targetRow, 11).setValue(receiptUrl);
-
+        
+        // Notify Reporter
         const proofSubject = sheetTaskProof.getRange(targetRow, 2).getValue();
         const proofDetail = sheetTaskProof.getRange(targetRow, 3).getValue();
         const proofReporter = sheetTaskProof.getRange(targetRow, 4).getValue();
         const proofReporterEmail = getUserEmailByName(proofReporter);
         const proofReporterLineId = getUserLineIdByName(proofReporter);
-
+        
         if (proofReporterEmail) {
           const bodyHtml = generateEmailHtml(
             `✅ งานซ่อมเสร็จสิ้น: ${proofSubject}`,
@@ -775,10 +800,10 @@ function doPost(e) {
             `อาการ: ${proofDetail}<br>การแก้ไข: ${data.fixDetail}<br>ช่าง: ${data.technician}`
           );
           try {
-
+            // MailApp block disabled
           } catch (e) { Logger.log(e.message); }
           }
-
+          
         const proofMsg = createFlexMessageTemplate(
           `งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน): ${proofSubject}`,
           "✅ ปิดงานซ่อม (พร้อมหลักฐาน)",
@@ -793,22 +818,24 @@ function doPost(e) {
             { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=repair&row=" + targetRow, color: "#f59e0b" }
           ]
         );
-
+        // Determine taskType based on sheetName
         let advTaskType = 'building';
         let color = '#265D5A';
         if (data.sheetName === CONFIG.IT_SHEET_NAME) { advTaskType = 'it'; color = '#0ea5e9'; }
         else if (data.sheetName === CONFIG.AV_REPAIR_SHEET_NAME) { advTaskType = 'av_repair'; color = '#f59e0b'; }
         else if (data.sheetName === CONFIG.PROJECT_SHEET_NAME) { advTaskType = 'project'; color = '#8b5cf6'; }
-
+        
         notifyTask(advTaskType, proofMsg, `อัปเดตสถานะงาน`, color, {reporter: proofReporter, subject: proofSubject, status: data.status || 'เสร็จสิ้น'}, null);
         break;
 
+      // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
       case 'update_av_status':
         const sheetAvStatus = db.getSheetByName(CONFIG.AV_SHEET_NAME);
         const avTargetRow = data.rowIndex + 2;
         sheetAvStatus.getRange(avTargetRow, 6).setValue(data.status);
         sheetAvStatus.getRange(avTargetRow, 7).setValue(data.technician);
-
+        
+        // Notify AV completion
         if (data.status === 'เสร็จสิ้น/คืนเรียบร้อย') {
            const avSubject = sheetAvStatus.getRange(avTargetRow, 3).getValue();
            const avReporter = sheetAvStatus.getRange(avTargetRow, 2).getValue();
@@ -843,6 +870,8 @@ function doPost(e) {
         }
         break;
 
+
+      // ── Master Data: เพิ่ม ──────────────────────────────────
       case 'master_add':
         const type = data.type;
         const id = data.id || (type + '_' + new Date().getTime());
@@ -851,12 +880,12 @@ function doPost(e) {
           let sheetLoc = db.getSheetByName(CONFIG.MASTER_LOC_SHEET) || db.insertSheet(CONFIG.MASTER_LOC_SHEET);
           if (sheetLoc.getLastRow() === 0) sheetLoc.appendRow(['id', 'name', 'department']);
           sheetLoc.appendRow([id, data.name || '', data.department || '']);
-        }
+        } 
         else if (type === 'project') {
           let sheetProj = db.getSheetByName(CONFIG.MASTER_PROJ_SHEET) || db.insertSheet(CONFIG.MASTER_PROJ_SHEET);
           if (sheetProj.getLastRow() === 0) sheetProj.appendRow(['id', 'name', 'department']);
           sheetProj.appendRow([id, data.name || '', data.department || '']);
-        }
+        } 
         else if (type === 'mechanic') {
           let sheetMech = db.getSheetByName(CONFIG.MASTER_MECH_SHEET) || db.insertSheet(CONFIG.MASTER_MECH_SHEET);
           if (sheetMech.getLastRow() === 0) sheetMech.appendRow(['id', 'name', 'phone', 'skills', 'notes']);
@@ -864,22 +893,24 @@ function doPost(e) {
         }
         break;
 
+      // ── Master Data: ลบ ─────────────────────────────────────
       case 'master_delete':
         const delType = data.type;
         const delId = data.id;
-        const sheetName = delType === 'location' ? CONFIG.MASTER_LOC_SHEET
-                        : delType === 'project'  ? CONFIG.MASTER_PROJ_SHEET
+        const sheetName = delType === 'location' ? CONFIG.MASTER_LOC_SHEET 
+                        : delType === 'project'  ? CONFIG.MASTER_PROJ_SHEET 
                         : CONFIG.MASTER_MECH_SHEET;
         deleteRowById(sheetName, 0, delId);
         break;
 
+      // ── ตั้งค่าระบบ ──────────────────────────────────────────
       case 'save_overdue_settings':
         let sheetSettings = db.getSheetByName('Settings');
         if (!sheetSettings) {
           sheetSettings = db.insertSheet('Settings');
           sheetSettings.appendRow(['Key', 'Value']);
         }
-
+        
         let foundKey = false;
         const settingsData = sheetSettings.getDataRange().getValues();
         for (let i = 1; i < settingsData.length; i++) {
@@ -889,19 +920,20 @@ function doPost(e) {
             break;
           }
         }
-
+        
         if (!foundKey) {
           sheetSettings.appendRow(['overdue_days', data.days]);
         }
         break;
 
+      // ── เอกสาร: อัปโหลด → เก็บใน "เอกสารระบบ" ──────────────
       case 'add_document':
         let sheetAddDoc = db.getSheetByName(CONFIG.DOC_SHEET_NAME);
         if (!sheetAddDoc) {
           sheetAddDoc = db.insertSheet(CONFIG.DOC_SHEET_NAME);
           sheetAddDoc.appendRow(['docId', 'category', 'uploadDate', 'docName', 'uploader', 'fileUrl', 'fileExt', 'description']);
         }
-
+        
         const addDocFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_DOCUMENTS);
 
         const docId = 'doc_' + new Date().getTime();
@@ -917,10 +949,12 @@ function doPost(e) {
         ]);
         break;
 
+      // ── เอกสาร: ลบ ──────────────────────────────────────────
       case 'delete_document':
         deleteRowById(CONFIG.DOC_SHEET_NAME, 0, data.docId);
         break;
 
+      // ── จัดการผู้ใช้ ──────────────────────────────────────────
       case 'update_user':
         const sheetUpdateUser = db.getSheetByName(CONFIG.USER_SHEET_NAME);
         if (sheetUpdateUser) {
@@ -948,13 +982,16 @@ function doPost(e) {
   }
 }
 
+// ============================================================
+// Helper Functions
+// ============================================================
 function uploadFileToDrive(fileData, folderName) {
   if (!fileData || !fileData.data) return "-";
   const folder = getOrCreateSubFolder(folderName);
   const blob = Utilities.newBlob(Utilities.base64Decode(fileData.data), fileData.type, fileData.name);
   const file = folder.createFile(blob);
   try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log(e); }
-  return `https://drive.google.com/uc?export=view&id=${file.getId()}`;
+  return file.getUrl();
 }
 
 function getContactsByRoles(targetRoles) {
@@ -962,11 +999,11 @@ function getContactsByRoles(targetRoles) {
     const db = getDB();
     const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet) return { emails: [], lineIds: [] };
-
+    
     const data = sheet.getDataRange().getValues();
     let emails = [];
     let lineIds = [];
-
+    
     for (let i = 1; i < data.length; i++) {
       const role = (data[i][2] || '').toString().trim().toLowerCase();
       const status = (data[i][3] || '').toString().trim().toLowerCase();
@@ -990,10 +1027,10 @@ function getReporterContacts(name) {
     const db = getDB();
     const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet || !name) return { email: null, lineId: null };
-
+    
     const data = sheet.getDataRange().getValues();
     const searchName = name.toString().trim().toLowerCase();
-
+    
     for (let i = 1; i < data.length; i++) {
       const rowName = (data[i][1] || '').toString().trim().toLowerCase();
       if (rowName === searchName) {
@@ -1013,9 +1050,9 @@ function createFlexMessageTemplate(altText, headerText, subjectText, color, deta
   detailsMap.forEach(item => {
     if (item.value && item.value !== '-') {
       detailsContents.push({
-        "type": "box", "layout": "baseline", "spacing": "sm",
+        "type": "box", "layout": "baseline", "spacing": "sm", 
         "contents": [
-          { "type": "text", "text": item.label, "color": "#aaaaaa", "size": "sm", "flex": item.flexLabel || 2 },
+          { "type": "text", "text": item.label, "color": "#aaaaaa", "size": "sm", "flex": item.flexLabel || 2 }, 
           { "type": "text", "text": String(item.value), "wrap": true, "color": "#4b5563", "size": "sm", "flex": item.flexValue || 5 }
         ]
       });
@@ -1034,7 +1071,7 @@ function createFlexMessageTemplate(altText, headerText, subjectText, color, deta
     });
   } else {
     buttonsContents.push({
-      "type": "button", "style": "primary", "color": color,
+      "type": "button", "style": "primary", "color": color, 
       "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": CONFIG.WEB_APP_URL }
     });
   }
@@ -1079,24 +1116,23 @@ function generateEmailHtml(title, color, reporter, loc, subject, detail) {
 }
 
 function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporterNameOverride) {
-  let targetRoles = ['admin', 'executive', 'supervisor'];
-
-  if (taskType === 'building') {
-    targetRoles.push('tech_building', 'tech'); // ส่งให้ช่างอาคาร และช่างทั่วไป (ของเก่า)
-  } else if (taskType === 'it') {
-    targetRoles.push('tech_it', 'tech'); // ส่งให้ช่างไอที
-  } else if (taskType === 'av' || taskType === 'av_repair') {
-    targetRoles.push('tech_av', 'av', 'tech'); // ส่งให้ช่างโสตฯ
-  } else if (taskType === 'project') {
-    targetRoles.push('tech_project');
+  let targetRoles = [];
+  
+  if (taskType === 'project') {
+    targetRoles = ['admin', 'executive'];
+  } else if (taskType === 'bug') {
+    targetRoles = ['admin', 'executive'];
+  } else {
+    // building, it, av, av_repair
+    targetRoles = ['admin', 'executive', 'tech', 'av'];
   }
-
+  
   const contacts = getContactsByRoles(targetRoles);
   let lineTargets = contacts.lineIds;
   let emailTargets = contacts.emails;
-
+  
   const reporterName = reporterNameOverride || dataObj?.reporter || dataObj?.borrower || null;
-
+  
   if (reporterName) {
     const reporter = getReporterContacts(reporterName);
     if (reporter.lineId && (reporter.lineId.startsWith('U') || reporter.lineId.startsWith('C') || reporter.lineId.startsWith('R')) && !lineTargets.includes(reporter.lineId)) {
@@ -1106,21 +1142,24 @@ function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporter
       emailTargets.push(reporter.email);
     }
   }
-
+  
+  // ปิด Broadcast ชั่วคราว ให้แจ้งเตือนเข้ากลุ่มอย่างเดียว
+  // if (!lineTargets.includes('BROADCAST')) { lineTargets.push('BROADCAST'); }
+  
   if (lineTargets.length > 0 && lineMsg) {
     sendLineMessage(lineMsg, lineTargets);
   }
-
+  
   if (emailTargets.length > 0 && emailTitle) {
     const emailHtml = generateEmailHtml(
-      emailTitle,
-      emailColor,
-      reporterName,
-      dataObj?.loc || null,
-      dataObj?.subject || dataObj?.borrower || 'System Update',
+      emailTitle, 
+      emailColor, 
+      reporterName, 
+      dataObj?.loc || null, 
+      dataObj?.subject || dataObj?.borrower || 'System Update', 
       dataObj?.detail || dataObj?.status || 'มีการอัปเดตข้อมูล'
     );
-
+    // sendEmailNotification(emailTitle, emailHtml, emailTargets);
   }
 }
 
@@ -1144,7 +1183,7 @@ function getDashboardDataInternal(monthStr) {
   const itSheet = db.getSheetByName(CONFIG.IT_SHEET_NAME);
   const avRepSheet = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
   const projSheet = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
-
+  
   const filterByMonth = (data) => {
     if (!monthStr) return data;
     return data.filter(r => {
@@ -1244,7 +1283,7 @@ function getDashboardDataInternal(monthStr) {
 
 function getMasterDataInternal() {
   const db = getDB();
-
+  
   let overdueDays = 3;
   const sheetSettings = db.getSheetByName('Settings');
   if (sheetSettings) {
@@ -1277,6 +1316,10 @@ function getSheetDataAsObjects(db, sheetName) {
   });
 }
 
+// ============================================================
+// ฟังก์ชันรัน 1 ครั้งเพื่อสร้างโฟลเดอร์ทั้งหมดล่วงหน้า
+// ── วิธีใช้: เลือกฟังก์ชันนี้ในหน้า Editor แล้วกด Run ──────
+// ============================================================
 function setupFolders() {
   const f1 = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_REPORT);
   const f2 = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_PROOF);
@@ -1295,17 +1338,21 @@ function setupFolders() {
   Logger.log("  - " + CONFIG.FOLDER_PROJECTS      + "   " + f7.getId());
 }
 
+
+// ============================================================
+// Google OAuth Login
+// ============================================================
 function handleGoogleLogin(credential) {
   try {
     const url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + credential;
     const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-
+    
     if (res.getResponseCode() !== 200) {
       throw new Error("Invalid Token");
     }
 
     const payload = JSON.parse(res.getContentText());
-
+    
     if (payload.aud !== CLIENT_ID) {
       throw new Error("Invalid Client ID");
     }
@@ -1316,7 +1363,7 @@ function handleGoogleLogin(credential) {
 
     const ss = getDB();
     let sheet = ss.getSheetByName(CONFIG.USER_SHEET_NAME);
-
+    
     if (!sheet) {
       sheet = ss.insertSheet('Users');
       sheet.appendRow(['Email', 'Name', 'Role', 'Status', 'ProfilePicture', 'LastLogin']);
@@ -1333,8 +1380,8 @@ function handleGoogleLogin(credential) {
         const status = data[i][3];
 
         if (status === 'approved') {
-          sheet.getRange(i + 1, 5, 1, 2).setValues([[picture || "", now]]);
-
+          sheet.getRange(i + 1, 5, 1, 2).setValues([[picture, now]]);
+          
           return ContentService.createTextOutput(JSON.stringify({
             status: 'success',
             name: data[i][1] || name,
@@ -1344,23 +1391,23 @@ function handleGoogleLogin(credential) {
           })).setMimeType(ContentService.MimeType.JSON);
 
         } else if (status === 'banned') {
-          return ContentService.createTextOutput(JSON.stringify({
-            status: 'error',
-            message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อแอดมิน'
+          return ContentService.createTextOutput(JSON.stringify({ 
+            status: 'error', 
+            message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อแอดมิน' 
           })).setMimeType(ContentService.MimeType.JSON);
         } else {
-          return ContentService.createTextOutput(JSON.stringify({
-            status: 'error',
-            message: 'บัญชีของคุณกำลังรอการอนุมัติจากแอดมิน'
+          return ContentService.createTextOutput(JSON.stringify({ 
+            status: 'error', 
+            message: 'บัญชีของคุณกำลังรอการอนุมัติจากแอดมิน' 
           })).setMimeType(ContentService.MimeType.JSON);
         }
       }
     }
 
-    sheet.appendRow([email || "", name || "LINE User", 'Teacher', 'approved', picture || "", now]);
-
-    return ContentService.createTextOutput(JSON.stringify({
-      status: 'success',
+    sheet.appendRow([email, name, 'Teacher', 'approved', picture, now]);
+    
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: 'success', 
       name: name,
       role: 'Teacher',
       picture: picture,
@@ -1368,30 +1415,33 @@ function handleGoogleLogin(credential) {
     })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: 'error',
-      message: 'การตรวจสอบสิทธิ์ล้มเหลว: ' + err.toString()
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: 'error', 
+      message: 'การตรวจสอบสิทธิ์ล้มเหลว: ' + err.toString() 
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
+// ============================================================
+// Notification Helpers
+// ============================================================
 function sendEmailNotification(subject, bodyHtml, targetEmails) {
   return; // ปิดการแจ้งเตือนอีเมลชั่วคราว
   try {
     let finalEmails = [];
-
+    
     if (targetEmails && Array.isArray(targetEmails) && targetEmails.length > 0) {
       finalEmails = targetEmails;
     } else {
       const db = getDB();
       const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
       if (!sheet) return;
-
+      
       const data = sheet.getDataRange().getValues();
       for (let i = 1; i < data.length; i++) {
         const email = (data[i][0] || '').toString().trim();
         const role = (data[i][2] || '').toString().trim().toLowerCase();
-
+        
         if (role === 'admin' || role === 'staff' || role === 'technician' || role === 'tech' || role === 'executive') {
           if (email && email.includes('@')) {
             finalEmails.push(email);
@@ -1399,11 +1449,12 @@ function sendEmailNotification(subject, bodyHtml, targetEmails) {
         }
       }
     }
-
+    
+    // Remove duplicates
     finalEmails = [...new Set(finalEmails)];
-
+    
     if (finalEmails.length > 0) {
-
+      // MailApp block disabled
     }
   } catch(e) {
     Logger.log("Email error: " + e.message);
@@ -1415,10 +1466,10 @@ function getUserEmailByName(name) {
     const db = getDB();
     const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet) return null;
-
+    
     const data = sheet.getDataRange().getValues();
     const searchName = (name || '').toString().trim().toLowerCase();
-
+    
     for (let i = 1; i < data.length; i++) {
       const sheetName = (data[i][1] || '').toString().trim().toLowerCase();
       if (sheetName === searchName && sheetName !== '') { // Column 1 = Name
@@ -1434,18 +1485,19 @@ function getUserEmailByName(name) {
   }
 }
 
+// ค้นหา Line ID ของผู้แจ้งจากชื่อ
 function getUserLineIdByName(name) {
   try {
     const db = getDB();
     const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet) return null;
-
+    
     const data = sheet.getDataRange().getValues();
     const searchName = (name || '').toString().trim().toLowerCase();
-
+    
     for (let i = 1; i < data.length; i++) {
       const sheetName = (data[i][1] || '').toString().trim().toLowerCase();
-      if (sheetName === searchName && sheetName !== '') {
+      if (sheetName === searchName && sheetName !== '') { 
         const lineId = (data[i][6] || '').toString().trim(); // Column G (6) = LineID
         if (lineId && (lineId.startsWith('U') || lineId.startsWith('C') || lineId.startsWith('R'))) {
           return lineId;
@@ -1458,15 +1510,16 @@ function getUserLineIdByName(name) {
   }
 }
 
+// ดึง Line ID ตาม Role ที่กำหนด
 function getLineIdsByRoles(targetRoles) {
   try {
     const db = getDB();
     const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
     if (!sheet) return [];
-
+    
     const data = sheet.getDataRange().getValues();
     let lineIds = [];
-
+    
     for (let i = 1; i < data.length; i++) {
       const role = (data[i][2] || '').toString().trim().toLowerCase();
       const status = (data[i][3] || '').toString().trim().toLowerCase();
@@ -1487,34 +1540,34 @@ function handleLinkLineAccount(email, lineId, name, picture) {
   try {
     const ss = getDB();
     let sheet = ss.getSheetByName(CONFIG.USER_SHEET_NAME);
-
+    
     if (!sheet) {
       sheet = ss.insertSheet('Users');
       sheet.appendRow(['Email', 'Name', 'Role', 'Status', 'ProfilePicture', 'LastLogin', 'LineID']);
       sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#f3f4f6');
       sheet.setFrozenRows(1);
     }
-
+    
     const data = sheet.getDataRange().getValues();
     const now = new Date();
-
+    
     for (let i = 1; i < data.length; i++) {
       if ((data[i][0] || '').toString().trim().toLowerCase() === (email || '').trim().toLowerCase()) {
         const role = data[i][2] || 'Teacher';
         const status = data[i][3];
         const dbName = data[i][1];
         const dbPicture = data[i][4];
-
+        
         if (status === 'approved') {
           sheet.getRange(i + 1, 7).setValue(lineId); // Column G (7) = LineID
           sheet.getRange(i + 1, 6).setValue(now); // Update LastLogin
-          return ContentService.createTextOutput(JSON.stringify({
-            status: 'success',
+          return ContentService.createTextOutput(JSON.stringify({ 
+            status: 'success', 
             name: dbName || name,
             role: role,
             picture: dbPicture || picture,
             email: email,
-            message: 'Linked successfully'
+            message: 'Linked successfully' 
           })).setMimeType(ContentService.MimeType.JSON);
         } else if (status === 'banned') {
           return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อแอดมิน' })).setMimeType(ContentService.MimeType.JSON);
@@ -1523,16 +1576,17 @@ function handleLinkLineAccount(email, lineId, name, picture) {
         }
       }
     }
-
+    
+    // ไม่พบบัญชี -> ลงทะเบียนใหม่อัตโนมัติเหมือน Google Login
     sheet.appendRow([email, name || 'LINE User', 'Teacher', 'approved', picture || '', now, lineId]);
-
-    return ContentService.createTextOutput(JSON.stringify({
-      status: 'success',
+    
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: 'success', 
       name: name || 'LINE User',
       role: 'Teacher',
       picture: picture || '',
       email: email,
-      message: 'Registered and Linked successfully'
+      message: 'Registered and Linked successfully' 
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (e) {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: e.message })).setMimeType(ContentService.MimeType.JSON);
@@ -1542,7 +1596,7 @@ function handleLinkLineAccount(email, lineId, name, picture) {
 function sendLineMessage(message, targetId) {
   try {
     if (!CONFIG.LINE_CHANNEL_ACCESS_TOKEN || CONFIG.LINE_CHANNEL_ACCESS_TOKEN.includes("ใส่_")) return;
-
+    
     let rawTargets = [];
     if (Array.isArray(targetId)) {
       rawTargets = targetId;
@@ -1550,10 +1604,12 @@ function sendLineMessage(message, targetId) {
       rawTargets = [targetId.trim()];
     }
 
+    // รวม LINE_TARGET_ID (กลุ่มหลัก) เข้าไปด้วยเสมอหากตั้งค่าไว้
     if (typeof ENABLE_LINE_GROUP_NOTIFY !== "undefined" && ENABLE_LINE_GROUP_NOTIFY && CONFIG.LINE_TARGET_ID && !CONFIG.LINE_TARGET_ID.includes("ใส่_")) {
       rawTargets.push(CONFIG.LINE_TARGET_ID.trim());
     }
 
+    // คัดเฉพาะ ID ที่ไม่ว่างเปล่าและลบค่าซ้ำ
     const validTargets = [...new Set(rawTargets.filter(id => typeof id === 'string' && id.trim() !== ''))];
     if (validTargets.length === 0) return;
 
@@ -1562,10 +1618,13 @@ function sendLineMessage(message, targetId) {
       "Authorization": "Bearer " + CONFIG.LINE_CHANNEL_ACCESS_TOKEN
     };
 
+    // แยกประเภท User IDs (U...) กับ Group/Room IDs (C... หรือ R...)
+    
     let allResponses = [];
     const isBroadcast = validTargets.includes('BROADCAST');
     const msgPayload = typeof message === 'string' ? { "type": "text", "text": message } : message;
 
+    // Sanitize Flex Message to prevent Line API crashes (empty strings or non-string values)
     function sanitizeFlex(obj) {
       if (Array.isArray(obj)) {
         obj.forEach(sanitizeFlex);
@@ -1599,10 +1658,13 @@ function sendLineMessage(message, targetId) {
       }
     }
 
+    // ถ้า Broadcast แล้ว ไม่ต้องส่งหา User ส่วนตัวทีละคนอีก (ป้องกันการส่งซ้ำ)
     const userIds = isBroadcast ? [] : validTargets.filter(id => id.startsWith('U') && id !== 'BROADCAST');
-
+  
+    // ส่วน Group (C... หรือ R...) ต้องส่งแยกเสมอ เพราะ Broadcast ไม่เข้ากลุ่ม!
     const groupIds = validTargets.filter(id => !id.startsWith('U') && id !== 'BROADCAST');
 
+    // Sanitize Flex Message to prevent Line API crashes (empty strings or non-string values)
     function sanitizeFlex(obj) {
       if (Array.isArray(obj)) {
         obj.forEach(sanitizeFlex);
@@ -1622,6 +1684,7 @@ function sendLineMessage(message, targetId) {
     }
     sanitizeFlex(msgPayload);
 
+    // 1. ส่งถึง User IDs (ใช้ multicast ถ้ามีหลายคน หรือ push ถ้ามีคนเดียว)
     if (userIds.length > 0) {
       if (userIds.length === 1) {
         const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
@@ -1651,6 +1714,7 @@ function sendLineMessage(message, targetId) {
       }
     }
 
+    // 2. ส่งถึง Group/Room IDs (ผ่าน push เป็นรายกลุ่ม)
     for (const gid of groupIds) {
       const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
         method: "post",
@@ -1663,7 +1727,10 @@ function sendLineMessage(message, targetId) {
       });
       allResponses.push(`[Push Group] ${res.getResponseCode()}: ${res.getContentText()}`);
     }
-
+    
+    // ==========================================
+    // เขียน Logs ลงชีต "Logs" เพื่อการตรวจสอบ
+    // ==========================================
     try {
       const db = getDB();
       let logSheet = db.getSheetByName('Logs');
@@ -1688,9 +1755,14 @@ function sendLineMessage(message, targetId) {
   }
 }
 
+// ============================================================
+// ฟังก์ชันตรวจสอบงานค้าง (Overdue Tasks)
+// ── วิธีใช้: ให้ตั้ง Time-driven Trigger รันฟังก์ชันนี้ทุกวัน ──────
+// ============================================================
 function checkOverdueTasks() {
   const db = getDB();
-
+  
+  // 1. ดึงการตั้งค่า Overdue Days
   let overdueDays = 3;
   const sheetSettings = db.getSheetByName('Settings');
   if (sheetSettings) {
@@ -1706,11 +1778,12 @@ function checkOverdueTasks() {
   const now = new Date();
   now.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเพื่อเปรียบเทียบแค่วันที่
 
+  // 2. เช็คงานซ่อม
   const repSheet = db.getSheetByName(CONFIG.SHEET_NAME);
   if (repSheet) {
     const repData = repSheet.getDataRange().getValues();
     let overdueCount = 0;
-
+    
     for (let i = 1; i < repData.length; i++) {
       const status = (repData[i][4] || '').toString().trim();
       if (status === 'รอดำเนินการ') {
@@ -1721,8 +1794,8 @@ function checkOverdueTasks() {
             const taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
             taskDate.setHours(0, 0, 0, 0);
             const diffTime = Math.abs(now - taskDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
             if (diffDays >= overdueDays) {
               overdueCount++;
             }
@@ -1730,7 +1803,7 @@ function checkOverdueTasks() {
         }
       }
     }
-
+    
     if (overdueCount > 0) {
       const msg = {
         "type": "flex",
@@ -1767,11 +1840,12 @@ function checkOverdueTasks() {
     }
   }
 
+  // 3. เช็คงานโสตฯ
   const avSheet = db.getSheetByName(CONFIG.AV_SHEET_NAME);
   if (avSheet) {
     const avData = avSheet.getDataRange().getValues();
     let avOverdueCount = 0;
-
+    
     for (let i = 1; i < avData.length; i++) {
       const status = (avData[i][5] || '').toString().trim();
       if (status === 'รอยืนยันการยืม') {
@@ -1782,8 +1856,8 @@ function checkOverdueTasks() {
             const taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
             taskDate.setHours(0, 0, 0, 0);
             const diffTime = Math.abs(now - taskDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
             if (diffDays >= overdueDays) {
               avOverdueCount++;
             }
@@ -1791,7 +1865,7 @@ function checkOverdueTasks() {
         }
       }
     }
-
+    
     if (avOverdueCount > 0) {
       const msg = {
         "type": "flex",
@@ -1828,6 +1902,11 @@ function checkOverdueTasks() {
     }
   }
 }
+
+// ============================================================
+// Phase B: ฟังก์ชันตัวช่วยนับงานค้าง (helper) + refactored checkOverdueTasks
+// + setupDailyTrigger / removeDailyTrigger
+// ============================================================
 
 function _countOverdueTasks(sheet, statusCol, pendingStatuses, overdueDays) {
   if (!sheet) return 0;
@@ -1906,4 +1985,10 @@ function removeDailyTrigger() {
   });
   Logger.log('removeDailyTrigger: ลบ trigger ' + count + ' รายการ');
 }
+
+
+
+
+
+
 
