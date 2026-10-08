@@ -1209,6 +1209,19 @@ function nav(pageId) {
     return nav('page-auth');
   }
 
+  // ป้องกันหน้าขาว: ถ้าเข้าหน้าจัดการงานเดิมหรือส่วนจัดการรวม ให้เปิดระบบติดตามงาน TrackUI ตรงหมวดทันที
+  const legacyTrackMap = {
+    'page-fb-admin': { type: 'all' },
+    'page-technician': { type: 'building' },
+    'page-av-manage': { type: 'av' },
+    'page-it-manage': { type: 'it' },
+    'page-av-repair-manage': { type: 'av' },
+    'page-project-manage': { type: 'project' }
+  };
+  if (legacyTrackMap[pageId] && window.TrackUI && typeof window.TrackUI.show === 'function') {
+    return window.TrackUI.show(legacyTrackMap[pageId]);
+  }
+
   $$('.page-section').forEach(e => e.classList.remove('active'));
   if ($(pageId)) $(pageId).classList.add('active');
   window.scrollTo(0, 0);

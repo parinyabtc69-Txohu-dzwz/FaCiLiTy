@@ -756,7 +756,7 @@
                     <i class="fa-solid fa-star"></i> <span id="b-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="b-rating-count">0</span>)</span>
                   </span>
                 </h2>
-                <button onclick="nav('page-fb-admin')"
+                <button onclick="TrackUI.show({ type: 'building' })"
                   class="text-xs text-[#265D5A] hover:text-[#1a3f3d] font-semibold flex items-center gap-1">
                   <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -790,7 +790,7 @@
                     <i class="fa-solid fa-star"></i> <span id="av-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="av-rating-count">0</span>)</span>
                   </span>
                 </h2>
-                <button onclick="nav('page-fb-admin')"
+                <button onclick="TrackUI.show({ type: 'av' })"
                   class="text-xs text-[#FF5F5F] hover:text-[#8F1C26] font-semibold flex items-center gap-1">
                   <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -824,7 +824,7 @@
                     <i class="fa-solid fa-star"></i> <span id="it-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="it-rating-count">0</span>)</span>
                   </span>
                 </h2>
-                <button onclick="nav('page-it-manage');"
+                <button onclick="TrackUI.show({ type: 'it' })"
                   class="text-xs text-sky-500 hover:text-sky-700 font-semibold flex items-center gap-1">
                   <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -858,7 +858,7 @@
                     <i class="fa-solid fa-star"></i> <span id="avrep-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="avrep-rating-count">0</span>)</span>
                   </span>
                 </h2>
-                <button onclick="nav('page-av-repair-manage');"
+                <button onclick="TrackUI.show({ type: 'av' })"
                   class="text-xs text-amber-500 hover:text-amber-700 font-semibold flex items-center gap-1">
                   <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -892,7 +892,7 @@
                     <i class="fa-solid fa-star"></i> <span id="proj-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="proj-rating-count">0</span>)</span>
                   </span>
                 </h2>
-                <button onclick="nav('page-project-manage');"
+                <button onclick="TrackUI.show({ type: 'project' })"
                   class="text-xs text-violet-500 hover:text-violet-700 font-semibold flex items-center gap-1">
                   <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -1684,7 +1684,7 @@
 </div>
 
 <!-- Firebase Unified Admin Dashboard -->
-<div id="page-fb-admin" class="page-section hidden">
+<div id="page-fb-admin" class="page-section">
   <div class="max-w-7xl mx-auto p-4 md:p-6 pb-24">
     
     <div class="bg-gradient-to-r from-amber-500 to-amber-700 text-white p-6 md:p-8 rounded-3xl shadow-sm mb-8 flex justify-between items-center">
@@ -3248,6 +3248,19 @@ function nav(pageId) {
   if (!currentTeacher && !isAdminLoggedIn && pageId !== 'page-auth') {
     alertBox('warning', 'ต้องเข้าสู่ระบบก่อน', 'กรุณาเข้าสู่ระบบก่อนใช้งานเมนูนี้ครับ');
     return nav('page-auth');
+  }
+
+  // ป้องกันหน้าขาว: ถ้าเข้าหน้าจัดการงานเดิมหรือส่วนจัดการรวม ให้เปิดระบบติดตามงาน TrackUI ตรงหมวดทันที
+  const legacyTrackMap = {
+    'page-fb-admin': { type: 'all' },
+    'page-technician': { type: 'building' },
+    'page-av-manage': { type: 'av' },
+    'page-it-manage': { type: 'it' },
+    'page-av-repair-manage': { type: 'av' },
+    'page-project-manage': { type: 'project' }
+  };
+  if (legacyTrackMap[pageId] && window.TrackUI && typeof window.TrackUI.show === 'function') {
+    return window.TrackUI.show(legacyTrackMap[pageId]);
   }
 
   $$('.page-section').forEach(e => e.classList.remove('active'));
@@ -6492,89 +6505,203 @@ const TrackUI = (() => {
 
   // ---------- Migration Script ----------
   async function migrateToFirebase() {
-    if (!firestoreDb) return alertBox('error', 'ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Firebase');
+    if (!window.firestoreDb) return alertBox('error', 'ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Firebase');
     if (!confirm('ยืนยันการย้ายข้อมูลทั้งหมดจากระบบเดิม (Google Sheets) ไปยัง Firebase ใช่หรือไม่?')) return;
     
-    Swal.fire({title: 'กำลังดึงข้อมูลจากระบบเก่า...', html: 'กรุณารอสักครู่ (อาจใช้เวลา 1-2 นาที)', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    Swal.fire({
+      title: 'กำลังดึงข้อมูลจากระบบเดิม...',
+      html: 'กำลังติดต่อ Google Apps Script เพื่อดึงข้อมูลทุกหมวด<br>กรุณารอสักครู่ (ประมาณ 5-15 วินาที)',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
     
     try {
-      // ดึงข้อมูลจาก GAS ทุกหมวด
-      const [b, a, i, p] = await Promise.all([
-        ResourceHubCore.api.get('get_tasks').catch(()=>[]),
-        ResourceHubCore.api.get('get_av_requests').catch(()=>[]),
-        ResourceHubCore.api.get('get_it_tasks').catch(()=>[]),
-        ResourceHubCore.api.get('get_project_tasks').catch(()=>[])
+      // ดึงข้อมูลจาก GAS ทุกหมวด: อาคาร, ยืมโสต, และงานขั้นสูง (IT, ซ่อมโสต, โครงการ)
+      const [buildingData, avData, advData] = await Promise.all([
+        ResourceHubCore.api.get('get_tasks').catch(err => { console.warn('get_tasks failed', err); return []; }),
+        ResourceHubCore.api.get('get_av_requests').catch(err => { console.warn('get_av_requests failed', err); return []; }),
+        ResourceHubCore.api.get('get_adv_tasks').catch(err => { console.warn('get_adv_tasks failed', err); return { it: [], av: [], project: [] }; })
       ]);
       
-      const allRows = [...(b||[]), ...(a||[]), ...(i||[]), ...(p||[])];
-      if (!allRows.length) throw new Error('ไม่พบข้อมูลจากระบบเก่า หรือไม่สามารถดึงข้อมูลได้');
-      
-      Swal.fire({title: 'กำลังย้ายข้อมูลเข้า Firebase...', html: `พบข้อมูลรวม ${allRows.length} รายการ`, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-      
-      let count = 0;
-      for (const row of allRows) {
-        const isArray = Array.isArray(row);
-        const ticketId = isArray ? row[16] : row.ticketId;
-        if (!ticketId) continue;
-        
-        const docRef = firestoreDb.collection('tickets').doc(ticketId);
-        const docSnap = await docRef.get();
-        if (docSnap.exists) continue; // ข้ามถ้ามีแล้ว
-        
-        const parseDate = (dStr) => {
-           if (!dStr) return null;
-           const d = new Date(dStr);
-           if (!isNaN(d.getTime())) return firebase.firestore.Timestamp.fromDate(d);
-           return null;
-        };
+      const parseDateToTimestamp = (dStr) => {
+        if (!dStr) return null;
+        if (dStr instanceof Date) return firebase.firestore.Timestamp.fromDate(dStr);
+        const parsed = parseDate(dStr);
+        if (parsed && !isNaN(parsed.getTime())) return firebase.firestore.Timestamp.fromDate(parsed);
+        const d = new Date(dStr);
+        if (!isNaN(d.getTime())) return firebase.firestore.Timestamp.fromDate(d);
+        return null;
+      };
 
-        const tsStr = isArray ? row[0] : row.timestamp;
-        const incStr = isArray ? row[14] : row.incidentDate;
-        let createdAt = parseDate(tsStr) || firebase.firestore.FieldValue.serverTimestamp();
-        let incidentDate = parseDate(incStr);
-        
-        let type = 'repair';
-        const typeStr = (isArray ? row[1] : row.type) || '';
-        const typeLow = typeStr.toLowerCase();
-        if (typeLow.includes('โสต')) type = 'av';
-        else if (typeLow.includes('ไอที') || typeLow.includes('it')) type = 'it';
-        else if (typeLow.includes('โครงการ')) type = 'project';
-        
-        let status = 'pending';
-        const stStr = (isArray ? row[9] : row.status) || '';
-        const stLow = stStr.toLowerCase();
-        if (stLow.includes('กำลังดำเนินการ') || stLow.includes('progress')) status = 'progress';
-        else if (stLow.includes('เสร็จสิ้น') || stLow.includes('สำเร็จ') || stLow.includes('done') || stLow.includes('completed')) status = 'done';
-        else if (stLow.includes('ยกเลิก') || stLow.includes('cancel')) status = 'cancelled';
-        
-        await docRef.set({
-          ticketId: ticketId,
-          type: type,
-          status: status,
-          createdAt: createdAt,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          subject: (isArray ? row[5] : row.subject) || '',
-          detail: (isArray ? row[6] : row.detail) || '',
-          reporterName: (isArray ? row[8] : row.reporterName) || '',
-          fileUrl: (isArray ? row[7] : row.fileUrl) || '',
-          fixDetail: (isArray ? row[11] : row.fixDetail) || '',
-          techName: (isArray ? row[10] : row.techName) || '',
-          proofUrl: (isArray ? row[12] : row.proofUrl) || '',
-          cost: (isArray ? row[15] : row.cost) || '',
-          urgency: (isArray ? row[13] : row.urgency) || '',
-          dept: (isArray ? row[3] : row.dept) || '',
-          location: (isArray ? row[4] : row.location) || '',
-          incidentDate: incidentDate,
-          contact: (isArray ? row[2] : row.contact) || '',
-          isMigrated: true
+      const tasksToMigrate = [];
+
+      // 1. งานซ่อมบำรุงอาคาร (Building)
+      if (Array.isArray(buildingData)) {
+        buildingData.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          const ticketId = row[16] || `BLD-LEG-${String(idx + 1).padStart(3, '0')}`;
+          const ts = parseDateToTimestamp(row[0]) || firebase.firestore.FieldValue.serverTimestamp();
+          const incident = parseDateToTimestamp(row[14]);
+          tasksToMigrate.push({
+            ticketId: ticketId,
+            originalIndex: idx,
+            type: 'building',
+            subject: row[1] || row[2] || 'แจ้งซ่อมบำรุงอาคาร',
+            detail: row[2] || '',
+            reporterName: row[3] || '',
+            status: row[4] || 'รอดำเนินการ',
+            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
+            fixDetail: row[6] || '',
+            techName: row[7] || '',
+            proofUrl: (row[8] && row[8] !== '-') ? row[8] : '',
+            cost: row[9] || '',
+            urgency: row[11] || '',
+            dept: row[12] || '',
+            location: row[13] || '',
+            incidentDate: incident,
+            contact: row[15] || '',
+            createdAt: ts,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
         });
+      }
+
+      // 2. งานยืม-คืนโสตฯ (AV Borrow/Return)
+      if (Array.isArray(avData)) {
+        avData.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          const ticketId = `AV-REQ-${String(idx + 1).padStart(3, '0')}`;
+          const ts = parseDateToTimestamp(row[0]) || firebase.firestore.FieldValue.serverTimestamp();
+          const borrowDate = parseDateToTimestamp(row[3]);
+          tasksToMigrate.push({
+            ticketId: ticketId,
+            originalIndex: idx,
+            type: 'av',
+            subject: 'ขอยืม-คืนโสตทัศนูปกรณ์',
+            detail: row[2] || '',
+            reporterName: row[1] || '',
+            status: row[5] || 'จัดเตรียมแล้ว',
+            location: row[4] ? String(row[4]) : '',
+            techName: row[6] || '',
+            createdAt: ts,
+            incidentDate: borrowDate,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
+        });
+      }
+
+      // 3. งานไอที (IT Repairs)
+      if (advData && Array.isArray(advData.it)) {
+        advData.it.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          const ticketId = `IT-LEG-${String(idx + 1).padStart(3, '0')}`;
+          const ts = parseDateToTimestamp(row[0]) || firebase.firestore.FieldValue.serverTimestamp();
+          tasksToMigrate.push({
+            ticketId: ticketId,
+            originalIndex: idx,
+            type: 'it',
+            subject: row[1] || 'แจ้งซ่อมไอที',
+            detail: row[2] || '',
+            reporterName: row[3] || '',
+            status: row[4] || 'รอดำเนินการ',
+            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
+            urgency: row[6] || '',
+            createdAt: ts,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
+        });
+      }
+
+      // 4. งานซ่อมอุปกรณ์โสตฯ (AV Repairs)
+      if (advData && Array.isArray(advData.av)) {
+        advData.av.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          const ticketId = `AV-REP-${String(idx + 1).padStart(3, '0')}`;
+          const ts = parseDateToTimestamp(row[0]) || firebase.firestore.FieldValue.serverTimestamp();
+          tasksToMigrate.push({
+            ticketId: ticketId,
+            originalIndex: idx,
+            type: 'av',
+            subject: row[1] || 'แจ้งซ่อมอุปกรณ์โสตฯ',
+            detail: row[2] || '',
+            reporterName: row[3] || '',
+            status: row[4] || 'รอดำเนินการ',
+            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
+            urgency: row[6] || '',
+            createdAt: ts,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
+        });
+      }
+
+      // 5. งานเสนอโครงการ (Projects)
+      if (advData && Array.isArray(advData.project)) {
+        advData.project.forEach((row, idx) => {
+          if (!row || !row[0]) return;
+          const ticketId = `PRJ-LEG-${String(idx + 1).padStart(3, '0')}`;
+          const ts = parseDateToTimestamp(row[0]) || firebase.firestore.FieldValue.serverTimestamp();
+          tasksToMigrate.push({
+            ticketId: ticketId,
+            originalIndex: idx,
+            type: 'project',
+            subject: row[1] || 'เสนอโครงการ/จัดซื้อ',
+            detail: row[2] || '',
+            reporterName: row[3] || '',
+            status: row[4] || 'รอพิจารณาอนุมัติ',
+            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
+            urgency: row[6] || '',
+            createdAt: ts,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isMigrated: true
+          });
+        });
+      }
+
+      if (!tasksToMigrate.length) {
+        throw new Error('ไม่พบข้อมูลจากระบบเดิม หรือไม่สามารถดึงข้อมูลได้');
+      }
+
+      Swal.fire({
+        title: 'กำลังย้ายข้อมูลเข้า Firebase...',
+        html: `พบข้อมูลเดิมทั้งหมด <b>${tasksToMigrate.length}</b> รายการ<br>กำลังบันทึกลง Cloud Firestore...`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      let count = 0;
+      for (const item of tasksToMigrate) {
+        const docRef = window.firestoreDb.collection('tickets').doc(item.ticketId);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+          continue; // ข้ามถ้ามีอยู่แล้ว
+        }
+        await docRef.set(item);
         count++;
       }
-      
-      Swal.fire('สำเร็จ!', `ย้ายข้อมูลใหม่ ${count} รายการไปยัง Firebase เรียบร้อยแล้ว`, 'success');
+
+      // รีเฟรชข้อมูลหน้าเว็บทันที
+      state.loaded = false;
+      await load(true);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ย้ายข้อมูลสำเร็จ!',
+        html: `ย้ายข้อมูลเข้า Firebase เรียบร้อยแล้ว<br>เพิ่มรายการใหม่ <b>${count}</b> รายการ (จากทั้งหมด ${tasksToMigrate.length} รายการ)`,
+        confirmButtonColor: '#265D5A'
+      });
+
     } catch (e) {
       console.error(e);
-      Swal.fire('ข้อผิดพลาด', 'การย้ายข้อมูลล้มเหลว: ' + e.message, 'error');
+      Swal.fire({
+        icon: 'error',
+        title: 'ข้อผิดพลาด',
+        text: 'การย้ายข้อมูลล้มเหลว: ' + e.message,
+        confirmButtonColor: '#e11d48'
+      });
     }
   }
 
@@ -6600,11 +6727,14 @@ const TrackUI = (() => {
       state.mineOnly = !state.mineOnly;
       render();
     },
-    // เปิดหน้ารายการพร้อมตั้งค่าเริ่มต้น (เช่น หลังแจ้งซ่อมเสร็จ ให้เห็นงานของตัวเอง)
+    // เปิดหน้ารายการพร้อมตั้งค่าเริ่มต้น (เช่น หลังแจ้งซ่อมเสร็จ หรือกดจัดการงานจากการ์ด)
     show(opts = {}) {
       if (opts.mineOnly !== undefined) state.mineOnly = !!opts.mineOnly && !!currentTeacher;
+      if (opts.type !== undefined) state.type = opts.type;
+      if (opts.status !== undefined) state.status = opts.status;
       if (opts.force) state.loaded = false;
       nav('page-track');
+      render();
       load(opts.force);
     }
   };
@@ -6615,6 +6745,11 @@ window.TrackUI = TrackUI;
 // ปุ่ม/ลิงก์เดิมที่เคยเปิด Modal ติดตามงาน ให้มาที่หน้าติดตามงานใหม่แทน
 window.openTrackModal = function () { TrackUI.show(); };
 window.promptTrackTicket = function () { TrackUI.show({ mineOnly: true }); };
+window.loadFbAdminTickets = function () {
+  const type = $('fb-admin-filter-type')?.value || 'all';
+  const status = $('fb-admin-filter-status')?.value || 'all';
+  TrackUI.show({ type: type === 'all' ? 'all' : type, status: status === 'all' ? 'all' : status });
+};
 
 
 
