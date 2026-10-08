@@ -682,51 +682,78 @@ const TrackUI = (() => {
   // ---------- Migration Script ----------
   async function migrateToFirebase() {
     if (!firestoreDb) return alertBox('error', 'ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Firebase');
-    if (!confirm('ยืนยันการย้ายข้อมูลทั้งหมดจาก Google Sheets ไปยัง Firebase?')) return;
+    if (!confirm('ยืนยันการย้ายข้อมูลทั้งหมดจากระบบเดิม (Google Sheets) ไปยัง Firebase ใช่หรือไม่?')) return;
     
-    Swal.fire({title: 'กำลังย้ายข้อมูล...', html: 'กรุณารอสักครู่ (อาจใช้เวลา 1-2 นาที)', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    Swal.fire({title: 'กำลังดึงข้อมูลจากระบบเก่า...', html: 'กรุณารอสักครู่ (อาจใช้เวลา 1-2 นาที)', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
     
     try {
+      // ดึงข้อมูลจาก GAS
+      const res = await ResourceHubCore.api.get('get_tasks');
+      if (!res || !Array.isArray(res)) throw new Error('ไม่สามารถดึงข้อมูลจากระบบเก่าได้');
+      
+      Swal.fire({title: 'กำลังย้ายข้อมูลเข้า Firebase...', html: `พบข้อมูล ${res.length} รายการ`, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      
       let count = 0;
-      for (const job of state.jobs) {
-        const docRef = firestoreDb.collection('tickets').doc(job.id);
+      for (const row of res) {
+        const isArray = Array.isArray(row);
+        const ticketId = isArray ? row[16] : row.ticketId;
+        if (!ticketId) continue;
         
-        let createdAt = firebase.firestore.FieldValue.serverTimestamp();
-        if (job.created && !isNaN(job.created.getTime())) {
-           createdAt = firebase.firestore.Timestamp.fromDate(job.created);
-        }
+        const docRef = firestoreDb.collection('tickets').doc(ticketId);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) continue; // ข้ามถ้ามีแล้ว
         
-        let incidentDate = null;
-        if (job.incident && !isNaN(job.incident.getTime())) {
-           incidentDate = firebase.firestore.Timestamp.fromDate(job.incident);
-        }
+        const parseDate = (dStr) => {
+           if (!dStr) return null;
+           const d = new Date(dStr);
+           if (!isNaN(d.getTime())) return firebase.firestore.Timestamp.fromDate(d);
+           return null;
+        };
+
+        const tsStr = isArray ? row[0] : row.timestamp;
+        const incStr = isArray ? row[14] : row.incidentDate;
+        let createdAt = parseDate(tsStr) || firebase.firestore.FieldValue.serverTimestamp();
+        let incidentDate = parseDate(incStr);
+        
+        let type = 'repair';
+        const typeStr = (isArray ? row[1] : row.type) || '';
+        const typeLow = typeStr.toLowerCase();
+        if (typeLow.includes('โสต')) type = 'av';
+        else if (typeLow.includes('ไอที') || typeLow.includes('it')) type = 'it';
+        else if (typeLow.includes('โครงการ')) type = 'project';
+        
+        let status = 'pending';
+        const stStr = (isArray ? row[9] : row.status) || '';
+        const stLow = stStr.toLowerCase();
+        if (stLow.includes('กำลังดำเนินการ') || stLow.includes('progress')) status = 'progress';
+        else if (stLow.includes('เสร็จสิ้น') || stLow.includes('สำเร็จ') || stLow.includes('done') || stLow.includes('completed')) status = 'done';
+        else if (stLow.includes('ยกเลิก') || stLow.includes('cancel')) status = 'cancelled';
         
         await docRef.set({
-          ticketId: job.id,
-          type: job.type,
-          status: job.status,
+          ticketId: ticketId,
+          type: type,
+          status: status,
           createdAt: createdAt,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          subject: job.subject || '',
-          detail: job.detail || '',
-          reporterName: job.reporter || '',
-          fileUrl: job.image || '',
-          fixDetail: job.fixDetail || '',
-          techName: job.tech || '',
-          proofUrl: job.proof || '',
-          cost: job.cost || '',
-          urgency: job.urgency || '',
-          dept: job.dept || '',
-          location: job.location || '',
+          subject: (isArray ? row[5] : row.subject) || '',
+          detail: (isArray ? row[6] : row.detail) || '',
+          reporterName: (isArray ? row[8] : row.reporterName) || '',
+          fileUrl: (isArray ? row[7] : row.fileUrl) || '',
+          fixDetail: (isArray ? row[11] : row.fixDetail) || '',
+          techName: (isArray ? row[10] : row.techName) || '',
+          proofUrl: (isArray ? row[12] : row.proofUrl) || '',
+          cost: (isArray ? row[15] : row.cost) || '',
+          urgency: (isArray ? row[13] : row.urgency) || '',
+          dept: (isArray ? row[3] : row.dept) || '',
+          location: (isArray ? row[4] : row.location) || '',
           incidentDate: incidentDate,
-          contact: job.contact || '',
-          originalIndex: job.originalIndex || 0,
+          contact: (isArray ? row[2] : row.contact) || '',
           isMigrated: true
-        }, { merge: true });
+        });
         count++;
       }
       
-      Swal.fire('สำเร็จ!', `ย้ายข้อมูลทั้งหมด ${count} รายการไปยัง Firebase เรียบร้อยแล้ว`, 'success');
+      Swal.fire('สำเร็จ!', `ย้ายข้อมูลใหม่ ${count} รายการไปยัง Firebase เรียบร้อยแล้ว`, 'success');
     } catch (e) {
       console.error(e);
       Swal.fire('ข้อผิดพลาด', 'การย้ายข้อมูลล้มเหลว: ' + e.message, 'error');
