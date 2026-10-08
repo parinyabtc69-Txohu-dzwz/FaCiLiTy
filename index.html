@@ -4028,38 +4028,49 @@ function refreshAdvancedTasks() {
 // 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
 // ==========================================
 function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate) {
-  let docRef = null;
-  if (window.firestoreDb) {
-     try {
-       const initialStatus = (typeForFirebase === 'av' && payload.action === 'submit_av') ? 'จัดเตรียมแล้ว' : (typeForFirebase === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
-       window.firestoreDb.collection('tickets').add({
-          ticketId: 'กำลังบันทึก...',
-          type: typeForFirebase,
-          subject: subject || '',
-          detail: detail || '',
-          reporterName: reporter || '',
-          dept: dept || '',
-          location: loc || '',
-          contact: contact || '',
-          incidentDate: incidentDate ? new Date(incidentDate) : null,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          status: initialStatus
-       }).then(ref => docRef = ref);
-     } catch (e) { console.error("Firebase preview add error:", e); }
-  }
-  
+  const prefix = typeForFirebase === 'building' ? 'BLD'
+               : typeForFirebase === 'av'       ? 'AV'
+               : typeForFirebase === 'it'       ? 'IT'
+               : typeForFirebase === 'project'  ? 'PRJ'
+               : 'TKT';
+  const ticketId = `${prefix}-${Date.now()}`;
+
+  const initialStatus = (typeForFirebase === 'av' && payload.action === 'submit_av')
+    ? 'จัดเตรียมแล้ว'
+    : (typeForFirebase === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
+
+  // ส่งข้อมูลไป Google Sheets (GAS) ก่อน แล้วค่อยบันทึก Firebase เมื่อสำเร็จ
   ResourceHubCore.api.post(payload)
     .then(async () => {
-       if (docRef) { await docRef.delete().catch(e=>console.error(e)); }
-       if (window.TrackUI && window.TrackUI.migrateToFirebase) {
-          window.TrackUI.migrateToFirebase(true);
-       }
+      if (!window.firestoreDb) return;
+      try {
+        await window.firestoreDb.collection('tickets').doc(ticketId).set({
+          ticketId,
+          type: typeForFirebase,
+          subject:      subject  || '',
+          detail:       detail   || '',
+          reporterName: reporter || '',
+          dept:         dept     || '',
+          location:     loc      || '',
+          contact:      contact  || '',
+          incidentDate: incidentDate ? new Date(incidentDate) : null,
+          status:       initialStatus,
+          createdAt:    firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt:    firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // รีเฟรช TrackUI โดยไม่รบกวน UX (ทำงานใน background)
+        if (window.TrackUI && typeof window.TrackUI.load === 'function') {
+          window.TrackUI.load(true);
+        }
+      } catch (e) {
+        console.error('Firebase save error:', e);
+      }
     })
-    .catch(async (e) => {
-       console.error("Background Submit error", e);
-       if (docRef) { await docRef.delete().catch(e=>console.error(e)); }
+    .catch((e) => {
+      console.error('Background Submit error', e);
     });
 }
+
 
 async function submitGenericForm(config) {
   const subject = $(config.prefix + 'Subject')?.value.trim();
