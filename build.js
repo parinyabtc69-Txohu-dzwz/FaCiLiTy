@@ -19,6 +19,8 @@ let jsApp = '';
 
 // Explicit load order to prevent reference errors for global variables
 const loadOrder = [
+  'firebase-config.js',
+  'firestore-db.js',
   'firebase-chat.js',
   'api.js',
   'auth.js',
@@ -26,8 +28,8 @@ const loadOrder = [
   'repair.js',
   'av.js',
   'dashboard.js',
-  'firestore-db.js',
-  'main.js'
+  'main.js',
+  'track.js'
 ];
 
 if (fs.existsSync(jsModulesDir)) {
@@ -68,4 +70,8 @@ if (fs.existsSync(pagesDir)) {
 }
 
 fs.writeFileSync(indexHtmlPath, htmlTemplate);
+const indexAppPath = path.join(__dirname, 'index_app.html');
+if (fs.existsSync(indexAppPath)) {
+  fs.writeFileSync(indexAppPath, htmlTemplate);
+}
 console.log('Build successful!');

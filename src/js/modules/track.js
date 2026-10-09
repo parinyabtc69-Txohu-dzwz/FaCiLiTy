@@ -229,7 +229,7 @@ const TrackUI = (() => {
           
           // ถ้าเปิดหน้ารายละเอียดค้างไว้ ให้ดึงข้อมูลมาอัปเดตแบบเนียนๆ
           const detailPage = $('page-track-detail');
-          if (detailPage && !detailPage.classList.contains('hidden') && state.currentJobId) {
+          if (detailPage && detailPage.classList.contains('active') && state.currentJobId) {
              open(state.currentJobId);
           }
         }, (err) => {
@@ -608,33 +608,43 @@ const TrackUI = (() => {
     }
   }
 
-  // ---------- แชทแบบ Real-time ----------
+  // ---------- มอบหมายช่างซ่อม (Assign Technician) ----------
   async function assignTech(jobId) {
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
     
-    Swal.fire({title: 'กำลังโหลดรายชื่อช่าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    // ตรวจสอบ Cache รายชื่อผู้ใช้ก่อน เพื่อให้เปิดหน้าต่างได้ทันทีโดยไม่ต้องรอดึงข้อมูล
     let users = window.cachedUsers;
     if (!users) {
       try {
+        const raw = localStorage.getItem('cached_system_users');
+        if (raw) users = JSON.parse(raw);
+      } catch (e) {}
+    }
+    if (!users) {
+      Swal.fire({title: 'กำลังโหลดรายชื่อช่าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      try {
         users = await ResourceHubCore.api.get('get_users');
         window.cachedUsers = users;
+        try { localStorage.setItem('cached_system_users', JSON.stringify(users)); } catch(e) {}
       } catch (e) {
         Swal.fire('Error', 'ไม่สามารถโหลดรายชื่อช่างได้', 'error');
         return;
       }
+      Swal.close();
     }
-    Swal.close();
 
-    const techOptions = {};
+    const techList = [];
     users.forEach(u => {
+      const email = u[0] ? u[0].toString().trim() : '';
+      const name = u[1] ? u[1].toString().trim() : '';
       const role = u[2] ? u[2].toString().trim() : '';
-      if (role === 'Tech' || role === 'IT') {
-        techOptions[u[1]] = u[1]; // Value is the name
+      if (role === 'Tech' || role === 'IT' || role === 'Admin' || role === 'Supervisor') {
+        techList.push({ name, email });
       }
     });
 
-    if (Object.keys(techOptions).length === 0) {
+    if (techList.length === 0) {
       Swal.fire('Info', 'ไม่พบรายชื่อช่างหรือไอทีในระบบ', 'info');
       return;
     }
@@ -646,23 +656,24 @@ const TrackUI = (() => {
       urgencyHtml += `<option value="${u}" ${selected}>${u}</option>`;
     });
 
-    let techOptionsHtml = '<option value="">ยังไม่มอบหมาย</option>';
-    Object.keys(techOptions).forEach(t => {
-      const selected = (job.tech === t) ? 'selected' : '';
-      techOptionsHtml += `<option value="${t}" ${selected}>${t}</option>`;
+    let techOptionsHtml = '<option value="" data-email="">-- ยังไม่มอบหมายช่าง --</option>';
+    techList.forEach(t => {
+      const selected = (job.tech === t.name) ? 'selected' : '';
+      const label = t.email ? `${t.name} (${t.email})` : t.name;
+      techOptionsHtml += `<option value="${esc(t.name)}" data-email="${esc(t.email)}" ${selected}>${esc(label)}</option>`;
     });
 
     const formHtml = `
       <div class="text-left space-y-4 text-slate-800 mt-4 border-t pt-4">
         <div>
-          <label class="block text-xs font-semibold mb-2">ช่างที่รับผิดชอบ</label>
-          <select id="assignTechName" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none">
+          <label class="block text-xs font-semibold mb-2 text-slate-700">ช่างที่รับผิดชอบ (ชื่อ และ อีเมล)</label>
+          <select id="assignTechName" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none text-sm bg-slate-50">
             ${techOptionsHtml}
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold mb-2">ความเร่งด่วน</label>
-          <select id="assignUrgency" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none">
+          <label class="block text-xs font-semibold mb-2 text-slate-700">ความเร่งด่วน</label>
+          <select id="assignUrgency" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none text-sm bg-slate-50">
             ${urgencyHtml}
           </select>
         </div>
@@ -673,47 +684,57 @@ const TrackUI = (() => {
       title: 'มอบหมายช่างซ่อม',
       html: formHtml,
       showCancelButton: true,
-      confirmButtonText: 'บันทึก',
+      confirmButtonText: '<i class="fa-solid fa-check mr-1"></i> ตกลง',
+      confirmButtonColor: '#265D5A',
       cancelButtonText: 'ยกเลิก',
+      cancelButtonColor: '#64748b',
       preConfirm: () => {
-        const techName = document.getElementById('assignTechName').value;
+        const select = document.getElementById('assignTechName');
+        const techName = select.value;
+        const techEmail = select.options[select.selectedIndex]?.dataset?.email || '';
         const urgency = document.getElementById('assignUrgency').value;
-        return { techName, urgency };
+        return { techName, techEmail, urgency };
       }
     });
     
     if (formValues) {
-      const techName = formValues.techName;
-      const urgency = formValues.urgency;
-      Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      const { techName, techEmail, urgency } = formValues;
+      Swal.fire({title: 'กำลังบันทึกและแจ้งเตือนช่าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
-      let sheetMap = { 'building': 'Task', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
-      let sheetName = sheetMap[job.type] || 'Task';
+      // กำหนดชื่อ Sheet ให้ตรงกับ CONFIG ใน Code.gs เสมอ ('Tasks' มี s)
+      const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
+      const sheetName = sheetMap[job.type] || 'Tasks';
       
       try {
-         // อัปเดตลง Firebase เพื่อให้ UI ทุกคนเปลี่ยนทันที (Real-time)
+         // 1. อัปเดตลง Firebase ทันที เพื่อให้ทุกคนเห็นการเปลี่ยนแปลง Real-time (0.2 วิ)
          if (window.firestoreDb) {
             let updateData = {
               techName: techName,
+              techEmail: techEmail,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
+            if (techName && (!job.status || job.status === 'รอดำเนินการ')) {
+              updateData.status = 'กำลังดำเนินการ';
+            }
             if (urgency) updateData.urgency = urgency;
             await window.firestoreDb.collection('tickets').doc(jobId).set(updateData, { merge: true });
          }
       
-         // อัปเดตลง Google Sheets เป็น Backup
+         // 2. อัปเดตลง Google Sheets เป็น Backup พร้อมส่งอีเมลแจ้งเตือนถึงช่างคนนั้น
          await ResourceHubCore.api.post({
            action: 'edit_assignment',
            sheetName: sheetName,
            rowIndex: job.originalIndex,
            technician: techName,
+           technicianEmail: techEmail,
            urgency: urgency
          });
         
-        Swal.fire({icon: 'success', title: 'มอบหมายช่างสำเร็จ!', showConfirmButton: false, timer: 1500});
-        // ไม่ต้องเรียก open(jobId) เองแล้ว เพราะ Firebase .onSnapshot จะทำงานและรีเฟรช UI ให้เอง
+        const successMsg = techEmail ? `มอบหมายงานและส่งอีเมลแจ้ง ${esc(techName)} (${esc(techEmail)}) เรียบร้อยแล้ว` : 'มอบหมายช่างสำเร็จ!';
+        Swal.fire({icon: 'success', title: 'สำเร็จ!', text: successMsg, confirmButtonColor: '#265D5A', timer: 2500});
       } catch (err) {
-        Swal.fire('Error', 'ไม่สามารถมอบหมายงานได้', 'error');
+        console.error('assignTech error:', err);
+        Swal.fire('Error', 'ไม่สามารถมอบหมายงานได้: ' + (err.message || ''), 'error');
       }
     }
   }
@@ -833,29 +854,33 @@ const TrackUI = (() => {
 
 
 
-  // ---------- ดึงข้อมูลจาก Google Sheets เข้า Firebase ----------
-  async function migrateFromSheets() {
+  // ---------- ดึงข้อมูลจาก Google Sheets เข้า Firebase (Optimized Batch Write & Silent Auto-Sync) ----------
+  async function migrateFromSheets(silent = false) {
     if (!window.firestoreDb) {
-      return alertBox('error', 'ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Firebase');
+      if (!silent) alertBox('error', 'ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Firebase');
+      return;
     }
 
-    const confirm = await Swal.fire({
-      title: 'ดึงข้อมูลจาก Google Sheet?',
-      html: 'ระบบจะดึงข้อมูลทั้งหมดจาก Google Sheets และบันทึกเข้า Firebase<br><b>รายการที่มีอยู่แล้วจะไม่ถูกทับ</b>',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'ดึงข้อมูล',
-      cancelButtonText: 'ยกเลิก',
-      confirmButtonColor: '#f59e0b'
-    });
-    if (!confirm.isConfirmed) return;
+    if (!silent) {
+      const confirm = await Swal.fire({
+        title: 'ดึงข้อมูลจาก Google Sheet?',
+        html: 'ระบบจะดึงข้อมูลทั้งหมดจาก Google Sheets และบันทึกเข้า Firebase<br><b>รายการที่มีอยู่แล้วจะไม่ถูกทับ</b>',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-cloud-arrow-down mr-1"></i> ดึงข้อมูลทันที',
+        confirmButtonColor: '#265D5A',
+        cancelButtonText: 'ยกเลิก',
+        cancelButtonColor: '#64748b'
+      });
+      if (!confirm.isConfirmed) return;
 
-    Swal.fire({
-      title: 'กำลังดึงข้อมูลจาก Sheet...',
-      html: 'กำลังติดต่อ Google Apps Script เพื่อดึงข้อมูลทุกหมวด<br>กรุณารอสักครู่ (ประมาณ 5-15 วินาที)',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
+      Swal.fire({
+        title: 'กำลังซิงก์ข้อมูลจาก Sheet...',
+        html: 'กำลังเชื่อมต่อและดึงข้อมูลทุกหมวด<br>กรุณารอสักครู่ (ประมาณ 1-3 วินาที)',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+    }
 
     try {
       const [buildingData, avData, advData] = await Promise.all([
@@ -882,7 +907,7 @@ const TrackUI = (() => {
           items.push({
             ticketId: row[16] || `BLD-LEG-${String(idx+1).padStart(3,'0')}`,
             type: 'building',
-            subject: row[1] || row[2] || 'แจ้ซ่อมบำรุงอาคาร',
+            subject: row[1] || row[2] || 'แจ้งซ่อมบำรุงอาคาร',
             detail: row[2] || '',
             reporterName: row[3] || '',
             status: row[4] || 'รอดำเนินการ',
@@ -903,7 +928,7 @@ const TrackUI = (() => {
         });
       }
 
-      // 2. ยืมโสต์
+      // 2. ยืมโสตฯ
       if (Array.isArray(avData)) {
         avData.forEach((row, idx) => {
           if (!row || !row[0]) return;
@@ -931,7 +956,7 @@ const TrackUI = (() => {
           items.push({
             ticketId: `IT-LEG-${String(idx+1).padStart(3,'0')}`,
             type: 'it',
-            subject: row[1] || 'แจ้ซ่อมไอที',
+            subject: row[1] || 'แจ้งซ่อมไอที',
             detail: row[2] || '',
             reporterName: row[3] || '',
             status: row[4] || 'รอดำเนินการ',
@@ -943,14 +968,14 @@ const TrackUI = (() => {
         });
       }
 
-      // 4. ซ่อมโสต์
+      // 4. ซ่อมโสตฯ
       if (advData && Array.isArray(advData.av)) {
         advData.av.forEach((row, idx) => {
           if (!row || !row[0]) return;
           items.push({
             ticketId: `AV-REP-${String(idx+1).padStart(3,'0')}`,
             type: 'av',
-            subject: row[1] || 'แจ้ซ่อมอุปกรณ์โสต์ฯ',
+            subject: row[1] || 'แจ้งซ่อมอุปกรณ์โสตฯ',
             detail: row[2] || '',
             reporterName: row[3] || '',
             status: row[4] || 'รอดำเนินการ',
@@ -981,32 +1006,68 @@ const TrackUI = (() => {
         });
       }
 
-      if (!items.length) throw new Error('ไม่พบข้อมูลจาก Google Sheet');
-
-      Swal.update({
-        html: `พบข้อมูล <b>${items.length}</b> รายการ<br>กำลังบันทึกเข้า Firebase...`
-      });
-
-      let added = 0;
-      for (const item of items) {
-        const ref = window.firestoreDb.collection('tickets').doc(item.ticketId);
-        const snap = await ref.get();
-        if (!snap.exists) { await ref.set(item); added++; }
+      if (!items.length) {
+        if (!silent) throw new Error('ไม่พบข้อมูลจาก Google Sheet');
+        return;
       }
 
+      // ตรวจสอบ ID ที่มีอยู่แล้วใน Firebase เพียง 1 query เดียว (ไม่ต้อง loop get)
+      const existingSnap = await window.firestoreDb.collection('tickets').get();
+      const existingIds = new Set();
+      existingSnap.forEach(doc => existingIds.add(doc.id));
+
+      const newItems = items.filter(item => !existingIds.has(item.ticketId));
+
+      // บันทึกเฉพาะรายการใหม่ด้วย Batch Write (เร็วสูงสุด 500 รายการต่อ 1 request)
+      if (newItems.length > 0) {
+        const batchSize = 450;
+        for (let i = 0; i < newItems.length; i += batchSize) {
+          const chunk = newItems.slice(i, i + batchSize);
+          const batch = window.firestoreDb.batch();
+          chunk.forEach(item => {
+            const ref = window.firestoreDb.collection('tickets').doc(item.ticketId);
+            batch.set(ref, item);
+          });
+          await batch.commit();
+        }
+      }
+
+      const added = newItems.length;
       state.loaded = false;
       await load(true);
 
-      Swal.fire({
-        icon: 'success',
-        title: 'ดึงข้อมูลสำเร็จ!',
-        html: `เพิ่มรายการใหม่ <b>${added}</b> รายการ (จากทั้งหมด ${items.length} รายการ)`,
-        confirmButtonColor: '#265D5A'
-      });
+      if (!silent) {
+        Swal.fire({
+          icon: 'success',
+          title: 'ซิงก์ข้อมูลสำเร็จ!',
+          html: `เพิ่มรายการใหม่ <b>${added}</b> รายการ (จากทั้งหมด ${items.length} รายการใน Sheet)`,
+          confirmButtonColor: '#265D5A'
+        });
+      } else {
+        console.log(`[AutoSync] Synced ${added} new items from Sheets into Firebase.`);
+      }
 
     } catch (e) {
       console.error(e);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, confirmButtonColor: '#e11d48' });
+      if (!silent) {
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, confirmButtonColor: '#e11d48' });
+      }
+    }
+  }
+
+  // ตัวกระตุ้น Silent Auto-Sync เบื้องหลัง (ไม่รบกวนหน้าจอ ไม่เด้ง Modal)
+  let lastAutoSyncTime = 0;
+  function triggerSilentAutoSync() {
+    const isManager = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || 
+                      (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor' || currentRole === 'Admin'));
+    if (!isManager) return;
+    const now = Date.now();
+    // อนุญาตให้รันเบื้องหลังสูงสุด 1 ครั้งทุกๆ 10 นาที
+    if (now - lastAutoSyncTime > 10 * 60 * 1000) {
+      lastAutoSyncTime = now;
+      setTimeout(() => {
+        migrateFromSheets(true).catch(e => console.warn('Silent auto-sync:', e));
+      }, 3000);
     }
   }
 
@@ -1020,6 +1081,10 @@ const TrackUI = (() => {
     previewChatImage,
     clearChatImage,
     migrateFromSheets,
+    backToList() {
+      state.currentJobId = null;
+      nav('page-track');
+    },
     onSearch(v) {
       clearTimeout(state.searchTimer);
       state.searchTimer = setTimeout(() => { state.search = str(v); render(); }, 150);
@@ -1035,6 +1100,7 @@ const TrackUI = (() => {
     },
     // เปิดหน้ารายการพร้อมตั้งค่าเริ่มต้น (เช่น หลังแจ้งซ่อมเสร็จ หรือกดจัดการงานจากการ์ด)
     show(opts = {}) {
+      state.currentJobId = null;
       if (opts.mineOnly !== undefined) state.mineOnly = !!opts.mineOnly && !!currentTeacher;
       if (opts.type !== undefined) state.type = opts.type;
       if (opts.status !== undefined) state.status = opts.status;
@@ -1042,6 +1108,7 @@ const TrackUI = (() => {
       nav('page-track');
       render();
       load(opts.force);
+      triggerSilentAutoSync();
     }
   };
 })();

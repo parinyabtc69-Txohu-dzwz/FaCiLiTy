@@ -593,10 +593,11 @@ function doPost(e) {
 
 
       case 'edit_assignment':
-        const editSheetName = data.sheetName || CONFIG.SHEET_NAME;
+        let editSheetName = data.sheetName || CONFIG.SHEET_NAME;
+        if (editSheetName === 'Task') editSheetName = CONFIG.SHEET_NAME;
         const sheetEdit = db.getSheetByName(editSheetName);
         if (!sheetEdit) {
-          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found: ' + editSheetName })).setMimeType(ContentService.MimeType.JSON);
         }
         
         let editTargetRow = 0;
@@ -626,30 +627,32 @@ function doPost(e) {
           try {
             const taskSubject = sheetEdit.getRange(editTargetRow, 2).getValue();
             const taskReporter = sheetEdit.getRange(editTargetRow, 4).getValue();
-            const techEmail = getUserEmailByName(data.technician);
+            const taskDetail = sheetEdit.getRange(editTargetRow, 3).getValue();
+            const techEmail = data.technicianEmail || getUserEmailByName(data.technician);
             if (techEmail) {
               const emailHtml = generateEmailHtml(
-                "👷 มีการอัปเดตช่างผู้รับผิดชอบ",
-                "#f59e0b",
+                "👷 มอบหมายงานซ่อมให้คุณ",
+                "#265D5A",
                 taskReporter,
                 null,
                 taskSubject,
-                "มีการแก้ไขและมอบหมายงานให้คุณเป็นผู้รับผิดชอบ"
+                `คุณได้รับมอบหมายงาน: <b>${taskSubject}</b><br>รายละเอียด: ${taskDetail}<br>ความเร่งด่วน: ${data.urgency || 'ตามคิว'}<br>กรุณาตรวจสอบรายละเอียดในระบบ`
               );
               MailApp.sendEmail({
                 to: techEmail,
-                subject: "อัปเดตช่างผู้รับผิดชอบ: " + taskSubject,
+                subject: "🔔 แจ้งเตือนมอบหมายงาน: " + taskSubject,
                 htmlBody: emailHtml
               });
             }
             
             const editAssignMsg = createFlexMessageTemplate(
-              "แก้ไขการมอบหมายงานให้: " + data.technician,
+              "มอบหมายงานให้: " + data.technician,
               "👷 เปลี่ยนแปลงช่างรับผิดชอบ",
               taskSubject,
-              "#f59e0b",
+              "#265D5A",
               [
-                { label: "ช่างคนใหม่", value: data.technician, flexLabel: 3, flexValue: 5 }
+                { label: "ช่างผู้รับผิดชอบ", value: data.technician, flexLabel: 3, flexValue: 5 },
+                { label: "ความเร่งด่วน", value: data.urgency || "ทั่วไป", flexLabel: 3, flexValue: 5 }
               ]
             );
             notifyTask('building', editAssignMsg, null, null, null, null);

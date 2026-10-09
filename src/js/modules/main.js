@@ -1998,35 +1998,60 @@ function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, repo
     ? 'จัดเตรียมแล้ว'
     : (typeForFirebase === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
 
-  // ส่งข้อมูลไป Google Sheets (GAS) ก่อน แล้วค่อยบันทึก Firebase เมื่อสำเร็จ
-  ResourceHubCore.api.post(payload)
-    .then(async () => {
-      if (!window.firestoreDb) return;
-      try {
-        await window.firestoreDb.collection('tickets').doc(ticketId).set({
-          ticketId,
-          type: typeForFirebase,
-          subject:      subject  || '',
-          detail:       detail   || '',
-          reporterName: reporter || '',
-          dept:         dept     || '',
-          location:     loc      || '',
-          contact:      contact  || '',
-          incidentDate: incidentDate ? new Date(incidentDate) : null,
-          status:       initialStatus,
-          createdAt:    firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt:    firebase.firestore.FieldValue.serverTimestamp()
-        });
-        // รีเฟรช TrackUI โดยไม่รบกวน UX (ทำงานใน background)
+  // ตรวจสอบและเตรียม Document สำหรับ Firebase
+  const docData = {
+    ticketId,
+    type: typeForFirebase,
+    subject:      subject  || '',
+    detail:       detail   || '',
+    reporterName: reporter || '',
+    dept:         dept     || '',
+    location:     loc      || '',
+    contact:      contact  || '',
+    incidentDate: incidentDate ? new Date(incidentDate) : null,
+    urgency:      payload.urgency || '',
+    status:       initialStatus,
+    createdAt:    firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt:    firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  // 1. บันทึกเข้า Firebase ทันที (Instant Client-Write ~0.2 วินาที) เพื่อให้ขึ้นหน้าจอ Real-time ทันที
+  const saveToFirebase = async () => {
+    try {
+      if (!window.firestoreDb && typeof initFirebase === 'function') {
+        initFirebase();
+      }
+      if (window.firestoreDb) {
+        await window.firestoreDb.collection('tickets').doc(ticketId).set(docData);
+        console.log('🔥 Instant Firebase save success for ticket:', ticketId);
         if (window.TrackUI && typeof window.TrackUI.load === 'function') {
           window.TrackUI.load(true);
         }
-      } catch (e) {
-        console.error('Firebase save error:', e);
+      }
+    } catch (e) {
+      console.error('Instant Firebase save error:', e);
+    }
+  };
+  saveToFirebase();
+
+  // 2. ส่งข้อมูลไป Google Sheets (GAS) ใน background
+  payload.ticketId = ticketId;
+  ResourceHubCore.api.post(payload)
+    .then(async (res) => {
+      // เมื่อ GAS บันทึกสำเร็จ อัปเดต fileUrl (ถ้ามี) ลง Firebase doc
+      if (res && res.fileUrl && window.firestoreDb) {
+        try {
+          await window.firestoreDb.collection('tickets').doc(ticketId).update({
+            fileUrl: res.fileUrl,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (e) {
+          console.warn('Update fileUrl in Firebase:', e);
+        }
       }
     })
     .catch((e) => {
-      console.error('Background Submit error', e);
+      console.error('Background Submit error to GAS:', e);
     });
 }
 
