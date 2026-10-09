@@ -1052,17 +1052,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Check for ticketId parameter (Direct Link from LINE Flex Message)
+  const ticketIdParam = params.get('ticketId');
+  if (ticketIdParam) {
+    const tryOpenTicket = (retry = 0) => {
+      if (window.TrackUI && typeof window.TrackUI.open === 'function') {
+        window.TrackUI.open(ticketIdParam);
+      } else if (retry < 25) {
+        setTimeout(() => tryOpenTicket(retry + 1), 200);
+      }
+    };
+    setTimeout(tryOpenTicket, 200);
+  }
+
   if (LIFF_ID && LIFF_ID !== "ใส่_LIFF_ID_ที่นี่") {
     liff.init({ liffId: LIFF_ID }).then(() => {
       if (liff.isLoggedIn()) {
         if (!localStorage.getItem('logged_teacher')) {
           handleLiffLogin();
         } else {
-          // ถ้ามี session อยู่แล้ว และเป็นแอดมิน ให้เด้งไป Dashboard หรือถอยไป Profile
-          if (localStorage.getItem('logged_admin') === 'true') {
-            nav('page-dashboard');
-          } else {
-            nav('page-teacher-profile');
+          // ถ้ามี ticketId ใน URL ไม่ต้องเด้งหนี ให้เปิดดูงานนั้นตรงๆ
+          const urlParams = new URLSearchParams(window.location.search);
+          if (!urlParams.get('ticketId')) {
+            // ถ้ามี session อยู่แล้ว และเป็นแอดมิน ให้เด้งไป Dashboard หรือถอยไป Profile
+            if (localStorage.getItem('logged_admin') === 'true') {
+              nav('page-dashboard');
+            } else {
+              nav('page-teacher-profile');
+            }
           }
         }
       }
@@ -1245,7 +1262,7 @@ function handleGlobalLogout() {
 // ==========================================
 // ฟังก์ชันสำหรับเปลี่ยนหน้า (โดยการซ่อน-แสดง div ตาม ID)
 function nav(pageId) {
-  if (!currentTeacher && !isAdminLoggedIn && pageId !== 'page-auth') {
+  if (!currentTeacher && !isAdminLoggedIn && pageId !== 'page-auth' && pageId !== 'page-track-detail' && pageId !== 'page-track') {
     alertBox('warning', 'ต้องเข้าสู่ระบบก่อน', 'กรุณาเข้าสู่ระบบก่อนใช้งานเมนูนี้ครับ');
     return nav('page-auth');
   }
@@ -1506,7 +1523,12 @@ function updateSessionUI() {
       $('dropdown-user-role').innerHTML = `สถานะ: ${roleDisplay}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
     }
 
-    if ($('page-auth').classList.contains('active')) nav('page-teacher-profile');
+    if ($('page-auth').classList.contains('active')) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (!urlParams.get('ticketId')) {
+        nav('page-teacher-profile');
+      }
+    }
 
   } else {
     // Guest

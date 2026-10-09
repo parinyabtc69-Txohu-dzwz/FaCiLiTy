@@ -3142,17 +3142,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Check for ticketId parameter (Direct Link from LINE Flex Message)
+  const ticketIdParam = params.get('ticketId');
+  if (ticketIdParam) {
+    const tryOpenTicket = (retry = 0) => {
+      if (window.TrackUI && typeof window.TrackUI.open === 'function') {
+        window.TrackUI.open(ticketIdParam);
+      } else if (retry < 25) {
+        setTimeout(() => tryOpenTicket(retry + 1), 200);
+      }
+    };
+    setTimeout(tryOpenTicket, 200);
+  }
+
   if (LIFF_ID && LIFF_ID !== "ใส่_LIFF_ID_ที่นี่") {
     liff.init({ liffId: LIFF_ID }).then(() => {
       if (liff.isLoggedIn()) {
         if (!localStorage.getItem('logged_teacher')) {
           handleLiffLogin();
         } else {
-          // ถ้ามี session อยู่แล้ว และเป็นแอดมิน ให้เด้งไป Dashboard หรือถอยไป Profile
-          if (localStorage.getItem('logged_admin') === 'true') {
-            nav('page-dashboard');
-          } else {
-            nav('page-teacher-profile');
+          // ถ้ามี ticketId ใน URL ไม่ต้องเด้งหนี ให้เปิดดูงานนั้นตรงๆ
+          const urlParams = new URLSearchParams(window.location.search);
+          if (!urlParams.get('ticketId')) {
+            // ถ้ามี session อยู่แล้ว และเป็นแอดมิน ให้เด้งไป Dashboard หรือถอยไป Profile
+            if (localStorage.getItem('logged_admin') === 'true') {
+              nav('page-dashboard');
+            } else {
+              nav('page-teacher-profile');
+            }
           }
         }
       }
@@ -3335,7 +3352,7 @@ function handleGlobalLogout() {
 // ==========================================
 // ฟังก์ชันสำหรับเปลี่ยนหน้า (โดยการซ่อน-แสดง div ตาม ID)
 function nav(pageId) {
-  if (!currentTeacher && !isAdminLoggedIn && pageId !== 'page-auth') {
+  if (!currentTeacher && !isAdminLoggedIn && pageId !== 'page-auth' && pageId !== 'page-track-detail' && pageId !== 'page-track') {
     alertBox('warning', 'ต้องเข้าสู่ระบบก่อน', 'กรุณาเข้าสู่ระบบก่อนใช้งานเมนูนี้ครับ');
     return nav('page-auth');
   }
@@ -3596,7 +3613,12 @@ function updateSessionUI() {
       $('dropdown-user-role').innerHTML = `สถานะ: ${roleDisplay}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
     }
 
-    if ($('page-auth').classList.contains('active')) nav('page-teacher-profile');
+    if ($('page-auth').classList.contains('active')) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (!urlParams.get('ticketId')) {
+        nav('page-teacher-profile');
+      }
+    }
 
   } else {
     // Guest
@@ -5943,19 +5965,67 @@ const TrackUI = (() => {
     return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=${size}` : u;
   }
 
+  // ---------- ตรวจจับชื่อและสิทธิ์ผู้ใช้งาน ----------
+  const normName = n => str(n).replace(/^(คุณครู|ครู|คุณ|นาย|นางสาว|นาง|นายช่าง|ช่าง|อาจารย์|อ\.)\s*/, '').replace(/\s+/g, '').toLowerCase();
+
+  function getTechEmailFromName(name) {
+    if (!name) return '';
+    const norm = normName(name);
+    if (!norm) return '';
+    let users = window.cachedUsers;
+    if (!users) {
+      try {
+        const raw = localStorage.getItem('cached_system_users');
+        if (raw) users = JSON.parse(raw);
+      } catch (e) {}
+    }
+    if (Array.isArray(users)) {
+      for (const u of users) {
+        if (normName(u[1]) === norm) return (u[0] || '').trim();
+      }
+    }
+    return '';
+  }
+
+  function canManageJob(job) {
+    if (!job) return false;
+    // 1. Role เป็น Admin, Executive หรือ Supervisor
+    const isSupervisor = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || 
+                         (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor' || currentRole === 'Admin'));
+    if (isSupervisor) return true;
+
+    // 2. ตรวจสอบอีเมลช่าง
+    const myEmail = ((typeof currentEmail === 'string' ? currentEmail : '') || (localStorage.getItem('logged_email') || '')).trim().toLowerCase();
+    const jobTechEmail = ((job.techEmail || '') || getTechEmailFromName(job.tech)).trim().toLowerCase();
+    if (myEmail && jobTechEmail && myEmail === jobTechEmail) return true;
+
+    // 3. ตรวจสอบชื่อช่าง (ตัดคำนำหน้า เช่น คุณครู, ครู, นาย, นางสาว ฯลฯ)
+    const myName = ((typeof currentTeacher === 'string' ? currentTeacher : '') || (localStorage.getItem('logged_teacher') || '')).trim();
+    if (job.tech && myName) {
+      const meNorm = normName(myName);
+      const techNorm = normName(job.tech);
+      if (meNorm && techNorm) {
+        if (meNorm === techNorm) return true;
+        if (meNorm.length >= 3 && techNorm.length >= 3 && (meNorm.includes(techNorm) || techNorm.includes(meNorm))) return true;
+      }
+    }
+    return false;
+  }
+
   // ---------- แปลงแถวข้อมูลจาก Sheet ให้อยู่ในรูปแบบเดียวกัน ----------
   // อาคาร (เรียงเก่า→ใหม่): 0 เวลา,1 หัวข้อ,2 รายละเอียด,3 ผู้แจ้ง,4 สถานะ,5 รูปแจ้ง,6 รายละเอียดการแก้ไข,7 ช่าง,8 รูปผลงาน,9 ค่าใช้จ่าย,10 ใบเสร็จ,11 ความเร่งด่วน,12 หน่วยงาน,13 สถานที่,14 วันที่พบปัญหา,15 ติดต่อ
   function fromBuilding(r, idx) {
     const tech = str(r[7]);
     return makeJob('building', idx + 1, r, {
-      image: r[5], fixDetail: r[6], tech, proof: r[8], cost: r[9], urgency: r[11]
+      image: r[5], fixDetail: r[6], tech, techEmail: getTechEmailFromName(tech), proof: r[8], cost: r[9], urgency: r[11]
     }, idx);
   }
 
   function fromAdvanced(type, r, seq, idx) {
+    const tech = str(r[8]);
     return makeJob(type, seq, r, {
       image: isUrl(r[5]) ? r[5] : '',
-      fixDetail: r[7], tech: str(r[8]), proof: r[6], cost: r[9],
+      fixDetail: r[7], tech, techEmail: getTechEmailFromName(tech), proof: r[6], cost: r[9],
       urgency: str(r[11]) || (!isUrl(r[5]) && str(r[5]) !== '-' ? r[5] : '')
     }, idx);
   }
@@ -5989,6 +6059,7 @@ const TrackUI = (() => {
       image: docData.fileUrl || '',
       fixDetail: docData.fixDetail || '',
       tech: docData.techName || '',
+      techEmail: docData.techEmail || '',
       proof: docData.proofUrl || '',
       cost: docData.cost || '',
       urgency: docData.urgency || '',
@@ -6018,6 +6089,7 @@ const TrackUI = (() => {
       image: isUrl(x.image) ? str(x.image) : '',
       fixDetail: str(x.fixDetail) === '-' ? '' : str(x.fixDetail),
       tech: x.tech,
+      techEmail: x.techEmail || '',
       proof: isUrl(x.proof) ? str(x.proof) : '',
       cost: str(x.cost) === '-' ? '' : str(x.cost),
       urgency: str(x.urgency) === '-' ? '' : str(x.urgency),
@@ -6029,7 +6101,6 @@ const TrackUI = (() => {
   }
 
   // ---------- ตรวจว่าเป็นงานของผู้ใช้ปัจจุบันหรือไม่ ----------
-  const normName = n => str(n).replace(/^(คุณครู|ครู|คุณ|นาย|นางสาว|นาง|อ\.)\s*/, '').replace(/\s+/g, '').toLowerCase();
   function isMine(job) {
     if (typeof currentTeacher === 'undefined' || !currentTeacher) return false;
     const me = normName(currentTeacher);
@@ -6281,43 +6352,78 @@ const TrackUI = (() => {
 
   function techMessage(job) {
     let body;
+    const isInProgress = /กำลัง|รอตรวจรับ|แก้ไข/.test(job.status) || job.step === 2;
+    const isDone = job.group === 'done' || job.step >= 3;
+    const isCancelled = job.group === 'cancel';
+
     if (job.fixDetail) {
       body = `<div class="flex items-start gap-3">
-        <div class="w-10 h-10 rounded-full bg-[#265D5A] text-white flex items-center justify-center shrink-0"><i class="fa-solid fa-user-gear"></i></div>
+        <div class="w-10 h-10 rounded-full bg-[#265D5A] text-white flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-user-gear"></i></div>
         <div class="flex-1 min-w-0">
-          <div class="text-xs text-slate-500 mb-1">${esc(job.tech) || 'ช่างผู้รับผิดชอบ'}</div>
+          <div class="flex items-center gap-2 mb-1 flex-wrap">
+            <span class="text-xs font-semibold text-slate-700">${esc(job.tech) || 'ช่างผู้รับผิดชอบ'}</span>
+            ${job.techEmail ? `<span class="text-[10px] text-slate-400">(${esc(job.techEmail)})</span>` : ''}
+            ${isInProgress ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">กำลังดำเนินการ</span>' : ''}
+          </div>
           <div class="bg-white border border-[#B0EDE6] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-slate-700 whitespace-pre-line shadow-sm">${esc(job.fixDetail)}</div>
         </div></div>`;
     } else if (job.tech) {
+      const statusNotice = isInProgress
+        ? '<span class="text-xs text-emerald-600 font-semibold flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>ช่างเริ่มดำเนินการแล้ว และกำลังปฏิบัติงาน</span>'
+        : '<span class="text-xs text-amber-600 font-medium flex items-center gap-1.5 mt-1"><i class="fa-regular fa-clock"></i>มอบหมายช่างแล้ว (รอช่างเริ่มดำเนินงาน)</span>';
+
       body = `<div class="flex items-center gap-3 text-sm text-slate-500">
-        <div class="w-10 h-10 rounded-full bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center shrink-0"><i class="fa-solid fa-user-gear"></i></div>
-        <div><b class="text-slate-700 font-medium">${esc(job.tech)}</b> รับผิดชอบงานนี้แล้ว<br><span class="text-xs">ช่างยังไม่ได้ระบุรายละเอียดสิ่งที่ต้องแก้ไข</span></div></div>`;
+        <div class="w-10 h-10 rounded-full bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-user-gear"></i></div>
+        <div>
+          <b class="text-slate-800 font-semibold">${esc(job.tech)}</b> ${job.techEmail ? `<span class="text-xs text-slate-400 font-normal">(${esc(job.techEmail)})</span>` : ''} รับผิดชอบงานนี้
+          <br>${statusNotice}
+        </div></div>`;
     } else {
       body = `<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm text-slate-500">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-regular fa-hourglass-half"></i></div>
-          <div>ยังไม่มีช่างรับงาน<br><span class="text-xs">เมื่อมีการมอบหมายช่าง ข้อความจากช่างจะแสดงที่นี่</span></div>
+          <div>ยังไม่มีช่างรับงาน<br><span class="text-xs text-slate-400">เมื่อมีการมอบหมายช่าง ข้อความและปุ่มจัดการจะแสดงที่นี่</span></div>
         </div>
-        ${isAdminLoggedIn || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor')) ? 
-          `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm w-full sm:w-auto"><i class="fa-solid fa-user-plus mr-1"></i>มอบหมายงาน</button>` : ''}
+        ${((typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor' || currentRole === 'Admin'))) ? 
+          `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm w-full sm:w-auto flex items-center justify-center gap-1.5"><i class="fa-solid fa-user-plus"></i>มอบหมายงาน</button>` : ''}
       </div>`;
     }
     
     let extra = '';
-    const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : '';
-    const isMyJob = job.tech && myNameStr === job.tech.trim();
-    const canManage = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor')) || isMyJob;
-    
-    if (job.tech && job.group !== 'done' && job.group !== 'cancel' && canManage) {
-      extra = `<div class="mt-4 flex flex-wrap gap-2 justify-end border-t border-[#B0EDE6]/50 pt-3">
-        <button onclick="TrackUI.closeJob('${job.id}')" class="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"><i class="fa-solid fa-check-circle mr-1"></i>อัปเดต / ปิดงาน</button>
-        ${(typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor')) ? 
-          `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-white border border-[#265D5A] text-[#265D5A] hover:bg-[#F3FCFA] px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"><i class="fa-solid fa-user-pen mr-1"></i>เปลี่ยนช่าง</button>` : ''}
-      </div>`;
+    const canManage = canManageJob(job);
+    const isSupervisor = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || 
+                         (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor' || currentRole === 'Admin'));
+
+    if (job.tech && !isDone && !isCancelled && canManage) {
+      if (!isInProgress) {
+        // ขั้นตอนที่ 2: มอบหมายช่างแล้ว แต่ยังไม่เริ่มทำ -> แสดงปุ่มเด่น "รับงาน / เริ่มดำเนินงาน"
+        extra = `<div class="mt-4 flex flex-wrap gap-2 justify-end border-t border-[#B0EDE6]/50 pt-3">
+          <button onclick="TrackUI.startJob('${job.id}')" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+            <i class="fa-solid fa-screwdriver-wrench"></i> <span>รับงาน / เริ่มดำเนินงาน</span>
+          </button>
+          ${isSupervisor ? 
+            `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-white border border-[#265D5A] text-[#265D5A] hover:bg-[#F3FCFA] px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-user-pen"></i>เปลี่ยนช่าง</button>` : ''}
+        </div>`;
+      } else {
+        // ขั้นตอนที่ 3: กำลังดำเนินการอยู่ -> แสดงปุ่ม "แจ้งความคืบหน้า" และ "ซ่อมเสร็จแล้ว / ปิดงาน"
+        extra = `<div class="mt-4 flex flex-wrap gap-2 justify-end border-t border-[#B0EDE6]/50 pt-3">
+          <button onclick="TrackUI.updateProgress('${job.id}')" class="bg-white border border-[#265D5A] text-[#265D5A] hover:bg-[#F3FCFA] px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition shadow-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-comment-dots text-emerald-600"></i> <span>แจ้งความคืบหน้า</span>
+          </button>
+          <button onclick="TrackUI.closeJob('${job.id}')" class="bg-[#10b981] hover:bg-[#059669] text-white px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+            <i class="fa-solid fa-check-circle"></i> <span>ซ่อมเสร็จแล้ว / ปิดงาน</span>
+          </button>
+          ${isSupervisor ? 
+            `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1"><i class="fa-solid fa-user-pen"></i>เปลี่ยนช่าง</button>` : ''}
+        </div>`;
+      }
     }
 
-    return `<section class="rounded-2xl border border-[#B0EDE6] bg-[#F3FCFA] p-5 mb-4">
-      <h3 class="font-semibold text-[#265D5A] mb-4 flex items-center gap-2"><i class="fa-solid fa-comments"></i>ข้อความจากช่าง</h3>
+    return `<section class="rounded-2xl border border-[#B0EDE6] bg-[#F3FCFA] p-5 mb-4 shadow-sm">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <h3 class="font-semibold text-[#265D5A] flex items-center gap-2"><i class="fa-solid fa-comments"></i>ข้อความจากช่าง</h3>
+        ${job.tech && isInProgress ? '<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-full"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>กำลังลงมือ</span>' : ''}
+      </div>
       ${body}
       ${extra}
       ${job.proof || job.cost ? `<div class="mt-4 pt-4 border-t border-[#B0EDE6] flex flex-col sm:flex-row gap-4 sm:items-end">
@@ -6327,18 +6433,25 @@ const TrackUI = (() => {
     </section>`;
   }
 
-  function open(id) {
+  async function open(id) {
     state.currentJobId = id;
-    const job = state.jobs.find(j => j.id === id);
+    let job = state.jobs.find(j => j.id === id);
+    if (!job && window.firestoreDb) {
+      try {
+        const docSnap = await window.firestoreDb.collection('tickets').doc(id).get();
+        if (docSnap.exists) {
+          job = fromFirebase(docSnap.data());
+          state.jobs.unshift(job);
+        }
+      } catch (e) {
+        console.warn('Fallback get ticket from Firestore:', e);
+      }
+    }
     if (!job) return alertBox('warning', 'ไม่พบงาน', 'อาจถูกลบหรือย้ายไปแล้ว กรุณารีเฟรชรายการ');
     nav('page-track-detail');
     const box = $('track-detail-body');
     if (!box) return;
-    const t = TYPES[job.type];
-    
-    // Determine target sheet name based on job type
-    let targetSheet = '';
-    if (job.type === 'building') targetSheet = 'Task'; // From V6 Code.gs SHEET_NAME is default "Task" or similar. wait, let's just pass job type
+    const t = TYPES[job.type] || { label: 'งานทั่วไป', prefix: 'T', icon: 'fa-wrench', chip: 'bg-slate-100 text-slate-700' };
     
     box.innerHTML = `
       <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 mb-4 shadow-sm">
@@ -6565,7 +6678,7 @@ const TrackUI = (() => {
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             if (techName && (!job.status || job.status === 'รอดำเนินการ')) {
-              updateData.status = 'กำลังดำเนินการ';
+              updateData.status = 'มอบหมายช่างแล้ว';
             }
             if (urgency) updateData.urgency = urgency;
             await window.firestoreDb.collection('tickets').doc(jobId).set(updateData, { merge: true });
@@ -6575,6 +6688,7 @@ const TrackUI = (() => {
          await ResourceHubCore.api.post({
            action: 'edit_assignment',
            sheetName: sheetName,
+           ticketId: jobId,
            rowIndex: job.originalIndex,
            technician: techName,
            technicianEmail: techEmail,
@@ -6590,6 +6704,180 @@ const TrackUI = (() => {
     }
   }
 
+  // ---------- ช่างกดรับงานและเริ่มดำเนินงาน (Start Job) ----------
+  async function startJob(jobId) {
+    let job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const { value: note, isConfirmed } = await Swal.fire({
+      title: '🛠️ ยืนยันรับงานและเริ่มดำเนินงาน?',
+      html: `
+        <div class="text-left text-sm text-slate-600 mb-3 space-y-1">
+          <p>ยืนยันการรับงานและเริ่มลงมือปฏิบัติงานสำหรับรายการนี้</p>
+          <p class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg p-2.5">
+            <i class="fa-solid fa-circle-info mr-1"></i>สถานะจะเปลี่ยนเป็น <b>"กำลังดำเนินการ"</b> ทันที เพื่อแจ้งให้ผู้แจ้งและระบบทราบ
+          </p>
+        </div>
+        <textarea id="startJobNote" rows="2" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#265D5A] outline-none" placeholder="ข้อความสั้นๆ ถึงผู้แจ้ง (ไม่บังคับ เช่น กำลังเข้าไปดูหน้างานครับ)"></textarea>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-play mr-1"></i> เริ่มดำเนินงาน',
+      confirmButtonColor: '#265D5A',
+      cancelButtonText: 'ยกเลิก',
+      cancelButtonColor: '#64748b',
+      preConfirm: () => {
+        const el = document.getElementById('startJobNote');
+        return el ? el.value.trim() : '';
+      }
+    });
+
+    if (!isConfirmed) return;
+
+    Swal.fire({
+      title: 'กำลังเริ่มดำเนินงาน...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    try {
+      const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
+      const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
+
+      // 1. อัปเดต Firestore ทันที (Real-time 0.2s)
+      if (window.firestoreDb) {
+        const updatePayload = {
+          status: 'กำลังดำเนินการ',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (note) {
+          updatePayload.fixDetail = note;
+        }
+        await window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true });
+
+        // ส่งข้อความแจ้งเตือนอัตโนมัติเข้าห้องแชทของงานนั้น
+        if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
+          const chatMsg = note ? `🔧 ช่าง ${techName} เริ่มดำเนินการแล้ว: ${note}` : `🔧 ช่าง ${techName} เริ่มดำเนินงานแล้ว`;
+          try {
+            await FirebaseChat.send(jobId, techName, 'tech', chatMsg);
+          } catch (chatErr) {
+            console.warn('Auto chat notification error:', chatErr);
+          }
+        }
+      }
+
+      // 2. ซิงค์ Google Sheets ในเบื้องหลัง
+      const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
+      const sheetName = sheetMap[job.type] || 'Tasks';
+      ResourceHubCore.api.post({
+        action: 'update_task_status',
+        sheetName: sheetName,
+        ticketId: jobId,
+        rowIndex: job.originalIndex,
+        status: 'กำลังดำเนินการ',
+        technician: techName,
+        fixDetail: note || ''
+      }).catch(err => console.warn('Sync start status to Sheets error:', err));
+
+      // Local state update immediately
+      job.status = 'กำลังดำเนินการ';
+      job.step = 2;
+      job.group = 'progress';
+      if (note) job.fixDetail = note;
+      open(jobId);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'เริ่มดำเนินงานแล้ว!',
+        text: 'สถานะเปลี่ยนเป็น "กำลังดำเนินการ" เรียบร้อยแล้ว',
+        timer: 1600,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      console.error('startJob error:', err);
+      Swal.fire('Error', 'ไม่สามารถเริ่มงานได้: ' + (err.message || ''), 'error');
+    }
+  }
+
+  // ---------- ช่างแจ้งความคืบหน้าระหว่างซ่อม (Update Progress) ----------
+  async function updateProgress(jobId) {
+    let job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const { value: note, isConfirmed } = await Swal.fire({
+      title: '💬 แจ้งความคืบหน้างาน',
+      html: `
+        <div class="text-left text-sm text-slate-600 mb-3 space-y-1">
+          <p>บันทึกหรือทิ้งโน้ตอัปเดตความคืบหน้าให้ผู้แจ้งและทีมงานทราบ</p>
+          <p class="text-xs text-slate-400">เช่น กำลังรออะไหล่ หรือ ดำเนินการแก้ไขระบบไฟเรียบร้อย กำลังทดสอบ</p>
+        </div>
+        <textarea id="progressNote" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#265D5A] outline-none" placeholder="ระบุความคืบหน้า...">${job.fixDetail || ''}</textarea>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1"></i> บันทึกความคืบหน้า',
+      confirmButtonColor: '#265D5A',
+      cancelButtonText: 'ยกเลิก',
+      cancelButtonColor: '#64748b',
+      preConfirm: () => {
+        const el = document.getElementById('progressNote');
+        const val = el ? el.value.trim() : '';
+        if (!val) {
+          Swal.showValidationMessage('กรุณากรอกข้อความความคืบหน้า');
+          return false;
+        }
+        return val;
+      }
+    });
+
+    if (!isConfirmed || !note) return;
+
+    Swal.fire({
+      title: 'กำลังบันทึกความคืบหน้า...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    try {
+      const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
+      const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
+
+      if (window.firestoreDb) {
+        await window.firestoreDb.collection('tickets').doc(jobId).set({
+          fixDetail: note,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
+          try {
+            await FirebaseChat.send(jobId, techName, 'tech', `📢 แจ้งความคืบหน้า: ${note}`);
+          } catch(e) {}
+        }
+      }
+
+      const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
+      const sheetName = sheetMap[job.type] || 'Tasks';
+      ResourceHubCore.api.post({
+        action: 'append_task_details',
+        sheetName: sheetName,
+        rowIndex: job.originalIndex,
+        newDetails: note
+      }).catch(err => console.warn('Sync progress note to Sheets error:', err));
+
+      job.fixDetail = note;
+      open(jobId);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'บันทึกสำเร็จ!',
+        text: 'แจ้งความคืบหน้าเรียบร้อยแล้ว',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      console.error('updateProgress error:', err);
+      Swal.fire('Error', 'ไม่สามารถบันทึกได้: ' + (err.message || ''), 'error');
+    }
+  }
+
   function renderChatMessages(messages) {
     const box = $('track-chat-messages');
     if (!box) return;
@@ -6599,7 +6887,7 @@ const TrackUI = (() => {
       return;
     }
     
-    const myName = isAdminLoggedIn ? 'Admin' : (typeof currentTeacher !== 'undefined' && currentTeacher ? currentTeacher.name : 'Unknown');
+    const myName = isAdminLoggedIn ? 'Admin' : ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || 'Unknown'));
     
     box.innerHTML = messages.map(msg => {
       const isMe = msg.senderName === myName;
@@ -6663,7 +6951,7 @@ const TrackUI = (() => {
         }
       }
       
-      const senderName = isAdminLoggedIn ? 'Admin' : (typeof currentTeacher !== 'undefined' && currentTeacher ? currentTeacher.name : 'Unknown');
+      const senderName = isAdminLoggedIn ? 'Admin' : ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || 'Unknown'));
       const role = isAdminLoggedIn ? 'admin' : 'user';
       
       await FirebaseChat.send(currentChatTicketId, senderName, role, msg, attachmentUrl);
@@ -6926,6 +7214,8 @@ const TrackUI = (() => {
   return {
     load,
     open,
+    startJob,
+    updateProgress,
     assignTech,
     closeJob,
     submitChat,

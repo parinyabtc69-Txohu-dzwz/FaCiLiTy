@@ -329,7 +329,9 @@ function doPost(e) {
             { label: "สถานที่", value: data.loc },
             { label: "ปัญหา", value: data.detail },
             { label: "ด่วน", value: data.urgency }
-          ]
+          ],
+          null,
+          data.ticketId
         );
         
         notifyTask('building', lineRepMsg, `🚨 แจ้งซ่อมอาคารสถานที่ใหม่`, '#265D5A', data, null);
@@ -355,7 +357,9 @@ function doPost(e) {
             { label: "ผู้แจ้ง", value: data.reporter || "-" },
             { label: "สถานที่", value: data.loc },
             { label: "ปัญหา", value: data.detail || "-" }
-          ]
+          ],
+          null,
+          data.ticketId
         );
         notifyTask('it', lineItMsg, `💻 แจ้งปัญหาไอทีใหม่`, '#0ea5e9', data, null);
         break;
@@ -379,7 +383,9 @@ function doPost(e) {
             { label: "ผู้แจ้ง", value: data.reporter || "-" },
             { label: "สถานที่", value: data.loc },
             { label: "ปัญหา", value: data.detail || "-" }
-          ]
+          ],
+          null,
+          data.ticketId
         );
         notifyTask('av_repair', lineAvRepMsg, `📷 แจ้งซ่อมอุปกรณ์โสตฯ ใหม่`, '#f59e0b', data, null);
         break;
@@ -404,9 +410,8 @@ function doPost(e) {
             { label: "สถานที่", value: data.loc },
             { label: "รายละเอียด", value: data.detail || "-" }
           ],
-          [
-            { label: "พิจารณาอนุมัติ", url: CONFIG.WEB_APP_URL }
-          ]
+          null,
+          data.ticketId
         );
         notifyTask('project', lineProjMsg, `🏢 เสนอโครงการ / จัดซื้อใหม่`, '#8b5cf6', data, null);
         break;
@@ -427,7 +432,9 @@ function doPost(e) {
             { label: "ผู้ยืม", value: data.borrower },
             { label: "วันที่", value: data.useDate },
             { label: "สถานที่", value: data.location }
-          ]
+          ],
+          null,
+          data.ticketId
         );
         
         notifyTask('av', lineAvMsg, `🎤 แจ้งยืมอุปกรณ์โสตฯ ใหม่`, '#0d9488', data, null);
@@ -461,9 +468,36 @@ function doPost(e) {
 
       // ── อัพสถานะงานซ่อม ─────────────────────────────────────
       case 'update_task_status':
-        const sheetTaskStatus = db.getSheetByName(CONFIG.SHEET_NAME);
-        const statusTargetRow = data.rowIndex + 2;
-        sheetTaskStatus.getRange(statusTargetRow, 5).setValue(data.status);
+        let statusSheetName = data.sheetName || CONFIG.SHEET_NAME;
+        if (statusSheetName === 'Task') statusSheetName = CONFIG.SHEET_NAME;
+        const sheetTaskStatus = db.getSheetByName(statusSheetName);
+        if (!sheetTaskStatus) {
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found: ' + statusSheetName })).setMimeType(ContentService.MimeType.JSON);
+        }
+
+        let statusTargetRow = 0;
+        let isReversedStatus = true;
+        if (statusSheetName === CONFIG.SHEET_NAME || statusSheetName === CONFIG.AV_SHEET_NAME) {
+          isReversedStatus = false;
+        }
+        if (isReversedStatus) {
+          const vals = sheetTaskStatus.getDataRange().getValues();
+          statusTargetRow = vals.length - data.rowIndex;
+        } else {
+          statusTargetRow = data.rowIndex + 2;
+        }
+
+        if (data.status) {
+          sheetTaskStatus.getRange(statusTargetRow, 5).setValue(data.status);
+        }
+        if (data.fixDetail) {
+          const detailCol = (statusSheetName === CONFIG.SHEET_NAME) ? 7 : 8;
+          sheetTaskStatus.getRange(statusTargetRow, detailCol).setValue(data.fixDetail);
+        }
+        if (data.technician) {
+          const techCol = (statusSheetName === CONFIG.SHEET_NAME) ? 8 : (statusSheetName === CONFIG.AV_SHEET_NAME ? 7 : 9);
+          sheetTaskStatus.getRange(statusTargetRow, techCol).setValue(data.technician);
+        }
         
         if (data.status === 'เสร็จสิ้น') {
           const subjectStr = sheetTaskStatus.getRange(statusTargetRow, 2).getValue();
@@ -497,11 +531,12 @@ function doPost(e) {
             ],
             [
               { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=repair&row=" + statusTargetRow, color: "#f59e0b" }
-            ]
+            ],
+            data.ticketId
           );
           notifyTask('building', statusMsg, `อัปเดตสถานะงานซ่อมอาคาร`, '#265D5A', {reporter: reporterNameStr, subject: subjectStr, status: 'เสร็จสิ้น'}, null);
         }
-        break;
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'อัปเดตสถานะสำเร็จ' })).setMimeType(ContentService.MimeType.JSON);
 
       // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
 
@@ -583,7 +618,9 @@ function doPost(e) {
               [
                 { label: "ช่างที่รับผิดชอบ", value: data.technician, flexLabel: 4, flexValue: 4 },
                 { label: "ความเร่งด่วน", value: data.urgency || "-", flexLabel: 4, flexValue: 4 }
-              ]
+              ],
+              null,
+              data.ticketId
             );
             notifyTask('building', assignMsg, null, null, null, null);
           } catch(e) { Logger.log("Error notifying tech: " + e.message); }
@@ -653,7 +690,9 @@ function doPost(e) {
               [
                 { label: "ช่างผู้รับผิดชอบ", value: data.technician, flexLabel: 3, flexValue: 5 },
                 { label: "ความเร่งด่วน", value: data.urgency || "ทั่วไป", flexLabel: 3, flexValue: 5 }
-              ]
+              ],
+              null,
+              data.ticketId
             );
             notifyTask('building', editAssignMsg, null, null, null, null);
           } catch(e) { Logger.log("Error notifying tech on edit: " + e.message); }
@@ -1055,7 +1094,7 @@ function getReporterContacts(name) {
     return { email: null, lineId: null };
   }
 }
-function createFlexMessageTemplate(altText, headerText, subjectText, color, detailsMap, buttonsArray) {
+function createFlexMessageTemplate(altText, headerText, subjectText, color, detailsMap, buttonsArray, ticketId) {
   const detailsContents = [];
   detailsMap.forEach(item => {
     if (item.value && item.value !== '-') {
@@ -1069,12 +1108,15 @@ function createFlexMessageTemplate(altText, headerText, subjectText, color, deta
     }
   });
 
+  const targetUrl = ticketId ? (CONFIG.WEB_APP_URL + (CONFIG.WEB_APP_URL.includes('?') ? '&' : '?') + 'ticketId=' + encodeURIComponent(ticketId)) : CONFIG.WEB_APP_URL;
+
   const buttonsContents = [];
   if (buttonsArray && buttonsArray.length > 0) {
     buttonsArray.forEach((btn, index) => {
+      const btnUri = (btn.url && btn.url !== CONFIG.WEB_APP_URL) ? btn.url : targetUrl;
       const btnObj = {
         "type": "button", "style": "primary", "color": btn.color || color,
-        "action": { "type": "uri", "label": btn.label, "uri": btn.url }
+        "action": { "type": "uri", "label": btn.label, "uri": btnUri }
       };
       if (index > 0) btnObj.margin = "sm";
       buttonsContents.push(btnObj);
@@ -1082,7 +1124,7 @@ function createFlexMessageTemplate(altText, headerText, subjectText, color, deta
   } else {
     buttonsContents.push({
       "type": "button", "style": "primary", "color": color, 
-      "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": CONFIG.WEB_APP_URL }
+      "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": targetUrl }
     });
   }
 
