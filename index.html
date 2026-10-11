@@ -3163,6 +3163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           // ถ้ามี ticketId ใน URL ไม่ต้องเด้งหนี ให้เปิดดูงานนั้นตรงๆ
           const urlParams = new URLSearchParams(window.location.search);
+          if (!urlParams.get('ticketId')) {
             // ไม่ว่าจะแอดมินหรือครู ให้ไปหน้าแรกเสมอ
             nav('page-teacher-profile');
           }
