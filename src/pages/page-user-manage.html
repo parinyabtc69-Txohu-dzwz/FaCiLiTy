@@ -7,9 +7,14 @@
           <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-users-gear text-[#265D5A] mr-2"></i>จัดการผู้ใช้ระบบ</h2>
           <p class="text-sm text-slate-500 mt-1">อนุมัติ, เปลี่ยนสิทธิ์, หรือระงับการใช้งาน</p>
         </div>
-        <button onclick="fetchUsers()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium">
-          <i class="fa-solid fa-rotate-right mr-2"></i>รีเฟรชข้อมูล
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="fetchUsers()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors text-sm font-medium flex items-center gap-2">
+            <i class="fa-solid fa-rotate-right"></i>รีเฟรชข้อมูล
+          </button>
+          <button onclick="migrateUsersFromSheets()" id="user-migrate-btn" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-colors text-sm font-semibold shadow-sm flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up"></i>ดึงข้อมูลจาก Sheet ไป Firebase
+          </button>
+        </div>
       </div>
 
       <div class="overflow-x-auto rounded-lg border border-slate-200">
