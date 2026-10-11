@@ -148,7 +148,7 @@ const TrackUI = (() => {
   // ตรวจสอบว่าเป็นผู้แจ้งเรื่อง (เจ้าของงานตัวจริง) หรือไม่
   function isReporter(job) {
     if (!job) return false;
-    const myName = ((typeof currentTeacher === 'string' ? currentTeacher : '') || (localStorage.getItem('logged_teacher') || '')).trim();
+    const myName = ((typeof currentTeacher === 'string' ? currentTeacher : (currentTeacher?.name || '')) || (localStorage.getItem('logged_teacher') || '')).trim();
     const myEmail = ((typeof currentEmail === 'string' ? currentEmail : '') || (localStorage.getItem('logged_email') || '')).trim().toLowerCase();
     if (myName && job.reporter) {
       const me = normName(myName);
@@ -158,6 +158,9 @@ const TrackUI = (() => {
       }
     }
     if (myEmail && job.reporterEmail && myEmail === job.reporterEmail.trim().toLowerCase()) {
+      return true;
+    }
+    if (myEmail && job.contact && job.contact.trim().toLowerCase().includes(myEmail)) {
       return true;
     }
     return false;
@@ -417,14 +420,14 @@ const TrackUI = (() => {
       createdRaw: createdDate ? fmtDate(createdDate, false) : '',
       subject: docData.subject || 'ไม่ระบุหัวข้อ',
       detail: docData.detail || '',
-      reporter: docData.reporterName || '',
+      reporter: docData.reporterName || docData.reporter || '',
       reporterEmail: docData.reporterEmail || docData.email || '',
       status: status,
       group: cls.group,
       step: cls.step,
       image: docData.fileUrl || '',
       fixDetail: docData.fixDetail || '',
-      tech: docData.techName || '',
+      tech: docData.techName || docData.tech || '',
       techEmail: docData.techEmail || '',
       proof: docData.proofUrl || '',
       cost: docData.cost || '',
@@ -486,6 +489,11 @@ const TrackUI = (() => {
   // ---------- สิทธิ์การมองเห็นคิวงานตาม Role ----------
   function isJobVisibleForRole(job, role) {
     if (!job) return false;
+    // ผู้ใช้งานระบบ (Teacher): เห็นเฉพาะงานของตนเองเท่านั้นอย่างเด็ดขาด
+    if (role === 'Teacher') {
+      return isMine(job);
+    }
+
     // งานของตนเอง (แจ้งเอง หรือ ได้รับมอบหมาย) ให้เห็นเสมอ
     if (isMine(job)) return true;
 
@@ -501,8 +509,11 @@ const TrackUI = (() => {
       // เจ้าหน้าที่โสตฯ เห็นงานโสตฯ
       return job.type === 'av';
     }
-    // Teacher / Staff / ทั่วไป: เห็นงานบริการซ่อมทั่วไป (อาคาร, ไอที, โสตฯ) ซ่อนงานโครงการภายใน (project)
-    return job.type === 'building' || job.type === 'it' || job.type === 'av';
+    // Staff / อื่นๆ
+    if (role === 'Staff') {
+      return job.type === 'building' || job.type === 'it' || job.type === 'av';
+    }
+    return isMine(job);
   }
 
   function sanitizeTypeForRole(role, currentType) {
@@ -581,6 +592,7 @@ const TrackUI = (() => {
     return state.jobs.filter(j => {
       // ตรวจสอบสิทธิ์การมองเห็นตาม Role
       if (!isJobVisibleForRole(j, role)) return false;
+      if (role === 'Teacher' && !isMine(j)) return false;
 
       if (state.showArchived) {
         if (!j.isArchived) return false;
@@ -639,7 +651,20 @@ const TrackUI = (() => {
   function updateControls() {
     const role = getUserRole();
 
-    // 1. ตัวเลือกสถานะ
+    // 0. อัปเดตข้อความหัวข้อตาม Role
+    const sub = $('track-header-subtitle');
+    if (sub) {
+      sub.textContent = (role === 'Teacher')
+        ? 'ติดตามสถานะงานซ่อมของคุณ กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง'
+        : 'ดูคิวงานทั้งหมดในระบบ กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง';
+    }
+
+    // 1. ตัวเลือกสถานะ (สำหรับ Teacher เปลี่ยนป้าย "งานทั้งหมด" เป็น "งานของตัวเอง")
+    const allLabel = $('track-stat-all-label') || document.querySelector('#track-summary .track-stat[data-status="all"] > div:first-child');
+    if (allLabel) {
+      allLabel.textContent = (role === 'Teacher') ? 'งานของตัวเอง' : 'งานทั้งหมด';
+    }
+
     $$('#track-summary .track-stat').forEach(b => {
       const on = b.dataset.status === state.status;
       b.classList.toggle('border-[#265D5A]', on);
@@ -667,11 +692,19 @@ const TrackUI = (() => {
         (on ? 'bg-[#265D5A] text-white border-[#265D5A]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50');
     });
 
-    // 3. ปุ่ม "เฉพาะงานของฉัน"
+    // 3. ปุ่ม "เฉพาะงานของฉัน" / "งานของตัวเอง"
     const mine = $('track-mine-btn');
     if (mine) {
-      mine.className = 'px-4 py-2 rounded-full text-sm font-medium border transition-colors flex items-center gap-2 ' +
-        (state.mineOnly ? 'bg-[#265D5A] text-white border-[#265D5A]' : 'border-[#265D5A]/30 text-[#265D5A] bg-white hover:bg-[#E0F7F4]');
+      if (role === 'Teacher') {
+        mine.innerHTML = '<i class="fa-solid fa-user"></i> งานของตัวเอง';
+        mine.className = 'px-4 py-2 rounded-full text-sm font-medium border transition-colors flex items-center gap-2 bg-[#265D5A] text-white border-[#265D5A] cursor-default shadow-sm';
+        mine.title = 'สิทธิ์ผู้ใช้งานระบบ: แสดงเฉพาะงานของตนเอง';
+      } else {
+        mine.innerHTML = '<i class="fa-solid fa-user"></i> เฉพาะงานของฉัน';
+        mine.className = 'px-4 py-2 rounded-full text-sm font-medium border transition-colors flex items-center gap-2 ' +
+          (state.mineOnly ? 'bg-[#265D5A] text-white border-[#265D5A]' : 'border-[#265D5A]/30 text-[#265D5A] bg-white hover:bg-[#E0F7F4]');
+        mine.title = '';
+      }
     }
 
     // 4. ปุ่ม "ดึงข้อมูลจาก Sheet" (เฉพาะ Admin และ Supervisor)
@@ -703,6 +736,8 @@ const TrackUI = (() => {
     const list = $('track-list');
     if (!list) return;
 
+    const role = getUserRole();
+
     // ตัวเลขสรุป (ตามประเภท/ค้นหา/งานของฉัน แต่ไม่กรองสถานะ)
     const base = filtered(true);
     const count = g => base.filter(j => j.group === g).length;
@@ -713,14 +748,27 @@ const TrackUI = (() => {
 
     const items = filtered();
     if ($('track-result-info')) {
-      $('track-result-info').textContent = `พบ ${items.length} งาน` + (state.mineOnly ? ' (เฉพาะงานของฉัน)' : '') + ' · เรียงจากล่าสุด';
+      if (role === 'Teacher') {
+        $('track-result-info').textContent = `พบ ${items.length} งาน (งานของตัวเอง) · เรียงจากล่าสุด`;
+      } else {
+        $('track-result-info').textContent = `พบ ${items.length} งาน` + (state.mineOnly ? ' (เฉพาะงานของฉัน)' : '') + ' · เรียงจากล่าสุด';
+      }
     }
 
     if (!items.length) {
-      list.innerHTML = `<div class="col-span-full p-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-        <i class="fa-regular fa-folder-open text-3xl mb-3 text-slate-300"></i><br>
-        ${state.search || state.mineOnly || state.status !== 'all' || state.type !== 'all' ? 'ไม่พบงานที่ตรงกับเงื่อนไข ลองเปลี่ยนคำค้นหาหรือตัวกรอง' : 'ยังไม่มีงานในระบบ'}
-      </div>`;
+      if (role === 'Teacher') {
+        list.innerHTML = `<div class="col-span-full p-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <i class="fa-regular fa-folder-open text-3xl mb-3 text-slate-300"></i>
+          <div class="font-medium text-slate-700 mb-1">${state.search || state.status !== 'all' || state.type !== 'all' ? 'ไม่พบงานที่ตรงกับเงื่อนไข' : 'ยังไม่มีประวัติการแจ้งซ่อมของคุณในระบบ'}</div>
+          <p class="text-xs text-slate-400 mb-4">${state.search || state.status !== 'all' || state.type !== 'all' ? 'ลองเปลี่ยนคำค้นหาหรือตัวกรองสถานะ' : 'เมื่อคุณแจ้งซ่อมผ่านระบบ รายการงานของคุณจะมาแสดงที่นี่เพื่อติดตามสถานะ'}</p>
+          <button onclick="nav('page-repair')" class="px-4 py-2 bg-[#265D5A] text-white text-xs font-medium rounded-xl shadow-sm hover:bg-[#1f4b48] transition-colors"><i class="fa-solid fa-plus mr-1"></i> แจ้งซ่อมใหม่</button>
+        </div>`;
+      } else {
+        list.innerHTML = `<div class="col-span-full p-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <i class="fa-regular fa-folder-open text-3xl mb-3 text-slate-300"></i><br>
+          ${state.search || state.mineOnly || state.status !== 'all' || state.type !== 'all' ? 'ไม่พบงานที่ตรงกับเงื่อนไข ลองเปลี่ยนคำค้นหาหรือตัวกรอง' : 'ยังไม่มีงานในระบบ'}
+        </div>`;
+      }
       return;
     }
 
@@ -1765,6 +1813,12 @@ const TrackUI = (() => {
     setStatus(s) { state.status = s; render(); },
     setType(t) { state.type = t; render(); },
     toggleMine() {
+      const role = getUserRole();
+      if (role === 'Teacher') {
+        state.mineOnly = true;
+        render();
+        return;
+      }
       const myName = (typeof currentTeacher === 'string' && currentTeacher) || localStorage.getItem('logged_teacher');
       if (!myName) {
         return alertBox('info', 'ต้องเข้าสู่ระบบ', 'กรุณาเข้าสู่ระบบเพื่อดูงานของคุณ');
@@ -1777,12 +1831,12 @@ const TrackUI = (() => {
       state.currentJobId = null;
       const role = getUserRole();
 
-      if (opts.mineOnly !== undefined) {
+      if (role === 'Teacher') {
+        state.mineOnly = true;
+      } else if (opts.mineOnly !== undefined) {
         state.mineOnly = !!opts.mineOnly;
       } else if (!state.loaded) {
-        // เมื่อเปิดหน้าครั้งแรก ถ้าเป็น Teacher ให้ default mineOnly = true เพื่อความสะอาดตา
-        const myName = (typeof currentTeacher === 'string' && currentTeacher) || localStorage.getItem('logged_teacher');
-        state.mineOnly = (role === 'Teacher' && !!myName);
+        state.mineOnly = false;
       }
 
       if (opts.type !== undefined) {

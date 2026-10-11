@@ -14,7 +14,7 @@
         </button>
         <div>
           <h1 class="text-2xl md:text-3xl font-semibold">ติดตามงานซ่อม</h1>
-          <p class="text-sm text-white/75 font-light mt-1">ดูคิวงานทั้งหมดในระบบ กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง</p>
+          <p class="text-sm text-white/75 font-light mt-1" id="track-header-subtitle">ดูคิวงานทั้งหมดในระบบ กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง</p>
         </div>
       </div>
       <div class="flex flex-col md:flex-row items-start md:items-center gap-3">
@@ -42,7 +42,7 @@
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5" id="track-summary">
     <button onclick="TrackUI.setStatus('all')" data-status="all"
       class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
-      <div class="text-xs text-slate-500">งานทั้งหมด</div>
+      <div class="text-xs text-slate-500" id="track-stat-all-label">งานทั้งหมด</div>
       <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-all">-</div>
     </button>
     <button onclick="TrackUI.setStatus('pending')" data-status="pending"
