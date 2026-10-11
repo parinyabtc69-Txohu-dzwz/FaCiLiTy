@@ -50,7 +50,7 @@ const CONFIG = {
 };
 
 // ── เปิด/ปิด การแจ้งเตือนเข้า LINE กลุ่มหลัก (true = เปิด, false = ปิด) ───────
-var ENABLE_LINE_GROUP_NOTIFY = (typeof ENABLE_LINE_GROUP_NOTIFY !== 'undefined') ? ENABLE_LINE_GROUP_NOTIFY : true;
+var ENABLE_LINE_GROUP_NOTIFY = (typeof ENABLE_LINE_GROUP_NOTIFY !== 'undefined') ? ENABLE_LINE_GROUP_NOTIFY : false;
 
 // ── การเชื่อมต่อ Database (Cache instance ในการรันเดียวกัน) ───────────────────
 let _globalDB = null;
