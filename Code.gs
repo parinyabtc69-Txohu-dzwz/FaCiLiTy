@@ -894,9 +894,24 @@ function doPost(e) {
         if (sheetUser) {
           const values = sheetUser.getDataRange().getValues();
           for (let i = 1; i < values.length; i++) {
-            if (String(values[i][0]) === String(data.email)) {
+            if (String(values[i][0]).trim().toLowerCase() === String(data.email).trim().toLowerCase()) {
               sheetUser.getRange(i + 1, 3).setValue(data.role);
               sheetUser.getRange(i + 1, 4).setValue(data.status);
+              break;
+            }
+          }
+        }
+        break;
+      }
+
+      // ── ลบผู้ใช้งานออกจากระบบ ──────────────────────────────────────────
+      case 'delete_user': {
+        const sheetUser = db.getSheetByName(CONFIG.USER_SHEET_NAME);
+        if (sheetUser) {
+          const values = sheetUser.getDataRange().getValues();
+          for (let i = 1; i < values.length; i++) {
+            if (String(values[i][0]).trim().toLowerCase() === String(data.email).trim().toLowerCase()) {
+              sheetUser.deleteRow(i + 1);
               break;
             }
           }
