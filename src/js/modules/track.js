@@ -730,13 +730,13 @@ const TrackUI = (() => {
       const email = u[0] ? u[0].toString().trim() : '';
       const name = u[1] ? u[1].toString().trim() : '';
       const role = u[2] ? u[2].toString().trim() : '';
-      if (role === 'Tech' || role === 'IT' || role === 'Admin' || role === 'Supervisor') {
+      if (role === 'Tech' || role === 'AV') {
         techList.push({ name, email });
       }
     });
 
     if (techList.length === 0) {
-      Swal.fire('Info', 'ไม่พบรายชื่อช่างหรือไอทีในระบบ', 'info');
+      Swal.fire('Info', 'ไม่พบรายชื่อช่าง (Tech) หรือเจ้าหน้าที่โสตฯ (AV) ในระบบ', 'info');
       return;
     }
 
