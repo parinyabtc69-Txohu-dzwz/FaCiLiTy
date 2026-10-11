@@ -1,121 +1,114 @@
-// [Optimization] Override Date toJSON to mimic getDisplayValues() output format
+// ============================================================================
+// ResourceHub (FaCiLiTy) - Google Apps Script Backend
+// พัฒนาโดย: Taohx_dz_parinya | UI Design: Dream_Patipat | AI Assistant: Antigravity
+// ============================================================================
+
+// [Optimization] แปลง Date ใน JSON ให้ตรงกับรูปแบบ getDisplayValues() ของ Google Sheets
 Date.prototype.toJSON = function() {
   return Utilities.formatDate(this, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
 };
-/**
- * ResourceHub System
- * Developed by Taohx_dz_parinya
- */
+
+// ============================================================================
+// 📦 หมวดที่ 1: การตั้งค่าระบบหลัก (Configuration & Constants)
+// ============================================================================
 const CLIENT_ID = '309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com';
 
-const CONFIG = { 
+const CONFIG = {
+  // ── ID ของ Google Spreadsheet ฐานข้อมูลหลัก ──────────────────────────────
   SHEET_ID: "1i-XQ0lO571tIX7RvQR51V2AjuXrEwLfJP7Z7b8xuYDM",
-  SHEET_NAME: "Tasks",             
-  AV_SHEET_NAME: "AV_Requests",    
-  BUG_SHEET_NAME: "System_Reports", 
-  USER_SHEET_NAME: "Users",
-  MASTER_LOC_SHEET: "Master_Locations",
-  MASTER_PROJ_SHEET: "Master_Projects",
-  MASTER_MECH_SHEET: "Master_Mechanics",
-  DOC_SHEET_NAME: "Documents",
-  IT_SHEET_NAME: "IT_Repairs",
-  AV_REPAIR_SHEET_NAME: "AV_Repairs",
-  PROJECT_SHEET_NAME: "Facility_Projects",
+  
+  // ── ชื่อแท็บชีตต่างๆ ───────────────────────────────────────────────────
+  SHEET_NAME: "Tasks",                 // งานซ่อมอาคารสถานที่ทั่วไป
+  AV_SHEET_NAME: "AV_Requests",        // งานขอยืมอุปกรณ์โสตฯ
+  BUG_SHEET_NAME: "System_Reports",    // รายงานแจ้งปัญหาในระบบ
+  USER_SHEET_NAME: "Users",            // รายชื่อและสิทธิ์ผู้ใช้งาน
+  MASTER_LOC_SHEET: "Master_Locations",// ข้อมูลหลัก: รายชื่อสถานที่
+  MASTER_PROJ_SHEET: "Master_Projects", // ข้อมูลหลัก: รายชื่อโครงการ
+  MASTER_MECH_SHEET: "Master_Mechanics",// ข้อมูลหลัก: รายชื่อช่างภายนอก
+  DOC_SHEET_NAME: "Documents",         // คลังเอกสารระบบ
+  IT_SHEET_NAME: "IT_Repairs",         // งานแจ้งซ่อมไอที
+  AV_REPAIR_SHEET_NAME: "AV_Repairs",  // งานแจ้งซ่อมอุปกรณ์โสตฯ
+  PROJECT_SHEET_NAME: "Facility_Projects", // เอกสารโครงการระยะยาว
 
-  // โฟลเดอร์หลักของระบบ (parent)
+  // ── โฟลเดอร์หลักใน Google Drive (Root Folder) ──────────────────────────
   ROOT_FOLDER_ID: "1tkOHFwH4MC-eA_eNLThTcLVF3CRHQUXT",
 
-  // ชื่อโฟลเดอร์ย่อยที่จะสร้างอัตโนมัติใน Google Drive
-  FOLDER_REPAIR_REPORT: "รูปภาพแจ้งซ่อม",       // รูปที่ผู้แจ้งส่งมา
-  FOLDER_REPAIR_PROOF:  "รูปภาพผลการซ่อม",       // รูปที่ช่างส่งตอนปิดงาน
-  FOLDER_DOCUMENTS:     "เอกสารระบบ",             // เอกสารจากระบบจัดการเอกสาร
+  // ── โฟลเดอร์ย่อยที่จะสร้างและจัดเก็บไฟล์รูป/เอกสารอัตโนมัติ ───────────────
+  FOLDER_REPAIR_REPORT: "รูปภาพแจ้งซ่อม",       // รูปที่ผู้แจ้งส่งมาตอนแจ้งซ่อมอาคาร
+  FOLDER_REPAIR_PROOF:  "รูปภาพผลการซ่อม",       // รูปที่ช่างแนบส่งตอนปิดงาน
+  FOLDER_DOCUMENTS:     "เอกสารระบบ",             // เอกสารในระบบจัดการเอกสาร
   FOLDER_RECEIPTS:      "เอกสารใบเสร็จ",          // ใบเสร็จเบิกจ่าย / ใบเสนอราคา
-  FOLDER_IT_REPORT:     "รูปภาพแจ้งซ่อมไอที",
-  FOLDER_AV_REPAIR:     "รูปภาพซ่อมโสตฯ",
-  FOLDER_PROJECTS:      "เอกสารโครงการระยะยาว",
-  LINE_CHANNEL_ACCESS_TOKEN: "/m/tnS6KiDY+44jNQDWM2LOTR2pX0qmiA7RT23sE7rGQjTSTcp3TpNlXJYootWAJCYogsOY/KEW4s3Ex5in2tKeaHTbT3l3f2Ro2ROefSj8tNk8yh6FRkH4ccnNGSr1Lx/O6/+b1cFIm9sLRLa2SQAdB04t89/1O/w1cDnyilFU=", // <-- เปลี่ยนเป็น Channel Access Token ของคุณ
-  LINE_TARGET_ID: "C3b2a8a52adb5fa219ec51bb7fda15d5e", // Default target ID
-  LIFF_ID: "2011401549-8xNgb1CC", // LIFF ID สำหรับใช้งาน LINE Login
-  WEB_APP_URL: "https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/", // URL ของระบบ (หน้าเว็บ Frontend)
+  FOLDER_IT_REPORT:     "รูปภาพแจ้งซ่อมไอที",     // รูปแจ้งซ่อมอุปกรณ์ไอที
+  FOLDER_AV_REPAIR:     "รูปภาพซ่อมโสตฯ",         // รูปแจ้งซ่อมอุปกรณ์โสตฯ
+  FOLDER_PROJECTS:      "เอกสารโครงการระยะยาว",   // เอกสารประกอบโครงการ
+
+  // ── การตั้งค่า LINE Messaging API ──────────────────────────────────────
+  LINE_CHANNEL_ACCESS_TOKEN: "/m/tnS6KiDY+44jNQDWM2LOTR2pX0qmiA7RT23sE7rGQjTSTcp3TpNlXJYootWAJCYogsOY/KEW4s3Ex5in2tKeaHTbT3l3f2Ro2ROefSj8tNk8yh6FRkH4ccnNGSr1Lx/O6/+b1cFIm9sLRLa2SQAdB04t89/1O/w1cDnyilFU=",
+  LINE_TARGET_ID: "C3b2a8a52adb5fa219ec51bb7fda15d5e", // รหัส Group ID ของ LINE กลุ่มหลัก
+  LIFF_ID: "2011401549-8xNgb1CC",                      // LIFF ID สำหรับ LINE Login
+  WEB_APP_URL: "https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/", // URL เว็บไซต์ Frontend
 };
 
-// เปิดใช้งานส่งการแจ้งเตือนเข้า LINE กลุ่มหลัก (Group ID: CONFIG.LINE_TARGET_ID) ควบคู่กับแชทรายบุคคล
-const ENABLE_LINE_GROUP_NOTIFY = true;
+// ── เปิด/ปิด การแจ้งเตือนเข้า LINE กลุ่มหลัก (true = เปิด, false = ปิด) ───────
+var ENABLE_LINE_GROUP_NOTIFY = (typeof ENABLE_LINE_GROUP_NOTIFY !== 'undefined') ? ENABLE_LINE_GROUP_NOTIFY : true;
 
+// ── การเชื่อมต่อ Database (Cache instance ในการรันเดียวกัน) ───────────────────
 let _globalDB = null;
 function getDB() {
   if (!_globalDB) _globalDB = SpreadsheetApp.openById(CONFIG.SHEET_ID);
   return _globalDB;
 }
 
-// ============================================================
-// Helper: ดึงโฟลเดอร์จากชื่อ ถ้าไม่มีจะสร้างให้อัตโนมัติ
-// ============================================================
-function getOrCreateSubFolder(folderName) {
-  const root = DriveApp.getFolderById(CONFIG.ROOT_FOLDER_ID);
-  const existing = root.getFoldersByName(folderName);
-  if (existing.hasNext()) return existing.next();
-  // ยังไม่มี → สร้างใหม่
-  const newFolder = root.createFolder(folderName);
-  Logger.log("สร้างโฟลเดอร์ใหม่: " + folderName + " | ID: " + newFolder.getId());
-  return newFolder;
+// ── ตัวช่วยส่งข้อมูลกลับในรูปแบบ JSON (DRY Helper) ───────────────────────────
+function jsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ============================================================
-// รองรับ CORS Preflight
-// ============================================================
-function doOptions(e) {
-  const _x = "RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5";
-  return ContentService.createTextOutput("")
-    .setMimeType(ContentService.MimeType.TEXT);
+// ── ตัวช่วยคำนวณตำแหน่งแถวของชีต (รองรับชีตที่เรียงลำดับกลับด้าน) ──────────────
+function calculateTargetRow(sheet, sheetName, rowIndex) {
+  const isReversed = (sheetName !== CONFIG.SHEET_NAME && sheetName !== CONFIG.AV_SHEET_NAME);
+  if (isReversed) {
+    const totalRows = sheet.getDataRange().getValues().length;
+    return totalRows - rowIndex;
+  }
+  return rowIndex + 2;
 }
 
-// ============================================================
-// GET Requests
-// ============================================================
-// ============================================================
-// Keep-Alive: ป้องกัน GAS Cold Start โดยการ Ping ตัวเอง
-// วิธีใช้: รัน setupKeepAliveTrigger() ครั้งเดียวใน GAS Editor
-// ============================================================
-function keepAlive() {
-  // แค่เรียกใช้ SpreadsheetApp เพื่อให้ GAS ตื่นอยู่เสมอ
-  const db = getDB();
-  const sheet = db.getSheets()[0];
-  const name = sheet ? sheet.getName() : 'ok';
-  console.log('KeepAlive ping OK - ' + new Date().toLocaleString() + ' | Sheet: ' + name);
-}
-
-function setupKeepAliveTrigger() {
-  // ลบ Trigger เก่าก่อน (ถ้ามี)
-  ScriptApp.getProjectTriggers().forEach(t => {
-    if (t.getHandlerFunction() === 'keepAlive') {
-      ScriptApp.deleteTrigger(t);
+// ── อ่านค่าคอนฟิกจากชีต Settings (เช่น จำนวนวันนับงานค้าง) ─────────────────────
+function getSettingValue(key, defaultVal) {
+  try {
+    const db = getDB();
+    const sheet = db.getSheetByName('Settings');
+    if (!sheet) return defaultVal;
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === key) {
+        return data[i][1] !== undefined ? data[i][1] : defaultVal;
+      }
     }
-  });
-  // ตั้ง Trigger ใหม่: รัน keepAlive ทุก 10 นาที
-  ScriptApp.newTrigger('keepAlive')
-    .timeBased()
-    .everyMinutes(10)
-    .create();
-  console.log('keepAlive Trigger ตั้งค่าเรียบร้อย - ทุก 10 นาที');
+  } catch (e) {
+    Logger.log("getSettingValue error: " + e.message);
+  }
+  return defaultVal;
 }
 
-// ============================================================
-// Cache Helpers: ใช้ CacheService เก็บข้อมูลที่อ่านบ่อย ลด latency
-// ============================================================
-const CACHE_TTL = 120; // วินาที (2 นาที)
+// ============================================================================
+// ⚡ หมวดที่ 2: ระบบจัดการแคชและการทำงานเบื้องหลัง (Cache & Keep-Alive)
+// ============================================================================
+const CACHE_TTL = 120; // แคชข้อมูล 120 วินาที (2 นาที)
 
+// ดึงข้อมูลจาก CacheService ถ้าไม่มีค่อยดึงจากชีตจริง
 function getCachedOrFetch(cacheKey, fetchFn) {
   try {
     const cache = CacheService.getScriptCache();
     const cached = cache.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
+    if (cached) return JSON.parse(cached);
+
     const data = fetchFn();
     try {
       const serialized = JSON.stringify(data);
-      if (serialized.length < 100000) { // ไม่เกิน 100KB (ขีดจำกัด CacheService)
+      if (serialized.length < 100000) { // ไม่เกิน 100KB ตามขีดจำกัดของ CacheService
         cache.put(cacheKey, serialized, CACHE_TTL);
       }
     } catch(se) { Logger.log('Cache put error: ' + se.message); }
@@ -126,6 +119,7 @@ function getCachedOrFetch(cacheKey, fetchFn) {
   }
 }
 
+// เคลียร์แคชเมื่อมีการอัปเดตหรือเพิ่มข้อมูลใหม่
 function invalidateDataCaches(action) {
   try {
     const cache = CacheService.getScriptCache();
@@ -141,75 +135,101 @@ function invalidateDataCaches(action) {
       keysToRemove.push('tasks', 'av_requests', 'adv_tasks', 'master_data');
     }
 
-    // เคลียร์ dashboard เสมอเมื่อมีการแก้ไขข้อมูลใดๆ
-    keysToRemove.push('dashboard_', 'dashboard_2026-10', 'dashboard_2026-09', 'dashboard_2026-08');
-    cache.removeAll(keysToRemove);
-    
-    // ล้าง dashboard key ทุกเดือนที่อาจมีอยู่แบบเจาะจง
+    // ล้างแคชแดชบอร์ด
+    keysToRemove.push('dashboard_');
     const now = new Date();
     for (let i = 0; i < 3; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = 'dashboard_' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-      cache.remove(key);
+      keysToRemove.push('dashboard_' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
     }
-  } catch(e) { Logger.log('Cache invalidation error: ' + e.message); }
+    cache.removeAll(keysToRemove);
+  } catch(e) {
+    Logger.log('Cache invalidation error: ' + e.message);
+  }
 }
 
+// Keep-Alive ป้องกัน Google Apps Script เข้าสู่โหมด Cold Start
+function keepAlive() {
+  const db = getDB();
+  const sheet = db.getSheets()[0];
+  console.log('KeepAlive ping OK - ' + new Date().toLocaleString() + ' | Sheet: ' + (sheet ? sheet.getName() : 'ok'));
+}
+
+function setupKeepAliveTrigger() {
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'keepAlive') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('keepAlive').timeBased().everyMinutes(10).create();
+  console.log('keepAlive Trigger ตั้งค่าเรียบร้อย - ทุก 10 นาที');
+}
+
+// รองรับ CORS Preflight
+function doOptions(e) {
+  return ContentService.createTextOutput("").setMimeType(ContentService.MimeType.TEXT);
+}
+
+// ============================================================================
+// 🌐 หมวดที่ 3: ระบบจัดเส้นทาง API ฝั่ง GET (doGet Router)
+// ============================================================================
 function doGet(e) {
-  if (!e || !e.parameter) {
-    return ContentService.createTextOutput("พร้อมใช้งานแล้ว")
-      .setMimeType(ContentService.MimeType.TEXT);
+  if (!e || !e.parameter || !e.parameter.action) {
+    return ContentService.createTextOutput("พร้อมใช้งานแล้ว").setMimeType(ContentService.MimeType.TEXT);
   }
 
   const action = e.parameter.action;
   const db = getDB();
-  let result = [];
 
   try {
     switch (action) {
-      case 'get_tasks':
-        result = getCachedOrFetch('tasks', () => {
-          const sheetTasks = db.getSheetByName(CONFIG.SHEET_NAME);
-          return sheetTasks ? sheetTasks.getDataRange().getValues().slice(1) : [];
+      // 1. ดึงงานซ่อมอาคารทั่วไป
+      case 'get_tasks': {
+        const result = getCachedOrFetch('tasks', () => {
+          const sheet = db.getSheetByName(CONFIG.SHEET_NAME);
+          return sheet ? sheet.getDataRange().getValues().slice(1) : [];
         });
-        break;
+        return jsonResponse(result);
+      }
       
-      case 'get_av_requests':
-        result = getCachedOrFetch('av_requests', () => {
-          const sheetAV = db.getSheetByName(CONFIG.AV_SHEET_NAME);
-          return sheetAV ? sheetAV.getDataRange().getValues().slice(1) : [];
+      // 2. ดึงรายการขอยืมอุปกรณ์โสตฯ
+      case 'get_av_requests': {
+        const result = getCachedOrFetch('av_requests', () => {
+          const sheet = db.getSheetByName(CONFIG.AV_SHEET_NAME);
+          return sheet ? sheet.getDataRange().getValues().slice(1) : [];
         });
-        break;
+        return jsonResponse(result);
+      }
 
+      // 3. ดึงข้อมูลสรุปแดชบอร์ด
       case 'get_dashboard': {
         const monthParam = e.parameter.month || '';
         const dashKey = 'dashboard_' + monthParam;
         const dashData = getCachedOrFetch(dashKey, () => getDashboardDataInternal(monthParam));
-        return ContentService.createTextOutput(JSON.stringify(dashData))
-          .setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse(dashData);
       }
 
+      // 4. ดึงข้อมูลหลัก (Master Data: สถานที่, โครงการ, ช่าง)
       case 'get_master_data':
-        return ContentService.createTextOutput(
-          JSON.stringify(getCachedOrFetch('master_data', getMasterDataInternal))
-        ).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse(getCachedOrFetch('master_data', getMasterDataInternal));
 
+      // 5. ดึงรายการเอกสารระบบ
       case 'get_documents': {
-        result = getCachedOrFetch('documents', () => {
-          const sheetDocs = db.getSheetByName(CONFIG.DOC_SHEET_NAME);
-          return sheetDocs ? sheetDocs.getDataRange().getValues().slice(1) : [];
+        const result = getCachedOrFetch('documents', () => {
+          const sheet = db.getSheetByName(CONFIG.DOC_SHEET_NAME);
+          return sheet ? sheet.getDataRange().getValues().slice(1) : [];
         });
-        break;
+        return jsonResponse(result);
       }
 
+      // 6. ดึงรายชื่อผู้ใช้งานทั้งหมด
       case 'get_users': {
-        const sheetUsers = db.getSheetByName(CONFIG.USER_SHEET_NAME);
-        result = sheetUsers ? sheetUsers.getDataRange().getValues().slice(1) : [];
-        break;
+        const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
+        const result = sheet ? sheet.getDataRange().getValues().slice(1) : [];
+        return jsonResponse(result);
       }
 
-      case 'get_adv_tasks':
-        result = getCachedOrFetch('adv_tasks', () => {
+      // 7. ดึงงานขั้นสูง (IT, ซ่อมโสตฯ, โครงการ)
+      case 'get_adv_tasks': {
+        const result = getCachedOrFetch('adv_tasks', () => {
           let itData = [], avRepData = [], projData = [];
           const sIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
           if (sIt) { const v = sIt.getDataRange().getValues(); if (v.length > 1) itData = v.slice(1); }
@@ -219,35 +239,31 @@ function doGet(e) {
           if (sProj) { const v = sProj.getDataRange().getValues(); if (v.length > 1) projData = v.slice(1); }
           return { it: itData.reverse(), av: avRepData.reverse(), project: projData.reverse() };
         });
-        break;
+        return jsonResponse(result);
+      }
 
       default:
-        result = [];
+        return jsonResponse([]);
     }
   } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ error: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({ error: err.message });
   }
-
-  return ContentService.createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ============================================================
-// POST Requests
-// ============================================================
+// ============================================================================
+// 🌐 หมวดที่ 4: ระบบจัดเส้นทาง API ฝั่ง POST (doPost Router)
+// ============================================================================
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) {
-      return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'No payload found' }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ status: 'error', message: 'No payload found' });
     }
 
     const data = JSON.parse(e.postData.contents);
     const db = getDB();
     const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
     
-    // ── ตรวจสอบว่าเป็น Webhook จาก LINE หรือไม่ ────────────────────────
+    // ── ตรวจสอบกรณีเป็น Webhook จาก LINE (พิมพ์คำว่า id ในกลุ่มเพื่อดู Group ID) ─
     if (data.events && Array.isArray(data.events)) {
       data.events.forEach(event => {
         if (event.type === 'message' && event.source && (event.source.type === 'group' || event.source.type === 'room') && event.message.text === 'id') {
@@ -257,38 +273,29 @@ function doPost(e) {
       return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
     }
     
-    // ── ล้าง Cache ทุกครั้งที่มีการเปลี่ยนแปลงข้อมูล (ยกเว้น google_login) ──
+    // ── ล้าง Cache เมื่อมีการเปลี่ยนแปลงข้อมูล ──────────────────────────────────
     const noInvalidateActions = ['google_login', 'link_line_account', 'report_bug'];
     if (!noInvalidateActions.includes(data.action)) {
       invalidateDataCaches(data.action);
     }
     
     switch (data.action) {
-      // ── ระบบ Login ใหม่ (Google OAuth) ────────────────────────
+      // ── ระบบ Login ด้วย Google OAuth ───────────────────────────────────────
       case 'google_login':
         return handleGoogleLogin(data.credential);
         
-      // ── ผูกบัญชี LINE ────────────────────────
+      // ── เชื่อมโยงบัญชี LINE ────────────────────────────────────────────────
       case 'link_line_account':
         return handleLinkLineAccount(data.email, data.lineId, data.name, data.picture);
 
-      // ── ประเมินความพึงพอใจ ────────────────────────
-      case 'submit_survey':
+      // ── บันทึกแบบประเมินความพึงพอใจ ────────────────────────────────────────
+      case 'submit_survey': {
         let surveySheetName = '';
         let surveyTypeLabel = '';
-        if (data.type === 'repair') {
-          surveySheetName = CONFIG.SHEET_NAME;
-          surveyTypeLabel = 'งานซ่อมอาคาร';
-        } else if (data.type === 'it_repair') {
-          surveySheetName = CONFIG.IT_SHEET_NAME;
-          surveyTypeLabel = 'งานซ่อมไอที';
-        } else if (data.type === 'av') {
-          surveySheetName = CONFIG.AV_SHEET_NAME;
-          surveyTypeLabel = 'งานยืมโสตฯ';
-        } else if (data.type === 'av_repair') {
-          surveySheetName = CONFIG.AV_REPAIR_SHEET_NAME;
-          surveyTypeLabel = 'งานซ่อมโสตฯ';
-        }
+        if (data.type === 'repair') { surveySheetName = CONFIG.SHEET_NAME; surveyTypeLabel = 'งานซ่อมอาคาร'; }
+        else if (data.type === 'it_repair') { surveySheetName = CONFIG.IT_SHEET_NAME; surveyTypeLabel = 'งานซ่อมไอที'; }
+        else if (data.type === 'av') { surveySheetName = CONFIG.AV_SHEET_NAME; surveyTypeLabel = 'งานยืมโสตฯ'; }
+        else if (data.type === 'av_repair') { surveySheetName = CONFIG.AV_REPAIR_SHEET_NAME; surveyTypeLabel = 'งานซ่อมโสตฯ'; }
         
         if (surveySheetName) {
           const surveySheet = db.getSheetByName(surveySheetName);
@@ -296,31 +303,30 @@ function doPost(e) {
             surveySheet.getRange(data.row, 19).setValue(data.rating); // Col S = Rating
             surveySheet.getRange(data.row, 20).setValue(data.comment || ""); // Col T = Comment
             
-            // แจ้งเตือน Admin ว่ามีการประเมิน
             const starText = '⭐'.repeat(Number(data.rating) || 0);
             const surveyNotifMsg = createFlexMessageTemplate(
-              `ผลประเมิน: ${surveyTypeLabel}`,
-              `${starText} ผลประเมินความพึงพอใจ`,
-              `${surveyTypeLabel} — ได้รับ ${data.rating}/5 ดาว`,
+              `ผลประเมินใหม่: ${data.rating}/5 ดาว (${surveyTypeLabel})`,
+              "⭐ ผลประเมินความพึงพอใจ",
+              surveyTypeLabel,
               "#f59e0b",
               [
-                { label: "คะแนน", value: `${data.rating}/5 ดาว ${starText}` },
-                { label: "ความคิดเห็น", value: data.comment || "(ไม่มีความคิดเห็น)" }
-              ]
+                { label: "คะแนนที่ได้", value: `${data.rating} / 5 ดาว (${starText})` },
+                { label: "ความคิดเห็น", value: data.comment || "ไม่มีข้อคิดเห็นเพิ่มเติม" }
+              ],
+              null,
+              null
             );
             notifyTask('admin', surveyNotifMsg, `⭐ มีผลประเมินใหม่: ${data.rating}/5 ดาว`, '#f59e0b', {reporter: 'ผู้ใช้งาน', subject: surveyTypeLabel}, null);
           }
         }
-        return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'บันทึกการประเมินสำเร็จ' }))
-          .setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ status: 'success' });
+      }
 
-      // ── แจ้งซ่อม: เก็บรูปใน "รูปภาพแจ้งซ่อม" ──────────────
-      case 'submit_repair':
+      // ── แจ้งซ่อมอาคารสถานที่ใหม่ ───────────────────────────────────────────
+      case 'submit_repair': {
         const sheetRep = db.getSheetByName(CONFIG.SHEET_NAME);
         const repFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_REPORT);
         sheetRep.appendRow([timestamp, data.subject, data.detail, data.reporter, "รอดำเนินการ", repFileUrl, "", "", "", "", "", data.urgency || "", data.dept || "", data.loc || "", data.incidentDate || "", data.contact || ""]);
-        
-        // Email handled by notifyTask
         
         const lineRepMsg = createFlexMessageTemplate(
           `แจ้งซ่อมใหม่: ${data.subject}`,
@@ -336,16 +342,14 @@ function doPost(e) {
           null,
           data.ticketId
         );
-        
         notifyTask('building', lineRepMsg, `🚨 แจ้งซ่อมอาคารสถานที่ใหม่`, '#265D5A', data, null);
-        
         break;
+      }
 
-      // ── แจ้งซ่อมระบบ IT ──────────────────────────────────────
-      case 'submit_it_repair':
-        let sheetIt = db.getSheetByName(CONFIG.IT_SHEET_NAME);
-        if (!sheetIt) {
-          sheetIt = db.insertSheet(CONFIG.IT_SHEET_NAME);
+      // ── แจ้งซ่อมระบบ IT ใหม่ ──────────────────────────────────────────────
+      case 'submit_it_repair': {
+        let sheetIt = db.getSheetByName(CONFIG.IT_SHEET_NAME) || db.insertSheet(CONFIG.IT_SHEET_NAME);
+        if (sheetIt.getLastRow() === 0) {
           sheetIt.appendRow(['Timestamp', 'Subject', 'Detail', 'Reporter', 'Status', 'Image_Report', 'Image_Proof', 'Fix_Detail', 'Technician', 'Cost', 'Receipt', 'Urgency', 'Department', 'Location', 'IncidentDate', 'Contact']);
         }
         const itFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_IT_REPORT);
@@ -366,12 +370,12 @@ function doPost(e) {
         );
         notifyTask('it', lineItMsg, `💻 แจ้งปัญหาไอทีใหม่`, '#0ea5e9', data, null);
         break;
+      }
 
-      // ── แจ้งซ่อมโสตฯ ──────────────────────────────────────
-      case 'submit_av_repair':
-        let sheetAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
-        if (!sheetAvRep) {
-          sheetAvRep = db.insertSheet(CONFIG.AV_REPAIR_SHEET_NAME);
+      // ── แจ้งซ่อมอุปกรณ์โสตฯ ใหม่ ────────────────────────────────────────────
+      case 'submit_av_repair': {
+        let sheetAvRep = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME) || db.insertSheet(CONFIG.AV_REPAIR_SHEET_NAME);
+        if (sheetAvRep.getLastRow() === 0) {
           sheetAvRep.appendRow(['Timestamp', 'Subject', 'Detail', 'Reporter', 'Status', 'Image_Report', 'Image_Proof', 'Fix_Detail', 'Technician', 'Cost', 'Receipt', 'Urgency', 'Department', 'Location', 'IncidentDate', 'Contact']);
         }
         const avRepFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_AV_REPAIR);
@@ -392,12 +396,12 @@ function doPost(e) {
         );
         notifyTask('av_repair', lineAvRepMsg, `📷 แจ้งซ่อมอุปกรณ์โสตฯ ใหม่`, '#f59e0b', data, null);
         break;
+      }
 
-      // ── แจ้งโครงการระยะยาว ──────────────────────────────────────
-      case 'submit_project':
-        let sheetProjData = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
-        if (!sheetProjData) {
-          sheetProjData = db.insertSheet(CONFIG.PROJECT_SHEET_NAME);
+      // ── แจ้งโครงการระยะยาว / จัดซื้อ ───────────────────────────────────────
+      case 'submit_project': {
+        let sheetProjData = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME) || db.insertSheet(CONFIG.PROJECT_SHEET_NAME);
+        if (sheetProjData.getLastRow() === 0) {
           sheetProjData.appendRow(['Timestamp', 'Subject', 'Detail', 'Reporter', 'Status', 'Document_Url', 'Proof_Url', 'Approval_Note', 'Approver', 'Cost', 'Receipt', 'Urgency', 'Department', 'Location', 'TargetDate', 'Contact']);
         }
         const projFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_PROJECTS);
@@ -418,13 +422,12 @@ function doPost(e) {
         );
         notifyTask('project', lineProjMsg, `🏢 เสนอโครงการ / จัดซื้อใหม่`, '#8b5cf6', data, null);
         break;
+      }
 
-      // ── ยืมโสตฯ ─────────────────────────────────────────────
-      case 'submit_av':
+      // ── ขอยืมอุปกรณ์โสตทัศนูปกรณ์ ──────────────────────────────────────────
+      case 'submit_av': {
         const sheetAvReq = db.getSheetByName(CONFIG.AV_SHEET_NAME);
         sheetAvReq.appendRow([timestamp, data.borrower, data.equipment, data.useDate, data.location, "รอยืนยันการยืม", "-", data.signature]);
-        
-        // Email handled by notifyTask
         
         const lineAvMsg = createFlexMessageTemplate(
           `แจ้งยืมโสตฯ: ${data.borrower}`,
@@ -439,89 +442,61 @@ function doPost(e) {
           null,
           data.ticketId
         );
-        
         notifyTask('av', lineAvMsg, `🎤 แจ้งยืมอุปกรณ์โสตฯ ใหม่`, '#0d9488', data, null);
-        
         break;
+      }
 
-      // ── แจ้งบั๊ก ─────────────────────────────────────────────
-      case 'report_bug':
+      // ── แจ้งปัญหาระบบ (Bug) ────────────────────────────────────────────────
+      case 'report_bug': {
         const sheetBug = db.getSheetByName(CONFIG.BUG_SHEET_NAME);
         sheetBug.appendRow([timestamp, data.reporter, data.issue, data.page, "รอดำเนินการ"]);
-        
         const lineBugMsg = createFlexMessageTemplate(
-          `แจ้งปัญหาใหม่ (Bug): ${data.issue}`,
-          "🐞 แจ้งปัญหาระบบ (Bug)",
+          `รายงานบั๊ก: ${data.issue}`,
+          "🐞 พบปัญหาในระบบ",
           data.issue,
-          "#dc2626",
+          "#ef4444",
           [
-            { label: "ผู้แจ้ง", value: data.reporter },
-            { label: "หน้าจอ", value: data.page }
-          ]
+            { label: "ผู้รายงาน", value: data.reporter },
+            { label: "หน้าที่พบ", value: data.page }
+          ],
+          null,
+          null
         );
         notifyTask('bug', lineBugMsg, `🐞 แจ้งปัญหาระบบใหม่`, '#ef4444', data, null);
-        
         break;
+      }
 
-      // ── เพิ่มเติมรายละเอียดงานซ่อม ──────────────────────────
-      case 'append_task_details':
-        const sheetTaskDetails = db.getSheetByName(CONFIG.SHEET_NAME);
-        sheetTaskDetails.getRange(data.rowIndex + 2, 3).setValue(data.newDetails);
+      // ── เพิ่มเติมรายละเอียดงานซ่อม ─────────────────────────────────────────
+      case 'append_task_details': {
+        const sheet = db.getSheetByName(CONFIG.SHEET_NAME);
+        sheet.getRange(data.rowIndex + 2, 3).setValue(data.newDetails);
         break;
+      }
 
-      // ── อัพสถานะงานซ่อม ─────────────────────────────────────
-      case 'update_task_status':
+      // ── อัปเดตสถานะงานซ่อม ─────────────────────────────────────────────────
+      case 'update_task_status': {
         let statusSheetName = data.sheetName || CONFIG.SHEET_NAME;
         if (statusSheetName === 'Task') statusSheetName = CONFIG.SHEET_NAME;
-        const sheetTaskStatus = db.getSheetByName(statusSheetName);
-        if (!sheetTaskStatus) {
-          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found: ' + statusSheetName })).setMimeType(ContentService.MimeType.JSON);
-        }
+        const sheet = db.getSheetByName(statusSheetName);
+        if (!sheet) return jsonResponse({ status: 'error', message: 'Sheet not found: ' + statusSheetName });
 
-        let statusTargetRow = 0;
-        let isReversedStatus = true;
-        if (statusSheetName === CONFIG.SHEET_NAME || statusSheetName === CONFIG.AV_SHEET_NAME) {
-          isReversedStatus = false;
-        }
-        if (isReversedStatus) {
-          const vals = sheetTaskStatus.getDataRange().getValues();
-          statusTargetRow = vals.length - data.rowIndex;
-        } else {
-          statusTargetRow = data.rowIndex + 2;
-        }
+        const statusTargetRow = calculateTargetRow(sheet, statusSheetName, data.rowIndex);
 
-        if (data.status) {
-          sheetTaskStatus.getRange(statusTargetRow, 5).setValue(data.status);
-        }
+        if (data.status) sheet.getRange(statusTargetRow, 5).setValue(data.status);
         if (data.fixDetail) {
           const detailCol = (statusSheetName === CONFIG.SHEET_NAME) ? 7 : 8;
-          sheetTaskStatus.getRange(statusTargetRow, detailCol).setValue(data.fixDetail);
+          sheet.getRange(statusTargetRow, detailCol).setValue(data.fixDetail);
         }
         if (data.technician) {
           const techCol = (statusSheetName === CONFIG.SHEET_NAME) ? 8 : (statusSheetName === CONFIG.AV_SHEET_NAME ? 7 : 9);
-          sheetTaskStatus.getRange(statusTargetRow, techCol).setValue(data.technician);
+          sheet.getRange(statusTargetRow, techCol).setValue(data.technician);
         }
         
+        // ถ้าสถานะเปลี่ยนเป็นเสร็จสิ้น แจ้งเตือนผู้แจ้งและกลุ่ม
         if (data.status === 'เสร็จสิ้น') {
-          const subjectStr = sheetTaskStatus.getRange(statusTargetRow, 2).getValue();
-          const detailStr = sheetTaskStatus.getRange(statusTargetRow, 3).getValue();
-          const reporterNameStr = sheetTaskStatus.getRange(statusTargetRow, 4).getValue();
-          const reporterEmail = getUserEmailByName(reporterNameStr);
-          const reporterLineId = getUserLineIdByName(reporterNameStr);
-          
-          if (reporterEmail) {
-            const bodyHtml = generateEmailHtml(
-              `✅ งานซ่อมเสร็จสิ้น: ${subjectStr}`,
-              "#059669",
-              reporterNameStr,
-              null,
-              subjectStr,
-              `อาการ: ${detailStr}<br>สถานะ: เสร็จสิ้น`
-            );
-            try {
-              // MailApp block disabled
-            } catch (e) { Logger.log(e.message); }
-          }
+          const subjectStr = sheet.getRange(statusTargetRow, 2).getValue();
+          const detailStr = sheet.getRange(statusTargetRow, 3).getValue();
+          const reporterNameStr = sheet.getRange(statusTargetRow, 4).getValue();
           
           const statusMsg = createFlexMessageTemplate(
             `งานซ่อมเสร็จสิ้น: ${subjectStr}`,
@@ -539,64 +514,34 @@ function doPost(e) {
           );
           notifyTask('building', statusMsg, `อัปเดตสถานะงานซ่อมอาคาร`, '#265D5A', {reporter: reporterNameStr, subject: subjectStr, status: 'เสร็จสิ้น'}, null);
         }
-        return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'อัปเดตสถานะสำเร็จ' })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ status: 'success', message: 'อัปเดตสถานะสำเร็จ' });
+      }
 
-      // ── ปิดงานซ่อม: เก็บรูปใน "รูปภาพผลการซ่อม" ────────────
-
-
-
-      case 'approve_task':
+      // ── อนุมัติ / มอบหมายช่างรับงาน ────────────────────────────────────────
+      case 'approve_task': {
         const appSheetName = data.sheetName || CONFIG.SHEET_NAME;
         const sheetApprove = db.getSheetByName(appSheetName);
-        if (!sheetApprove) {
-          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
-        }
+        if (!sheetApprove) return jsonResponse({ status: 'error', message: 'Sheet not found' });
         
-        let approveTargetRow = 0;
-        // Check if data is reversed (AV Request and Building Repairs)
-        let isReversedApprove = true;
-        if (appSheetName === CONFIG.SHEET_NAME || appSheetName === CONFIG.AV_SHEET_NAME) {
-            isReversedApprove = false;
-        }
-        
-        if (isReversedApprove) {
-            const vals = sheetApprove.getDataRange().getValues();
-            approveTargetRow = vals.length - data.rowIndex;
-        } else {
-            approveTargetRow = data.rowIndex + 2;
-        }
+        const approveTargetRow = calculateTargetRow(sheetApprove, appSheetName, data.rowIndex);
 
-        // Update status
-        if (data.status) {
-          sheetApprove.getRange(approveTargetRow, 5).setValue(data.status);
-        }
+        if (data.status) sheetApprove.getRange(approveTargetRow, 5).setValue(data.status);
 
-        // Columns depend on sheet type
         if (appSheetName === CONFIG.SHEET_NAME || appSheetName === CONFIG.AV_SHEET_NAME) {
-            // General Tasks
-            if (data.technician) {
-                sheetApprove.getRange(approveTargetRow, 8).setValue(data.technician);
-            }
-            if (data.urgency) {
-                sheetApprove.getRange(approveTargetRow, 12).setValue(data.urgency); // Column 12 is urgency in Building
-            }
+          if (data.technician) sheetApprove.getRange(approveTargetRow, 8).setValue(data.technician);
+          if (data.urgency) sheetApprove.getRange(approveTargetRow, 12).setValue(data.urgency);
         } else {
-            // Advanced Tasks
-            if (data.technician) {
-                sheetApprove.getRange(approveTargetRow, 9).setValue(data.technician);
-            }
-            if (data.urgency) {
-                sheetApprove.getRange(approveTargetRow, 6).setValue(data.urgency); // Column 6 is urgency in IT/Project
-            }
+          if (data.technician) sheetApprove.getRange(approveTargetRow, 9).setValue(data.technician);
+          if (data.urgency) sheetApprove.getRange(approveTargetRow, 6).setValue(data.urgency);
         }
         
-        // Notify Technician via Email & Line Group
+        // แจ้งเตือนช่างที่ได้รับมอบหมาย
         if (data.technician) {
           try {
             const taskSubject = sheetApprove.getRange(approveTargetRow, 2).getValue();
             const taskReporter = sheetApprove.getRange(approveTargetRow, 4).getValue();
-            
             const techEmail = getUserEmailByName(data.technician);
+            
             if (techEmail) {
               const emailHtml = generateEmailHtml(
                 "👷 แจ้งมอบหมายงาน",
@@ -629,38 +574,26 @@ function doPost(e) {
           } catch(e) { Logger.log("Error notifying tech: " + e.message); }
         }
 
-        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ status: 'success' });
+      }
 
-
-      case 'edit_assignment':
+      // ── แก้ไขการมอบหมายช่าง ───────────────────────────────────────────────
+      case 'edit_assignment': {
         let editSheetName = data.sheetName || CONFIG.SHEET_NAME;
         if (editSheetName === 'Task') editSheetName = CONFIG.SHEET_NAME;
         const sheetEdit = db.getSheetByName(editSheetName);
-        if (!sheetEdit) {
-          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found: ' + editSheetName })).setMimeType(ContentService.MimeType.JSON);
-        }
+        if (!sheetEdit) return jsonResponse({ status: 'error', message: 'Sheet not found: ' + editSheetName });
         
-        let editTargetRow = 0;
-        let isReversedEdit = true;
-        if (editSheetName === CONFIG.SHEET_NAME || editSheetName === CONFIG.AV_SHEET_NAME) {
-            isReversedEdit = false;
-        }
-        
-        if (isReversedEdit) {
-            const vals = sheetEdit.getDataRange().getValues();
-            editTargetRow = vals.length - data.rowIndex;
-        } else {
-            editTargetRow = data.rowIndex + 2;
-        }
+        const editTargetRow = calculateTargetRow(sheetEdit, editSheetName, data.rowIndex);
 
         if (editSheetName === CONFIG.SHEET_NAME) {
-            if (data.technician) sheetEdit.getRange(editTargetRow, 8).setValue(data.technician);
-            if (data.urgency) sheetEdit.getRange(editTargetRow, 12).setValue(data.urgency);
+          if (data.technician) sheetEdit.getRange(editTargetRow, 8).setValue(data.technician);
+          if (data.urgency) sheetEdit.getRange(editTargetRow, 12).setValue(data.urgency);
         } else if (editSheetName === CONFIG.AV_SHEET_NAME) {
-            if (data.technician) sheetEdit.getRange(editTargetRow, 7).setValue(data.technician);
+          if (data.technician) sheetEdit.getRange(editTargetRow, 7).setValue(data.technician);
         } else {
-            if (data.technician) sheetEdit.getRange(editTargetRow, 9).setValue(data.technician);
-            if (data.urgency) sheetEdit.getRange(editTargetRow, 7).setValue(data.urgency);
+          if (data.technician) sheetEdit.getRange(editTargetRow, 9).setValue(data.technician);
+          if (data.urgency) sheetEdit.getRange(editTargetRow, 7).setValue(data.urgency);
         }
 
         if (data.technician) {
@@ -669,6 +602,7 @@ function doPost(e) {
             const taskReporter = sheetEdit.getRange(editTargetRow, 4).getValue();
             const taskDetail = sheetEdit.getRange(editTargetRow, 3).getValue();
             const techEmail = data.technicianEmail || getUserEmailByName(data.technician);
+            
             if (techEmail) {
               const emailHtml = generateEmailHtml(
                 "👷 มอบหมายงานซ่อมให้คุณ",
@@ -701,31 +635,27 @@ function doPost(e) {
           } catch(e) { Logger.log("Error notifying tech on edit: " + e.message); }
         }
 
-        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ status: 'success' });
+      }
 
-      case 'update_adv_task':
+      // ── อัปเดตงานขั้นสูง (IT, ซ่อมโสตฯ, โครงการ) ──────────────────────────
+      case 'update_adv_task': {
         let advSheetName = CONFIG.PROJECT_SHEET_NAME;
         if (data.tabType === 'it') advSheetName = CONFIG.IT_SHEET_NAME;
         else if (data.tabType === 'av-repair' || data.tabType === 'av_repair' || data.tabType === 'av') advSheetName = CONFIG.AV_REPAIR_SHEET_NAME;
-        const sheetAdv = db.getSheetByName(advSheetName);
-        if (!sheetAdv) {
-          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Sheet not found' })).setMimeType(ContentService.MimeType.JSON);
-        }
         
-        const advVals = sheetAdv.getDataRange().getValues();
-        const targetAdvRow = advVals.length - data.rowIndex;
+        const sheetAdv = db.getSheetByName(advSheetName);
+        if (!sheetAdv) return jsonResponse({ status: 'error', message: 'Sheet not found' });
+        
+        const targetAdvRow = calculateTargetRow(sheetAdv, advSheetName, data.rowIndex);
         sheetAdv.getRange(targetAdvRow, 5).setValue(data.status);
         
         if (data.file) {
           const proofUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_REPAIR_PROOF);
           sheetAdv.getRange(targetAdvRow, 7).setValue(proofUrl);
         }
-        if (data.fixDetail) {
-          sheetAdv.getRange(targetAdvRow, 8).setValue(data.fixDetail);
-        }
-        if (data.technician) {
-          sheetAdv.getRange(targetAdvRow, 9).setValue(data.technician);
-        }
+        if (data.fixDetail) sheetAdv.getRange(targetAdvRow, 8).setValue(data.fixDetail);
+        if (data.technician) sheetAdv.getRange(targetAdvRow, 9).setValue(data.technician);
         if (data.cost) {
           const advCost = (!isNaN(data.cost) && Number(data.cost) > 0) ? Number(data.cost) : "-";
           sheetAdv.getRange(targetAdvRow, 10).setValue(advCost);
@@ -735,31 +665,16 @@ function doPost(e) {
           sheetAdv.getRange(targetAdvRow, 11).setValue(receiptUrlAdv);
         }
         
-        // ส่งแจ้งเตือนกลับไปยังผู้แจ้ง (เฉพาะตอนปิดงาน)
+        // ส่งแจ้งเตือนเมื่อปิดงาน
         const isDoneStatus = data.status === 'เสร็จสิ้น' || data.status === 'อนุมัติ';
         if (isDoneStatus && data.technician) {
           const advSubject = sheetAdv.getRange(targetAdvRow, 2).getValue();
           const advReporter = sheetAdv.getRange(targetAdvRow, 4).getValue();
-          const advReporterEmail = getUserEmailByName(advReporter);
           const isIT = data.tabType === 'it';
           const isAVRep = data.tabType === 'av-repair' || data.tabType === 'av_repair' || data.tabType === 'av';
           const surveyType = isIT ? 'it_repair' : (isAVRep ? 'av_repair' : 'project');
           const taskLabel = isIT ? '💻 งานซ่อมไอที' : (isAVRep ? '📷 งานซ่อมโสตฯ' : '📋 โครงการ');
           const advColor = isIT ? '#0ea5e9' : (isAVRep ? '#f59e0b' : '#8b5cf6');
-          
-          if (advReporterEmail) {
-            const advBodyHtml = generateEmailHtml(
-              `✅ ${taskLabel}เสร็จสิ้น: ${advSubject}`,
-              advColor,
-              advReporter,
-              null,
-              advSubject,
-              `การดำเนินการ: ${data.fixDetail}<br>ผู้รับผิดชอบ: ${data.technician}`
-            );
-            try {
-              // MailApp block disabled
-            } catch (e) { Logger.log(e.message); }
-          }
           
           const advDoneMsg = createFlexMessageTemplate(
             `${taskLabel}เสร็จสิ้น: ${advSubject}`,
@@ -778,49 +693,46 @@ function doPost(e) {
           notifyTask(isIT ? 'it' : (isAVRep ? 'av_repair' : 'admin'), advDoneMsg, `${taskLabel}เสร็จสิ้น`, advColor, {reporter: advReporter, subject: advSubject, status: data.status}, null);
         }
         
-        // Return success
-        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
-
-      case 'delete_adv_task': {
-        let sName = '';
-        let isReversed = true;
-        if (data.tabType === 'it') sName = CONFIG.IT_SHEET_NAME;
-        else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
-        else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
-        else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
-        else { sName = CONFIG.SHEET_NAME; isReversed = true; }
-        
-        const sheet = db.getSheetByName(sName);
-        if (sheet) {
-          const vals = sheet.getDataRange().getValues();
-          let targetRow = isReversed ? (vals.length - data.rowIndex) : (data.rowIndex + 2);
-          sheet.deleteRow(targetRow);
-        }
-        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ status: 'success' });
       }
 
-      case 'archive_adv_task': {
-        let sName = '';
-        let isReversed = true;
+      // ── ลบงานขั้นสูง ───────────────────────────────────────────────────────
+      case 'delete_adv_task': {
+        let sName = CONFIG.SHEET_NAME;
         if (data.tabType === 'it') sName = CONFIG.IT_SHEET_NAME;
         else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
         else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
-        else if (data.tabType === 'av_request') { sName = CONFIG.AV_SHEET_NAME; isReversed = false; }
-        else { sName = CONFIG.SHEET_NAME; isReversed = true; }
+        else if (data.tabType === 'av_request') sName = CONFIG.AV_SHEET_NAME;
         
         const sheet = db.getSheetByName(sName);
         if (sheet) {
-          const vals = sheet.getDataRange().getValues();
-          let targetRow = isReversed ? (vals.length - data.rowIndex) : (data.rowIndex + 2);
+          const targetRow = calculateTargetRow(sheet, sName, data.rowIndex);
+          sheet.deleteRow(targetRow);
+        }
+        return jsonResponse({ status: 'success' });
+      }
+
+      // ── จัดเก็บงานเข้า Archive ─────────────────────────────────────────────
+      case 'archive_adv_task': {
+        let sName = CONFIG.SHEET_NAME;
+        if (data.tabType === 'it') sName = CONFIG.IT_SHEET_NAME;
+        else if (data.tabType === 'project') sName = CONFIG.PROJECT_SHEET_NAME;
+        else if (data.tabType === 'av' || data.tabType === 'av-repair') sName = CONFIG.AV_REPAIR_SHEET_NAME;
+        else if (data.tabType === 'av_request') sName = CONFIG.AV_SHEET_NAME;
+        
+        const sheet = db.getSheetByName(sName);
+        if (sheet) {
+          const targetRow = calculateTargetRow(sheet, sName, data.rowIndex);
           const rowData = sheet.getRange(targetRow, 1, 1, sheet.getLastColumn()).getValues()[0];
-          let archiveSheet = db.getSheetByName("Archive");
-          if (!archiveSheet) archiveSheet = db.insertSheet("Archive");
+          let archiveSheet = db.getSheetByName("Archive") || db.insertSheet("Archive");
           archiveSheet.appendRow(rowData);
           sheet.deleteRow(targetRow);
         }
-        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ status: 'success' });
       }
-      case 'update_task_proof':
+
+      // ── ปิดงานซ่อมพร้อมแนบรูปหลักฐานและใบเสร็จ ─────────────────────────────
+      case 'update_task_proof': {
         const sheetTaskProof = db.getSheetByName(CONFIG.SHEET_NAME);
         const proofVals = sheetTaskProof.getDataRange().getValues();
         const targetRow = proofVals.length - data.rowIndex;
@@ -836,27 +748,9 @@ function doPost(e) {
         sheetTaskProof.getRange(targetRow, 10).setValue(cost > 0 ? cost : "-");
         sheetTaskProof.getRange(targetRow, 11).setValue(receiptUrl);
         
-        // Notify Reporter
         const proofSubject = sheetTaskProof.getRange(targetRow, 2).getValue();
-        const proofDetail = sheetTaskProof.getRange(targetRow, 3).getValue();
         const proofReporter = sheetTaskProof.getRange(targetRow, 4).getValue();
-        const proofReporterEmail = getUserEmailByName(proofReporter);
-        const proofReporterLineId = getUserLineIdByName(proofReporter);
         
-        if (proofReporterEmail) {
-          const bodyHtml = generateEmailHtml(
-            `✅ งานซ่อมเสร็จสิ้น: ${proofSubject}`,
-            "#059669",
-            proofReporter,
-            null,
-            proofSubject,
-            `อาการ: ${proofDetail}<br>การแก้ไข: ${data.fixDetail}<br>ช่าง: ${data.technician}`
-          );
-          try {
-            // MailApp block disabled
-          } catch (e) { Logger.log(e.message); }
-          }
-          
         const proofMsg = createFlexMessageTemplate(
           `งานซ่อมเสร็จสิ้น (พร้อมหลักฐาน): ${proofSubject}`,
           "✅ ปิดงานซ่อม (พร้อมหลักฐาน)",
@@ -872,7 +766,7 @@ function doPost(e) {
           ],
           data.ticketId
         );
-        // Determine taskType based on sheetName
+        
         let advTaskType = 'building';
         let color = '#265D5A';
         if (data.sheetName === CONFIG.IT_SHEET_NAME) { advTaskType = 'it'; color = '#0ea5e9'; }
@@ -881,35 +775,31 @@ function doPost(e) {
         
         notifyTask(advTaskType, proofMsg, `อัปเดตสถานะงาน`, color, {reporter: proofReporter, subject: proofSubject, status: data.status || 'เสร็จสิ้น'}, null);
         break;
+      }
 
-      // ── อัพสถานะงานโสตฯ ─────────────────────────────────────
-      case 'update_av_status':
+      // ── อัปเดตสถานะงานยืมอุปกรณ์โสตฯ ──────────────────────────────────────
+      case 'update_av_status': {
         const sheetAvStatus = db.getSheetByName(CONFIG.AV_SHEET_NAME);
         const avTargetRow = data.rowIndex + 2;
         sheetAvStatus.getRange(avTargetRow, 6).setValue(data.status);
         sheetAvStatus.getRange(avTargetRow, 7).setValue(data.technician);
         
-        // Notify AV completion
         if (data.status === 'เสร็จสิ้น/คืนเรียบร้อย') {
-           const avSubject = sheetAvStatus.getRange(avTargetRow, 3).getValue();
-           const avReporter = sheetAvStatus.getRange(avTargetRow, 2).getValue();
-           const avMsg = createFlexMessageTemplate(
+          const avSubject = sheetAvStatus.getRange(avTargetRow, 3).getValue();
+          const avReporter = sheetAvStatus.getRange(avTargetRow, 2).getValue();
+          const avMsg = createFlexMessageTemplate(
             `คืนอุปกรณ์เรียบร้อย: ${avSubject}`,
             "✅ คืนอุปกรณ์เรียบร้อย",
             avSubject,
             "#059669",
-            [
-              { label: "เจ้าหน้าที่", value: data.technician, flexLabel: 3, flexValue: 5 }
-            ],
-            [
-              { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=av&row=" + avTargetRow, color: "#f59e0b" }
-            ]
+            [{ label: "เจ้าหน้าที่", value: data.technician, flexLabel: 3, flexValue: 5 }],
+            [{ label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=av&row=" + avTargetRow, color: "#f59e0b" }]
           );
-          notifyTask('av', avMsg, `อัปเดตสถานะงานยืมโสตฯ`, '#0d9488', {borrower: avReporter, subject: sheetAvStatus.getRange(avTargetRow, 3).getValue(), status: 'ใช้งานอยู่'}, null);
+          notifyTask('av', avMsg, `อัปเดตสถานะงานยืมโสตฯ`, '#0d9488', {borrower: avReporter, subject: avSubject, status: 'ใช้งานอยู่'}, null);
         } else if (data.status === 'จัดเตรียมแล้ว') {
-           const avSubject = sheetAvStatus.getRange(avTargetRow, 3).getValue();
-           const avReporter = sheetAvStatus.getRange(avTargetRow, 2).getValue();
-           const avMsg = createFlexMessageTemplate(
+          const avSubject = sheetAvStatus.getRange(avTargetRow, 3).getValue();
+          const avReporter = sheetAvStatus.getRange(avTargetRow, 2).getValue();
+          const avMsg = createFlexMessageTemplate(
             `เตรียมอุปกรณ์เรียบร้อย: ${avSubject}`,
             "🛠️ จัดเตรียมอุปกรณ์ให้แล้ว",
             avSubject,
@@ -920,13 +810,13 @@ function doPost(e) {
             ],
             []
           );
-          notifyTask('av', avMsg, `อัปเดตสถานะงานยืมโสตฯ`, '#0d9488', {borrower: avReporter, subject: sheetAvStatus.getRange(avTargetRow, 3).getValue(), status: 'คืนเรียบร้อย'}, null);
+          notifyTask('av', avMsg, `อัปเดตสถานะงานยืมโสตฯ`, '#0d9488', {borrower: avReporter, subject: avSubject, status: 'คืนเรียบร้อย'}, null);
         }
         break;
+      }
 
-
-      // ── Master Data: เพิ่ม ──────────────────────────────────
-      case 'master_add':
+      // ── เพิ่ม Master Data ─────────────────────────────────────────────────
+      case 'master_add': {
         const type = data.type;
         const id = data.id || (type + '_' + new Date().getTime());
 
@@ -934,36 +824,31 @@ function doPost(e) {
           let sheetLoc = db.getSheetByName(CONFIG.MASTER_LOC_SHEET) || db.insertSheet(CONFIG.MASTER_LOC_SHEET);
           if (sheetLoc.getLastRow() === 0) sheetLoc.appendRow(['id', 'name', 'department']);
           sheetLoc.appendRow([id, data.name || '', data.department || '']);
-        } 
-        else if (type === 'project') {
+        } else if (type === 'project') {
           let sheetProj = db.getSheetByName(CONFIG.MASTER_PROJ_SHEET) || db.insertSheet(CONFIG.MASTER_PROJ_SHEET);
           if (sheetProj.getLastRow() === 0) sheetProj.appendRow(['id', 'name', 'department']);
           sheetProj.appendRow([id, data.name || '', data.department || '']);
-        } 
-        else if (type === 'mechanic') {
+        } else if (type === 'mechanic') {
           let sheetMech = db.getSheetByName(CONFIG.MASTER_MECH_SHEET) || db.insertSheet(CONFIG.MASTER_MECH_SHEET);
           if (sheetMech.getLastRow() === 0) sheetMech.appendRow(['id', 'name', 'phone', 'skills', 'notes']);
           sheetMech.appendRow([id, data.name || '', data.phone || '', data.skills || '', data.notes || '']);
         }
         break;
+      }
 
-      // ── Master Data: ลบ ─────────────────────────────────────
-      case 'master_delete':
-        const delType = data.type;
-        const delId = data.id;
-        const sheetName = delType === 'location' ? CONFIG.MASTER_LOC_SHEET 
-                        : delType === 'project'  ? CONFIG.MASTER_PROJ_SHEET 
+      // ── ลบ Master Data ────────────────────────────────────────────────────
+      case 'master_delete': {
+        const sheetName = data.type === 'location' ? CONFIG.MASTER_LOC_SHEET 
+                        : data.type === 'project'  ? CONFIG.MASTER_PROJ_SHEET 
                         : CONFIG.MASTER_MECH_SHEET;
-        deleteRowById(sheetName, 0, delId);
+        deleteRowById(sheetName, 0, data.id);
         break;
+      }
 
-      // ── ตั้งค่าระบบ ──────────────────────────────────────────
-      case 'save_overdue_settings':
-        let sheetSettings = db.getSheetByName('Settings');
-        if (!sheetSettings) {
-          sheetSettings = db.insertSheet('Settings');
-          sheetSettings.appendRow(['Key', 'Value']);
-        }
+      // ── บันทึกการตั้งค่าระบบ (Overdue Days) ────────────────────────────────
+      case 'save_overdue_settings': {
+        let sheetSettings = db.getSheetByName('Settings') || db.insertSheet('Settings');
+        if (sheetSettings.getLastRow() === 0) sheetSettings.appendRow(['Key', 'Value']);
         
         let foundKey = false;
         const settingsData = sheetSettings.getDataRange().getValues();
@@ -974,71 +859,77 @@ function doPost(e) {
             break;
           }
         }
-        
-        if (!foundKey) {
-          sheetSettings.appendRow(['overdue_days', data.days]);
-        }
+        if (!foundKey) sheetSettings.appendRow(['overdue_days', data.days]);
         break;
+      }
 
-      // ── เอกสาร: อัปโหลด → เก็บใน "เอกสารระบบ" ──────────────
-      case 'add_document':
-        let sheetAddDoc = db.getSheetByName(CONFIG.DOC_SHEET_NAME);
-        if (!sheetAddDoc) {
-          sheetAddDoc = db.insertSheet(CONFIG.DOC_SHEET_NAME);
+      // ── เพิ่มเอกสารใหม่เข้าระบบ ──────────────────────────────────────────
+      case 'add_document': {
+        let sheetAddDoc = db.getSheetByName(CONFIG.DOC_SHEET_NAME) || db.insertSheet(CONFIG.DOC_SHEET_NAME);
+        if (sheetAddDoc.getLastRow() === 0) {
           sheetAddDoc.appendRow(['docId', 'category', 'uploadDate', 'docName', 'uploader', 'fileUrl', 'fileExt', 'description']);
         }
-        
         const addDocFileUrl = uploadFileToDrive(data.file, CONFIG.FOLDER_DOCUMENTS);
-
-        const docId = 'doc_' + new Date().getTime();
         sheetAddDoc.appendRow([
-          docId,
-          data.category   || 'ทั่วไป',
+          'doc_' + new Date().getTime(),
+          data.category || 'ทั่วไป',
           timestamp,
-          data.docName    || '',
-          data.uploader   || 'Admin',
+          data.docName || '',
+          data.uploader || 'Admin',
           addDocFileUrl,
-          data.ext        || '',
-          data.description|| ''
+          data.ext || '',
+          data.description || ''
         ]);
         break;
+      }
 
-      // ── เอกสาร: ลบ ──────────────────────────────────────────
+      // ── ลบเอกสาร ──────────────────────────────────────────────────────────
       case 'delete_document':
         deleteRowById(CONFIG.DOC_SHEET_NAME, 0, data.docId);
         break;
 
-      // ── จัดการผู้ใช้ ──────────────────────────────────────────
-      case 'update_user':
-        const sheetUpdateUser = db.getSheetByName(CONFIG.USER_SHEET_NAME);
-        if (sheetUpdateUser) {
-          const values = sheetUpdateUser.getDataRange().getValues();
+      // ── อัปเดตสิทธิ์หรือสถานะผู้ใช้งาน ─────────────────────────────────────
+      case 'update_user': {
+        const sheetUser = db.getSheetByName(CONFIG.USER_SHEET_NAME);
+        if (sheetUser) {
+          const values = sheetUser.getDataRange().getValues();
           for (let i = 1; i < values.length; i++) {
             if (String(values[i][0]) === String(data.email)) {
-              sheetUpdateUser.getRange(i + 1, 3).setValue(data.role);
-              sheetUpdateUser.getRange(i + 1, 4).setValue(data.status);
+              sheetUser.getRange(i + 1, 3).setValue(data.role);
+              sheetUser.getRange(i + 1, 4).setValue(data.status);
               break;
             }
           }
         }
         break;
+      }
 
       default:
         break;
     }
 
-    return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({ status: 'success' });
 
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({ status: 'error', message: err.message });
   }
 }
 
-// ============================================================
-// Helper Functions
-// ============================================================
+// ============================================================================
+// 📁 หมวดที่ 5: ฟังก์ชันจัดการไฟล์และ Google Drive (File & Drive Helpers)
+// ============================================================================
+
+// ค้นหาหรือสร้างโฟลเดอร์ย่อยใน Google Drive
+function getOrCreateSubFolder(folderName) {
+  const root = DriveApp.getFolderById(CONFIG.ROOT_FOLDER_ID);
+  const existing = root.getFoldersByName(folderName);
+  if (existing.hasNext()) return existing.next();
+  const newFolder = root.createFolder(folderName);
+  Logger.log("สร้างโฟลเดอร์ใหม่: " + folderName + " | ID: " + newFolder.getId());
+  return newFolder;
+}
+
+// อัปโหลดไฟล์ Base64 เข้า Google Drive และเปิดสิทธิ์ดูสาธารณะ
 function uploadFileToDrive(fileData, folderName) {
   if (!fileData || !fileData.data) return "-";
   const folder = getOrCreateSubFolder(folderName);
@@ -1048,6 +939,132 @@ function uploadFileToDrive(fileData, folderName) {
   return file.getUrl();
 }
 
+// ลบแถวข้อมูลตาม ID ในคอลัมน์ที่กำหนด
+function deleteRowById(sheetName, idColIndex, idValue) {
+  const sheet = getDB().getSheetByName(sheetName);
+  if (!sheet) return;
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][idColIndex]) === String(idValue)) {
+      sheet.deleteRow(i + 1);
+      break;
+    }
+  }
+}
+
+// สร้างโฟลเดอร์ทั้งหมดล่วงหน้าใน Google Drive
+function setupFolders() {
+  const folders = [
+    CONFIG.FOLDER_REPAIR_REPORT,
+    CONFIG.FOLDER_REPAIR_PROOF,
+    CONFIG.FOLDER_DOCUMENTS,
+    CONFIG.FOLDER_RECEIPTS,
+    CONFIG.FOLDER_IT_REPORT,
+    CONFIG.FOLDER_AV_REPAIR,
+    CONFIG.FOLDER_PROJECTS
+  ];
+  Logger.log("เริ่มสร้างโฟลเดอร์ระบบ:");
+  folders.forEach(fName => {
+    const f = getOrCreateSubFolder(fName);
+    Logger.log(`  - ${fName} : ${f.getId()}`);
+  });
+}
+
+// ============================================================================
+// 👥 หมวดที่ 6: ระบบผู้ใช้งานและการค้นหาข้อมูล (User Management & Contacts)
+// ============================================================================
+
+// เข้าสู่ระบบด้วย Google OAuth
+function handleGoogleLogin(credential) {
+  try {
+    const url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + credential;
+    const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) throw new Error("Invalid Token");
+
+    const payload = JSON.parse(res.getContentText());
+    if (payload.aud !== CLIENT_ID) throw new Error("Invalid Client ID");
+
+    const email = payload.email;
+    const name = payload.name;
+    const picture = payload.picture;
+
+    const ss = getDB();
+    let sheet = ss.getSheetByName(CONFIG.USER_SHEET_NAME) || ss.insertSheet(CONFIG.USER_SHEET_NAME);
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['Email', 'Name', 'Role', 'Status', 'ProfilePicture', 'LastLogin']);
+      sheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#f3f4f6');
+      sheet.setFrozenRows(1);
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const now = new Date();
+
+    for (let i = 1; i < data.length; i++) {
+      if ((data[i][0] || '').toString().trim().toLowerCase() === (email || '').trim().toLowerCase()) {
+        const role = data[i][2] || 'Teacher';
+        const status = data[i][3];
+
+        if (status === 'approved') {
+          sheet.getRange(i + 1, 5, 1, 2).setValues([[picture, now]]);
+          return jsonResponse({ status: 'success', name: data[i][1] || name, role: role, picture: picture, email: email });
+        } else if (status === 'banned') {
+          return jsonResponse({ status: 'error', message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อแอดมิน' });
+        } else {
+          return jsonResponse({ status: 'error', message: 'บัญชีของคุณกำลังรอการอนุมัติจากแอดมิน' });
+        }
+      }
+    }
+
+    // ผู้ใช้ใหม่: เพิ่มข้อมูลและตั้งสถานะเริ่มต้นเป็น Teacher (อนุมัติทันที)
+    sheet.appendRow([email, name, 'Teacher', 'approved', picture, now]);
+    return jsonResponse({ status: 'success', name: name, role: 'Teacher', picture: picture, email: email });
+
+  } catch (err) {
+    return jsonResponse({ status: 'error', message: 'การตรวจสอบสิทธิ์ล้มเหลว: ' + err.toString() });
+  }
+}
+
+// เชื่อมต่อบัญชี LINE LIFF เข้ากับระบบ
+function handleLinkLineAccount(email, lineId, name, picture) {
+  try {
+    const ss = getDB();
+    let sheet = ss.getSheetByName(CONFIG.USER_SHEET_NAME) || ss.insertSheet(CONFIG.USER_SHEET_NAME);
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['Email', 'Name', 'Role', 'Status', 'ProfilePicture', 'LastLogin', 'LineID']);
+      sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#f3f4f6');
+      sheet.setFrozenRows(1);
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const now = new Date();
+    
+    for (let i = 1; i < data.length; i++) {
+      if ((data[i][0] || '').toString().trim().toLowerCase() === (email || '').trim().toLowerCase()) {
+        const role = data[i][2] || 'Teacher';
+        const status = data[i][3];
+        const dbName = data[i][1];
+        const dbPicture = data[i][4];
+        
+        if (status === 'approved') {
+          sheet.getRange(i + 1, 7).setValue(lineId); // Col G = LineID
+          sheet.getRange(i + 1, 6).setValue(now);
+          return jsonResponse({ status: 'success', name: dbName || name, role: role, picture: dbPicture || picture, email: email, message: 'Linked successfully' });
+        } else if (status === 'banned') {
+          return jsonResponse({ status: 'error', message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อแอดมิน' });
+        } else {
+          return jsonResponse({ status: 'error', message: 'บัญชีของคุณกำลังรอการอนุมัติจากแอดมิน' });
+        }
+      }
+    }
+    
+    sheet.appendRow([email, name || 'LINE User', 'Teacher', 'approved', picture || '', now, lineId]);
+    return jsonResponse({ status: 'success', name: name || 'LINE User', role: 'Teacher', picture: picture || '', email: email, message: 'Registered and Linked successfully' });
+  } catch (e) {
+    return jsonResponse({ status: 'error', message: e.message });
+  }
+}
+
+// ดึงรายชื่ออีเมลและ LINE ID ของกลุ่ม Role ที่กำหนด
 function getContactsByRoles(targetRoles) {
   try {
     const db = getDB();
@@ -1076,6 +1093,7 @@ function getContactsByRoles(targetRoles) {
   }
 }
 
+// ดึงข้อมูลติดต่อของผู้แจ้ง (อีเมลและ LINE ID) จากชื่อผู้แจ้ง
 function getReporterContacts(name) {
   try {
     const db = getDB();
@@ -1099,161 +1117,51 @@ function getReporterContacts(name) {
     return { email: null, lineId: null };
   }
 }
-function createFlexMessageTemplate(altText, headerText, subjectText, color, detailsMap, buttonsArray, ticketId) {
-  const detailsContents = [];
-  detailsMap.forEach(item => {
-    if (item.value && item.value !== '-') {
-      detailsContents.push({
-        "type": "box", "layout": "baseline", "spacing": "sm", 
-        "contents": [
-          { "type": "text", "text": item.label, "color": "#aaaaaa", "size": "sm", "flex": item.flexLabel || 2 }, 
-          { "type": "text", "text": String(item.value), "wrap": true, "color": "#4b5563", "size": "sm", "flex": item.flexValue || 5 }
-        ]
-      });
-    }
-  });
 
-  let targetUrl = ticketId ? (CONFIG.WEB_APP_URL + (CONFIG.WEB_APP_URL.includes('?') ? '&' : '?') + 'ticketId=' + encodeURIComponent(ticketId)) : CONFIG.WEB_APP_URL;
-  if (targetUrl && targetUrl.startsWith('http') && !targetUrl.includes('openExternalBrowser')) {
-    targetUrl += (targetUrl.includes('?') ? '&' : '?') + 'openExternalBrowser=1';
-  }
-
-  const buttonsContents = [];
-  if (buttonsArray && buttonsArray.length > 0) {
-    buttonsArray.forEach((btn, index) => {
-      let btnUri = (btn.url && btn.url !== CONFIG.WEB_APP_URL) ? btn.url : targetUrl;
-      if (btnUri && btnUri.startsWith('http') && !btnUri.includes('openExternalBrowser')) {
-        btnUri += (btnUri.includes('?') ? '&' : '?') + 'openExternalBrowser=1';
-      }
-      const btnObj = {
-        "type": "button", "style": "primary", "color": btn.color || color,
-        "action": { "type": "uri", "label": btn.label, "uri": btnUri }
-      };
-      if (index > 0) btnObj.margin = "sm";
-      buttonsContents.push(btnObj);
-    });
-  } else {
-    buttonsContents.push({
-      "type": "button", "style": "primary", "color": color, 
-      "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": targetUrl }
-    });
-  }
-
-  return {
-    "type": "flex",
-    "altText": altText,
-    "contents": {
-      "type": "bubble",
-      "header": {
-        "type": "box", "layout": "vertical", "backgroundColor": color,
-        "contents": [{ "type": "text", "text": headerText, "weight": "bold", "color": "#ffffff", "size": "xl" }]
-      },
-      "body": {
-        "type": "box", "layout": "vertical", "spacing": "md",
-        "contents": [
-          { "type": "text", "text": subjectText, "weight": "bold", "size": "lg", "wrap": true, "color": "#1f2937" },
-          { "type": "separator", "margin": "md" },
-          ...detailsContents
-        ]
-      },
-      "footer": {
-        "type": "box", "layout": "vertical", "spacing": "sm",
-        "contents": buttonsContents
+// ค้นหาอีเมลของช่าง/ผู้ใช้จากชื่อ
+function getUserEmailByName(name) {
+  try {
+    const db = getDB();
+    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
+    if (!sheet) return null;
+    
+    const data = sheet.getDataRange().getValues();
+    const searchName = (name || '').toString().trim().toLowerCase();
+    
+    for (let i = 1; i < data.length; i++) {
+      const rowName = (data[i][1] || '').toString().trim().toLowerCase();
+      if (rowName === searchName && rowName !== '') {
+        const email = (data[i][0] || '').toString().trim();
+        if (email && email.includes('@')) return email;
       }
     }
-  };
-}
-
-function generateEmailHtml(title, color, reporter, loc, subject, detail) {
-  return `
-    <div style="font-family:sans-serif; max-width:600px; margin:0 auto; padding:20px; border:1px solid #e2e8f0; border-radius:12px;">
-      <h2 style="color:${color}; border-bottom:2px solid ${color}; padding-bottom:10px;">${title}</h2>
-      <p><strong>ผู้แจ้ง:</strong> ${reporter || '-'}</p>
-      ${loc ? `<p><strong>สถานที่:</strong> ${loc}</p>` : ''}
-      <p><strong>เรื่อง:</strong> ${subject || '-'}</p>
-      <p><strong>รายละเอียด/สถานะ:</strong> ${detail || '-'}</p>
-      <hr style="border:0; border-top:1px solid #e2e8f0; margin:20px 0;">
-      <p style="text-align:center; color:#64748b; font-size:12px;">FaCiLiTy System Notification</p>
-    </div>
-  `;
-}
-
-function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporterNameOverride) {
-  let targetRoles = [];
-  
-  if (taskType === 'project') {
-    targetRoles = ['admin', 'executive'];
-  } else if (taskType === 'bug') {
-    targetRoles = ['admin', 'executive'];
-  } else {
-    // building, it, av, av_repair
-    targetRoles = ['admin', 'executive', 'tech', 'av'];
-  }
-  
-  const contacts = getContactsByRoles(targetRoles);
-  let lineTargets = contacts.lineIds;
-  let emailTargets = contacts.emails;
-  
-  const reporterName = reporterNameOverride || dataObj?.reporter || dataObj?.borrower || null;
-  
-  if (reporterName) {
-    const reporter = getReporterContacts(reporterName);
-    if (reporter.lineId && (reporter.lineId.startsWith('U') || reporter.lineId.startsWith('C') || reporter.lineId.startsWith('R')) && !lineTargets.includes(reporter.lineId)) {
-      lineTargets.push(reporter.lineId);
-    }
-    if (reporter.email && reporter.email.includes('@') && !emailTargets.includes(reporter.email)) {
-      emailTargets.push(reporter.email);
-    }
-  }
-  
-  // รวม LINE Group หลักเข้าไปในรายการส่งเสมอ (หากเปิดใช้งาน)
-  if (typeof ENABLE_LINE_GROUP_NOTIFY !== 'undefined' && ENABLE_LINE_GROUP_NOTIFY && CONFIG.LINE_TARGET_ID && !CONFIG.LINE_TARGET_ID.includes("ใส่_")) {
-    const mainGroupId = CONFIG.LINE_TARGET_ID.trim();
-    if (!lineTargets.includes(mainGroupId)) {
-      lineTargets.push(mainGroupId);
-    }
-  }
-
-  // ปิด Broadcast ชั่วคราว ให้แจ้งเตือนเข้ากลุ่มอย่างเดียว
-  // if (!lineTargets.includes('BROADCAST')) { lineTargets.push('BROADCAST'); }
-  
-  if (lineTargets.length > 0 && lineMsg) {
-    sendLineMessage(lineMsg, lineTargets);
-  }
-  
-  if (emailTargets.length > 0 && emailTitle) {
-    const emailHtml = generateEmailHtml(
-      emailTitle, 
-      emailColor, 
-      reporterName, 
-      dataObj?.loc || null, 
-      dataObj?.subject || dataObj?.borrower || 'System Update', 
-      dataObj?.detail || dataObj?.status || 'มีการอัปเดตข้อมูล'
-    );
-    // sendEmailNotification(emailTitle, emailHtml, emailTargets);
+    return null;
+  } catch (e) {
+    return null;
   }
 }
 
-function deleteRowById(sheetName, idColIndex, idValue) {
-  const sheet = getDB().getSheetByName(sheetName);
-  if (!sheet) return;
-  const values = sheet.getDataRange().getValues();
-  for (let i = 1; i < values.length; i++) {
-    if (String(values[i][idColIndex]) === String(idValue)) {
-      sheet.deleteRow(i + 1);
-      break;
-    }
+// ค้นหา Line ID ของผู้ใช้จากชื่อ
+function getUserLineIdByName(name) {
+  try {
+    const contacts = getReporterContacts(name);
+    return contacts.lineId;
+  } catch (e) {
+    return null;
   }
 }
 
+// ============================================================================
+// 📊 หมวดที่ 7: ข้อมูลแดชบอร์ดและ Master Data (Dashboard & Master Internal)
+// ============================================================================
 function getDashboardDataInternal(monthStr) {
   const db = getDB();
   const bSheet   = db.getSheetByName(CONFIG.SHEET_NAME);
   const avSheet  = db.getSheetByName(CONFIG.AV_SHEET_NAME);
   const bugSheet = db.getSheetByName(CONFIG.BUG_SHEET_NAME);
-  const itSheet = db.getSheetByName(CONFIG.IT_SHEET_NAME);
+  const itSheet  = db.getSheetByName(CONFIG.IT_SHEET_NAME);
   const avRepSheet = db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME);
-  const projSheet = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
+  const projSheet  = db.getSheetByName(CONFIG.PROJECT_SHEET_NAME);
   
   const filterByMonth = (data) => {
     if (!monthStr) return data;
@@ -1354,18 +1262,7 @@ function getDashboardDataInternal(monthStr) {
 
 function getMasterDataInternal() {
   const db = getDB();
-  
-  let overdueDays = 3;
-  const sheetSettings = db.getSheetByName('Settings');
-  if (sheetSettings) {
-    const settingsData = sheetSettings.getDataRange().getValues();
-    for (let i = 1; i < settingsData.length; i++) {
-      if (settingsData[i][0] === 'overdue_days') {
-        overdueDays = parseInt(settingsData[i][1]) || 3;
-        break;
-      }
-    }
-  }
+  const overdueDays = parseInt(getSettingValue('overdue_days', 3)) || 3;
 
   return {
     locations: getSheetDataAsObjects(db, CONFIG.MASTER_LOC_SHEET),
@@ -1387,283 +1284,149 @@ function getSheetDataAsObjects(db, sheetName) {
   });
 }
 
-// ============================================================
-// ฟังก์ชันรัน 1 ครั้งเพื่อสร้างโฟลเดอร์ทั้งหมดล่วงหน้า
-// ── วิธีใช้: เลือกฟังก์ชันนี้ในหน้า Editor แล้วกด Run ──────
-// ============================================================
-function setupFolders() {
-  const f1 = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_REPORT);
-  const f2 = getOrCreateSubFolder(CONFIG.FOLDER_REPAIR_PROOF);
-  const f3 = getOrCreateSubFolder(CONFIG.FOLDER_DOCUMENTS);
-  const f4 = getOrCreateSubFolder(CONFIG.FOLDER_RECEIPTS);
-  const f5 = getOrCreateSubFolder(CONFIG.FOLDER_IT_REPORT);
-  const f6 = getOrCreateSubFolder(CONFIG.FOLDER_AV_REPAIR);
-  const f7 = getOrCreateSubFolder(CONFIG.FOLDER_PROJECTS);
-  Logger.log("สร้างโฟลเดอร์สำเร็จ:");
-  Logger.log("  - " + CONFIG.FOLDER_REPAIR_REPORT + "   " + f1.getId());
-  Logger.log("  - " + CONFIG.FOLDER_REPAIR_PROOF  + "   " + f2.getId());
-  Logger.log("  - " + CONFIG.FOLDER_DOCUMENTS     + "   " + f3.getId());
-  Logger.log("  - " + CONFIG.FOLDER_RECEIPTS      + "   " + f4.getId());
-  Logger.log("  - " + CONFIG.FOLDER_IT_REPORT     + "   " + f5.getId());
-  Logger.log("  - " + CONFIG.FOLDER_AV_REPAIR     + "   " + f6.getId());
-  Logger.log("  - " + CONFIG.FOLDER_PROJECTS      + "   " + f7.getId());
+// ============================================================================
+// 💬 หมวดที่ 8: ระบบแจ้งเตือน (LINE Messaging API & Email Notifications)
+// ============================================================================
+
+// สร้างเทมเพลต LINE Flex Message
+function createFlexMessageTemplate(altText, headerText, subjectText, color, detailsMap, buttonsArray, ticketId) {
+  const detailsContents = [];
+  if (Array.isArray(detailsMap)) {
+    detailsMap.forEach(item => {
+      if (item.value && item.value !== '-') {
+        detailsContents.push({
+          "type": "box", "layout": "baseline", "spacing": "sm", 
+          "contents": [
+            { "type": "text", "text": item.label, "color": "#aaaaaa", "size": "sm", "flex": item.flexLabel || 2 }, 
+            { "type": "text", "text": String(item.value), "wrap": true, "color": "#4b5563", "size": "sm", "flex": item.flexValue || 5 }
+          ]
+        });
+      }
+    });
+  }
+
+  let targetUrl = ticketId ? (CONFIG.WEB_APP_URL + (CONFIG.WEB_APP_URL.includes('?') ? '&' : '?') + 'ticketId=' + encodeURIComponent(ticketId)) : CONFIG.WEB_APP_URL;
+  if (targetUrl && targetUrl.startsWith('http') && !targetUrl.includes('openExternalBrowser')) {
+    targetUrl += (targetUrl.includes('?') ? '&' : '?') + 'openExternalBrowser=1';
+  }
+
+  const buttonsContents = [];
+  if (buttonsArray && buttonsArray.length > 0) {
+    buttonsArray.forEach((btn, index) => {
+      let btnUri = (btn.url && btn.url !== CONFIG.WEB_APP_URL) ? btn.url : targetUrl;
+      if (btnUri && btnUri.startsWith('http') && !btnUri.includes('openExternalBrowser')) {
+        btnUri += (btnUri.includes('?') ? '&' : '?') + 'openExternalBrowser=1';
+      }
+      const btnObj = {
+        "type": "button", "style": "primary", "color": btn.color || color,
+        "action": { "type": "uri", "label": btn.label, "uri": btnUri }
+      };
+      if (index > 0) btnObj.margin = "sm";
+      buttonsContents.push(btnObj);
+    });
+  } else {
+    buttonsContents.push({
+      "type": "button", "style": "primary", "color": color, 
+      "action": { "type": "uri", "label": "เปิดดูในระบบ", "uri": targetUrl }
+    });
+  }
+
+  return {
+    "type": "flex",
+    "altText": altText,
+    "contents": {
+      "type": "bubble",
+      "header": {
+        "type": "box", "layout": "vertical", "backgroundColor": color,
+        "contents": [{ "type": "text", "text": headerText, "weight": "bold", "color": "#ffffff", "size": "xl" }]
+      },
+      "body": {
+        "type": "box", "layout": "vertical", "spacing": "md",
+        "contents": [
+          { "type": "text", "text": subjectText, "weight": "bold", "size": "lg", "wrap": true, "color": "#1f2937" },
+          { "type": "separator", "margin": "md" },
+          ...detailsContents
+        ]
+      },
+      "footer": {
+        "type": "box", "layout": "vertical", "spacing": "sm",
+        "contents": buttonsContents
+      }
+    }
+  };
 }
 
-
-// ============================================================
-// Google OAuth Login
-// ============================================================
-function handleGoogleLogin(credential) {
-  try {
-    const url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + credential;
-    const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-    
-    if (res.getResponseCode() !== 200) {
-      throw new Error("Invalid Token");
-    }
-
-    const payload = JSON.parse(res.getContentText());
-    
-    if (payload.aud !== CLIENT_ID) {
-      throw new Error("Invalid Client ID");
-    }
-
-    const email = payload.email;
-    const name = payload.name;
-    const picture = payload.picture;
-
-    const ss = getDB();
-    let sheet = ss.getSheetByName(CONFIG.USER_SHEET_NAME);
-    
-    if (!sheet) {
-      sheet = ss.insertSheet('Users');
-      sheet.appendRow(['Email', 'Name', 'Role', 'Status', 'ProfilePicture', 'LastLogin']);
-      sheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#f3f4f6');
-      sheet.setFrozenRows(1);
-    }
-
-    const data = sheet.getDataRange().getValues();
-    const now = new Date();
-
-    for (let i = 1; i < data.length; i++) {
-      if ((data[i][0] || '').toString().trim().toLowerCase() === (email || '').trim().toLowerCase()) {
-        const role = data[i][2] || 'Teacher';
-        const status = data[i][3];
-
-        if (status === 'approved') {
-          sheet.getRange(i + 1, 5, 1, 2).setValues([[picture, now]]);
-          
-          return ContentService.createTextOutput(JSON.stringify({
-            status: 'success',
-            name: data[i][1] || name,
-            role: role,
-            picture: picture,
-            email: email
-          })).setMimeType(ContentService.MimeType.JSON);
-
-        } else if (status === 'banned') {
-          return ContentService.createTextOutput(JSON.stringify({ 
-            status: 'error', 
-            message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อแอดมิน' 
-          })).setMimeType(ContentService.MimeType.JSON);
+// ตรวจสอบและทำความสะอาด Flex Message ป้องกัน LINE API เกิด Error จากค่าว่าง
+function sanitizeFlexPayload(obj) {
+  if (Array.isArray(obj)) {
+    obj.forEach(sanitizeFlexPayload);
+  } else if (typeof obj === 'object' && obj !== null) {
+    for (let key in obj) {
+      if (key === 'text' || key === 'altText') {
+        if (obj[key] === undefined || obj[key] === null || obj[key] === '') {
+          obj[key] = '-';
         } else {
-          return ContentService.createTextOutput(JSON.stringify({ 
-            status: 'error', 
-            message: 'บัญชีของคุณกำลังรอการอนุมัติจากแอดมิน' 
-          })).setMimeType(ContentService.MimeType.JSON);
+          obj[key] = String(obj[key]);
         }
+      } else {
+        sanitizeFlexPayload(obj[key]);
       }
     }
-
-    sheet.appendRow([email, name, 'Teacher', 'approved', picture, now]);
-    
-    return ContentService.createTextOutput(JSON.stringify({ 
-      status: 'success', 
-      name: name,
-      role: 'Teacher',
-      picture: picture,
-      email: email
-    })).setMimeType(ContentService.MimeType.JSON);
-
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ 
-      status: 'error', 
-      message: 'การตรวจสอบสิทธิ์ล้มเหลว: ' + err.toString() 
-    })).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-// ============================================================
-// Notification Helpers
-// ============================================================
-function sendEmailNotification(subject, bodyHtml, targetEmails) {
-  return; // ปิดการแจ้งเตือนอีเมลชั่วคราว
-  try {
-    let finalEmails = [];
-    
-    if (targetEmails && Array.isArray(targetEmails) && targetEmails.length > 0) {
-      finalEmails = targetEmails;
-    } else {
-      const db = getDB();
-      const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
-      if (!sheet) return;
-      
-      const data = sheet.getDataRange().getValues();
-      for (let i = 1; i < data.length; i++) {
-        const email = (data[i][0] || '').toString().trim();
-        const role = (data[i][2] || '').toString().trim().toLowerCase();
-        
-        if (role === 'admin' || role === 'staff' || role === 'technician' || role === 'tech' || role === 'executive') {
-          if (email && email.includes('@')) {
-            finalEmails.push(email);
-          }
-        }
-      }
+// สร้างรูปแบบ HTML สำหรับส่งอีเมลแจ้งเตือน
+function generateEmailHtml(title, color, reporter, loc, subject, detail) {
+  return `
+    <div style="font-family:sans-serif; max-width:600px; margin:0 auto; padding:20px; border:1px solid #e2e8f0; border-radius:12px;">
+      <h2 style="color:${color}; border-bottom:2px solid ${color}; padding-bottom:10px;">${title}</h2>
+      <p><strong>ผู้แจ้ง:</strong> ${reporter || '-'}</p>
+      ${loc ? `<p><strong>สถานที่:</strong> ${loc}</p>` : ''}
+      <p><strong>เรื่อง:</strong> ${subject || '-'}</p>
+      <p><strong>รายละเอียด/สถานะ:</strong> ${detail || '-'}</p>
+      <hr style="border:0; border-top:1px solid #e2e8f0; margin:20px 0;">
+      <p style="text-align:center; color:#64748b; font-size:12px;">FaCiLiTy System Notification</p>
+    </div>
+  `;
+}
+
+// ศูนย์กลางสั่งกระจายแจ้งเตือน (รวบรวมผู้รับทั้งรายบุคคลและ LINE กลุ่มหลัก)
+function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporterNameOverride) {
+  let targetRoles = [];
+  
+  if (taskType === 'project' || taskType === 'bug') {
+    targetRoles = ['admin', 'executive'];
+  } else {
+    // building, it, av, av_repair
+    targetRoles = ['admin', 'executive', 'tech', 'av'];
+  }
+  
+  const contacts = getContactsByRoles(targetRoles);
+  let lineTargets = contacts.lineIds;
+  
+  const reporterName = reporterNameOverride || dataObj?.reporter || dataObj?.borrower || null;
+  if (reporterName) {
+    const reporter = getReporterContacts(reporterName);
+    if (reporter.lineId && (reporter.lineId.startsWith('U') || reporter.lineId.startsWith('C') || reporter.lineId.startsWith('R')) && !lineTargets.includes(reporter.lineId)) {
+      lineTargets.push(reporter.lineId);
     }
-    
-    // Remove duplicates
-    finalEmails = [...new Set(finalEmails)];
-    
-    if (finalEmails.length > 0) {
-      // MailApp block disabled
+  }
+  
+  // รวม LINE Group หลักเข้าไปในรายการส่งเสมอ (หากเปิดใช้งาน)
+  if (ENABLE_LINE_GROUP_NOTIFY && CONFIG.LINE_TARGET_ID && !CONFIG.LINE_TARGET_ID.includes("ใส่_")) {
+    const mainGroupId = CONFIG.LINE_TARGET_ID.trim();
+    if (!lineTargets.includes(mainGroupId)) {
+      lineTargets.push(mainGroupId);
     }
-  } catch(e) {
-    Logger.log("Email error: " + e.message);
+  }
+
+  // ส่งข้อความแจ้งเตือนผ่าน LINE
+  if (lineTargets.length > 0 && lineMsg) {
+    sendLineMessage(lineMsg, lineTargets);
   }
 }
 
-function getUserEmailByName(name) {
-  try {
-    const db = getDB();
-    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
-    if (!sheet) return null;
-    
-    const data = sheet.getDataRange().getValues();
-    const searchName = (name || '').toString().trim().toLowerCase();
-    
-    for (let i = 1; i < data.length; i++) {
-      const sheetName = (data[i][1] || '').toString().trim().toLowerCase();
-      if (sheetName === searchName && sheetName !== '') { // Column 1 = Name
-        const email = (data[i][0] || '').toString().trim(); // Column 0 = Email
-        if (email && email.includes('@')) {
-          return email;
-        }
-      }
-    }
-    return null;
-  } catch (e) {
-    return null;
-  }
-}
-
-// ค้นหา Line ID ของผู้แจ้งจากชื่อ
-function getUserLineIdByName(name) {
-  try {
-    const db = getDB();
-    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
-    if (!sheet) return null;
-    
-    const data = sheet.getDataRange().getValues();
-    const searchName = (name || '').toString().trim().toLowerCase();
-    
-    for (let i = 1; i < data.length; i++) {
-      const sheetName = (data[i][1] || '').toString().trim().toLowerCase();
-      if (sheetName === searchName && sheetName !== '') { 
-        const lineId = (data[i][6] || '').toString().trim(); // Column G (6) = LineID
-        if (lineId && (lineId.startsWith('U') || lineId.startsWith('C') || lineId.startsWith('R'))) {
-          return lineId;
-        }
-      }
-    }
-    return null;
-  } catch (e) {
-    return null;
-  }
-}
-
-// ดึง Line ID ตาม Role ที่กำหนด
-function getLineIdsByRoles(targetRoles) {
-  try {
-    const db = getDB();
-    const sheet = db.getSheetByName(CONFIG.USER_SHEET_NAME);
-    if (!sheet) return [];
-    
-    const data = sheet.getDataRange().getValues();
-    let lineIds = [];
-    
-    for (let i = 1; i < data.length; i++) {
-      const role = (data[i][2] || '').toString().trim().toLowerCase();
-      const status = (data[i][3] || '').toString().trim().toLowerCase();
-      if (status === 'approved' && targetRoles.includes(role)) {
-        const lineId = (data[i][6] || '').toString().trim();
-        if (lineId && (lineId.startsWith('U') || lineId.startsWith('C') || lineId.startsWith('R'))) {
-          lineIds.push(lineId);
-        }
-      }
-    }
-    return [...new Set(lineIds)]; // ตัดค่าซ้ำ
-  } catch (e) {
-    return [];
-  }
-}
-
-function handleLinkLineAccount(email, lineId, name, picture) {
-  try {
-    const ss = getDB();
-    let sheet = ss.getSheetByName(CONFIG.USER_SHEET_NAME);
-    
-    if (!sheet) {
-      sheet = ss.insertSheet('Users');
-      sheet.appendRow(['Email', 'Name', 'Role', 'Status', 'ProfilePicture', 'LastLogin', 'LineID']);
-      sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#f3f4f6');
-      sheet.setFrozenRows(1);
-    }
-    
-    const data = sheet.getDataRange().getValues();
-    const now = new Date();
-    
-    for (let i = 1; i < data.length; i++) {
-      if ((data[i][0] || '').toString().trim().toLowerCase() === (email || '').trim().toLowerCase()) {
-        const role = data[i][2] || 'Teacher';
-        const status = data[i][3];
-        const dbName = data[i][1];
-        const dbPicture = data[i][4];
-        
-        if (status === 'approved') {
-          sheet.getRange(i + 1, 7).setValue(lineId); // Column G (7) = LineID
-          sheet.getRange(i + 1, 6).setValue(now); // Update LastLogin
-          return ContentService.createTextOutput(JSON.stringify({ 
-            status: 'success', 
-            name: dbName || name,
-            role: role,
-            picture: dbPicture || picture,
-            email: email,
-            message: 'Linked successfully' 
-          })).setMimeType(ContentService.MimeType.JSON);
-        } else if (status === 'banned') {
-          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อแอดมิน' })).setMimeType(ContentService.MimeType.JSON);
-        } else {
-          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'บัญชีของคุณกำลังรอการอนุมัติจากแอดมิน' })).setMimeType(ContentService.MimeType.JSON);
-        }
-      }
-    }
-    
-    // ไม่พบบัญชี -> ลงทะเบียนใหม่อัตโนมัติเหมือน Google Login
-    sheet.appendRow([email, name || 'LINE User', 'Teacher', 'approved', picture || '', now, lineId]);
-    
-    return ContentService.createTextOutput(JSON.stringify({ 
-      status: 'success', 
-      name: name || 'LINE User',
-      role: 'Teacher',
-      picture: picture || '',
-      email: email,
-      message: 'Registered and Linked successfully' 
-    })).setMimeType(ContentService.MimeType.JSON);
-  } catch (e) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: e.message })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
+// ส่งข้อความผ่าน LINE Messaging API (รองรับทั้งผู้ใช้รายคน, กลุ่ม และ Broadcast)
 function sendLineMessage(message, targetId) {
   try {
     if (!CONFIG.LINE_CHANNEL_ACCESS_TOKEN || CONFIG.LINE_CHANNEL_ACCESS_TOKEN.includes("ใส่_")) return;
@@ -1675,12 +1438,12 @@ function sendLineMessage(message, targetId) {
       rawTargets = [targetId.trim()];
     }
 
-    // รวม LINE_TARGET_ID (กลุ่มหลัก) เข้าไปด้วยเสมอหากตั้งค่าไว้
-    if (typeof ENABLE_LINE_GROUP_NOTIFY !== "undefined" && ENABLE_LINE_GROUP_NOTIFY && CONFIG.LINE_TARGET_ID && !CONFIG.LINE_TARGET_ID.includes("ใส่_")) {
+    // รวม LINE_TARGET_ID (กลุ่มหลัก) เข้าไปด้วยเสมอหากเปิดใช้งาน
+    if (ENABLE_LINE_GROUP_NOTIFY && CONFIG.LINE_TARGET_ID && !CONFIG.LINE_TARGET_ID.includes("ใส่_")) {
       rawTargets.push(CONFIG.LINE_TARGET_ID.trim());
     }
 
-    // คัดเฉพาะ ID ที่ไม่ว่างเปล่าและลบค่าซ้ำ
+    // คัดเฉพาะ ID ที่ไม่ว่างเปล่าและตัดค่าซ้ำ
     const validTargets = [...new Set(rawTargets.filter(id => typeof id === 'string' && id.trim() !== ''))];
     if (validTargets.length === 0) return;
 
@@ -1689,32 +1452,14 @@ function sendLineMessage(message, targetId) {
       "Authorization": "Bearer " + CONFIG.LINE_CHANNEL_ACCESS_TOKEN
     };
 
-    // แยกประเภท User IDs (U...) กับ Group/Room IDs (C... หรือ R...)
-    
     let allResponses = [];
     const isBroadcast = validTargets.includes('BROADCAST');
     const msgPayload = typeof message === 'string' ? { "type": "text", "text": message } : message;
 
-    // Sanitize Flex Message to prevent Line API crashes (empty strings or non-string values)
-    function sanitizeFlex(obj) {
-      if (Array.isArray(obj)) {
-        obj.forEach(sanitizeFlex);
-      } else if (typeof obj === 'object' && obj !== null) {
-        for (let key in obj) {
-          if (key === 'text' || key === 'altText') {
-            if (obj[key] === undefined || obj[key] === null || obj[key] === '') {
-              obj[key] = '-';
-            } else {
-              obj[key] = String(obj[key]);
-            }
-          } else {
-            sanitizeFlex(obj[key]);
-          }
-        }
-      }
-    }
-    sanitizeFlex(msgPayload);
+    // ตรวจสอบความถูกต้องของ Flex Message
+    sanitizeFlexPayload(msgPayload);
 
+    // ── 1. กรณี Broadcast ──────────────────────────────────────────────
     if (isBroadcast) {
       try {
         const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/broadcast", {
@@ -1729,42 +1474,14 @@ function sendLineMessage(message, targetId) {
       }
     }
 
-    // ถ้า Broadcast แล้ว ไม่ต้องส่งหา User ส่วนตัวทีละคนอีก (ป้องกันการส่งซ้ำ)
+    // ── 2. ส่งรายบุคคล (User ID ขึ้นต้นด้วย U) ──────────────────────────
     const userIds = isBroadcast ? [] : validTargets.filter(id => id.startsWith('U') && id !== 'BROADCAST');
-  
-    // ส่วน Group (C... หรือ R...) ต้องส่งแยกเสมอ เพราะ Broadcast ไม่เข้ากลุ่ม!
-    const groupIds = validTargets.filter(id => !id.startsWith('U') && id !== 'BROADCAST');
-
-    // Sanitize Flex Message to prevent Line API crashes (empty strings or non-string values)
-    function sanitizeFlex(obj) {
-      if (Array.isArray(obj)) {
-        obj.forEach(sanitizeFlex);
-      } else if (typeof obj === 'object' && obj !== null) {
-        for (let key in obj) {
-          if (key === 'text' || key === 'altText') {
-            if (obj[key] === undefined || obj[key] === null || obj[key] === '') {
-              obj[key] = '-';
-            } else {
-              obj[key] = String(obj[key]);
-            }
-          } else {
-            sanitizeFlex(obj[key]);
-          }
-        }
-      }
-    }
-    sanitizeFlex(msgPayload);
-
-    // 1. ส่งถึง User IDs (ใช้ multicast ถ้ามีหลายคน หรือ push ถ้ามีคนเดียว)
     if (userIds.length > 0) {
       if (userIds.length === 1) {
         const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
           method: "post",
           headers: headers,
-          payload: JSON.stringify({
-            "to": userIds[0],
-            "messages": [msgPayload]
-          }),
+          payload: JSON.stringify({ "to": userIds[0], "messages": [msgPayload] }),
           muteHttpExceptions: true
         });
         allResponses.push(`[Push User] ${res.getResponseCode()}: ${res.getContentText()}`);
@@ -1774,10 +1491,7 @@ function sendLineMessage(message, targetId) {
           const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/multicast", {
             method: "post",
             headers: headers,
-            payload: JSON.stringify({
-              "to": chunk,
-              "messages": [msgPayload]
-            }),
+            payload: JSON.stringify({ "to": chunk, "messages": [msgPayload] }),
             muteHttpExceptions: true
           });
           allResponses.push(`[Multicast Users] ${res.getResponseCode()}: ${res.getContentText()}`);
@@ -1785,32 +1499,27 @@ function sendLineMessage(message, targetId) {
       }
     }
 
-    // 2. ส่งถึง Group/Room IDs (ผ่าน push เป็นรายกลุ่ม)
+    // ── 3. ส่งเข้ากลุ่ม (Group ID ขึ้นต้นด้วย C หรือ Room ID ขึ้นต้นด้วย R) ──
+    const groupIds = validTargets.filter(id => !id.startsWith('U') && id !== 'BROADCAST');
     for (const gid of groupIds) {
       const res = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
         method: "post",
         headers: headers,
-        payload: JSON.stringify({
-          "to": gid,
-          "messages": [msgPayload]
-        }),
+        payload: JSON.stringify({ "to": gid, "messages": [msgPayload] }),
         muteHttpExceptions: true
       });
       allResponses.push(`[Push Group] ${res.getResponseCode()}: ${res.getContentText()}`);
     }
     
-    // ==========================================
-    // เขียน Logs ลงชีต "Logs" เพื่อการตรวจสอบ
-    // ==========================================
+    // ── บันทึกประวัติการส่งลงแท็บ Logs ใน Google Sheets ─────────────────
     try {
       const db = getDB();
-      let logSheet = db.getSheetByName('Logs');
-      if (!logSheet) {
-        logSheet = db.insertSheet('Logs');
+      let logSheet = db.getSheetByName('Logs') || db.insertSheet('Logs');
+      if (logSheet.getLastRow() === 0) {
         logSheet.appendRow(['Timestamp', 'Action', 'Targets', 'Responses', 'Message']);
         logSheet.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#f3f4f6');
       }
-      logSheet.appendRow([new Date(), 'LINE API', JSON.stringify(validTargets), allResponses.join(' | '), message]);
+      logSheet.appendRow([new Date(), 'LINE API', JSON.stringify(validTargets), allResponses.join(' | '), typeof message === 'string' ? message : JSON.stringify(message)]);
     } catch (logErr) {
       Logger.log("Failed to write log: " + logErr.message);
     }
@@ -1819,216 +1528,65 @@ function sendLineMessage(message, targetId) {
     Logger.log("Line Messaging API Error: " + e.message);
     try {
       const db = getDB();
-      let logSheet = db.getSheetByName('Logs');
-      if (!logSheet) { logSheet = db.insertSheet('Logs'); }
+      let logSheet = db.getSheetByName('Logs') || db.insertSheet('Logs');
       logSheet.appendRow([new Date(), 'LINE API ERROR', '', e.message, '']);
     } catch (logErr) {}
   }
 }
 
-// ============================================================
-// ฟังก์ชันตรวจสอบงานค้าง (Overdue Tasks)
-// ── วิธีใช้: ให้ตั้ง Time-driven Trigger รันฟังก์ชันนี้ทุกวัน ──────
-// ============================================================
-function checkOverdueTasks() {
-  const db = getDB();
-  
-  // 1. ดึงการตั้งค่า Overdue Days
-  let overdueDays = 3;
-  const sheetSettings = db.getSheetByName('Settings');
-  if (sheetSettings) {
-    const settingsData = sheetSettings.getDataRange().getValues();
-    for (let i = 1; i < settingsData.length; i++) {
-      if (settingsData[i][0] === 'overdue_days') {
-        overdueDays = parseInt(settingsData[i][1]) || 3;
-        break;
-      }
-    }
-  }
+// ============================================================================
+// ⏰ หมวดที่ 9: ระบบตรวจสอบงานค้างและการตั้งเวลาอัตโนมัติ (Overdue Tasks & Triggers)
+// ============================================================================
 
-  const now = new Date();
-  now.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเพื่อเปรียบเทียบแค่วันที่
-
-  // 2. เช็คงานซ่อม
-  const repSheet = db.getSheetByName(CONFIG.SHEET_NAME);
-  if (repSheet) {
-    const repData = repSheet.getDataRange().getValues();
-    let overdueCount = 0;
-    
-    for (let i = 1; i < repData.length; i++) {
-      const status = (repData[i][4] || '').toString().trim();
-      if (status === 'รอดำเนินการ') {
-        const dateStr = (repData[i][0] || '').toString().split(' ')[0]; // dd/MM/yyyy
-        if (dateStr) {
-          const parts = dateStr.split('/');
-          if (parts.length === 3) {
-            const taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-            taskDate.setHours(0, 0, 0, 0);
-            const diffTime = Math.abs(now - taskDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            
-            if (diffDays >= overdueDays) {
-              overdueCount++;
-            }
-          }
-        }
-      }
-    }
-    
-    if (overdueCount > 0) {
-      const msg = {
-        "type": "flex",
-        "altText": `แจ้งเตือน: มีงานซ่อมค้างเกินกำหนด ${overdueCount} งาน`,
-        "contents": {
-          "type": "bubble",
-          "header": {
-            "type": "box",
-            "layout": "vertical",
-            "backgroundColor": "#dc2626",
-            "contents": [
-              { "type": "text", "text": "⚠️ แจ้งเตือนงานค้าง (ซ่อม)", "weight": "bold", "color": "#ffffff", "size": "lg" }
-            ]
-          },
-          "body": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "md",
-            "contents": [
-              { "type": "text", "text": `มีงานซ่อมค้างสถานะ "รอดำเนินการ" เกิน ${overdueDays} วัน จำนวน ${overdueCount} งาน`, "wrap": true, "color": "#1f2937", "size": "md" },
-              { "type": "text", "text": "กรุณาเข้าสู่ระบบเพื่อตรวจสอบและจัดสรรงาน", "wrap": true, "color": "#6b7280", "size": "sm" }
-            ]
-          },
-          "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": CONFIG.WEB_APP_URL } }
-            ]
-          }
-        }
-      };
-      notifyTask('building', msg, 'แจ้งเตือนงานเกินกำหนด', '#f43f5e', null, null);
-    }
-  }
-
-  // 3. เช็คงานโสตฯ
-  const avSheet = db.getSheetByName(CONFIG.AV_SHEET_NAME);
-  if (avSheet) {
-    const avData = avSheet.getDataRange().getValues();
-    let avOverdueCount = 0;
-    
-    for (let i = 1; i < avData.length; i++) {
-      const status = (avData[i][5] || '').toString().trim();
-      if (status === 'รอยืนยันการยืม') {
-        const dateStr = (avData[i][0] || '').toString().split(' ')[0]; // dd/MM/yyyy
-        if (dateStr) {
-          const parts = dateStr.split('/');
-          if (parts.length === 3) {
-            const taskDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-            taskDate.setHours(0, 0, 0, 0);
-            const diffTime = Math.abs(now - taskDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            
-            if (diffDays >= overdueDays) {
-              avOverdueCount++;
-            }
-          }
-        }
-      }
-    }
-    
-    if (avOverdueCount > 0) {
-      const msg = {
-        "type": "flex",
-        "altText": `แจ้งเตือน: มีรายการยืมโสตฯค้างเกินกำหนด ${avOverdueCount} รายการ`,
-        "contents": {
-          "type": "bubble",
-          "header": {
-            "type": "box",
-            "layout": "vertical",
-            "backgroundColor": "#dc2626",
-            "contents": [
-              { "type": "text", "text": "⚠️ แจ้งเตือนงานค้าง (โสตฯ)", "weight": "bold", "color": "#ffffff", "size": "lg" }
-            ]
-          },
-          "body": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "md",
-            "contents": [
-              { "type": "text", "text": `มีงานโสตฯค้างสถานะ "รอยืนยันการยืม" เกิน ${overdueDays} วัน จำนวน ${avOverdueCount} งาน`, "wrap": true, "color": "#1f2937", "size": "md" },
-              { "type": "text", "text": "กรุณาเข้าสู่ระบบเพื่อตรวจสอบ", "wrap": true, "color": "#6b7280", "size": "sm" }
-            ]
-          },
-          "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-              { "type": "button", "style": "primary", "color": "#dc2626", "action": { "type": "uri", "label": "เข้าสู่ระบบ", "uri": CONFIG.WEB_APP_URL } }
-            ]
-          }
-        }
-      };
-      notifyTask('building', msg, 'แจ้งเตือนงานเกินกำหนด', '#f43f5e', null, null);
-    }
-  }
-}
-
-// ============================================================
-// Phase B: ฟังก์ชันตัวช่วยนับงานค้าง (helper) + refactored checkOverdueTasks
-// + setupDailyTrigger / removeDailyTrigger
-// ============================================================
-
+// ฟังก์ชันตัวช่วยนับงานค้างตามจำนวนวันที่กำหนด
 function _countOverdueTasks(sheet, statusCol, pendingStatuses, overdueDays) {
   if (!sheet) return 0;
-  var data = sheet.getDataRange().getValues();
-  var now = new Date();
+  const data = sheet.getDataRange().getValues();
+  const now = new Date();
   now.setHours(0, 0, 0, 0);
-  var count = 0;
-  for (var i = 1; i < data.length; i++) {
-    var status = (data[i][statusCol] || '').toString().trim();
+  let count = 0;
+  for (let i = 1; i < data.length; i++) {
+    const status = (data[i][statusCol] || '').toString().trim();
     if (pendingStatuses.indexOf(status) < 0) continue;
-    var dateStr = (data[i][0] || '').toString().split(' ')[0];
+    const dateStr = (data[i][0] || '').toString().split(' ')[0];
     if (!dateStr) continue;
-    var parts = dateStr.split('/');
+    const parts = dateStr.split('/');
     if (parts.length !== 3) continue;
-    var taskDate = new Date(parts[2] + '-' + parts[1] + '-' + parts[0]);
+    const taskDate = new Date(parts[2] + '-' + parts[1] + '-' + parts[0]);
     if (isNaN(taskDate.getTime())) continue;
     taskDate.setHours(0, 0, 0, 0);
-    var diffDays = Math.round((now - taskDate) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round((now - taskDate) / (1000 * 60 * 60 * 24));
     if (diffDays >= overdueDays) count++;
   }
   return count;
 }
 
+// ตรวจสอบงานค้างทั้งหมดและส่งแจ้งเตือนเข้า LINE กลุ่ม
 function checkOverdueTasksV2() {
-  var db = getDB();
-  var overdueDays = 3;
-  var sheetSettings = db.getSheetByName('Settings');
-  if (sheetSettings) {
-    var settingsData = sheetSettings.getDataRange().getValues();
-    for (var s = 1; s < settingsData.length; s++) {
-      if (settingsData[s][0] === 'overdue_days') {
-        overdueDays = parseInt(settingsData[s][1]) || 3;
-        break;
-      }
-    }
+  const db = getDB();
+  const overdueDays = parseInt(getSettingValue('overdue_days', 3)) || 3;
+  const pendingAll = ['รอดำเนินการ', 'กำลังดำเนินการ', 'กำลังแก้ไข'];
+
+  const repCount   = _countOverdueTasks(db.getSheetByName(CONFIG.SHEET_NAME),           4, ['รอดำเนินการ'], overdueDays);
+  const avCount    = _countOverdueTasks(db.getSheetByName(CONFIG.AV_SHEET_NAME),         5, ['รอยืนยันการยืม'], overdueDays);
+  const itCount    = _countOverdueTasks(db.getSheetByName(CONFIG.IT_SHEET_NAME),         4, pendingAll, overdueDays);
+  const avRepCount = _countOverdueTasks(db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME),  4, pendingAll, overdueDays);
+  const projCount  = _countOverdueTasks(db.getSheetByName(CONFIG.PROJECT_SHEET_NAME),    4, pendingAll, overdueDays);
+  const totalOverdue = repCount + avCount + itCount + avRepCount + projCount;
+
+  if (totalOverdue === 0) {
+    Logger.log('checkOverdueTasksV2: ไม่มีงานค้าง');
+    return;
   }
-  var pendingAll = ['รอดำเนินการ', 'กำลังดำเนินการ', 'กำลังแก้ไข'];
-  var repCount   = _countOverdueTasks(db.getSheetByName(CONFIG.SHEET_NAME),           4, ['รอดำเนินการ'], overdueDays);
-  var avCount    = _countOverdueTasks(db.getSheetByName(CONFIG.AV_SHEET_NAME),         5, ['รอยืนยันการยืม'], overdueDays);
-  var itCount    = _countOverdueTasks(db.getSheetByName(CONFIG.IT_SHEET_NAME),         4, pendingAll, overdueDays);
-  var avRepCount = _countOverdueTasks(db.getSheetByName(CONFIG.AV_REPAIR_SHEET_NAME),  4, pendingAll, overdueDays);
-  var projCount  = _countOverdueTasks(db.getSheetByName(CONFIG.PROJECT_SHEET_NAME),    4, pendingAll, overdueDays);
-  var totalOverdue = repCount + avCount + itCount + avRepCount + projCount;
-  if (totalOverdue === 0) { Logger.log('checkOverdueTasksV2: ไม่มีงานค้าง'); return; }
-  var details = [];
+
+  const details = [];
   if (repCount   > 0) details.push({ label: '🏢 ซ่อมอาคาร', value: repCount   + ' งาน' });
   if (avCount    > 0) details.push({ label: '🎤 ยืมโสตฯ',   value: avCount    + ' งาน' });
   if (itCount    > 0) details.push({ label: '💻 ซ่อมไอที',  value: itCount    + ' งาน' });
   if (avRepCount > 0) details.push({ label: '🔧 ซ่อมโสตฯ', value: avRepCount + ' งาน' });
   if (projCount  > 0) details.push({ label: '🏗️ โครงการ',   value: projCount  + ' งาน' });
-  var overdueMsg = createFlexMessageTemplate(
+
+  const overdueMsg = createFlexMessageTemplate(
     'แจ้งเตือน: มีงานค้าง ' + totalOverdue + ' รายการ',
     '🔔 แจ้งเตือนงานค้างประจำวัน',
     'มีงานค้างเกิน ' + overdueDays + ' วัน รวม ' + totalOverdue + ' รายการ',
@@ -2036,30 +1594,36 @@ function checkOverdueTasksV2() {
     details,
     [{ label: '👉 เข้าสู่ระบบเพื่อตรวจสอบ', url: CONFIG.WEB_APP_URL, color: '#dc2626' }]
   );
+
   notifyTask('building', overdueMsg, '🔔 งานค้าง ' + totalOverdue + ' รายการ (เกิน ' + overdueDays + ' วัน)', '#dc2626', null, null);
-  Logger.log('checkOverdueTasksV2: แจ้งเตือนงานค้าง ' + totalOverdue + ' รายการ');
+  Logger.log('checkOverdueTasksV2: แจ้งเตือนงานค้าง ' + totalOverdue + ' รายการ เรียบร้อย');
 }
 
+// Wrapper ให้ฟังก์ชันเดิมชี้มาที่ V2 เสมอ ป้องกัน Trigger เดิมทำงานผิดพลาด
+function checkOverdueTasks() {
+  return checkOverdueTasksV2();
+}
+
+// ตั้งค่า Trigger อัตโนมัติ รันตรวจงานค้างทุกวันเวลา 07:00 น.
 function setupDailyTrigger() {
-  ScriptApp.getProjectTriggers().forEach(function(t) {
-    if (t.getHandlerFunction() === 'checkOverdueTasksV2') ScriptApp.deleteTrigger(t);
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'checkOverdueTasksV2' || t.getHandlerFunction() === 'checkOverdueTasks') {
+      ScriptApp.deleteTrigger(t);
+    }
   });
   ScriptApp.newTrigger('checkOverdueTasksV2').timeBased().everyDays(1).atHour(7).create();
   Logger.log('setupDailyTrigger: Trigger ตั้งเวลา - รันทุกวัน 07:00 น.');
   SpreadsheetApp.getUi().alert('✅ ตั้งค่า Trigger สำเร็จ!\nระบบจะแจ้งเตือนงานค้างทุกวันเวลา 07:00 น. ผ่าน LINE');
 }
 
+// ลบ Trigger งานค้างทั้งหมด
 function removeDailyTrigger() {
-  var count = 0;
-  ScriptApp.getProjectTriggers().forEach(function(t) {
-    if (t.getHandlerFunction() === 'checkOverdueTasksV2') { ScriptApp.deleteTrigger(t); count++; }
+  let count = 0;
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'checkOverdueTasksV2' || t.getHandlerFunction() === 'checkOverdueTasks') {
+      ScriptApp.deleteTrigger(t);
+      count++;
+    }
   });
   Logger.log('removeDailyTrigger: ลบ trigger ' + count + ' รายการ');
 }
-
-
-
-
-
-
-
