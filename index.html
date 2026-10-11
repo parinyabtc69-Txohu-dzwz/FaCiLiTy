@@ -6524,8 +6524,8 @@ const TrackUI = (() => {
       const userCanDelete = canDeleteJob(j);
 
       return `
-      <button onclick="TrackUI.open('${j.id}')" id="track-item-${j.id}"
-        class="w-full text-left px-4 py-3.5 rounded-2xl border ${mine ? 'border-[#265D5A]/40 bg-[#F3FCFA]' : 'border-slate-200/90 bg-white'} hover:border-[#265D5A]/50 hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5 transition-all group shadow-sm flex flex-col md:flex-row md:items-center gap-2 md:gap-4 cursor-pointer">
+      <div onclick="TrackUI.open('${j.id}')" role="button" tabindex="0" id="track-item-${j.id}"
+        class="w-full text-left px-4 py-3.5 rounded-2xl border ${mine ? 'border-[#265D5A]/40 bg-[#F3FCFA]' : 'border-slate-200/90 bg-white'} hover:border-[#265D5A]/50 hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5 transition-all group shadow-sm flex flex-col md:flex-row md:items-center gap-2 md:gap-4 cursor-pointer select-none">
         
         <!-- ฝั่งซ้าย: จุดสถานะ, รหัสงาน, ป้ายประเภท, ป้ายงานของฉัน -->
         <div class="flex items-center gap-2.5 shrink-0">
@@ -6544,18 +6544,18 @@ const TrackUI = (() => {
         </div>
 
         <!-- ฝั่งขวา: สลับระหว่าง [ช่าง/เวลา] ปกติ กับ [Gmail Actions 4 ปุ่ม] เมื่อ Hover -->
-        <div class="flex items-center gap-3 text-xs text-slate-500 shrink-0 md:ml-auto">
+        <div class="relative shrink-0 md:ml-auto h-8 flex items-center justify-end">
           <!-- ข้อมูลปกติ (ซ่อนเมื่อ Hover บน Desktop) -->
-          <div class="flex items-center gap-3 md:group-hover:hidden transition-all">
+          <div class="flex items-center gap-3 text-xs text-slate-500 md:group-hover:opacity-0 md:group-hover:pointer-events-none transition-opacity duration-150">
             <span class="text-slate-600 truncate max-w-[130px] md:max-w-[160px]">${j.tech ? `<i class="fa-solid fa-user-gear text-[#265D5A] mr-1"></i>${esc(j.tech)}` : '<i class="fa-regular fa-hourglass-half mr-1 text-slate-400"></i>รอมอบหมาย'}</span>
             <span class="text-slate-300">·</span>
             <span class="whitespace-nowrap text-slate-400"><i class="fa-regular fa-clock mr-1 text-slate-300"></i>${timeAgo(j.created) || esc(j.createdRaw)}</span>
           </div>
 
-          <!-- Gmail Action Icons (แสดงเมื่อ Hover บน Desktop) -->
-          <div class="hidden md:group-hover:flex items-center gap-1 transition-all">
+          <!-- Gmail Action Icons (แสดงแทนที่ช่าง/เวลาเมื่อ Hover บน Desktop) -->
+          <div class="hidden md:group-hover:flex items-center gap-1.5 absolute right-0 transition-all">
             <!-- 1. Archive จัดเก็บ -->
-            <button type="button" onclick="TrackUI.toggleArchive('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:bg-slate-200 transition-colors" title="${j.isArchived ? 'ยกเลิกการจัดเก็บ' : 'จัดเก็บเข้าคลัง (Archive)'}">
+            <button type="button" onclick="TrackUI.toggleArchive('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:bg-slate-200/80 transition-colors" title="${j.isArchived ? 'ยกเลิกการจัดเก็บ' : 'จัดเก็บเข้าคลัง (Archive)'}">
               <i class="fa-solid ${j.isArchived ? 'fa-box-open text-[#265D5A]' : 'fa-box-archive'} text-sm"></i>
             </button>
             
@@ -6565,7 +6565,7 @@ const TrackUI = (() => {
             </button>
 
             <!-- 3. Mark Read / Unread ซองจดหมาย -->
-            <button type="button" onclick="TrackUI.toggleRead('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:bg-slate-200 transition-colors" title="${isRead ? 'ทำเครื่องหมายว่ายังไม่อ่าน' : 'ทำเครื่องหมายว่าอ่านแล้ว'}">
+            <button type="button" onclick="TrackUI.toggleRead('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:bg-slate-200/80 transition-colors" title="${isRead ? 'ทำเครื่องหมายว่ายังไม่อ่าน' : 'ทำเครื่องหมายว่าอ่านแล้ว'}">
               <i class="fa-regular ${isRead ? 'fa-envelope' : 'fa-envelope-open'} text-sm"></i>
             </button>
 
@@ -6575,7 +6575,7 @@ const TrackUI = (() => {
             </button>
           </div>
         </div>
-      </button>`;
+      </div>`;
     }).join('');
   }
 
