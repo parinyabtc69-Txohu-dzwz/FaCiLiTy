@@ -704,36 +704,70 @@ const TrackUI = (() => {
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
     
-    // ตรวจสอบ Cache รายชื่อผู้ใช้ก่อน เพื่อให้เปิดหน้าต่างได้ทันทีโดยไม่ต้องรอดึงข้อมูล
-    let users = window.cachedUsers;
-    if (!users) {
-      try {
-        const raw = localStorage.getItem('cached_system_users');
-        if (raw) users = JSON.parse(raw);
-      } catch (e) {}
-    }
-    if (!users) {
+    // ใช้ Cache ของ Tech/AV list เพื่อให้โหลดไว
+    let techList = window.cachedTechList;
+    if (!techList) {
       Swal.fire({title: 'กำลังโหลดรายชื่อช่าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      
+      let gasUsers = [];
+      let fbUsers = [];
+      
+      // ดึงจาก Google Sheets
       try {
-        users = await ResourceHubCore.api.get('get_users');
-        window.cachedUsers = users;
-        try { localStorage.setItem('cached_system_users', JSON.stringify(users)); } catch(e) {}
+        gasUsers = await ResourceHubCore.api.get('get_users');
       } catch (e) {
-        Swal.fire('Error', 'ไม่สามารถโหลดรายชื่อช่างได้', 'error');
-        return;
+        console.warn('Cannot fetch from GAS', e);
       }
+      
+      // ดึงจาก Firebase
+      if (window.firestoreDb) {
+        try {
+          const snap = await window.firestoreDb.collection('users').get();
+          snap.forEach(doc => {
+            const data = doc.data();
+            data.email = doc.id; // ใช้ Document ID เป็น email
+            fbUsers.push(data);
+          });
+        } catch (e) {
+          console.warn('Cannot fetch from Firebase', e);
+        }
+      }
+      
+      // รวมข้อมูลจากทั้งสองแหล่งโดยใช้ Email เป็น Key
+      const userMap = new Map();
+      
+      gasUsers.forEach(u => {
+        const email = u[0] ? u[0].toString().trim().toLowerCase() : '';
+        const name = u[1] ? u[1].toString().trim() : '';
+        const role = u[2] ? u[2].toString().trim() : '';
+        if (email) userMap.set(email, { name, role, originalEmail: u[0].toString().trim() });
+      });
+      
+      fbUsers.forEach(u => {
+        const email = u.email ? u.email.toString().trim().toLowerCase() : '';
+        const name = u.name ? u.name.toString().trim() : '';
+        const role = u.role ? u.role.toString().trim() : '';
+        if (email) {
+          const existing = userMap.get(email) || {};
+          userMap.set(email, {
+            name: name || existing.name || '',
+            role: role || existing.role || '',
+            originalEmail: existing.originalEmail || u.email
+          });
+        }
+      });
+      
+      // กรองเฉพาะ Tech และ AV
+      techList = [];
+      userMap.forEach(user => {
+        if (user.role === 'Tech' || user.role === 'AV') {
+          techList.push({ name: user.name, email: user.originalEmail });
+        }
+      });
+      
+      window.cachedTechList = techList;
       Swal.close();
     }
-
-    const techList = [];
-    users.forEach(u => {
-      const email = u[0] ? u[0].toString().trim() : '';
-      const name = u[1] ? u[1].toString().trim() : '';
-      const role = u[2] ? u[2].toString().trim() : '';
-      if (role === 'Tech' || role === 'AV') {
-        techList.push({ name, email });
-      }
-    });
 
     if (techList.length === 0) {
       Swal.fire('Info', 'ไม่พบรายชื่อช่าง (Tech) หรือเจ้าหน้าที่โสตฯ (AV) ในระบบ', 'info');
