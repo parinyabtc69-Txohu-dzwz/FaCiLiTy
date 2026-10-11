@@ -826,7 +826,7 @@ const ResourceHubCore = {
               else if (type === 'it') cat = 'it';
               else if (type === 'project') cat = 'proj';
               else if (type === 'av') {
-                 if (ticketId.includes('AV-REQ')) cat = 'av';
+                 if (ticketId.includes('AV-REQ') || (data.subject && data.subject.includes('ยืม')) || Boolean(data.borrower)) cat = 'av';
                  else cat = 'avRep';
               }
               
@@ -2016,16 +2016,56 @@ function refreshAdvancedTasks() {
   return loadAdvancedTasks();
 }
 
-// ==========================================
-// 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
-// ==========================================
-function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate) {
+// ฟังก์ชันสร้างรหัสคิวงานแบบสั้น (BLD-01 ถึง BLD-300 แล้วรันใหม่)
+async function getNextTicketSequence(typeForFirebase) {
+  const typeKey = (typeForFirebase === 'building' || typeForFirebase === 'it' || typeForFirebase === 'av' || typeForFirebase === 'project')
+    ? typeForFirebase : 'building';
   const prefix = typeForFirebase === 'building' ? 'BLD'
                : typeForFirebase === 'av'       ? 'AV'
                : typeForFirebase === 'it'       ? 'IT'
                : typeForFirebase === 'project'  ? 'PRJ'
                : 'TKT';
-  const ticketId = `${prefix}-${Date.now()}`;
+
+  if (!window.firestoreDb && typeof initFirebase === 'function') {
+    initFirebase();
+  }
+
+  if (window.firestoreDb) {
+    try {
+      const counterRef = window.firestoreDb.collection('system_counters').doc('tickets');
+      const nextNum = await window.firestoreDb.runTransaction(async (transaction) => {
+        const doc = await transaction.get(counterRef);
+        let current = 0;
+        let data = {};
+        if (doc.exists) {
+          data = doc.data() || {};
+          current = Number(data[typeKey]) || 0;
+        }
+        let next = current + 1;
+        if (next > 300) next = 1; // เพดานสูงสุดประเภทละ 300 แล้ววนรอบใหม่ที่ 01
+        data[typeKey] = next;
+        transaction.set(counterRef, data, { merge: true });
+        return next;
+      });
+
+      const numStr = nextNum < 100 ? String(nextNum).padStart(2, '0') : String(nextNum);
+      return `${prefix}-${numStr}`;
+    } catch (err) {
+      console.warn('Counter transaction failed, falling back:', err);
+    }
+  }
+
+  // Fallback กรณีออฟไลน์
+  const fallbackNum = (Math.floor(Date.now() / 1000) % 300) + 1;
+  const numStr = fallbackNum < 100 ? String(fallbackNum).padStart(2, '0') : String(fallbackNum);
+  return `${prefix}-${numStr}`;
+}
+
+// ==========================================
+// 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
+// ==========================================
+async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate) {
+  const ticketId = await getNextTicketSequence(typeForFirebase);
 
   const initialStatus = (typeForFirebase === 'av' && payload.action === 'submit_av')
     ? 'จัดเตรียมแล้ว'

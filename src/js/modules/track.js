@@ -25,10 +25,10 @@ const TrackUI = (() => {
 
   // ---------- ข้อมูลประเภทงาน ----------
   const TYPES = {
-    building: { label: 'ซ่อมอาคาร', prefix: 'B', icon: 'fa-wrench', chip: 'bg-[#B0EDE6] text-[#265D5A]' },
+    building: { label: 'ซ่อมอาคาร', prefix: 'BLD', icon: 'fa-wrench', chip: 'bg-[#B0EDE6] text-[#265D5A]' },
     it: { label: 'ซ่อมไอที', prefix: 'IT', icon: 'fa-desktop', chip: 'bg-sky-100 text-sky-700' },
     av: { label: 'ซ่อมโสตฯ', prefix: 'AV', icon: 'fa-camera', chip: 'bg-amber-100 text-amber-700' },
-    project: { label: 'โครงการ', prefix: 'PJ', icon: 'fa-building-circle-check', chip: 'bg-violet-100 text-violet-700' }
+    project: { label: 'โครงการ', prefix: 'PRJ', icon: 'fa-building-circle-check', chip: 'bg-violet-100 text-violet-700' }
   };
 
   // ---------- ขั้นตอนความคืบหน้า ----------
@@ -551,7 +551,15 @@ const TrackUI = (() => {
         .orderBy('createdAt', 'desc')
         .onSnapshot((snapshot) => {
           const jobs = [];
-          snapshot.forEach(doc => jobs.push(fromFirebase(doc.data())));
+          let hasLegacyId = false;
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const tid = data.ticketId || doc.id || '';
+            if (/\d{10,}/.test(tid) || tid.includes('-LEG-') || tid.includes('-REQ-') || tid.includes('-REP-')) {
+              hasLegacyId = true;
+            }
+            jobs.push(fromFirebase(data));
+          });
           
           state.jobs = jobs;
           state.loaded = true;
@@ -567,6 +575,12 @@ const TrackUI = (() => {
           const detailPage = $('page-track-detail');
           if (detailPage && detailPage.classList.contains('active') && state.currentJobId) {
              open(state.currentJobId);
+          }
+
+          // ตรวจจับและปรับรหัสคิวงานเก่าให้เป็นรหัสสั้นใหม่อัตโนมัติ (BLD-01)
+          if (hasLegacyId && !state.reindexing) {
+            state.reindexing = true;
+            setTimeout(() => { reindexTickets(false); }, 1500);
           }
         }, (err) => {
           console.error("Firebase listen error:", err);
@@ -714,6 +728,16 @@ const TrackUI = (() => {
         migrateBtn.classList.remove('hidden');
       } else {
         migrateBtn.classList.add('hidden');
+      }
+    }
+
+    // 4.1 ปุ่ม "จัดลำดับเลขคิวใหม่" (เฉพาะ Admin และ Supervisor)
+    const reindexBtn = $('track-reindex-btn');
+    if (reindexBtn) {
+      if (role === 'Admin' || role === 'Supervisor') {
+        reindexBtn.classList.remove('hidden');
+      } else {
+        reindexBtn.classList.add('hidden');
       }
     }
 
@@ -1614,12 +1638,14 @@ const TrackUI = (() => {
 
       const items = [];
 
+      const fmtSeq = (n) => (n < 100 ? String(n).padStart(2, '0') : String(n));
+
       // 1. อาคาร
       if (Array.isArray(buildingData)) {
         buildingData.forEach((row, idx) => {
           if (!row || !row[0]) return;
           items.push({
-            ticketId: row[16] || `BLD-LEG-${String(idx+1).padStart(3,'0')}`,
+            ticketId: `BLD-${fmtSeq(idx + 1)}`,
             type: 'building',
             subject: row[1] || row[2] || 'แจ้งซ่อมบำรุงอาคาร',
             detail: row[2] || '',
@@ -1647,7 +1673,7 @@ const TrackUI = (() => {
         avData.forEach((row, idx) => {
           if (!row || !row[0]) return;
           items.push({
-            ticketId: `AV-REQ-${String(idx+1).padStart(3,'0')}`,
+            ticketId: `AV-${fmtSeq(idx + 1)}`,
             type: 'av',
             subject: 'ขอยืม-คืนโสตทัศนูปกรณ์',
             detail: row[2] || '',
@@ -1668,7 +1694,7 @@ const TrackUI = (() => {
         advData.it.forEach((row, idx) => {
           if (!row || !row[0]) return;
           items.push({
-            ticketId: `IT-LEG-${String(idx+1).padStart(3,'0')}`,
+            ticketId: `IT-${fmtSeq(idx + 1)}`,
             type: 'it',
             subject: row[1] || 'แจ้งซ่อมไอที',
             detail: row[2] || '',
@@ -1687,7 +1713,7 @@ const TrackUI = (() => {
         advData.av.forEach((row, idx) => {
           if (!row || !row[0]) return;
           items.push({
-            ticketId: `AV-REP-${String(idx+1).padStart(3,'0')}`,
+            ticketId: `AV-${fmtSeq((Array.isArray(avData) ? avData.length : 0) + idx + 1)}`,
             type: 'av',
             subject: row[1] || 'แจ้งซ่อมอุปกรณ์โสตฯ',
             detail: row[2] || '',
@@ -1706,7 +1732,7 @@ const TrackUI = (() => {
         advData.project.forEach((row, idx) => {
           if (!row || !row[0]) return;
           items.push({
-            ticketId: `PRJ-LEG-${String(idx+1).padStart(3,'0')}`,
+            ticketId: `PRJ-${fmtSeq(idx + 1)}`,
             type: 'project',
             subject: row[1] || 'เสนอโครงการ/จัดซื้อ',
             detail: row[2] || '',
@@ -1769,6 +1795,257 @@ const TrackUI = (() => {
     }
   }
 
+  // ---------- จัดลำดับเลขคิวใหม่ / รีเซ็ตตัวนับคิว (Re-index & Reset Queue) ----------
+  async function reindexTickets(manual = false) {
+    const role = getUserRole();
+    if (manual) {
+      if (role !== 'Admin' && role !== 'Supervisor') {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ไม่มีสิทธิ์จัดลำดับเลขคิว',
+          text: 'เฉพาะระดับผู้ดูแลระบบ (Admin) หรือหัวหน้างาน (Supervisor) เท่านั้น'
+        });
+        return;
+      }
+
+      const actionChoice = await Swal.fire({
+        title: 'จัดการคิวงานและตัวนับระบบ',
+        html: `
+          <div class="text-left text-xs md:text-sm text-slate-600 space-y-3">
+            <p>เลือกคำสั่งจัดการลำดับเลขคิวที่ต้องการ:</p>
+            <div class="space-y-2">
+              <label class="flex items-start gap-2.5 p-3 rounded-xl border border-emerald-200 bg-emerald-50/50 cursor-pointer hover:bg-emerald-50">
+                <input type="radio" name="reindex_action" value="reindex" checked class="mt-1 text-emerald-600">
+                <div>
+                  <div class="font-bold text-slate-800">1. จัดลำดับเลขคิวใหม่ตามงานจริง (01 - 300)</div>
+                  <div class="text-xs text-slate-500 mt-0.5">เรียงลำดับงานตามวันที่สร้างจริง (งานเก่าสุด = 01) และตั้งตัวนับระบบให้รันต่อจากงานล่าสุด</div>
+                </div>
+              </label>
+              <label class="flex items-start gap-2.5 p-3 rounded-xl border border-amber-200 bg-amber-50/50 cursor-pointer hover:bg-amber-50">
+                <input type="radio" name="reindex_action" value="reset_counter" class="mt-1 text-amber-600">
+                <div>
+                  <div class="font-bold text-slate-800">2. รีเซ็ตตัวนับคิวระบบเป็น 01 (ล้างรอบคิว)</div>
+                  <div class="text-xs text-slate-500 mt-0.5">คงงานเดิมไว้ แต่รีเซ็ตตัวนับเพื่อให้งานที่ส่งเข้ามาใหม่เริ่มนับจาก 01 อีกครั้ง</div>
+                </div>
+              </label>
+            </div>
+            <p class="text-slate-400 text-xs mt-2">* หมายเหตุ: ระบบปกติเมื่อส่งงานเข้ามาและมีการลบงาน เลขคิวจะไม่ดันหรือเลื่อน จะรันต่อเนื่องอัตโนมัติ</p>
+          </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#265D5A',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'ดำเนินการ',
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: () => {
+          const selected = document.querySelector('input[name="reindex_action"]:checked');
+          return selected ? selected.value : 'reindex';
+        }
+      });
+
+      if (!actionChoice.isConfirmed) return;
+
+      // กรณีเลือกรีเซ็ตเฉพาะตัวนับคิว
+      if (actionChoice.value === 'reset_counter') {
+        try {
+          if (window.firestoreDb) {
+            await window.firestoreDb.collection('system_counters').doc('tickets').set({
+              building: 0,
+              it: 0,
+              av: 0,
+              project: 0
+            });
+          }
+          Swal.fire({
+            icon: 'success',
+            title: 'รีเซ็ตตัวนับคิวเรียบร้อย',
+            text: 'ตัวนับคิวทุกประเภทถูกรีเซ็ตเป็น 01 แล้ว งานใหม่ที่ส่งเข้ามาถัดไปจะเริ่มนับที่ 01',
+            confirmButtonColor: '#265D5A'
+          });
+          return;
+        } catch (err) {
+          Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถรีเซ็ตตัวนับได้: ' + err.message, 'error');
+          return;
+        }
+      }
+    }
+
+    if (!window.firestoreDb) {
+      if (manual) Swal.fire('เกิดข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อฐานข้อมูล Firebase', 'error');
+      return;
+    }
+
+    state.reindexing = true;
+    if (manual) {
+      Swal.fire({
+        title: 'กำลังจัดลำดับเลขคิวใหม่...',
+        html: 'กำลังตรวจสอบและจัดเรียงข้อมูลตามวันที่สร้าง...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+    }
+
+    try {
+      const snap = await window.firestoreDb.collection('tickets').get();
+      if (snap.empty) {
+        state.reindexing = false;
+        if (manual) Swal.fire('สำเร็จ', 'ไม่พบรายการงานในระบบ', 'info');
+        return;
+      }
+
+      // Helper แปลง Timestamp/Date เป็น ms
+      const getTsMs = (val) => {
+        if (!val) return 0;
+        if (typeof val.toMillis === 'function') return val.toMillis();
+        if (val.seconds) return val.seconds * 1000 + (val.nanoseconds || 0) / 1e6;
+        if (val instanceof Date) return val.getTime();
+        const d = new Date(val);
+        return isNaN(d) ? 0 : d.getTime();
+      };
+
+      const fmtSeq = (n) => (n < 100 ? String(n).padStart(2, '0') : String(n));
+
+      // แยกตามประเภทงาน
+      const groups = {
+        building: [],
+        it: [],
+        av: [],
+        project: []
+      };
+
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        let cat = (d.type || '').toLowerCase();
+        const tid = d.ticketId || doc.id || '';
+        if (cat === 'it' || tid.startsWith('IT-')) cat = 'it';
+        else if (cat === 'av' || tid.startsWith('AV-')) cat = 'av';
+        else if (cat === 'project' || tid.startsWith('PRJ-')) cat = 'project';
+        else cat = 'building';
+
+        groups[cat].push({
+          oldId: doc.id,
+          data: d,
+          ts: getTsMs(d.createdAt)
+        });
+      });
+
+      const prefixes = { building: 'BLD', it: 'IT', av: 'AV', project: 'PRJ' };
+      const tasks = [];
+      const finalCounters = {};
+
+      Object.keys(groups).forEach(cat => {
+        const list = groups[cat];
+        // เรียงจากงานที่สร้างเก่าที่สุด -> ใหม่ที่สุด
+        list.sort((a, b) => a.ts - b.ts);
+
+        list.forEach((item, idx) => {
+          const seq = (idx % 300) + 1;
+          const targetId = `${prefixes[cat]}-${fmtSeq(seq)}`;
+          tasks.push({
+            oldId: item.oldId,
+            targetId: targetId,
+            cat: cat,
+            data: {
+              ...item.data,
+              ticketId: targetId,
+              type: cat,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }
+          });
+        });
+
+        // กำหนดค่า counter ล่าสุดของหมวดนี้ ให้เท่ากับจำนวนงานที่รันล่าสุด
+        finalCounters[cat] = list.length > 0 ? ((list.length - 1) % 300) + 1 : 0;
+      });
+
+      // กรองเฉพาะรายการที่ต้องเปลี่ยน ID
+      const changes = tasks.filter(t => t.oldId !== t.targetId);
+
+      if (changes.length > 0) {
+        if (manual) {
+          Swal.update({
+            html: `พบรายการที่ต้องเปลี่ยนรหัส ${changes.length} รายการ<br>กำลังโอนย้ายข้อมูลและประวัติแชท...`
+          });
+        }
+
+        for (const ch of changes) {
+          // 1. คัดลอกข้อความแชท (chats/{oldId}/messages -> chats/{targetId}/messages)
+          try {
+            const oldChatRef = window.firestoreDb.collection('chats').doc(ch.oldId).collection('messages');
+            const chatSnap = await oldChatRef.get();
+            if (!chatSnap.empty) {
+              const chatBatch = window.firestoreDb.batch();
+              const newChatRef = window.firestoreDb.collection('chats').doc(ch.targetId).collection('messages');
+              chatSnap.forEach(msgDoc => {
+                chatBatch.set(newChatRef.doc(msgDoc.id), msgDoc.data());
+                chatBatch.delete(msgDoc.ref);
+              });
+              await chatBatch.commit();
+            }
+          } catch (chatErr) {
+            console.warn(`Chat migration warn (${ch.oldId} -> ${ch.targetId}):`, chatErr);
+          }
+
+          // 2. บันทึก Ticket ด้วย ID ใหม่
+          await window.firestoreDb.collection('tickets').doc(ch.targetId).set(ch.data);
+
+          // 3. ลบ ID เก่า ถ้าไม่ได้เป็น targetId ของงานอื่น
+          const willBeTarget = tasks.some(other => other.targetId === ch.oldId);
+          if (!willBeTarget) {
+            await window.firestoreDb.collection('tickets').doc(ch.oldId).delete();
+          }
+        }
+
+        // ลบ ID เก่าที่เหลือ
+        for (const ch of changes) {
+          const isTarget = tasks.some(t => t.targetId === ch.oldId);
+          if (!isTarget) {
+            try {
+              await window.firestoreDb.collection('tickets').doc(ch.oldId).delete();
+            } catch (_) {}
+          }
+        }
+      }
+
+      // บันทึกตัวนับล่าสุดลง system_counters/tickets
+      await window.firestoreDb.collection('system_counters').doc('tickets').set(finalCounters, { merge: true });
+
+      state.reindexing = false;
+      state.loaded = false;
+      await load(true);
+
+      if (manual) {
+        Swal.fire({
+          icon: 'success',
+          title: 'จัดลำดับเลขคิวสำเร็จ!',
+          html: `
+            <div class="text-left text-sm text-slate-700 space-y-1">
+              <div>จัดระเบียบคิวงานเรียบร้อยแล้วทั้งหมด <b>${tasks.length}</b> รายการ</div>
+              <div class="text-xs text-slate-500 mt-2">ตัวนับคิวงานปัจจุบัน (รันต่อเนื่อง):</div>
+              <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border mt-1">
+                <div>🏢 ซ่อมอาคาร: <b>BLD-${fmtSeq(finalCounters.building || 0)}</b></div>
+                <div>💻 ซ่อมไอที: <b>IT-${fmtSeq(finalCounters.it || 0)}</b></div>
+                <div>📷 โสตทัศนูปกรณ์: <b>AV-${fmtSeq(finalCounters.av || 0)}</b></div>
+                <div>📋 โครงการ: <b>PRJ-${fmtSeq(finalCounters.project || 0)}</b></div>
+              </div>
+            </div>
+          `,
+          confirmButtonColor: '#265D5A'
+        });
+      } else {
+        console.log(`[AutoReindex] Successfully re-indexed ${changes.length} tickets to short IDs.`);
+      }
+
+    } catch (err) {
+      console.error('Reindex error:', err);
+      state.reindexing = false;
+      if (manual) {
+        Swal.fire({ icon: 'error', title: 'จัดลำดับไม่สำเร็จ', text: err.message, confirmButtonColor: '#e11d48' });
+      }
+    }
+  }
+
   // ตัวกระตุ้น Silent Auto-Sync เบื้องหลัง (ไม่รบกวนหน้าจอ ไม่เด้ง Modal)
   let lastAutoSyncTime = 0;
   function triggerSilentAutoSync() {
@@ -1802,6 +2079,7 @@ const TrackUI = (() => {
     previewChatImage,
     clearChatImage,
     migrateFromSheets,
+    reindexTickets,
     backToList() {
       state.currentJobId = null;
       nav('page-track');
