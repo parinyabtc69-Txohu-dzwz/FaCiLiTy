@@ -404,31 +404,41 @@ const TrackUI = (() => {
       return;
     }
 
+    const dotColors = {
+      pending: 'bg-rose-500 ring-2 ring-rose-200 animate-pulse',
+      progress: 'bg-amber-400 ring-2 ring-amber-200',
+      done: 'bg-emerald-500 ring-2 ring-emerald-200',
+      cancel: 'bg-slate-400 ring-2 ring-slate-200'
+    };
+
     list.innerHTML = items.map(j => {
-      const t = TYPES[j.type];
+      const t = TYPES[j.type] || { chip: 'bg-slate-100 text-slate-600', icon: 'fa-wrench', label: 'ทั่วไป' };
       const mine = isMine(j);
+      const dotCls = dotColors[j.group] || 'bg-slate-400';
       return `
       <button onclick="TrackUI.open('${j.id}')" id="track-item-${j.id}"
-        class="text-left p-5 rounded-2xl border ${mine ? 'border-[#265D5A]/40 bg-[#F3FCFA]' : 'border-slate-200 bg-white'} hover:border-[#265D5A]/50 hover:shadow-lg hover:-translate-y-0.5 transition-all group">
-        <div class="flex items-start justify-between gap-3 mb-3">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">#${j.id}</span>
-            <span class="text-[11px] px-2 py-0.5 rounded-md ${t.chip}"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
-            ${mine ? '<span class="text-[11px] px-2 py-0.5 rounded-md bg-[#265D5A] text-white">งานของฉัน</span>' : ''}
-          </div>
-          ${statusBadge(j, 'text-[11px]')}
+        class="w-full text-left px-4 py-3.5 rounded-2xl border ${mine ? 'border-[#265D5A]/40 bg-[#F3FCFA]' : 'border-slate-200/90 bg-white'} hover:border-[#265D5A]/50 hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5 transition-all group shadow-sm flex flex-col md:flex-row md:items-center gap-2 md:gap-4 cursor-pointer">
+        
+        <!-- ฝั่งซ้าย: จุดสถานะ, รหัสงาน, ป้ายประเภท, ป้ายงานของฉัน -->
+        <div class="flex items-center gap-2.5 shrink-0">
+          <span class="w-2.5 h-2.5 rounded-full ${dotCls} shrink-0" title="${esc(j.status)}"></span>
+          <span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">#${j.id}</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-md ${t.chip} shrink-0 font-medium"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
+          ${mine ? '<span class="text-[10px] px-2 py-0.5 rounded-md bg-[#265D5A] text-white font-medium shrink-0">งานของฉัน</span>' : ''}
         </div>
-        <h3 class="font-semibold text-slate-800 text-base leading-snug mb-1 group-hover:text-[#265D5A]">${esc(j.subject)}</h3>
-        <p class="text-sm text-slate-500 line-clamp-2 mb-3">${esc(j.detail) || '<span class="text-slate-300">ไม่มีรายละเอียดเพิ่มเติม</span>'}</p>
-        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 mb-4">
-          ${j.location ? `<span><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${esc(j.location)}</span>` : ''}
-          <span><i class="fa-solid fa-user text-slate-400 mr-1"></i>${esc(j.reporter) || 'ไม่ระบุ'}</span>
-          <span><i class="fa-regular fa-clock text-slate-400 mr-1"></i>${timeAgo(j.created) || esc(j.createdRaw)}</span>
+
+        <!-- ส่วนกลาง: ชื่อหัวข้องานหนา - รายละเอียดงานสีเทา บังคับบรรทัดเดียว (Truncate) -->
+        <div class="flex-1 min-w-0 truncate text-sm">
+          <span class="font-semibold text-slate-800 group-hover:text-[#265D5A] transition-colors">${esc(j.subject)}</span>
+          <span class="text-slate-300 mx-1.5">-</span>
+          <span class="text-slate-500 font-light">${esc(j.detail) || 'ไม่มีรายละเอียดเพิ่มเติม'}</span>
         </div>
-        ${miniProgress(j)}
-        <div class="flex items-center justify-between mt-3 text-xs">
-          <span class="text-slate-500">${j.tech ? `<i class="fa-solid fa-user-gear text-[#265D5A] mr-1"></i>ช่าง: <b class="text-slate-700 font-medium">${esc(j.tech)}</b>` : '<i class="fa-regular fa-hourglass-half mr-1"></i>รอมอบหมายช่าง'}</span>
-          ${j.fixDetail ? '<span class="text-[#265D5A] font-medium"><i class="fa-solid fa-comment-dots mr-1"></i>มีข้อความจากช่าง</span>' : '<span class="text-slate-300 group-hover:text-[#265D5A]">ดูรายละเอียด ›</span>'}
+
+        <!-- ฝั่งขวา: ช่างผู้รับผิดชอบ และ ระยะเวลา -->
+        <div class="flex items-center gap-3 text-xs text-slate-500 shrink-0 md:ml-auto">
+          <span class="text-slate-600 truncate max-w-[130px] md:max-w-[160px]">${j.tech ? `<i class="fa-solid fa-user-gear text-[#265D5A] mr-1"></i>${esc(j.tech)}` : '<i class="fa-regular fa-hourglass-half mr-1 text-slate-400"></i>รอมอบหมาย'}</span>
+          <span class="text-slate-300">·</span>
+          <span class="whitespace-nowrap text-slate-400"><i class="fa-regular fa-clock mr-1 text-slate-300"></i>${timeAgo(j.created) || esc(j.createdRaw)}</span>
         </div>
       </button>`;
     }).join('');
