@@ -1326,7 +1326,9 @@ function nav(pageId) {
   }
 
   if (pageId === 'page-dashboard') {
-    ResourceHubCore.ui.loadDashboard();
+    // ซ่อนหน้านี้ไว้ชั่วคราวตามที่แจ้ง (ยังไม่ลบ) ให้กลับไปหน้าแรกแทน
+    nav('page-home');
+    return;
   } else if (pageId === 'page-teacher-profile') {
     ResourceHubCore.ui.loadTeacherHistory('repair');
   } else if (pageId === 'page-teacher-av-profile') {
@@ -1375,7 +1377,8 @@ function updateSessionUI() {
   const homeCardDocument = $('home-card-document');
 
   if (isAdminLoggedIn) {
-    if (dashNav) { dashNav.classList.remove('hidden'); dashNav.classList.add('flex'); }
+    // ซ่อนหน้ามอนิเตอร์ภาพรวมไว้ชั่วคราว (ยังไม่ลบโค้ด)
+    if (dashNav) { dashNav.classList.add('hidden'); dashNav.classList.remove('flex'); }
     if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
     if (avManageNav) { avManageNav.classList.remove('hidden'); avManageNav.classList.add('flex'); }
     if (masterDataNav) { masterDataNav.classList.remove('hidden'); masterDataNav.classList.add('flex'); }
@@ -1385,7 +1388,7 @@ function updateSessionUI() {
     if (homeCardDocument) { homeCardDocument.classList.remove('hidden'); homeCardDocument.classList.add('flex'); }
     if (teacherProfileNav) { teacherProfileNav.classList.remove('hidden'); teacherProfileNav.classList.add('flex'); }
     if (teacherAVProfileNav) { teacherAVProfileNav.classList.remove('hidden'); teacherAVProfileNav.classList.add('flex'); }
-    if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
+    if (homeCardDash) { homeCardDash.classList.add('hidden'); homeCardDash.classList.remove('flex'); }
     if (homeCardTeacherProfile) { homeCardTeacherProfile.classList.remove('hidden'); homeCardTeacherProfile.classList.add('flex'); }
     if (homeCardTeacherAVProfile) { homeCardTeacherAVProfile.classList.remove('hidden'); homeCardTeacherAVProfile.classList.add('flex'); }
 
@@ -1612,7 +1615,7 @@ function handleGlobalSearch(keyword) {
   } else if (term.includes('โสต') || term.includes('ยืม')) {
     nav('page-av-form');
   } else if (term.includes('มอนิเตอร์') || term.includes('กราฟ') || term.includes('dashboard')) {
-    if (isAdminLoggedIn) nav('page-dashboard');
+    nav('page-home');
   } else if (term.includes('ประวัติ')) {
     if (currentTeacher) nav('page-teacher-profile');
   }
