@@ -1801,7 +1801,7 @@
       <i class="fa-solid fa-user"></i> เฉพาะงานของฉัน
     </button>
     <button onclick="TrackUI.toggleArchived()" id="track-archived-btn"
-      class="px-3.5 py-2 rounded-full text-xs font-medium border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5" title="ดูงานที่จัดเก็บไว้">
+      class="hidden px-3.5 py-2 rounded-full text-xs font-medium border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-colors items-center gap-1.5" title="ดูงานที่จัดเก็บไว้">
       <i class="fa-solid fa-box-archive text-slate-400"></i> คลังจัดเก็บ
     </button>
     <span class="w-px h-6 bg-slate-200 mx-1 hidden md:inline-block"></span>
@@ -6533,7 +6533,6 @@ const TrackUI = (() => {
           <span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">#${j.id}</span>
           <span class="text-[11px] px-2 py-0.5 rounded-md ${t.chip} shrink-0 font-medium"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
           ${mine ? '<span class="text-[10px] px-2 py-0.5 rounded-md bg-[#265D5A] text-white font-medium shrink-0">งานของฉัน</span>' : ''}
-          ${j.isArchived ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-medium shrink-0"><i class="fa-solid fa-box-archive mr-1"></i>จัดเก็บแล้ว</span>' : ''}
         </div>
 
         <!-- ส่วนกลาง: ชื่อหัวข้องานหนา - รายละเอียดงานสีเทา บังคับบรรทัดเดียว (Truncate) -->
@@ -6554,24 +6553,14 @@ const TrackUI = (() => {
 
           <!-- Gmail Action Icons (แสดงแทนที่ช่าง/เวลาเมื่อ Hover บน Desktop) -->
           <div class="hidden md:group-hover:flex items-center gap-1.5 absolute right-0 transition-all">
-            <!-- 1. Archive จัดเก็บ -->
-            <button type="button" onclick="TrackUI.toggleArchive('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:bg-slate-200/80 transition-colors" title="${j.isArchived ? 'ยกเลิกการจัดเก็บ' : 'จัดเก็บเข้าคลัง (Archive)'}">
-              <i class="fa-solid ${j.isArchived ? 'fa-box-open text-[#265D5A]' : 'fa-box-archive'} text-sm"></i>
-            </button>
-            
-            <!-- 2. Delete ถังขยะ (ตรวจสอบสิทธิ์) -->
-            <button type="button" onclick="TrackUI.deleteJob('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center ${userCanDelete ? 'text-slate-500 hover:text-rose-600 hover:bg-rose-100' : 'text-slate-300 cursor-not-allowed hover:bg-slate-100'}" title="${userCanDelete ? 'ลบงานนี้' : 'ไม่มีสิทธิ์ลบ (เฉพาะเจ้าของงาน/หัวหน้างาน/แอดมิน)'}">
-              <i class="fa-regular fa-trash-can text-sm"></i>
-            </button>
-
-            <!-- 3. Mark Read / Unread ซองจดหมาย -->
+            <!-- 1. Mark Read / Unread ซองจดหมาย -->
             <button type="button" onclick="TrackUI.toggleRead('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:bg-slate-200/80 transition-colors" title="${isRead ? 'ทำเครื่องหมายว่ายังไม่อ่าน' : 'ทำเครื่องหมายว่าอ่านแล้ว'}">
               <i class="fa-regular ${isRead ? 'fa-envelope' : 'fa-envelope-open'} text-sm"></i>
             </button>
 
-            <!-- 4. Snooze / Urgency นาฬิกา -->
-            <button type="button" onclick="TrackUI.openSnooze('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors" title="ตั้งเตือน / ปรับความเร่งด่วน">
-              <i class="fa-regular fa-clock text-sm"></i>
+            <!-- 2. Delete ถังขยะ (ตรวจสอบสิทธิ์) -->
+            <button type="button" onclick="TrackUI.deleteJob('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center ${userCanDelete ? 'text-slate-500 hover:text-rose-600 hover:bg-rose-100' : 'text-slate-300 cursor-not-allowed hover:bg-slate-100'}" title="${userCanDelete ? 'ลบงานนี้' : 'ไม่มีสิทธิ์ลบ (เฉพาะเจ้าของงาน/หัวหน้างาน/แอดมิน)'}">
+              <i class="fa-regular fa-trash-can text-sm"></i>
             </button>
           </div>
         </div>
