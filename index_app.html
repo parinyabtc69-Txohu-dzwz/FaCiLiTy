@@ -2170,44 +2170,110 @@ const FirebaseChat = {
 // ============================================================
 
 const MasterData = (() => {
-  const CACHE_KEY = 'master_data_cache_v1';
+  const CACHE_KEY = 'master_data_cache_v2';
 
   // ข้อมูลเริ่มต้นมาตรฐาน (Default Seed Data)
   const DEFAULT_DATA = {
     locations: [
-      // สังกัด วพบ. (วิทยาลัยพยาบาลบรมราชชนนี)
-      { id: 'loc_wpb_101', name: 'ห้องเรียน 101', department: 'วพบ.' },
-      { id: 'loc_wpb_102', name: 'ห้องเรียน 102', department: 'วพบ.' },
-      { id: 'loc_wpb_201', name: 'ห้องเรียน 201', department: 'วพบ.' },
-      { id: 'loc_wpb_202', name: 'ห้องเรียน 202', department: 'วพบ.' },
-      { id: 'loc_wpb_301', name: 'ห้องเรียน 301', department: 'วพบ.' },
-      { id: 'loc_wpb_lab', name: 'ห้องปฏิบัติการพยาบาล (Lab)', department: 'วพบ.' },
-      { id: 'loc_wpb_com', name: 'ห้องปฏิบัติการคอมพิวเตอร์', department: 'วพบ.' },
-      { id: 'loc_wpb_meet1', name: 'ห้องประชุมชั้น 2', department: 'วพบ.' },
-      { id: 'loc_wpb_meet_big', name: 'ห้องประชุมใหญ่ วพบ.', department: 'วพบ.' },
-      { id: 'loc_wpb_office', name: 'สำนักงานอำนวยการ วพบ.', department: 'วพบ.' },
-      { id: 'loc_wpb_canteen', name: 'โรงอาหาร วพบ.', department: 'วพบ.' },
-      { id: 'loc_wpb_dorm', name: 'หอพักนักศึกษา วพบ.', department: 'วพบ.' },
+      // ---------- ตึก วพบ. (วิทยาลัยพยาบาลบรมราชชนนี) ----------
+      // ชั้น 1
+      { id: 'loc_wpb_101', name: 'ห้อง 101 (ชั้น 1)', department: 'วพบ.' },
+      { id: 'loc_wpb_102', name: 'ห้อง 102 (ชั้น 1)', department: 'วพบ.' },
+      { id: 'loc_wpb_103', name: 'ห้อง 103 - ผู้ช่วย วพบ. (ชั้น 1)', department: 'วพบ.' },
+      { id: 'loc_wpb_104', name: 'ห้อง 104 (ชั้น 1)', department: 'วพบ.' },
+      { id: 'loc_wpb_105', name: 'ห้อง 105 (ชั้น 1)', department: 'วพบ.' },
+      { id: 'loc_wpb_106', name: 'ห้อง 106 (ชั้น 1)', department: 'วพบ.' },
+      { id: 'loc_wpb_off', name: 'ห้องธุรการ (ชั้น 1)', department: 'วพบ.' },
 
-      // สังกัด ศษ. (ศูนย์การศึกษา / โรงเรียน)
-      { id: 'loc_ss_k1', name: 'ห้องเรียนอนุบาล 1-3', department: 'ศษ.' },
-      { id: 'loc_ss_p1', name: 'ห้องเรียน ป.1 - ป.3', department: 'ศษ.' },
-      { id: 'loc_ss_p4', name: 'ห้องเรียน ป.4 - ป.6', department: 'ศษ.' },
-      { id: 'loc_ss_m1', name: 'ห้องเรียน ม.1 - ม.3', department: 'ศษ.' },
-      { id: 'loc_ss_m4', name: 'ห้องเรียน ม.4 - ม.6', department: 'ศษ.' },
-      { id: 'loc_ss_tea_p', name: 'ห้องพักครูประถม', department: 'ศษ.' },
-      { id: 'loc_ss_tea_m', name: 'ห้องพักครูมัธยม', department: 'ศษ.' },
-      { id: 'loc_ss_meet', name: 'ห้องประชุม ศษ.', department: 'ศษ.' },
-      { id: 'loc_ss_hall', name: 'หอประชุมใหญ่ ศษ.', department: 'ศษ.' },
-      { id: 'loc_ss_lib', name: 'ห้องสมุด ศษ.', department: 'ศษ.' },
-      { id: 'loc_ss_com', name: 'ห้องปฏิบัติการคอมพิวเตอร์ ศษ.', department: 'ศษ.' },
-      { id: 'loc_ss_gym', name: 'โรงยิม / สนามกีฬา', department: 'ศษ.' },
-      { id: 'loc_ss_nurse', name: 'ห้องพยาบาล ศษ.', department: 'ศษ.' },
-      { id: 'loc_ss_canteen', name: 'โรงอาหาร ศษ.', department: 'ศษ.' },
+      // ชั้น 2
+      { id: 'loc_wpb_201', name: 'ห้อง 201 (ชั้น 2)', department: 'วพบ.' },
+      { id: 'loc_wpb_202', name: 'ห้อง 202 (ชั้น 2)', department: 'วพบ.' },
+      { id: 'loc_wpb_203', name: 'ห้อง 203 (ชั้น 2)', department: 'วพบ.' },
+      { id: 'loc_wpb_204', name: 'ห้อง 204 (ชั้น 2)', department: 'วพบ.' },
+      { id: 'loc_wpb_205', name: 'ห้อง 205 (ชั้น 2)', department: 'วพบ.' },
+      { id: 'loc_wpb_206', name: 'ห้อง 206 (ชั้น 2)', department: 'วพบ.' },
+      { id: 'loc_wpb_sport', name: 'ห้องอุปกรณ์กีฬา (ชั้น 2)', department: 'วพบ.' },
 
-      // ส่วนกลาง / อื่นๆ
+      // ชั้น 3
+      { id: 'loc_wpb_301', name: 'ห้อง 301 (ชั้น 3)', department: 'วพบ.' },
+      { id: 'loc_wpb_302', name: 'ห้อง 302 (ชั้น 3)', department: 'วพบ.' },
+      { id: 'loc_wpb_303', name: 'ห้อง 303 (ชั้น 3)', department: 'วพบ.' },
+      { id: 'loc_wpb_304', name: 'ห้อง 304 (ชั้น 3)', department: 'วพบ.' },
+      { id: 'loc_wpb_305', name: 'ห้อง 305 (ชั้น 3)', department: 'วพบ.' },
+      { id: 'loc_wpb_306', name: 'ห้อง 306 (ชั้น 3)', department: 'วพบ.' },
+      { id: 'loc_wpb_309', name: 'ห้อง 309 (ชั้น 3)', department: 'วพบ.' },
+
+      // ชั้น 4
+      { id: 'loc_wpb_401', name: 'ห้อง 401 - ห้องเสื้อผ้า (ชั้น 4)', department: 'วพบ.' },
+      { id: 'loc_wpb_402', name: 'ห้อง 402 (ชั้น 4)', department: 'วพบ.' },
+      { id: 'loc_wpb_403', name: 'ห้อง 403 - ห้องเรียน (ชั้น 4)', department: 'วพบ.' },
+      { id: 'loc_wpb_404', name: 'ห้อง 404 (ชั้น 4)', department: 'วพบ.' },
+      { id: 'loc_wpb_405', name: 'ห้อง 405 (ชั้น 4)', department: 'วพบ.' },
+      { id: 'loc_wpb_406', name: 'ห้อง 406 (ชั้น 4)', department: 'วพบ.' },
+      { id: 'loc_wpb_wc4', name: 'ห้องน้ำหญิง (ชั้น 4)', department: 'วพบ.' },
+
+      // ---------- ตึก ศษ. (ศูนย์การศึกษา / โรงเรียน) ----------
+      // ชั้น 1 / บริการ
+      { id: 'loc_ss_coop', name: 'สหกรณ์ (ชั้น 1)', department: 'ศษ.' },
+      { id: 'loc_ss_store', name: 'ห้องเก็บของ ศษ. (ชั้น 1)', department: 'ศษ.' },
+      { id: 'loc_ss_pool', name: 'สระว่ายน้ำ (ชั้น 1)', department: 'ศษ.' },
+      { id: 'loc_ss_wc', name: 'ห้องน้ำ ศษ. (ชั้น 1)', department: 'ศษ.' },
+
+      // ชั้น 2
+      { id: 'loc_ss_201', name: 'ห้อง 201 (ชั้น 2)', department: 'ศษ.' },
+      { id: 'loc_ss_202', name: 'ห้อง 202 (ชั้น 2)', department: 'ศษ.' },
+      { id: 'loc_ss_203', name: 'ห้อง 203 (ชั้น 2)', department: 'ศษ.' },
+      { id: 'loc_ss_204', name: 'ห้อง 204 (ชั้น 2)', department: 'ศษ.' },
+      { id: 'loc_ss_205', name: 'ห้อง 205 (ชั้น 2)', department: 'ศษ.' },
+      { id: 'loc_ss_206', name: 'ห้อง 206 (ชั้น 2)', department: 'ศษ.' },
+      { id: 'loc_ss_207', name: 'ห้อง 207 (ชั้น 2)', department: 'ศษ.' },
+      { id: 'loc_ss_208', name: 'ห้อง 208 (ชั้น 2)', department: 'ศษ.' },
+      { id: 'loc_ss_209', name: 'ห้อง 209 (ชั้น 2)', department: 'ศษ.' },
+      { id: 'loc_ss_210', name: 'ห้อง 210 (ชั้น 2)', department: 'ศษ.' },
+
+      // ชั้น 3
+      { id: 'loc_ss_301', name: 'ห้อง 301 (ชั้น 3)', department: 'ศษ.' },
+      { id: 'loc_ss_302', name: 'ห้อง 302 (ชั้น 3)', department: 'ศษ.' },
+      { id: 'loc_ss_303', name: 'ห้อง 303 (ชั้น 3)', department: 'ศษ.' },
+      { id: 'loc_ss_304', name: 'ห้อง 304 (ชั้น 3)', department: 'ศษ.' },
+      { id: 'loc_ss_305', name: 'ห้อง 305 (ชั้น 3)', department: 'ศษ.' },
+      { id: 'loc_ss_306', name: 'ห้อง 306 (ชั้น 3)', department: 'ศษ.' },
+      { id: 'loc_ss_307', name: 'ห้อง 307 (ชั้น 3)', department: 'ศษ.' },
+      { id: 'loc_ss_308', name: 'ห้อง 308 (ชั้น 3)', department: 'ศษ.' },
+      { id: 'loc_ss_309', name: 'ห้อง 309 (ชั้น 3)', department: 'ศษ.' },
+      { id: 'loc_ss_310', name: 'ห้อง 310 (ชั้น 3)', department: 'ศษ.' },
+
+      // ชั้น 4
+      { id: 'loc_ss_401', name: 'ห้อง 401 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_402', name: 'ห้อง 402 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_403', name: 'ห้อง 403 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_404', name: 'ห้อง 404 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_405', name: 'ห้อง 405 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_406', name: 'ห้อง 406 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_407', name: 'ห้อง 407 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_408', name: 'ห้อง 408 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_409', name: 'ห้อง 409 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_410', name: 'ห้อง 410 (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_meet4', name: 'ห้องประชุม ศษ. (ชั้น 4)', department: 'ศษ.' },
+      { id: 'loc_ss_type4', name: 'ห้องพิมพ์ดีด / คอมพิวเตอร์ (ชั้น 4)', department: 'ศษ.' },
+
+      // ชั้น 5
+      { id: 'loc_ss_501', name: 'ห้อง 501 (ชั้น 5)', department: 'ศษ.' },
+      { id: 'loc_ss_502', name: 'ห้อง 502 (ชั้น 5)', department: 'ศษ.' },
+      { id: 'loc_ss_503', name: 'ห้อง 503 (ชั้น 5)', department: 'ศษ.' },
+      { id: 'loc_ss_504', name: 'ห้อง 504 (ชั้น 5)', department: 'ศษ.' },
+      { id: 'loc_ss_505', name: 'ห้อง 505 (ชั้น 5)', department: 'ศษ.' },
+      { id: 'loc_ss_506', name: 'ห้อง 506 (ชั้น 5)', department: 'ศษ.' },
+      { id: 'loc_ss_507', name: 'ห้อง 507 (ชั้น 5)', department: 'ศษ.' },
+      { id: 'loc_ss_508', name: 'ห้อง 508 (ชั้น 5)', department: 'ศษ.' },
+
+      // ห้องปฏิบัติการ
+      { id: 'loc_ss_lab', name: 'ห้อง LAB', department: 'ศษ.' },
+
+      // ---------- ส่วนกลาง / อื่นๆ ----------
       { id: 'loc_cen_gate', name: 'ป้อมยาม / ประตูทางเข้า', department: 'ส่วนกลาง' },
-      { id: 'loc_cen_park', name: 'ลานจอดรถส่วนกลาง', department: 'ส่วนกลาง' },
+      { id: 'loc_cen_park', name: 'ลานจอดรถ', department: 'ส่วนกลาง' },
+      { id: 'loc_cen_canteen', name: 'โรงอาหาร', department: 'ส่วนกลาง' },
       { id: 'loc_cen_garden', name: 'สวนหย่อม / ภูมิทัศน์', department: 'ส่วนกลาง' }
     ],
     departments: [
@@ -2441,7 +2507,7 @@ const MasterData = (() => {
 
     let html = `<option value="" disabled selected>-- เลือกสถานที่ / ห้อง --</option>`;
     filtered.forEach(loc => {
-      const deptTag = loc.department ? `[${loc.department}] ` : '';
+      const deptTag = (loc.department === 'ส่วนกลาง') ? '[ส่วนกลาง] ' : '';
       html += `<option value="${sanitize(loc.name)}">${deptTag}${sanitize(loc.name)}</option>`;
     });
     html += `<option value="__OTHER__">➕ อื่นๆ (พิมพ์ระบุเอง)...</option>`;
