@@ -39,6 +39,9 @@ const CONFIG = {
   WEB_APP_URL: "https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/", // URL ของระบบ (หน้าเว็บ Frontend)
 };
 
+// เปิดใช้งานส่งการแจ้งเตือนเข้า LINE กลุ่มหลัก (Group ID: CONFIG.LINE_TARGET_ID) ควบคู่กับแชทรายบุคคล
+const ENABLE_LINE_GROUP_NOTIFY = true;
+
 let _globalDB = null;
 function getDB() {
   if (!_globalDB) _globalDB = SpreadsheetApp.openById(CONFIG.SHEET_ID);
@@ -769,7 +772,8 @@ function doPost(e) {
             ],
             [
               { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=" + surveyType + "&row=" + targetAdvRow, color: "#f59e0b" }
-            ]
+            ],
+            data.ticketId
           );
           notifyTask(isIT ? 'it' : (isAVRep ? 'av_repair' : 'admin'), advDoneMsg, `${taskLabel}เสร็จสิ้น`, advColor, {reporter: advReporter, subject: advSubject, status: data.status}, null);
         }
@@ -865,7 +869,8 @@ function doPost(e) {
           [
             { label: "เปิดดูรูปหลักฐานในระบบ", url: CONFIG.WEB_APP_URL, color: "#059669" },
             { label: "⭐ ประเมินความพึงพอใจ", url: CONFIG.WEB_APP_URL + "?action=survey&type=repair&row=" + targetRow, color: "#f59e0b" }
-          ]
+          ],
+          data.ticketId
         );
         // Determine taskType based on sheetName
         let advTaskType = 'building';
@@ -1108,12 +1113,18 @@ function createFlexMessageTemplate(altText, headerText, subjectText, color, deta
     }
   });
 
-  const targetUrl = ticketId ? (CONFIG.WEB_APP_URL + (CONFIG.WEB_APP_URL.includes('?') ? '&' : '?') + 'ticketId=' + encodeURIComponent(ticketId)) : CONFIG.WEB_APP_URL;
+  let targetUrl = ticketId ? (CONFIG.WEB_APP_URL + (CONFIG.WEB_APP_URL.includes('?') ? '&' : '?') + 'ticketId=' + encodeURIComponent(ticketId)) : CONFIG.WEB_APP_URL;
+  if (targetUrl && targetUrl.startsWith('http') && !targetUrl.includes('openExternalBrowser')) {
+    targetUrl += (targetUrl.includes('?') ? '&' : '?') + 'openExternalBrowser=1';
+  }
 
   const buttonsContents = [];
   if (buttonsArray && buttonsArray.length > 0) {
     buttonsArray.forEach((btn, index) => {
-      const btnUri = (btn.url && btn.url !== CONFIG.WEB_APP_URL) ? btn.url : targetUrl;
+      let btnUri = (btn.url && btn.url !== CONFIG.WEB_APP_URL) ? btn.url : targetUrl;
+      if (btnUri && btnUri.startsWith('http') && !btnUri.includes('openExternalBrowser')) {
+        btnUri += (btnUri.includes('?') ? '&' : '?') + 'openExternalBrowser=1';
+      }
       const btnObj = {
         "type": "button", "style": "primary", "color": btn.color || color,
         "action": { "type": "uri", "label": btn.label, "uri": btnUri }
@@ -1195,6 +1206,14 @@ function notifyTask(taskType, lineMsg, emailTitle, emailColor, dataObj, reporter
     }
   }
   
+  // รวม LINE Group หลักเข้าไปในรายการส่งเสมอ (หากเปิดใช้งาน)
+  if (typeof ENABLE_LINE_GROUP_NOTIFY !== 'undefined' && ENABLE_LINE_GROUP_NOTIFY && CONFIG.LINE_TARGET_ID && !CONFIG.LINE_TARGET_ID.includes("ใส่_")) {
+    const mainGroupId = CONFIG.LINE_TARGET_ID.trim();
+    if (!lineTargets.includes(mainGroupId)) {
+      lineTargets.push(mainGroupId);
+    }
+  }
+
   // ปิด Broadcast ชั่วคราว ให้แจ้งเตือนเข้ากลุ่มอย่างเดียว
   // if (!lineTargets.includes('BROADCAST')) { lineTargets.push('BROADCAST'); }
   

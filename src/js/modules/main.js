@@ -1123,8 +1123,16 @@ function handleLiffLogin() {
         if (isAdminLoggedIn) prefetchAllData();
         alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
           .then(() => {
-            if (isAdminLoggedIn) nav('page-dashboard');
-            else nav('page-teacher-profile');
+            const urlParams = new URLSearchParams(window.location.search);
+            const tid = urlParams.get('ticketId');
+            if (tid) {
+              if (window.TrackUI && typeof window.TrackUI.open === 'function') {
+                window.TrackUI.open(tid);
+              }
+            } else {
+              if (isAdminLoggedIn) nav('page-dashboard');
+              else nav('page-teacher-profile');
+            }
           });
       })
       .catch((e) => {
@@ -1240,8 +1248,16 @@ function finalizeLogin(name, role, email) {
   
   alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
     .then(() => {
-      if (isAdminLoggedIn) nav('page-dashboard');
-      else nav('page-teacher-profile');
+      const urlParams = new URLSearchParams(window.location.search);
+      const tid = urlParams.get('ticketId');
+      if (tid) {
+        if (window.TrackUI && typeof window.TrackUI.open === 'function') {
+          window.TrackUI.open(tid);
+        }
+      } else {
+        if (isAdminLoggedIn) nav('page-dashboard');
+        else nav('page-teacher-profile');
+      }
     });
 }
 
