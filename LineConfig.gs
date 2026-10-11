@@ -4,4 +4,4 @@
  *   true  = เปิดแจ้งเตือนเข้ากลุ่มหลัก
  *   false = ปิดแจ้งเตือนเข้ากลุ่มหลัก (จะแจ้งเตือนเฉพาะ LINE ส่วนตัว)
  */
-var ENABLE_LINE_GROUP_NOTIFY = false;
+var ENABLE_LINE_GROUP_NOTIFY = true;
