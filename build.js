@@ -22,6 +22,7 @@ const loadOrder = [
   'firebase-config.js',
   'firestore-db.js',
   'firebase-chat.js',
+  'master-data.js',
   'api.js',
   'auth.js',
   'user.js',

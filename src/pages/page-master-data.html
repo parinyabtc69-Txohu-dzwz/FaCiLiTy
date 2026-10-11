@@ -1,47 +1,93 @@
       <div id="page-master-data" class="page-section">
-        <div class="max-w-7xl mx-auto">
-          <div class="flex justify-between items-center mb-6">
+        <div class="max-w-7xl mx-auto p-4 md:p-6 pb-24">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-database text-[#265D5A]"></i> Master
-                Data</h1>
-              <p class="text-sm text-slate-500">ข้อมูลกลางที่ใช้ในแบบฟอร์มและการจัดสรรงาน</p>
-            </div><button onclick="loadMasterData()" class="bg-white border px-4 py-2 rounded-xl text-sm font-bold"><i
-                class="fa-solid fa-rotate"></i> รีเฟรช</button>
-          </div>
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div class="bg-white rounded-2xl border p-5">
-              <h3 class="font-bold mb-3">สถานที่ / ห้อง</h3>
-              <div class="flex gap-2 mb-3"><input id="md-location-name" class="flex-1 border rounded-xl p-2.5"
-                  placeholder="ชื่อสถานที่"><select id="md-location-dept" class="border rounded-xl p-2.5">
-                  <option>โรงเรียน</option>
-                  <option>วิทยาลัย</option>
-                </select></div><button onclick="addMaster('location')"
-                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เพิ่มสถานที่</button>
-              <div id="md-locations" class="mt-4 space-y-2 max-h-72 overflow-auto"></div>
+              <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-database text-[#265D5A] mr-2"></i>Master Data (ข้อมูลกลาง)</h1>
+              <p class="text-sm text-slate-500 mt-1">ข้อมูลกลางที่ใช้เป็นตัวเลือก Dropdown ในแบบฟอร์มและการจัดสรรงาน</p>
             </div>
-            <div class="bg-white rounded-2xl border p-5">
-              <h3 class="font-bold mb-3">โครงการ</h3>
-              <div class="flex gap-2 mb-3"><input id="md-project-name" class="flex-1 border rounded-xl p-2.5"
-                  placeholder="ชื่อโครงการ"><select id="md-project-dept" class="border rounded-xl p-2.5">
-                  <option>โรงเรียน</option>
-                  <option>วิทยาลัย</option>
-                </select></div><button onclick="addMaster('project')"
-                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold">เพิ่มโครงการ</button>
-              <div id="md-projects" class="mt-4 space-y-2 max-h-72 overflow-auto"></div>
-            </div>
-            <div class="bg-white rounded-2xl border p-5">
-              <h3 class="font-bold mb-3">ช่าง / ผู้รับผิดชอบ</h3>
-              <div class="space-y-2"><input id="md-mechanic-name" class="w-full border rounded-xl p-2.5"
-                  placeholder="ชื่อช่าง"><input id="md-mechanic-phone" class="w-full border rounded-xl p-2.5"
-                  placeholder="โทรศัพท์"><input id="md-mechanic-skills" class="w-full border rounded-xl p-2.5"
-                  placeholder="ทักษะ เช่น ไฟฟ้า, แอร์"></div><button onclick="addMaster('mechanic')"
-                class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2 font-bold mt-3">เพิ่มช่าง</button>
-              <div id="md-mechanics" class="mt-4 space-y-2 max-h-72 overflow-auto"></div>
+            <div class="flex items-center gap-2">
+              <button onclick="seedInitialMasterData()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 shadow-sm transition" title="สร้างข้อมูลห้องเรียน แผนก และช่างเริ่มต้น">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> ข้อมูลเริ่มต้นมาตรฐาน
+              </button>
+              <button onclick="loadMasterData(true)" class="bg-white border hover:bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-rotate"></i> รีเฟรช
+              </button>
             </div>
           </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- 1. สถานที่ / ห้อง -->
+            <div class="bg-white rounded-2xl border p-5 shadow-sm flex flex-col">
+              <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-door-open text-[#265D5A]"></i> สถานที่ / ห้อง
+              </h3>
+              <div class="space-y-2 mb-3">
+                <input id="md-location-name" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-[#265D5A]" placeholder="ชื่อสถานที่ เช่น ห้อง 101">
+                <select id="md-location-dept" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-[#265D5A]">
+                  <option value="วพบ.">วพบ. (วิทยาลัย)</option>
+                  <option value="ศษ.">ศษ. (โรงเรียน)</option>
+                  <option value="ส่วนกลาง">ส่วนกลาง / ทั่วไป</option>
+                </select>
+              </div>
+              <button onclick="addMaster('location')" class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2.5 text-sm font-bold shadow-sm">
+                <i class="fa-solid fa-plus mr-1"></i> เพิ่มสถานที่
+              </button>
+              <div id="md-locations" class="mt-4 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
+            </div>
+
+            <!-- 2. แผนก / ฝ่าย -->
+            <div class="bg-white rounded-2xl border p-5 shadow-sm flex flex-col">
+              <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-building-user text-amber-600"></i> แผนก / ฝ่าย
+              </h3>
+              <div class="space-y-2 mb-3">
+                <input id="md-dept-name" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-amber-500" placeholder="ชื่อฝ่าย เช่น ฝ่ายวิชาการ">
+              </div>
+              <button onclick="addMaster('department')" class="w-full bg-amber-600 hover:bg-amber-700 transition-colors text-white rounded-xl py-2.5 text-sm font-bold shadow-sm">
+                <i class="fa-solid fa-plus mr-1"></i> เพิ่มแผนก/ฝ่าย
+              </button>
+              <div id="md-departments" class="mt-4 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
+            </div>
+
+            <!-- 3. โครงการ -->
+            <div class="bg-white rounded-2xl border p-5 shadow-sm flex flex-col">
+              <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-building-circle-check text-violet-600"></i> โครงการ
+              </h3>
+              <div class="space-y-2 mb-3">
+                <input id="md-project-name" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-violet-500" placeholder="ชื่อโครงการ">
+                <select id="md-project-dept" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-violet-500">
+                  <option value="วพบ.">วพบ. (วิทยาลัย)</option>
+                  <option value="ศษ.">ศษ. (โรงเรียน)</option>
+                  <option value="ส่วนกลาง">ส่วนกลาง / ทั่วไป</option>
+                </select>
+              </div>
+              <button onclick="addMaster('project')" class="w-full bg-violet-600 hover:bg-violet-700 transition-colors text-white rounded-xl py-2.5 text-sm font-bold shadow-sm">
+                <i class="fa-solid fa-plus mr-1"></i> เพิ่มโครงการ
+              </button>
+              <div id="md-projects" class="mt-4 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
+            </div>
+
+            <!-- 4. ช่าง / ผู้รับผิดชอบ -->
+            <div class="bg-white rounded-2xl border p-5 shadow-sm flex flex-col">
+              <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-wrench text-sky-600"></i> ช่าง / ผู้รับผิดชอบ
+              </h3>
+              <div class="space-y-2 mb-3">
+                <input id="md-mechanic-name" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-sky-500" placeholder="ชื่อช่าง">
+                <input id="md-mechanic-phone" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-sky-500" placeholder="เบอร์โทรศัพท์">
+                <input id="md-mechanic-skills" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-sky-500" placeholder="ทักษะ เช่น ไฟฟ้า, แอร์">
+              </div>
+              <button onclick="addMaster('mechanic')" class="w-full bg-sky-600 hover:bg-sky-700 transition-colors text-white rounded-xl py-2.5 text-sm font-bold shadow-sm">
+                <i class="fa-solid fa-plus mr-1"></i> เพิ่มช่าง
+              </button>
+              <div id="md-mechanics" class="mt-4 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
+            </div>
+          </div>
+
           <div class="mt-8 border-t pt-8">
             <h2 class="text-xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-bell text-[#265D5A]"></i> ตั้งค่าระบบแจ้งเตือน (Notification Settings)</h2>
-            <div class="bg-white rounded-2xl border p-5 max-w-md">
+            <div class="bg-white rounded-2xl border p-5 max-w-md shadow-sm">
               <h3 class="font-bold text-slate-700 mb-2">แจ้งเตือนงานค้าง (Overdue Notification)</h3>
               <p class="text-xs text-slate-500 mb-4">กำหนดจำนวนวันที่งานค้างสถานะ "รอดำเนินการ" ก่อนระบบจะส่ง LINE แจ้งเตือนแอดมิน</p>
               <div class="flex items-center gap-3">

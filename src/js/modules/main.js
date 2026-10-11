@@ -456,8 +456,10 @@ const ResourceHubCore = {
       const subject = $('subject').value.trim();
       let detail = $('detail').value.trim();
       const reporter = $('reporter').value.trim();
-      const dept = $('department') ? $('department').value.trim() : '';
-      const rawLoc = $('repair_location') ? $('repair_location').value.trim() : '';
+      let dept = $('department') ? $('department').value.trim() : '';
+      if (dept === '__OTHER__') dept = $('department_other') ? $('department_other').value.trim() : '';
+      let rawLoc = $('repair_location') ? $('repair_location').value.trim() : '';
+      if (rawLoc === '__OTHER__') rawLoc = $('repair_location_other') ? $('repair_location_other').value.trim() : '';
       const inst = $('repair_inst') ? $('repair_inst').value : '';
       const loc = (inst ? `[${inst}] ` : '') + rawLoc;
       const urgency = ''; // Set by Supervisor during approval
@@ -496,7 +498,8 @@ const ResourceHubCore = {
     async submitAV() {
       const borrower = $('borrower').value.trim();
       const useDate = $('useDate').value;
-      const rawLoc = $('av_location') ? $('av_location').value.trim() : '';
+      let rawLoc = $('av_location') ? $('av_location').value.trim() : '';
+      if (rawLoc === '__OTHER__') rawLoc = $('av_location_other') ? $('av_location_other').value.trim() : '';
       const inst = $('av_inst') ? $('av_inst').value : '';
       const loc = (inst ? `[${inst}] ` : '') + rawLoc;
       const signer = $('signerName').value.trim();
@@ -1349,6 +1352,15 @@ function nav(pageId) {
     if ($('reporter')) $('reporter').value = currentTeacher;
     if ($('borrower')) $('borrower').value = currentTeacher;
     if ($('signerName')) $('signerName').value = currentTeacher;
+    if ($('itReporter')) $('itReporter').value = currentTeacher;
+    if ($('avRepReporter')) $('avRepReporter').value = currentTeacher;
+    if ($('projReporter')) $('projReporter').value = currentTeacher;
+  }
+
+  // เรียกผูกตัวเลือก Master Data Dropdown เมื่อเปิดหน้าแบบฟอร์ม
+  const formPages = ['page-repair-form', 'page-it-repair', 'page-av-repair', 'page-av-form', 'page-project-form'];
+  if (formPages.includes(pageId) && window.MasterData && typeof window.MasterData.initFormDropdowns === 'function') {
+    window.MasterData.initFormDropdowns();
   }
 }
 
@@ -1763,95 +1775,28 @@ async function updateBugStatus(index, oldStatus) {
     .catch(() => alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตข้อมูลได้'));
 }
 
-async function loadMasterData() {
-  try {
-    const d = await ResourceHubCore.master.list();
-    mergedCache = { ...mergedCache, ...d };
-    mergedCacheSave();
-  } catch (e) {
-    mergedCacheLoad();
+async function loadMasterData(force = true) {
+  if (window.MasterData && typeof window.MasterData.load === 'function') {
+    return window.MasterData.load(force);
   }
-  renderMasterData();
 }
 
 function renderMasterData() {
-  const loc = $('md-locations');
-  const pro = $('md-projects');
-  const mec = $('md-mechanics');
-  if (!loc) return;
-
-  loc.innerHTML = (mergedCache.locations || []).map(x =>
-    `<div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 text-slate-800">
-          <span>${mergedEsc(x.name)} <small class="text-slate-400">${mergedEsc(x.department || '')}</small></span>
-          <div class="flex gap-4">
-            <button onclick="openQrGenModal('${mergedEsc(x.name)}')" class="text-[#265D5A] hover:text-[#1a3f3d]" title="สร้าง QR Code"><i class="fa-solid fa-qrcode"></i></button>
-            <button onclick="deleteMaster('location','${mergedEsc(x.id)}')" class="text-rose-500 hover:text-rose-700" title="ลบ"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>`
-  ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
-
-  pro.innerHTML = (mergedCache.projects || []).map(x =>
-    `<div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 text-slate-800">
-          <span>${mergedEsc(x.name)} <small class="text-slate-400">${mergedEsc(x.department || '')}</small></span>
-          <button onclick="deleteMaster('project','${mergedEsc(x.id)}')" class="text-rose-500">ลบ</button>
-        </div>`
-  ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
-
-  mec.innerHTML = (mergedCache.mechanics || []).map(x =>
-    `<div class="p-2 rounded-lg bg-slate-50 text-slate-800">
-          <div class="flex justify-between">
-            <b>${mergedEsc(x.name)}</b>
-            <button onclick="deleteMaster('mechanic','${mergedEsc(x.id)}')" class="text-rose-500">ลบ</button>
-          </div>
-          <div class="text-xs text-slate-500">${mergedEsc(x.phone || '')} · ${mergedEsc(x.skills || '')}</div>
-        </div>`
-  ).join('') || '<p class="text-slate-400 text-sm">ยังไม่มีข้อมูล</p>';
-
-  const overdueInput = $('md-overdue-days');
-  if (overdueInput && mergedCache.settings && mergedCache.settings.overdueDays) {
-    overdueInput.value = mergedCache.settings.overdueDays;
+  if (window.MasterData && typeof window.MasterData.load === 'function') {
+    window.MasterData.load(false);
   }
 }
 
 async function addMaster(type) {
-  const p = { action: 'master_add', type, id: `${type}_${Date.now()}` };
-  if (type === 'location') {
-    p.name = $('md-location-name').value.trim();
-    p.department = $('md-location-dept').value;
+  if (window.MasterData && typeof window.addMaster === 'function') {
+    return window.addMaster(type);
   }
-  if (type === 'project') {
-    p.name = $('md-project-name').value.trim();
-    p.department = $('md-project-dept').value;
-  }
-  if (type === 'mechanic') {
-    p.name = $('md-mechanic-name').value.trim();
-    p.phone = $('md-mechanic-phone').value.trim();
-    p.skills = $('md-mechanic-skills').value.trim();
-    p.notes = '';
-  }
-  if (!p.name) return alertBox('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกชื่อข้อมูลก่อน');
-
-  submitAction(
-    () => ResourceHubCore.master.add(p),
-    'เพิ่มข้อมูลสำเร็จ',
-    () => {
-      if ($('md-location-name')) $('md-location-name').value = '';
-      if ($('md-project-name')) $('md-project-name').value = '';
-      if ($('md-mechanic-name')) $('md-mechanic-name').value = '';
-      if ($('md-mechanic-phone')) $('md-mechanic-phone').value = '';
-      if ($('md-mechanic-skills')) $('md-mechanic-skills').value = '';
-      loadMasterData();
-    }
-  );
 }
 
 async function deleteMaster(type, id) {
-  if (!confirm('ยืนยันการลบข้อมูลนี้?')) return;
-  submitAction(
-    () => ResourceHubCore.master.remove({ type, id }),
-    'ลบข้อมูลสำเร็จ',
-    () => loadMasterData()
-  );
+  if (window.MasterData && typeof window.deleteMaster === 'function') {
+    return window.deleteMaster(type, id);
+  }
 }
 
 function filterTable(tbodyId, searchText) {
@@ -2133,8 +2078,10 @@ async function submitGenericForm(config) {
   const subject = $(config.prefix + 'Subject')?.value.trim();
   const detail = $(config.prefix + 'Detail')?.value.trim();
   const reporter = $(config.prefix + 'Reporter')?.value.trim();
-  const dept = $(config.prefix + 'Department')?.value.trim() || '';
-  const rawLoc = $(config.prefix + 'Location')?.value.trim() || '';
+  let dept = $(config.prefix + 'Department')?.value.trim() || '';
+  if (dept === '__OTHER__') dept = $(config.prefix + 'Department_other')?.value.trim() || '';
+  let rawLoc = $(config.prefix + 'Location')?.value.trim() || '';
+  if (rawLoc === '__OTHER__') rawLoc = $(config.prefix + 'Location_other')?.value.trim() || '';
   const inst = $(config.prefix + '_inst')?.value || '';
   const loc = (inst ? `[${inst}] ` : '') + rawLoc;
   const urgency = document.querySelector(`input[name="${config.prefix}Urgency"]:checked`)?.value || 'ตามคิว';
