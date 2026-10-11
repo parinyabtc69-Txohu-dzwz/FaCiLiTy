@@ -96,6 +96,12 @@ const TrackUI = (() => {
   // ---------- ตรวจจับชื่อและสิทธิ์ผู้ใช้งาน ----------
   const normName = n => str(n).replace(/^(คุณครู|ครู|คุณ|นาย|นางสาว|นาง|นายช่าง|ช่าง|อาจารย์|อ\.)\s*/, '').replace(/\s+/g, '').toLowerCase();
 
+  function getUserRole() {
+    if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) return 'Admin';
+    const r = (typeof currentRole !== 'undefined' && currentRole) ? currentRole : (localStorage.getItem('logged_role') || '');
+    return r || 'Teacher';
+  }
+
   function getTechEmailFromName(name) {
     if (!name) return '';
     const norm = normName(name);
@@ -118,9 +124,8 @@ const TrackUI = (() => {
   function canManageJob(job) {
     if (!job) return false;
     // 1. Role เป็น Admin, Executive หรือ Supervisor
-    const isSupervisor = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || 
-                         (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor' || currentRole === 'Admin'));
-    if (isSupervisor) return true;
+    const role = getUserRole();
+    if (role === 'Executive' || role === 'Supervisor' || role === 'Admin') return true;
 
     // 2. ตรวจสอบอีเมลช่าง
     const myEmail = ((typeof currentEmail === 'string' ? currentEmail : '') || (localStorage.getItem('logged_email') || '')).trim().toLowerCase();
@@ -140,15 +145,37 @@ const TrackUI = (() => {
     return false;
   }
 
+  // ตรวจสอบว่าเป็นผู้แจ้งเรื่อง (เจ้าของงานตัวจริง) หรือไม่
+  function isReporter(job) {
+    if (!job) return false;
+    const myName = ((typeof currentTeacher === 'string' ? currentTeacher : '') || (localStorage.getItem('logged_teacher') || '')).trim();
+    const myEmail = ((typeof currentEmail === 'string' ? currentEmail : '') || (localStorage.getItem('logged_email') || '')).trim().toLowerCase();
+    if (myName && job.reporter) {
+      const me = normName(myName);
+      const rep = normName(job.reporter);
+      if (me && rep && (me === rep || (me.length >= 3 && rep.includes(me)) || (rep.length >= 3 && me.includes(rep)))) {
+        return true;
+      }
+    }
+    if (myEmail && job.reporterEmail && myEmail === job.reporterEmail.trim().toLowerCase()) {
+      return true;
+    }
+    return false;
+  }
+
   function canDeleteJob(job) {
     if (!job) return false;
+    const role = getUserRole();
     // 1. ระดับหัวหน้างาน หรือ แอดมิน
-    const isSupervisorOrAdmin = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || 
-                                (typeof currentRole !== 'undefined' && (currentRole === 'Supervisor' || currentRole === 'Admin' || currentRole === 'Executive'));
-    if (isSupervisorOrAdmin) return true;
-    // 2. เจ้าของงาน (ผู้แจ้ง)
-    if (isMine(job)) return true;
+    if (role === 'Supervisor' || role === 'Admin' || role === 'Executive') return true;
+    // 2. ผู้แจ้งเรื่อง (เจ้าของงาน)
+    if (isReporter(job)) return true;
     return false;
+  }
+
+  function canSnoozeJob(job) {
+    if (!job) return false;
+    return canManageJob(job);
   }
 
   // ---------- ระบบจัดการสถานะอ่านแล้ว/ยังไม่อ่าน (Gmail Style) ----------
@@ -284,6 +311,15 @@ const TrackUI = (() => {
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
 
+    if (!canSnoozeJob(job)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'ไม่มีสิทธิ์ตั้งเตือน/ปรับความเร่งด่วน',
+        text: 'เฉพาะช่างผู้รับผิดชอบงาน หรือระดับหัวหน้างาน/ผู้ดูแลระบบเท่านั้น'
+      });
+      return;
+    }
+
     const { value: formValues } = await Swal.fire({
       title: 'ตั้งเตือน / ปรับความเร่งด่วน',
       html: `
@@ -382,6 +418,7 @@ const TrackUI = (() => {
       subject: docData.subject || 'ไม่ระบุหัวข้อ',
       detail: docData.detail || '',
       reporter: docData.reporterName || '',
+      reporterEmail: docData.reporterEmail || docData.email || '',
       status: status,
       group: cls.group,
       step: cls.step,
@@ -433,12 +470,47 @@ const TrackUI = (() => {
 
   // ---------- ตรวจว่าเป็นงานของผู้ใช้ปัจจุบันหรือไม่ ----------
   function isMine(job) {
-    if (typeof currentTeacher === 'undefined' || !currentTeacher) return false;
-    const me = normName(currentTeacher);
-    const rep = normName(job.reporter);
-    if (!me || !rep) return false;
-    if (me === rep) return true;
-    return (me.length >= 3 && rep.includes(me)) || (rep.length >= 3 && me.includes(rep));
+    if (!job) return false;
+    // 1. ตนเองเป็นผู้แจ้งเรื่อง
+    if (isReporter(job)) return true;
+
+    // 2. ถ้าเป็นช่าง (Tech) หรือ เจ้าหน้าที่โสตฯ (AV) งานที่ได้รับมอบหมายก็นับเป็น "งานของฉัน" ด้วย
+    const role = getUserRole();
+    if (role === 'Tech' || role === 'AV') {
+      if (canManageJob(job)) return true;
+    }
+
+    return false;
+  }
+
+  // ---------- สิทธิ์การมองเห็นคิวงานตาม Role ----------
+  function isJobVisibleForRole(job, role) {
+    if (!job) return false;
+    // งานของตนเอง (แจ้งเอง หรือ ได้รับมอบหมาย) ให้เห็นเสมอ
+    if (isMine(job)) return true;
+
+    // สิทธิ์การมองเห็นคิวงานส่วนกลาง
+    if (role === 'Admin' || role === 'Supervisor' || role === 'Executive') {
+      return true; // เห็นทุกประเภท 100%
+    }
+    if (role === 'Tech') {
+      // ช่างอาคาร/ไอที เห็นงานอาคารและไอที
+      return job.type === 'building' || job.type === 'it';
+    }
+    if (role === 'AV') {
+      // เจ้าหน้าที่โสตฯ เห็นงานโสตฯ
+      return job.type === 'av';
+    }
+    // Teacher / Staff / ทั่วไป: เห็นงานบริการซ่อมทั่วไป (อาคาร, ไอที, โสตฯ) ซ่อนงานโครงการภายใน (project)
+    return job.type === 'building' || job.type === 'it' || job.type === 'av';
+  }
+
+  function sanitizeTypeForRole(role, currentType) {
+    if (currentType === 'all') return 'all';
+    if (role === 'Tech' && (currentType === 'av' || currentType === 'project')) return 'all';
+    if (role === 'AV' && (currentType === 'building' || currentType === 'it' || currentType === 'project')) return 'all';
+    if ((role === 'Teacher' || role === 'Staff') && currentType === 'project') return 'all';
+    return currentType;
   }
 
   // ---------- โหลดข้อมูล ----------
@@ -505,7 +577,11 @@ const TrackUI = (() => {
   // ---------- กรองข้อมูล ----------
   function filtered(ignoreStatus = false) {
     const q = state.search.toLowerCase();
+    const role = getUserRole();
     return state.jobs.filter(j => {
+      // ตรวจสอบสิทธิ์การมองเห็นตาม Role
+      if (!isJobVisibleForRole(j, role)) return false;
+
       if (state.showArchived) {
         if (!j.isArchived) return false;
       } else {
@@ -519,7 +595,7 @@ const TrackUI = (() => {
         if (state.status === 'done' && j.group !== 'done') return false;
       }
       if (q) {
-        const hay = [j.id, j.subject, j.detail, j.reporter, j.location, j.dept, j.tech, j.status, TYPES[j.type].label]
+        const hay = [j.id, j.subject, j.detail, j.reporter, j.location, j.dept, j.tech, j.status, TYPES[j.type]?.label || '']
           .join(' ').toLowerCase();
         if (!hay.includes(q)) return false;
       }
@@ -561,6 +637,9 @@ const TrackUI = (() => {
   }
 
   function updateControls() {
+    const role = getUserRole();
+
+    // 1. ตัวเลือกสถานะ
     $$('#track-summary .track-stat').forEach(b => {
       const on = b.dataset.status === state.status;
       b.classList.toggle('border-[#265D5A]', on);
@@ -568,26 +647,58 @@ const TrackUI = (() => {
       b.classList.toggle('ring-[#B0EDE6]', on);
       b.classList.toggle('border-slate-200', !on);
     });
+
+    // 2. แถบประเภทงาน (Pills) กรองตาม Role
     $$('#track-type-filters .track-type').forEach(b => {
-      const on = b.dataset.type === state.type;
+      const t = b.dataset.type;
+      let isAllowed = true;
+      if (role === 'Tech') {
+        isAllowed = (t === 'all' || t === 'building' || t === 'it');
+      } else if (role === 'AV') {
+        isAllowed = (t === 'all' || t === 'av');
+      } else if (role === 'Teacher' || role === 'Staff') {
+        isAllowed = (t !== 'project');
+      }
+      b.classList.toggle('hidden', !isAllowed);
+
+      const on = t === state.type;
       b.className = 'track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors ' +
+        (!isAllowed ? 'hidden ' : '') +
         (on ? 'bg-[#265D5A] text-white border-[#265D5A]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50');
     });
+
+    // 3. ปุ่ม "เฉพาะงานของฉัน"
     const mine = $('track-mine-btn');
     if (mine) {
       mine.className = 'px-4 py-2 rounded-full text-sm font-medium border transition-colors flex items-center gap-2 ' +
         (state.mineOnly ? 'bg-[#265D5A] text-white border-[#265D5A]' : 'border-[#265D5A]/30 text-[#265D5A] bg-white hover:bg-[#E0F7F4]');
     }
+
+    // 4. ปุ่ม "ดึงข้อมูลจาก Sheet" (เฉพาะ Admin และ Supervisor)
+    const migrateBtn = $('track-migrate-btn');
+    if (migrateBtn) {
+      if (role === 'Admin' || role === 'Supervisor') {
+        migrateBtn.classList.remove('hidden');
+      } else {
+        migrateBtn.classList.add('hidden');
+      }
+    }
+
+    // 5. ปุ่ม "คลังจัดเก็บ" (เฉพาะ Admin และ Supervisor)
+    const archiveBtn = $('track-archived-btn');
+    if (archiveBtn) {
+      if (role === 'Admin' || role === 'Supervisor') {
+        archiveBtn.classList.remove('hidden');
+        archiveBtn.classList.add('flex');
+      } else {
+        archiveBtn.classList.add('hidden');
+        archiveBtn.classList.remove('flex');
+      }
+    }
   }
 
   function render() {
     updateControls();
-    
-    // Show migrate button for Admins/Supervisors only
-    if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
-       const btn = $('track-migrate-btn');
-       if (btn) btn.classList.remove('hidden');
-    }
 
     const list = $('track-list');
     if (!list) return;
@@ -659,13 +770,14 @@ const TrackUI = (() => {
 
           <!-- Gmail Action Icons (แสดงแทนที่ช่าง/เวลาเมื่อ Hover บน Desktop) -->
           <div class="hidden md:group-hover:flex items-center gap-1.5 absolute right-0 transition-all">
-            <!-- 1. Snooze / Urgency นาฬิกา -->
+            <!-- 1. Snooze / Urgency นาฬิกา (เฉพาะช่างที่รับผิดชอบ/หัวหน้า/แอดมิน) -->
+            ${canSnoozeJob(j) ? `
             <button type="button" onclick="TrackUI.openSnooze('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors" title="ตั้งเตือน / ปรับความเร่งด่วน">
               <i class="fa-regular fa-clock text-sm"></i>
-            </button>
+            </button>` : ''}
 
             <!-- 2. Delete ถังขยะ (ตรวจสอบสิทธิ์) -->
-            <button type="button" onclick="TrackUI.deleteJob('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center ${userCanDelete ? 'text-slate-500 hover:text-rose-600 hover:bg-rose-100' : 'text-slate-300 cursor-not-allowed hover:bg-slate-100'}" title="${userCanDelete ? 'ลบงานนี้' : 'ไม่มีสิทธิ์ลบ (เฉพาะเจ้าของงาน/หัวหน้างาน/แอดมิน)'}">
+            <button type="button" onclick="TrackUI.deleteJob('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center ${userCanDelete ? 'text-slate-500 hover:text-rose-600 hover:bg-rose-100' : 'text-slate-300 cursor-not-allowed hover:bg-slate-100'}" title="${userCanDelete ? 'ลบงานนี้' : 'ไม่มีสิทธิ์ลบ (เฉพาะผู้แจ้ง/หัวหน้างาน/แอดมิน)'}">
               <i class="fa-regular fa-trash-can text-sm"></i>
             </button>
           </div>
@@ -751,15 +863,15 @@ const TrackUI = (() => {
           <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-regular fa-hourglass-half"></i></div>
           <div>ยังไม่มีช่างรับงาน<br><span class="text-xs text-slate-400">เมื่อมีการมอบหมายช่าง ข้อความและปุ่มจัดการจะแสดงที่นี่</span></div>
         </div>
-        ${((typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor' || currentRole === 'Admin'))) ? 
+        ${(getUserRole() === 'Executive' || getUserRole() === 'Supervisor' || getUserRole() === 'Admin') ? 
           `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm w-full sm:w-auto flex items-center justify-center gap-1.5"><i class="fa-solid fa-user-plus"></i>มอบหมายงาน</button>` : ''}
       </div>`;
     }
     
     let extra = '';
     const canManage = canManageJob(job);
-    const isSupervisor = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || 
-                         (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor' || currentRole === 'Admin'));
+    const role = getUserRole();
+    const isSupervisor = (role === 'Executive' || role === 'Supervisor' || role === 'Admin');
 
     if (job.tech && !isDone && !isCancelled && canManage) {
       if (!isInProgress) {
@@ -873,7 +985,8 @@ const TrackUI = (() => {
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
 
-    const isSupervisor = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor'));
+    const role = getUserRole();
+    const isSupervisor = (role === 'Executive' || role === 'Supervisor' || role === 'Admin');
 
     const x = await Swal.fire({
       title: 'อัปเดต / ปิดงาน',
@@ -949,6 +1062,11 @@ const TrackUI = (() => {
 
   // ---------- มอบหมายช่างซ่อม (Assign Technician) ----------
   async function assignTech(jobId) {
+    const role = getUserRole();
+    if (role !== 'Admin' && role !== 'Supervisor' && role !== 'Executive') {
+      Swal.fire('ไม่มีสิทธิ์', 'เฉพาะหัวหน้างานหรือผู้ดูแลระบบเท่านั้นที่สามารถมอบหมายงานหรือเปลี่ยนช่างได้', 'warning');
+      return;
+    }
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
     
@@ -1606,8 +1724,8 @@ const TrackUI = (() => {
   // ตัวกระตุ้น Silent Auto-Sync เบื้องหลัง (ไม่รบกวนหน้าจอ ไม่เด้ง Modal)
   let lastAutoSyncTime = 0;
   function triggerSilentAutoSync() {
-    const isManager = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || 
-                      (typeof currentRole !== 'undefined' && (currentRole === 'Executive' || currentRole === 'Supervisor' || currentRole === 'Admin'));
+    const role = getUserRole();
+    const isManager = (role === 'Executive' || role === 'Supervisor' || role === 'Admin');
     if (!isManager) return;
     const now = Date.now();
     // อนุญาตให้รันเบื้องหลังสูงสุด 1 ครั้งทุกๆ 10 นาที
@@ -1647,7 +1765,8 @@ const TrackUI = (() => {
     setStatus(s) { state.status = s; render(); },
     setType(t) { state.type = t; render(); },
     toggleMine() {
-      if (typeof currentTeacher === 'undefined' || !currentTeacher) {
+      const myName = (typeof currentTeacher === 'string' && currentTeacher) || localStorage.getItem('logged_teacher');
+      if (!myName) {
         return alertBox('info', 'ต้องเข้าสู่ระบบ', 'กรุณาเข้าสู่ระบบเพื่อดูงานของคุณ');
       }
       state.mineOnly = !state.mineOnly;
@@ -1656,8 +1775,22 @@ const TrackUI = (() => {
     // เปิดหน้ารายการพร้อมตั้งค่าเริ่มต้น (เช่น หลังแจ้งซ่อมเสร็จ หรือกดจัดการงานจากการ์ด)
     show(opts = {}) {
       state.currentJobId = null;
-      if (opts.mineOnly !== undefined) state.mineOnly = !!opts.mineOnly && !!currentTeacher;
-      if (opts.type !== undefined) state.type = opts.type;
+      const role = getUserRole();
+
+      if (opts.mineOnly !== undefined) {
+        state.mineOnly = !!opts.mineOnly;
+      } else if (!state.loaded) {
+        // เมื่อเปิดหน้าครั้งแรก ถ้าเป็น Teacher ให้ default mineOnly = true เพื่อความสะอาดตา
+        const myName = (typeof currentTeacher === 'string' && currentTeacher) || localStorage.getItem('logged_teacher');
+        state.mineOnly = (role === 'Teacher' && !!myName);
+      }
+
+      if (opts.type !== undefined) {
+        state.type = opts.type;
+      } else {
+        state.type = sanitizeTypeForRole(role, state.type);
+      }
+
       if (opts.status !== undefined) state.status = opts.status;
       if (opts.force) state.loaded = false;
       nav('page-track');
