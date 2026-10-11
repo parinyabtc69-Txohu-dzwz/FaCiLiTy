@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 
 # Archives & Backups
@@ -9,10 +9,11 @@ node_modules/
 backup_*
 *_backup
 
-# Temporary patch scripts
+# Temporary & Utility scripts (Local only)
 patch_*.js
 fix.ps1
 fix.bat
+*.bat
 
 # OS files
 Thumbs.db
