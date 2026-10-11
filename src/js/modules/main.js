@@ -1453,9 +1453,7 @@ function updateSessionUI() {
 
     if (currentRole === 'Tech') {
       roleDisplay = 'ช่างซ่อมบำรุง (Tech)';
-      if (dashNav) { dashNav.classList.remove('hidden'); dashNav.classList.add('flex'); }
       if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
-      if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
       
       // New Admin menus for Tech
       if ($('gnav-project-manage')) { $('gnav-project-manage').classList.remove('hidden'); $('gnav-project-manage').classList.add('flex'); }
@@ -1471,12 +1469,10 @@ function updateSessionUI() {
 
     } else if (currentRole === 'AV') {
       roleDisplay = 'เจ้าหน้าที่โสตฯ (AV)';
-      if (dashNav) { dashNav.classList.remove('hidden'); dashNav.classList.add('flex'); }
       if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
       if (avManageNav) { avManageNav.classList.remove('hidden'); avManageNav.classList.add('flex'); }
       if (masterDataNav) { masterDataNav.classList.remove('hidden'); masterDataNav.classList.add('flex'); }
       if ($('gnav-user-manage')) { $('gnav-user-manage').classList.remove('hidden'); $('gnav-user-manage').classList.add('flex'); }
-      if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
   
       // New Admin menus for AV
       if ($('gnav-it-manage')) { $('gnav-it-manage').classList.remove('hidden'); $('gnav-it-manage').classList.add('flex'); }
@@ -1496,12 +1492,10 @@ function updateSessionUI() {
 
     } else if (currentRole === 'Staff') {
       roleDisplay = 'เจ้าหน้าที่ / แอดมิน (Staff)';
-      if (dashNav) { dashNav.classList.remove('hidden'); dashNav.classList.add('flex'); }
       if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
       if (avManageNav) { avManageNav.classList.remove('hidden'); avManageNav.classList.add('flex'); }
       if (masterDataNav) { masterDataNav.classList.remove('hidden'); masterDataNav.classList.add('flex'); }
       if ($('gnav-user-manage')) { $('gnav-user-manage').classList.remove('hidden'); $('gnav-user-manage').classList.add('flex'); }
-      if (homeCardDash) { homeCardDash.classList.remove('hidden'); homeCardDash.classList.add('flex'); }
 
       // New Admin menus for Staff
       if ($('gnav-it-manage')) { $('gnav-it-manage').classList.remove('hidden'); $('gnav-it-manage').classList.add('flex'); }
