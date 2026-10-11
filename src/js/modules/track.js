@@ -15,6 +15,7 @@ const TrackUI = (() => {
     status: 'all',   // all | pending | progress | done
     type: 'all',     // all | building | it | av | project
     mineOnly: false,
+    showArchived: false,
     searchTimer: null
   };
 
@@ -139,6 +140,207 @@ const TrackUI = (() => {
     return false;
   }
 
+  function canDeleteJob(job) {
+    if (!job) return false;
+    // 1. ระดับหัวหน้างาน หรือ แอดมิน
+    const isSupervisorOrAdmin = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || 
+                                (typeof currentRole !== 'undefined' && (currentRole === 'Supervisor' || currentRole === 'Admin' || currentRole === 'Executive'));
+    if (isSupervisorOrAdmin) return true;
+    // 2. เจ้าของงาน (ผู้แจ้ง)
+    if (isMine(job)) return true;
+    return false;
+  }
+
+  // ---------- ระบบจัดการสถานะอ่านแล้ว/ยังไม่อ่าน (Gmail Style) ----------
+  function getReadSet() {
+    try {
+      const userKey = (typeof currentEmail === 'string' && currentEmail) || (typeof currentTeacher === 'string' && currentTeacher) || 'guest';
+      const raw = localStorage.getItem('read_tickets_' + userKey);
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch(e) {
+      return new Set();
+    }
+  }
+
+  function saveReadSet(readSet) {
+    try {
+      const userKey = (typeof currentEmail === 'string' && currentEmail) || (typeof currentTeacher === 'string' && currentTeacher) || 'guest';
+      localStorage.setItem('read_tickets_' + userKey, JSON.stringify([...readSet]));
+    } catch(e) {}
+  }
+
+  function toggleRead(jobId, event) {
+    if (event) event.stopPropagation();
+    const readSet = getReadSet();
+    const isRead = readSet.has(jobId);
+    if (isRead) {
+      readSet.delete(jobId);
+    } else {
+      readSet.add(jobId);
+    }
+    saveReadSet(readSet);
+    render();
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'info',
+      title: isRead ? 'ทำเครื่องหมายว่า "ยังไม่อ่าน"' : 'ทำเครื่องหมายว่า "อ่านแล้ว"',
+      showConfirmButton: false,
+      timer: 1500
+    });
+  }
+
+  // ---------- จัดเก็บเข้าคลัง / ยกเลิกการจัดเก็บ (Archive) ----------
+  async function toggleArchive(jobId, event) {
+    if (event) event.stopPropagation();
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const newArchived = !job.isArchived;
+    const actionText = newArchived ? 'จัดเก็บงานเข้าคลังเรียบร้อย' : 'นำงานกลับมาที่คิวปกติเรียบร้อย';
+
+    try {
+      if (window.firestoreDb) {
+        await window.firestoreDb.collection('tickets').doc(job.id).update({
+          isArchived: newArchived
+        });
+      }
+      job.isArchived = newArchived;
+      render();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: actionText,
+        showConfirmButton: false,
+        timer: 2000
+      });
+    } catch (err) {
+      console.error('Archive error:', err);
+      Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเปลี่ยนสถานะการจัดเก็บได้: ' + err.message, 'error');
+    }
+  }
+
+  function toggleArchived() {
+    state.showArchived = !state.showArchived;
+    const btn = $('track-archived-btn');
+    if (btn) {
+      if (state.showArchived) {
+        btn.classList.add('bg-[#265D5A]', 'text-white', 'border-[#265D5A]');
+        btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+      } else {
+        btn.classList.remove('bg-[#265D5A]', 'text-white', 'border-[#265D5A]');
+        btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+      }
+    }
+    render();
+  }
+
+  // ---------- ลบงานออกจากระบบ (Delete) ----------
+  async function deleteJob(jobId, event) {
+    if (event) event.stopPropagation();
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    if (!canDeleteJob(job)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'ไม่มีสิทธิ์ลบรายการนี้',
+        text: 'เฉพาะเจ้าของงาน (ผู้แจ้ง) หรือระดับหัวหน้างาน/ผู้ดูแลระบบเท่านั้นที่สามารถลบได้'
+      });
+      return;
+    }
+
+    const confirm = await Swal.fire({
+      title: 'ยืนยันการลบงาน?',
+      html: `คุณต้องการลบงาน <b>#${job.id}</b> (${esc(job.subject)}) หรือไม่?<br><span class="text-xs text-rose-500">ข้อมูลที่ลบจะไม่สามารถกู้คืนได้</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'ใช่, ลบเลย',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    try {
+      if (window.firestoreDb) {
+        await window.firestoreDb.collection('tickets').doc(job.id).delete();
+      }
+      state.jobs = state.jobs.filter(j => j.id !== jobId);
+      render();
+      Swal.fire('สำเร็จ', 'ลบงานเรียบร้อยแล้ว', 'success');
+    } catch (err) {
+      console.error('Delete job error:', err);
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบงานได้: ' + err.message, 'error');
+    }
+  }
+
+  // ---------- เลื่อนเวลา / ปรับความเร่งด่วน (Snooze) ----------
+  async function openSnooze(jobId, event) {
+    if (event) event.stopPropagation();
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const { value: formValues } = await Swal.fire({
+      title: 'ตั้งเตือน / ปรับความเร่งด่วน',
+      html: `
+        <div class="text-left space-y-4 pt-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">ระดับความเร่งด่วน (Urgency)</label>
+            <select id="swal-snooze-urgency" class="w-full p-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-[#265D5A]">
+              <option value="ด่วนที่สุด (ภายใน 2 ชม.)" ${job.urgency?.includes('2 ชม.') ? 'selected' : ''}>🔴 ด่วนที่สุด (ภายใน 2 ชม.)</option>
+              <option value="ด่วน (ภายใน 24 ชม.)" ${job.urgency?.includes('24 ชม.') ? 'selected' : ''}>🟡 ด่วน (ภายใน 24 ชม.)</option>
+              <option value="ปานกลาง (2-3 วัน)" ${job.urgency?.includes('2-3 วัน') ? 'selected' : ''}>🔵 ปานกลาง (2-3 วัน)</option>
+              <option value="ตามคิว (ทั่วไป)" ${!job.urgency || job.urgency?.includes('ทั่วไป') ? 'selected' : ''}>⚪ ตามคิว (ทั่วไป)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">บันทึกช่วยจำ / เลื่อนกำหนดติดตาม</label>
+            <input type="text" id="swal-snooze-note" class="w-full p-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-[#265D5A]" placeholder="เช่น เลื่อนตรวจเช็คพรุ่งนี้ 09:00 น." value="${esc(job.snoozeNote || '')}">
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'บันทึก',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#265D5A',
+      preConfirm: () => {
+        return {
+          urgency: document.getElementById('swal-snooze-urgency').value,
+          note: document.getElementById('swal-snooze-note').value.trim()
+        };
+      }
+    });
+
+    if (!formValues) return;
+
+    try {
+      if (window.firestoreDb) {
+        await window.firestoreDb.collection('tickets').doc(job.id).update({
+          urgency: formValues.urgency,
+          snoozeNote: formValues.note
+        });
+      }
+      job.urgency = formValues.urgency;
+      job.snoozeNote = formValues.note;
+      render();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'บันทึกข้อมูลเรียบร้อยแล้ว',
+        showConfirmButton: false,
+        timer: 2000
+      });
+    } catch (err) {
+      console.error('Snooze update error:', err);
+      Swal.fire('ข้อผิดพลาด', err.message, 'error');
+    }
+  }
+
   // ---------- แปลงแถวข้อมูลจาก Sheet ให้อยู่ในรูปแบบเดียวกัน ----------
   // อาคาร (เรียงเก่า→ใหม่): 0 เวลา,1 หัวข้อ,2 รายละเอียด,3 ผู้แจ้ง,4 สถานะ,5 รูปแจ้ง,6 รายละเอียดการแก้ไข,7 ช่าง,8 รูปผลงาน,9 ค่าใช้จ่าย,10 ใบเสร็จ,11 ความเร่งด่วน,12 หน่วยงาน,13 สถานที่,14 วันที่พบปัญหา,15 ติดต่อ
   function fromBuilding(r, idx) {
@@ -193,7 +395,9 @@ const TrackUI = (() => {
       dept: docData.dept || '',
       location: docData.location || '',
       incident: incidentDate,
-      contact: docData.contact || ''
+      contact: docData.contact || '',
+      isArchived: Boolean(docData.isArchived),
+      snoozeNote: docData.snoozeNote || ''
     };
   }
 
@@ -302,6 +506,11 @@ const TrackUI = (() => {
   function filtered(ignoreStatus = false) {
     const q = state.search.toLowerCase();
     return state.jobs.filter(j => {
+      if (state.showArchived) {
+        if (!j.isArchived) return false;
+      } else {
+        if (j.isArchived) return false;
+      }
       if (state.type !== 'all' && j.type !== state.type) return false;
       if (state.mineOnly && !isMine(j)) return false;
       if (!ignoreStatus && state.status !== 'all') {
@@ -411,10 +620,15 @@ const TrackUI = (() => {
       cancel: 'bg-slate-400 ring-2 ring-slate-200'
     };
 
+    const readSet = getReadSet();
+
     list.innerHTML = items.map(j => {
       const t = TYPES[j.type] || { chip: 'bg-slate-100 text-slate-600', icon: 'fa-wrench', label: 'ทั่วไป' };
       const mine = isMine(j);
       const dotCls = dotColors[j.group] || 'bg-slate-400';
+      const isRead = readSet.has(j.id);
+      const userCanDelete = canDeleteJob(j);
+
       return `
       <button onclick="TrackUI.open('${j.id}')" id="track-item-${j.id}"
         class="w-full text-left px-4 py-3.5 rounded-2xl border ${mine ? 'border-[#265D5A]/40 bg-[#F3FCFA]' : 'border-slate-200/90 bg-white'} hover:border-[#265D5A]/50 hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5 transition-all group shadow-sm flex flex-col md:flex-row md:items-center gap-2 md:gap-4 cursor-pointer">
@@ -425,20 +639,47 @@ const TrackUI = (() => {
           <span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">#${j.id}</span>
           <span class="text-[11px] px-2 py-0.5 rounded-md ${t.chip} shrink-0 font-medium"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
           ${mine ? '<span class="text-[10px] px-2 py-0.5 rounded-md bg-[#265D5A] text-white font-medium shrink-0">งานของฉัน</span>' : ''}
+          ${j.isArchived ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-medium shrink-0"><i class="fa-solid fa-box-archive mr-1"></i>จัดเก็บแล้ว</span>' : ''}
         </div>
 
         <!-- ส่วนกลาง: ชื่อหัวข้องานหนา - รายละเอียดงานสีเทา บังคับบรรทัดเดียว (Truncate) -->
         <div class="flex-1 min-w-0 truncate text-sm">
-          <span class="font-semibold text-slate-800 group-hover:text-[#265D5A] transition-colors">${esc(j.subject)}</span>
+          <span class="${isRead ? 'font-medium text-slate-700' : 'font-bold text-slate-900'} group-hover:text-[#265D5A] transition-colors">${esc(j.subject)}</span>
           <span class="text-slate-300 mx-1.5">-</span>
-          <span class="text-slate-500 font-light">${esc(j.detail) || 'ไม่มีรายละเอียดเพิ่มเติม'}</span>
+          <span class="${isRead ? 'text-slate-400 font-light' : 'text-slate-600 font-normal'} truncate">${esc(j.detail) || 'ไม่มีรายละเอียดเพิ่มเติม'}</span>
         </div>
 
-        <!-- ฝั่งขวา: ช่างผู้รับผิดชอบ และ ระยะเวลา -->
+        <!-- ฝั่งขวา: สลับระหว่าง [ช่าง/เวลา] ปกติ กับ [Gmail Actions 4 ปุ่ม] เมื่อ Hover -->
         <div class="flex items-center gap-3 text-xs text-slate-500 shrink-0 md:ml-auto">
-          <span class="text-slate-600 truncate max-w-[130px] md:max-w-[160px]">${j.tech ? `<i class="fa-solid fa-user-gear text-[#265D5A] mr-1"></i>${esc(j.tech)}` : '<i class="fa-regular fa-hourglass-half mr-1 text-slate-400"></i>รอมอบหมาย'}</span>
-          <span class="text-slate-300">·</span>
-          <span class="whitespace-nowrap text-slate-400"><i class="fa-regular fa-clock mr-1 text-slate-300"></i>${timeAgo(j.created) || esc(j.createdRaw)}</span>
+          <!-- ข้อมูลปกติ (ซ่อนเมื่อ Hover บน Desktop) -->
+          <div class="flex items-center gap-3 md:group-hover:hidden transition-all">
+            <span class="text-slate-600 truncate max-w-[130px] md:max-w-[160px]">${j.tech ? `<i class="fa-solid fa-user-gear text-[#265D5A] mr-1"></i>${esc(j.tech)}` : '<i class="fa-regular fa-hourglass-half mr-1 text-slate-400"></i>รอมอบหมาย'}</span>
+            <span class="text-slate-300">·</span>
+            <span class="whitespace-nowrap text-slate-400"><i class="fa-regular fa-clock mr-1 text-slate-300"></i>${timeAgo(j.created) || esc(j.createdRaw)}</span>
+          </div>
+
+          <!-- Gmail Action Icons (แสดงเมื่อ Hover บน Desktop) -->
+          <div class="hidden md:group-hover:flex items-center gap-1 transition-all">
+            <!-- 1. Archive จัดเก็บ -->
+            <button type="button" onclick="TrackUI.toggleArchive('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:bg-slate-200 transition-colors" title="${j.isArchived ? 'ยกเลิกการจัดเก็บ' : 'จัดเก็บเข้าคลัง (Archive)'}">
+              <i class="fa-solid ${j.isArchived ? 'fa-box-open text-[#265D5A]' : 'fa-box-archive'} text-sm"></i>
+            </button>
+            
+            <!-- 2. Delete ถังขยะ (ตรวจสอบสิทธิ์) -->
+            <button type="button" onclick="TrackUI.deleteJob('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center ${userCanDelete ? 'text-slate-500 hover:text-rose-600 hover:bg-rose-100' : 'text-slate-300 cursor-not-allowed hover:bg-slate-100'}" title="${userCanDelete ? 'ลบงานนี้' : 'ไม่มีสิทธิ์ลบ (เฉพาะเจ้าของงาน/หัวหน้างาน/แอดมิน)'}">
+              <i class="fa-regular fa-trash-can text-sm"></i>
+            </button>
+
+            <!-- 3. Mark Read / Unread ซองจดหมาย -->
+            <button type="button" onclick="TrackUI.toggleRead('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:bg-slate-200 transition-colors" title="${isRead ? 'ทำเครื่องหมายว่ายังไม่อ่าน' : 'ทำเครื่องหมายว่าอ่านแล้ว'}">
+              <i class="fa-regular ${isRead ? 'fa-envelope' : 'fa-envelope-open'} text-sm"></i>
+            </button>
+
+            <!-- 4. Snooze / Urgency นาฬิกา -->
+            <button type="button" onclick="TrackUI.openSnooze('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors" title="ตั้งเตือน / ปรับความเร่งด่วน">
+              <i class="fa-regular fa-clock text-sm"></i>
+            </button>
+          </div>
         </div>
       </button>`;
     }).join('');
@@ -572,6 +813,14 @@ const TrackUI = (() => {
 
   async function open(id) {
     state.currentJobId = id;
+    // มาร์กว่าอ่านแล้วอัตโนมัติเมื่อเปิดดูรายละเอียด
+    try {
+      const readSet = getReadSet();
+      if (!readSet.has(id)) {
+        readSet.add(id);
+        saveReadSet(readSet);
+      }
+    } catch(e) {}
     let job = state.jobs.find(j => j.id === id);
     if (!job && window.firestoreDb) {
       try {
@@ -1387,6 +1636,11 @@ const TrackUI = (() => {
     open,
     startJob,
     updateProgress,
+    deleteJob,
+    toggleArchive,
+    toggleRead,
+    openSnooze,
+    toggleArchived,
     assignTech,
     closeJob,
     submitChat,
