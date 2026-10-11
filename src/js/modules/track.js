@@ -659,17 +659,12 @@ const TrackUI = (() => {
 
           <!-- Gmail Action Icons (แสดงแทนที่ช่าง/เวลาเมื่อ Hover บน Desktop) -->
           <div class="hidden md:group-hover:flex items-center gap-1.5 absolute right-0 transition-all">
-            <!-- 1. Mark Read / Unread ซองจดหมาย -->
-            <button type="button" onclick="TrackUI.toggleRead('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:bg-slate-200/80 transition-colors" title="${isRead ? 'ทำเครื่องหมายว่ายังไม่อ่าน' : 'ทำเครื่องหมายว่าอ่านแล้ว'}">
-              <i class="fa-regular ${isRead ? 'fa-envelope' : 'fa-envelope-open'} text-sm"></i>
-            </button>
-
-            <!-- 2. Snooze / Urgency นาฬิกา -->
+            <!-- 1. Snooze / Urgency นาฬิกา -->
             <button type="button" onclick="TrackUI.openSnooze('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors" title="ตั้งเตือน / ปรับความเร่งด่วน">
               <i class="fa-regular fa-clock text-sm"></i>
             </button>
 
-            <!-- 3. Delete ถังขยะ (ตรวจสอบสิทธิ์) -->
+            <!-- 2. Delete ถังขยะ (ตรวจสอบสิทธิ์) -->
             <button type="button" onclick="TrackUI.deleteJob('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center ${userCanDelete ? 'text-slate-500 hover:text-rose-600 hover:bg-rose-100' : 'text-slate-300 cursor-not-allowed hover:bg-slate-100'}" title="${userCanDelete ? 'ลบงานนี้' : 'ไม่มีสิทธิ์ลบ (เฉพาะเจ้าของงาน/หัวหน้างาน/แอดมิน)'}">
               <i class="fa-regular fa-trash-can text-sm"></i>
             </button>
