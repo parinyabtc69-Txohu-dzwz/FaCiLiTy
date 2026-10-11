@@ -18,27 +18,46 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             <!-- 1. สถานที่ / ห้อง -->
             <div class="bg-white rounded-2xl border p-5 shadow-sm flex flex-col">
-              <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <i class="fa-solid fa-door-open text-[#265D5A]"></i> สถานที่ / ห้อง
+              <h3 class="font-bold text-slate-800 mb-3 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                  <i class="fa-solid fa-door-open text-[#265D5A]"></i> สถานที่ / ห้อง
+                </span>
+                <span id="md-loc-count" class="text-xs font-normal text-slate-400"></span>
               </h3>
               <div class="space-y-2 mb-3">
                 <input id="md-location-name" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-[#265D5A]" placeholder="ชื่อสถานที่ เช่น ห้อง 101">
-                <select id="md-location-dept" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-[#265D5A]">
-                  <option value="วพบ.">วพบ. (วิทยาลัย)</option>
-                  <option value="ศษ.">ศษ. (โรงเรียน)</option>
-                  <option value="ส่วนกลาง">ส่วนกลาง / ทั่วไป</option>
-                </select>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-500 mb-1">สังกัด / กรองรายการ:</label>
+                  <select id="md-location-dept" onchange="filterMasterLocations(this.value)" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-[#265D5A]">
+                    <option value="ทั้งหมด">-- แสดงทุกสังกัด (ทั้งหมด) --</option>
+                    <option value="วพบ.">วพบ. (วิทยาลัย)</option>
+                    <option value="ศษ.">ศษ. (โรงเรียน)</option>
+                    <option value="ส่วนกลาง">ส่วนกลาง / ทั่วไป</option>
+                  </select>
+                </div>
               </div>
               <button onclick="addMaster('location')" class="w-full bg-[#265D5A] hover:bg-[#1a3f3d] transition-colors text-white rounded-xl py-2.5 text-sm font-bold shadow-sm">
                 <i class="fa-solid fa-plus mr-1"></i> เพิ่มสถานที่
               </button>
-              <div id="md-locations" class="mt-4 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
+
+              <!-- แท็บปุ่มกดกรองรวดเร็ว -->
+              <div class="flex gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
+                <button type="button" onclick="filterMasterLocations('ทั้งหมด')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-[#265D5A] text-white" data-dept="ทั้งหมด">ทั้งหมด</button>
+                <button type="button" onclick="filterMasterLocations('วพบ.')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="วพบ.">วพบ.</button>
+                <button type="button" onclick="filterMasterLocations('ศษ.')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ศษ.">ศษ.</button>
+                <button type="button" onclick="filterMasterLocations('ส่วนกลาง')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ส่วนกลาง">ส่วนกลาง</button>
+              </div>
+
+              <div id="md-locations" class="mt-2 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
             </div>
 
             <!-- 2. แผนก / ฝ่าย -->
             <div class="bg-white rounded-2xl border p-5 shadow-sm flex flex-col">
-              <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <i class="fa-solid fa-building-user text-amber-600"></i> แผนก / ฝ่าย
+              <h3 class="font-bold text-slate-800 mb-3 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                  <i class="fa-solid fa-building-user text-amber-600"></i> แผนก / ฝ่าย
+                </span>
+                <span id="md-dept-count" class="text-xs font-normal text-slate-400"></span>
               </h3>
               <div class="space-y-2 mb-3">
                 <input id="md-dept-name" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-amber-500" placeholder="ชื่อฝ่าย เช่น ฝ่ายวิชาการ">
@@ -51,21 +70,37 @@
 
             <!-- 3. โครงการ -->
             <div class="bg-white rounded-2xl border p-5 shadow-sm flex flex-col">
-              <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <i class="fa-solid fa-building-circle-check text-violet-600"></i> โครงการ
+              <h3 class="font-bold text-slate-800 mb-3 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                  <i class="fa-solid fa-building-circle-check text-violet-600"></i> โครงการ
+                </span>
+                <span id="md-proj-count" class="text-xs font-normal text-slate-400"></span>
               </h3>
               <div class="space-y-2 mb-3">
                 <input id="md-project-name" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-violet-500" placeholder="ชื่อโครงการ">
-                <select id="md-project-dept" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-violet-500">
-                  <option value="วพบ.">วพบ. (วิทยาลัย)</option>
-                  <option value="ศษ.">ศษ. (โรงเรียน)</option>
-                  <option value="ส่วนกลาง">ส่วนกลาง / ทั่วไป</option>
-                </select>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-500 mb-1">สังกัด / กรองรายการ:</label>
+                  <select id="md-project-dept" onchange="filterMasterProjects(this.value)" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-violet-500">
+                    <option value="ทั้งหมด">-- แสดงทุกสังกัด (ทั้งหมด) --</option>
+                    <option value="วพบ.">วพบ. (วิทยาลัย)</option>
+                    <option value="ศษ.">ศษ. (โรงเรียน)</option>
+                    <option value="ส่วนกลาง">ส่วนกลาง / ทั่วไป</option>
+                  </select>
+                </div>
               </div>
               <button onclick="addMaster('project')" class="w-full bg-violet-600 hover:bg-violet-700 transition-colors text-white rounded-xl py-2.5 text-sm font-bold shadow-sm">
                 <i class="fa-solid fa-plus mr-1"></i> เพิ่มโครงการ
               </button>
-              <div id="md-projects" class="mt-4 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
+
+              <!-- แท็บปุ่มกดกรองรวดเร็ว -->
+              <div class="flex gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
+                <button type="button" onclick="filterMasterProjects('ทั้งหมด')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-violet-600 text-white" data-dept="ทั้งหมด">ทั้งหมด</button>
+                <button type="button" onclick="filterMasterProjects('วพบ.')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="วพบ.">วพบ.</button>
+                <button type="button" onclick="filterMasterProjects('ศษ.')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ศษ.">ศษ.</button>
+                <button type="button" onclick="filterMasterProjects('ส่วนกลาง')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ส่วนกลาง">ส่วนกลาง</button>
+              </div>
+
+              <div id="md-projects" class="mt-2 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
             </div>
 
             <!-- 4. ช่าง / ผู้รับผิดชอบ -->

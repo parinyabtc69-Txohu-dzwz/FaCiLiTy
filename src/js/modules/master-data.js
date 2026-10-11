@@ -332,12 +332,14 @@ const MasterData = (() => {
     const inst = (instVal || '').trim();
     const allLocs = state.locations || [];
 
-    // กรองสถานที่: ถ้าเลือก วพบ. ก็เอาของ วพบ. + ส่วนกลาง, ถ้าเลือก ศษ. ก็เอาของ ศษ. + ส่วนกลาง
+    // กรองสถานที่: ถ้าเลือก วพบ. ก็เอาของ วพบ. + ส่วนกลาง, ถ้าเลือก ศษ. ก็เอาของ ศษ. + ส่วนกลาง, ถ้าเลือก ส่วนกลาง ก็เอาส่วนกลาง
     let filtered = allLocs;
-    if (inst === 'วพบ.') {
-      filtered = allLocs.filter(l => l.department === 'วพบ.' || l.department === 'ส่วนกลาง' || l.department === 'วิทยาลัย');
-    } else if (inst === 'ศษ.') {
-      filtered = allLocs.filter(l => l.department === 'ศษ.' || l.department === 'ส่วนกลาง' || l.department === 'โรงเรียน');
+    if (inst.startsWith('วพบ')) {
+      filtered = allLocs.filter(l => (l.department || '').startsWith('วพบ') || l.department === 'ส่วนกลาง' || l.department === 'วิทยาลัย');
+    } else if (inst.startsWith('ศษ')) {
+      filtered = allLocs.filter(l => (l.department || '').startsWith('ศษ') || l.department === 'ส่วนกลาง' || l.department === 'โรงเรียน');
+    } else if (inst.includes('ส่วนกลาง')) {
+      filtered = allLocs.filter(l => l.department === 'ส่วนกลาง');
     }
 
     let html = `<option value="" disabled selected>-- เลือกสถานที่ / ห้อง --</option>`;
@@ -496,15 +498,68 @@ const MasterData = (() => {
     }
   }
 
+  let activeLocFilter = 'ทั้งหมด';
+  let activeProjFilter = 'ทั้งหมด';
+
+  function filterLocations(dept) {
+    activeLocFilter = dept || 'ทั้งหมด';
+    const sel = document.getElementById('md-location-dept');
+    if (sel && sel.value !== activeLocFilter) {
+      sel.value = activeLocFilter;
+    }
+    document.querySelectorAll('.md-loc-tab').forEach(btn => {
+      const bDept = btn.getAttribute('data-dept');
+      if (bDept === activeLocFilter) {
+        btn.className = 'md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-[#265D5A] text-white shadow-sm';
+      } else {
+        btn.className = 'md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200';
+      }
+    });
+    renderMasterDataUI();
+  }
+
+  function filterProjects(dept) {
+    activeProjFilter = dept || 'ทั้งหมด';
+    const sel = document.getElementById('md-project-dept');
+    if (sel && sel.value !== activeProjFilter) {
+      sel.value = activeProjFilter;
+    }
+    document.querySelectorAll('.md-proj-tab').forEach(btn => {
+      const bDept = btn.getAttribute('data-dept');
+      if (bDept === activeProjFilter) {
+        btn.className = 'md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-violet-600 text-white shadow-sm';
+      } else {
+        btn.className = 'md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200';
+      }
+    });
+    renderMasterDataUI();
+  }
+
   // แสดงผลในหน้า Master Data UI (page-master-data.html)
   function renderMasterDataUI() {
     const locEl = document.getElementById('md-locations');
+    const locCountEl = document.getElementById('md-loc-count');
     const depEl = document.getElementById('md-departments');
+    const depCountEl = document.getElementById('md-dept-count');
     const proEl = document.getElementById('md-projects');
+    const proCountEl = document.getElementById('md-proj-count');
     const mecEl = document.getElementById('md-mechanics');
 
     if (locEl) {
-      locEl.innerHTML = (state.locations || []).map(x =>
+      let filteredLocs = state.locations || [];
+      if (activeLocFilter && activeLocFilter !== 'ทั้งหมด') {
+        filteredLocs = filteredLocs.filter(x => {
+          if (activeLocFilter.startsWith('วพบ')) return (x.department || '').startsWith('วพบ') || x.department === 'วิทยาลัย';
+          if (activeLocFilter.startsWith('ศษ')) return (x.department || '').startsWith('ศษ') || x.department === 'โรงเรียน';
+          if (activeLocFilter.includes('ส่วนกลาง')) return x.department === 'ส่วนกลาง';
+          return x.department === activeLocFilter;
+        });
+      }
+      if (locCountEl) {
+        locCountEl.textContent = `(${filteredLocs.length} จาก ${state.locations.length} ห้อง)`;
+      }
+
+      locEl.innerHTML = filteredLocs.map(x =>
         `<div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 text-slate-800 border border-slate-100 hover:bg-slate-100/60 transition">
           <div class="flex items-center gap-2">
             <span class="text-xs px-2 py-0.5 rounded-md font-semibold ${x.department === 'วพบ.' ? 'bg-sky-100 text-sky-700' : (x.department === 'ศษ.' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700')}">${sanitize(x.department || 'ทั่วไป')}</span>
@@ -515,10 +570,13 @@ const MasterData = (() => {
             <button onclick="MasterData.deleteItem('location','${sanitize(x.id)}')" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
           </div>
         </div>`
-      ).join('') || '<p class="text-slate-400 text-sm p-4 text-center">ยังไม่มีข้อมูล</p>';
+      ).join('') || '<p class="text-slate-400 text-sm p-4 text-center">ไม่พบรายการห้องในสังกัดนี้</p>';
     }
 
     if (depEl) {
+      if (depCountEl) {
+        depCountEl.textContent = `(${state.departments.length} แผนก)`;
+      }
       depEl.innerHTML = (state.departments || []).map(x =>
         `<div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 text-slate-800 border border-slate-100 hover:bg-slate-100/60 transition">
           <span class="font-medium text-sm"><i class="fa-solid fa-building-user text-slate-400 mr-2"></i>${sanitize(x.name)}</span>
@@ -528,7 +586,20 @@ const MasterData = (() => {
     }
 
     if (proEl) {
-      proEl.innerHTML = (state.projects || []).map(x =>
+      let filteredProjs = state.projects || [];
+      if (activeProjFilter && activeProjFilter !== 'ทั้งหมด') {
+        filteredProjs = filteredProjs.filter(x => {
+          if (activeProjFilter.startsWith('วพบ')) return (x.department || '').startsWith('วพบ') || x.department === 'วิทยาลัย';
+          if (activeProjFilter.startsWith('ศษ')) return (x.department || '').startsWith('ศษ') || x.department === 'โรงเรียน';
+          if (activeProjFilter.includes('ส่วนกลาง')) return x.department === 'ส่วนกลาง';
+          return x.department === activeProjFilter;
+        });
+      }
+      if (proCountEl) {
+        proCountEl.textContent = `(${filteredProjs.length} จาก ${state.projects.length} โครงการ)`;
+      }
+
+      proEl.innerHTML = filteredProjs.map(x =>
         `<div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 text-slate-800 border border-slate-100 hover:bg-slate-100/60 transition">
           <div>
             <div class="font-medium text-sm">${sanitize(x.name)}</div>
@@ -536,7 +607,7 @@ const MasterData = (() => {
           </div>
           <button onclick="MasterData.deleteItem('project','${sanitize(x.id)}')" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
         </div>`
-      ).join('') || '<p class="text-slate-400 text-sm p-4 text-center">ยังไม่มีข้อมูล</p>';
+      ).join('') || '<p class="text-slate-400 text-sm p-4 text-center">ไม่พบโครงการในสังกัดนี้</p>';
     }
 
     if (mecEl) {
@@ -581,6 +652,8 @@ const MasterData = (() => {
     handleSelectOther,
     updateDepartmentSelect,
     updateProjectSelect,
+    filterLocations,
+    filterProjects,
     getValue,
     getState: () => state,
     DEFAULT_DATA
@@ -592,6 +665,18 @@ window.MasterData = MasterData;
 // Global Hooks สำหรับหน้า HTML
 window.loadMasterData = function (force = true) {
   return MasterData.load(force);
+};
+
+window.filterMasterLocations = function (dept) {
+  if (window.MasterData && typeof window.MasterData.filterLocations === 'function') {
+    window.MasterData.filterLocations(dept);
+  }
+};
+
+window.filterMasterProjects = function (dept) {
+  if (window.MasterData && typeof window.MasterData.filterProjects === 'function') {
+    window.MasterData.filterProjects(dept);
+  }
 };
 
 window.seedInitialMasterData = function () {
@@ -619,7 +704,9 @@ window.addMaster = async function (type) {
     const deptEl = document.getElementById('md-location-dept');
     if (!nameEl || !nameEl.value.trim()) return alertBox('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกชื่อสถานที่/ห้อง');
     item.name = nameEl.value.trim();
-    item.department = deptEl ? deptEl.value : 'วพบ.';
+    let chosenDept = deptEl ? deptEl.value : 'วพบ.';
+    if (chosenDept === 'ทั้งหมด') chosenDept = 'วพบ.';
+    item.department = chosenDept;
     nameEl.value = '';
   } else if (type === 'department') {
     const nameEl = document.getElementById('md-dept-name');
@@ -631,7 +718,9 @@ window.addMaster = async function (type) {
     const deptEl = document.getElementById('md-project-dept');
     if (!nameEl || !nameEl.value.trim()) return alertBox('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกชื่อโครงการ');
     item.name = nameEl.value.trim();
-    item.department = deptEl ? deptEl.value : 'ทั่วไป';
+    let chosenDept = deptEl ? deptEl.value : 'ทั่วไป';
+    if (chosenDept === 'ทั้งหมด') chosenDept = 'วพบ.';
+    item.department = chosenDept;
     nameEl.value = '';
   } else if (type === 'mechanic') {
     const nameEl = document.getElementById('md-mechanic-name');
