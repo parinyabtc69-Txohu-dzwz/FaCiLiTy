@@ -3164,8 +3164,8 @@ document.addEventListener('DOMContentLoaded', () => {
           // ถ้ามี ticketId ใน URL ไม่ต้องเด้งหนี ให้เปิดดูงานนั้นตรงๆ
           const urlParams = new URLSearchParams(window.location.search);
           if (!urlParams.get('ticketId')) {
-            // ไม่ว่าจะแอดมินหรือครู ให้ไปหน้าแรกเสมอ
-            nav('page-teacher-profile');
+            // ไม่ว่าจะแอดมินหรือครู ให้ไปหน้าแรก (Home) เสมอ
+            nav('page-home');
           }
         }
       }
@@ -3216,8 +3216,8 @@ function handleLiffLogin() {
                 window.TrackUI.open(tid);
               }
             } else {
-              // ให้ไปหน้าแรกเสมอ
-              nav('page-teacher-profile');
+              // ให้ไปหน้าแรก (Home) เสมอ
+              nav('page-home');
             }
           });
       })
@@ -3341,7 +3341,7 @@ function finalizeLogin(name, role, email) {
           window.TrackUI.open(tid);
         }
       } else {
-        nav('page-teacher-profile');
+        nav('page-home');
       }
     });
 }
@@ -3510,7 +3510,7 @@ function updateSessionUI() {
 
     if ($('page-auth').classList.contains('active')) {
       const urlParams = new URLSearchParams(window.location.search);
-      if (!urlParams.get('ticketId')) nav('page-teacher-profile');
+      if (!urlParams.get('ticketId')) nav('page-home');
     }
 
   } else if (currentTeacher) {
@@ -3630,7 +3630,7 @@ function updateSessionUI() {
     if ($('page-auth').classList.contains('active')) {
       const urlParams = new URLSearchParams(window.location.search);
       if (!urlParams.get('ticketId')) {
-        nav('page-teacher-profile');
+        nav('page-home');
       }
     }
 
