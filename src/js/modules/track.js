@@ -1195,10 +1195,10 @@ const TrackUI = (() => {
         }
       });
       
-      // กรองเฉพาะ Tech และ AV และผู้ที่มีสิทธิ์
+      // กรองเฉพาะ Tech และ AV เท่านั้น (ไม่รวม Admin / ผู้ดูแลระบบ)
       techList = [];
       userMap.forEach(user => {
-        if (user.role === 'Tech' || user.role === 'AV' || user.role === 'Admin') {
+        if (user.role === 'Tech' || user.role === 'AV') {
           techList.push({ name: user.name, email: user.originalEmail, role: user.role, phone: user.phone || '' });
         }
       });
