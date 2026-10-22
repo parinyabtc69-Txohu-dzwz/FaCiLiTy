@@ -9111,6 +9111,7 @@ window.loadFbAdminTickets = function () {
 // Developed by Taohx_dz_parinya
 
 let deferredInstallPrompt = null;
+let hasAutoPrompted = false;
 
 /**
  * ตรวจสอบว่าแอปทำงานในโหมด Standalone (ติดตั้งเป็นไอคอนแล้ว) หรือไม่
@@ -9143,9 +9144,18 @@ function showInstallButtons() {
   const sidebarBtn = document.getElementById('btn-pwa-install-sidebar');
   const dropdownBtn = document.getElementById('btn-pwa-install-dropdown');
 
-  if (headerBtn) headerBtn.classList.remove('hidden');
-  if (sidebarBtn) sidebarBtn.classList.remove('hidden');
-  if (dropdownBtn) dropdownBtn.classList.remove('hidden');
+  if (headerBtn) {
+    headerBtn.classList.remove('hidden');
+    headerBtn.classList.add('flex');
+  }
+  if (sidebarBtn) {
+    sidebarBtn.classList.remove('hidden');
+    sidebarBtn.classList.add('flex');
+  }
+  if (dropdownBtn) {
+    dropdownBtn.classList.remove('hidden');
+    dropdownBtn.classList.add('flex');
+  }
 }
 
 /**
@@ -9156,9 +9166,18 @@ function hideInstallButtons() {
   const sidebarBtn = document.getElementById('btn-pwa-install-sidebar');
   const dropdownBtn = document.getElementById('btn-pwa-install-dropdown');
 
-  if (headerBtn) headerBtn.classList.add('hidden');
-  if (sidebarBtn) sidebarBtn.classList.add('hidden');
-  if (dropdownBtn) dropdownBtn.classList.add('hidden');
+  if (headerBtn) {
+    headerBtn.classList.add('hidden');
+    headerBtn.classList.remove('flex');
+  }
+  if (sidebarBtn) {
+    sidebarBtn.classList.add('hidden');
+    sidebarBtn.classList.remove('flex');
+  }
+  if (dropdownBtn) {
+    dropdownBtn.classList.add('hidden');
+    dropdownBtn.classList.remove('flex');
+  }
 }
 
 /**
@@ -9179,10 +9198,10 @@ async function triggerPWAInstall() {
     return;
   }
 
-  // กรณีเป็น Android / Chrome / Edge และมี Event prompt พร้อม
+  // กรณีเป็น Android / Chrome / Edge และมี Event prompt พร้อม -> เด้งหน้าต่างติดตั้งของระบบทันที!
   if (deferredInstallPrompt) {
     try {
-      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.prompt();
       const choiceResult = await deferredInstallPrompt.userChoice;
       if (choiceResult && choiceResult.outcome === 'accepted') {
         console.log('[PWA] ผู้ใช้ยอมรับการติดตั้งแอป');
@@ -9190,40 +9209,92 @@ async function triggerPWAInstall() {
       } else {
         console.log('[PWA] ผู้ใช้ยกเลิกการติดตั้งแอป');
       }
+      deferredInstallPrompt = null;
+      return;
     } catch (err) {
       console.warn('[PWA] ข้อผิดพลาดขณะเรียก prompt:', err);
     }
-    deferredInstallPrompt = null;
-    return;
   }
 
-  // กรณีเป็น iOS Safari (iPhone / iPad)
+  // กรณีเป็น iOS Safari (iPhone / iPad) -> เด้งหน้าต่างแนะนำภาพสไลด์ 3 สเต็ป
   if (isIOS()) {
     openIosInstallModal();
     return;
   }
 
-  // กรณีอื่นๆ (เช่น Desktop ที่ยังไม่ trigger หรือเบราว์เซอร์อื่นๆ)
-  if (typeof Swal !== 'undefined') {
-    Swal.fire({
-      icon: 'info',
-      title: 'ติดตั้งแอปลงหน้าจอหลัก',
-      html: `
-        <div class="text-left text-sm space-y-3 text-slate-700 leading-relaxed">
-          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-            <p class="font-bold text-[#265D5A] mb-1"><i class="fa-brands fa-chrome mr-1"></i> บนมือถือ Android (Chrome):</p>
-            <p class="text-xs text-slate-600">กดปุ่มเมนู 3 จุด (<i class="fa-solid fa-ellipsis-vertical"></i>) ที่มุมขวาบนของเบราว์เซอร์ แล้วเลือก <b>"เพิ่มลงในหน้าจอหลัก"</b> หรือ <b>"ติดตั้งแอปพลิเคชัน"</b></p>
-          </div>
-          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-            <p class="font-bold text-[#265D5A] mb-1"><i class="fa-solid fa-desktop mr-1"></i> บนคอมพิวเตอร์ (Chrome / Edge):</p>
-            <p class="text-xs text-slate-600">คลิกที่ไอคอนติดตั้ง <i class="fa-solid fa-download text-[#265D5A]"></i> บริเวณด้านขวาสุดของแถบกรอกที่อยู่เว็บ (Address bar) แล้วคลิก <b>"ติดตั้ง"</b></p>
-          </div>
-        </div>
-      `,
-      confirmButtonColor: '#265D5A',
-      confirmButtonText: 'เข้าใจแล้ว'
-    });
-  }
+  // กรณีที่ Event ยังเตรียมไม่เสร็จ ให้รอ 1 วินาทีแล้วลองเรียกใหม่
+  let waitCount = 0;
+  const checkInterval = setInterval(async () => {
+    waitCount++;
+    if (deferredInstallPrompt) {
+      clearInterval(checkInterval);
+      try {
+        await deferredInstallPrompt.prompt();
+        const choiceResult = await deferredInstallPrompt.userChoice;
+        if (choiceResult && choiceResult.outcome === 'accepted') {
+          hideInstallButtons();
+        }
+        deferredInstallPrompt = null;
+      } catch (err) {}
+      return;
+    }
+
+    if (waitCount >= 4) {
+      clearInterval(checkInterval);
+      // Fallback ถ้าเบราว์เซอร์ไม่รองรับ
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'info',
+          title: 'ติดตั้งแอปลงหน้าจอหลัก',
+          html: `
+            <div class="text-left text-sm space-y-3 text-slate-700 leading-relaxed">
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <p class="font-bold text-[#265D5A] mb-1"><i class="fa-brands fa-chrome mr-1"></i> บนมือถือ Android (Chrome):</p>
+                <p class="text-xs text-slate-600">กดปุ่มเมนู 3 จุด (<i class="fa-solid fa-ellipsis-vertical"></i>) ที่มุมขวาบนของเบราว์เซอร์ แล้วเลือก <b>"เพิ่มลงในหน้าจอหลัก"</b> หรือ <b>"ติดตั้งแอปพลิเคชัน"</b></p>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <p class="font-bold text-[#265D5A] mb-1"><i class="fa-solid fa-desktop mr-1"></i> บนคอมพิวเตอร์ (Chrome / Edge):</p>
+                <p class="text-xs text-slate-600">คลิกที่ไอคอนติดตั้ง <i class="fa-solid fa-download text-[#265D5A]"></i> บริเวณด้านขวาสุดของแถบกรอกที่อยู่เว็บ (Address bar) แล้วคลิก <b>"ติดตั้ง"</b></p>
+              </div>
+            </div>
+          `,
+          confirmButtonColor: '#265D5A',
+          confirmButtonText: 'เข้าใจแล้ว'
+        });
+      }
+    }
+  }, 300);
+}
+
+/**
+ * ฟังก์ชันทำงานแบบ Auto Prompt:
+ * เมื่อเบราว์เซอร์พร้อมติดตั้ง และผู้ใช้แตะหรือคลิกหน้าจอครั้งแรก ให้เรียกหน้าต่างติดตั้งของระบบขึ้นมาทันทีอัตโนมัติ
+ */
+function setupAutoInstallPrompt() {
+  if (hasAutoPrompted || isAppInstalled()) return;
+
+  const triggerAutoOnUserGesture = async () => {
+    window.removeEventListener('click', triggerAutoOnUserGesture);
+    window.removeEventListener('touchstart', triggerAutoOnUserGesture);
+
+    if (deferredInstallPrompt && !hasAutoPrompted && !isAppInstalled()) {
+      hasAutoPrompted = true;
+      try {
+        console.log('[PWA Auto] ทำงานแบบอัตโนมัติ: เรียกหน้าต่างติดตั้งของระบบ');
+        await deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          hideInstallButtons();
+        }
+        deferredInstallPrompt = null;
+      } catch (err) {
+        console.warn('[PWA Auto Error]', err);
+      }
+    }
+  };
+
+  window.addEventListener('click', triggerAutoOnUserGesture, { once: true });
+  window.addEventListener('touchstart', triggerAutoOnUserGesture, { once: true });
 }
 
 /**
@@ -9254,8 +9325,11 @@ function closeIosInstallModal() {
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
-  console.log('[PWA] beforeinstallprompt event captured');
+  console.log('[PWA] beforeinstallprompt event captured สำเร็จ!');
   showInstallButtons();
+
+  // เปิดใช้งาน Auto Prompt อัตโนมัติเมื่อผู้ใช้สัมผัสหน้าจอ
+  setupAutoInstallPrompt();
 });
 
 // ดักจับเมื่อผู้ใช้ติดตั้งสำเร็จ
@@ -9276,7 +9350,6 @@ window.addEventListener('appinstalled', () => {
 
 // เริ่มต้นระบบเมื่อโหลดหน้าเสร็จ
 window.addEventListener('DOMContentLoaded', () => {
-  // หากติดตั้งแล้ว ให้ซ่อนปุ่ม แต่ถ้ายัง ให้แสดงปุ่มในทุกแพลตฟอร์ม
   if (isAppInstalled()) {
     hideInstallButtons();
   } else {
