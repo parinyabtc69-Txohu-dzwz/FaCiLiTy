@@ -859,11 +859,12 @@ const ResourceHubCore = {
         if ($('dash-progress-all')) $('dash-progress-all').textContent = progressAll;
         if ($('dash-completed-all')) $('dash-completed-all').textContent = completedAll;
 
-        // อัปเดตแจ้งเตือนที่กระดิ่ง Header (สรุปงานรอดำเนินการ)
+        // อัปเดตแจ้งเตือนที่กระดิ่ง Header (ค้างรายการไว้จนกว่าจะได้รับการแก้ไขหรือส่งมอบงานเสร็จสิ้น)
+        const unclearedAll = pendingAll + progressAll;
         const globalBadge = $('global-overdue-badge');
         if (globalBadge) {
-          if (pendingAll > 0) {
-            globalBadge.textContent = pendingAll > 99 ? '99+' : pendingAll;
+          if (unclearedAll > 0) {
+            globalBadge.textContent = unclearedAll > 99 ? '99+' : unclearedAll;
             globalBadge.classList.remove('hidden');
           } else {
             globalBadge.classList.add('hidden');
@@ -871,43 +872,92 @@ const ResourceHubCore = {
         }
 
         const dropdownCount = $('dropdown-overdue-count');
-        if (dropdownCount) dropdownCount.textContent = pendingAll;
+        if (dropdownCount) dropdownCount.textContent = unclearedAll;
 
         const notifList = $('notification-list');
         if (notifList) {
-          if (pendingAll > 0) {
+          if (unclearedAll > 0) {
             let html = '';
-            if (bPending > 0) {
-              html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-rose-100 flex items-center justify-between mb-2">
+            
+            // 1. งานซ่อมอาคาร (ค้างทั้ง รอดำเนินการ + กำลังดำเนินการ)
+            const bUncleared = bPending + bProgress;
+            if (bUncleared > 0) {
+              html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-rose-100 flex items-center justify-between mb-2 hover:bg-rose-50/30 transition-colors">
                            <div class="flex items-center gap-3">
                              <div class="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
                                <i class="fa-solid fa-wrench"></i>
                              </div>
                              <div>
                                <p class="text-xs font-bold text-slate-700">แจ้งซ่อมอาคาร</p>
-                               <p class="text-[10px] text-slate-500">รอดำเนินการ ${bPending} รายการ</p>
+                               <p class="text-[10px] text-slate-500">
+                                 <span class="text-rose-600 font-semibold">รอดำเนินการ ${bPending}</span> | <span class="text-amber-600 font-semibold">กำลังซ่อม ${bProgress}</span>
+                               </p>
                              </div>
                            </div>
-                           <button onclick="toggleNotificationDropdown(); nav('page-technician');" class="text-xs font-bold text-[#265D5A] hover:underline">จัดการ</button>
+                           <button onclick="toggleNotificationDropdown(); nav('page-technician');" class="text-xs font-bold text-[#265D5A] hover:underline px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200">จัดการ</button>
                          </div>`;
             }
-            if (avPending > 0) {
-              html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-amber-100 flex items-center justify-between">
+
+            // 2. งานยืมอุปกรณ์โสตฯ (ค้างจัดเตรียม / รอคืน)
+            const avUncleared = avPending + avActive;
+            if (avUncleared > 0) {
+              html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-amber-100 flex items-center justify-between mb-2 hover:bg-amber-50/30 transition-colors">
                            <div class="flex items-center gap-3">
                              <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
                                <i class="fa-solid fa-microphone-lines"></i>
                              </div>
                              <div>
                                <p class="text-xs font-bold text-slate-700">ยืมอุปกรณ์โสตฯ</p>
-                               <p class="text-[10px] text-slate-500">รอดำเนินการ ${avPending} รายการ</p>
+                               <p class="text-[10px] text-slate-500">
+                                 <span class="text-rose-600 font-semibold">รอดำเนินการ ${avPending}</span> | <span class="text-amber-600 font-semibold">ใช้งานอยู่ ${avActive}</span>
+                               </p>
                              </div>
                            </div>
-                           <button onclick="toggleNotificationDropdown(); nav('page-av-manage');" class="text-xs font-bold text-[#265D5A] hover:underline">จัดการ</button>
+                           <button onclick="toggleNotificationDropdown(); nav('page-av-manage');" class="text-xs font-bold text-[#265D5A] hover:underline px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200">จัดการ</button>
                          </div>`;
             }
+
+            // 3. งานซ่อมไอที
+            const itUncleared = itPending + itProgress;
+            if (itUncleared > 0) {
+              html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-sky-100 flex items-center justify-between mb-2 hover:bg-sky-50/30 transition-colors">
+                           <div class="flex items-center gap-3">
+                             <div class="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-500">
+                               <i class="fa-solid fa-laptop"></i>
+                             </div>
+                             <div>
+                               <p class="text-xs font-bold text-slate-700">แจ้งซ่อมไอที</p>
+                               <p class="text-[10px] text-slate-500">
+                                 <span class="text-rose-600 font-semibold">รอดำเนินการ ${itPending}</span> | <span class="text-amber-600 font-semibold">กำลังซ่อม ${itProgress}</span>
+                               </p>
+                             </div>
+                           </div>
+                           <button onclick="toggleNotificationDropdown(); if(window.TrackUI) window.TrackUI.show({type:'it'});" class="text-xs font-bold text-[#265D5A] hover:underline px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200">จัดการ</button>
+                         </div>`;
+            }
+
+            // 4. งานซ่อมอุปกรณ์โสตฯ
+            const avRepUncleared = avRepPending + avRepProgress;
+            if (avRepUncleared > 0) {
+              html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-purple-100 flex items-center justify-between mb-2 hover:bg-purple-50/30 transition-colors">
+                           <div class="flex items-center gap-3">
+                             <div class="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-500">
+                               <i class="fa-solid fa-sliders"></i>
+                             </div>
+                             <div>
+                               <p class="text-xs font-bold text-slate-700">ซ่อมอุปกรณ์โสตฯ</p>
+                               <p class="text-[10px] text-slate-500">
+                                 <span class="text-rose-600 font-semibold">รอดำเนินการ ${avRepPending}</span> | <span class="text-amber-600 font-semibold">กำลังซ่อม ${avRepProgress}</span>
+                               </p>
+                             </div>
+                           </div>
+                           <button onclick="toggleNotificationDropdown(); if(window.TrackUI) window.TrackUI.show({type:'av'});" class="text-xs font-bold text-[#265D5A] hover:underline px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200">จัดการ</button>
+                         </div>`;
+            }
+
             notifList.innerHTML = html;
           } else {
-            notifList.innerHTML = '<div class="p-4 text-center text-sm text-slate-400">ไม่มีงานค้าง</div>';
+            notifList.innerHTML = '<div class="p-4 text-center text-xs text-slate-400"><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>ไม่มีงานค้าง ทุกรายการได้รับการแก้ไขและส่งมอบงานเรียบร้อยแล้ว</div>';
           }
         }
 

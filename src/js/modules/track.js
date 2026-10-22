@@ -1195,11 +1195,11 @@ const TrackUI = (() => {
         }
       });
       
-      // กรองเฉพาะ Tech และ AV
+      // กรองเฉพาะ Tech และ AV และผู้ที่มีสิทธิ์
       techList = [];
       userMap.forEach(user => {
-        if (user.role === 'Tech' || user.role === 'AV') {
-          techList.push({ name: user.name, email: user.originalEmail });
+        if (user.role === 'Tech' || user.role === 'AV' || user.role === 'Admin') {
+          techList.push({ name: user.name, email: user.originalEmail, role: user.role, phone: user.phone || '' });
         }
       });
       
@@ -1207,9 +1207,58 @@ const TrackUI = (() => {
       Swal.close();
     }
 
-    if (techList.length === 0) {
+    // ดึงข้อมูลช่างภายนอก (Master Data Mechanics จาก Firestore / MasterData)
+    let masterMechanics = [];
+    if (window.MasterData && typeof window.MasterData.getState === 'function') {
+      const mdState = window.MasterData.getState();
+      if (Array.isArray(mdState.mechanics) && mdState.mechanics.length > 0) {
+        masterMechanics = mdState.mechanics;
+      }
+    }
+    if ((!masterMechanics || masterMechanics.length === 0) && window.firestoreDb) {
+      try {
+        const mecDoc = await window.firestoreDb.collection('master_data').doc('mechanics').get();
+        if (mecDoc.exists) {
+          const d = mecDoc.data();
+          masterMechanics = Array.isArray(d?.items) ? d.items : [];
+        }
+      } catch (e) {
+        console.warn('Cannot fetch master mechanics', e);
+      }
+    }
+
+    if (techList.length === 0 && masterMechanics.length === 0) {
       Swal.fire('Info', 'ไม่พบรายชื่อช่าง (Tech) หรือเจ้าหน้าที่โสตฯ (AV) ในระบบ', 'info');
       return;
+    }
+
+    function formatRoleName(role) {
+      if (!role) return 'ช่างเทคนิค';
+      const r = String(role).trim();
+      if (r === 'Tech') return 'ช่างเทคนิค';
+      if (r === 'AV') return 'เจ้าหน้าที่โสตฯ';
+      if (r === 'Admin') return 'ผู้ดูแลระบบ';
+      if (r === 'Supervisor') return 'หัวหน้างาน';
+      return r;
+    }
+
+    function getTechWorkload(techName) {
+      if (!techName) return { active: 0, completed: 0, total: 0 };
+      const target = techName.trim().toLowerCase();
+      let active = 0, completed = 0, total = 0;
+      (state.jobs || []).forEach(j => {
+        const jt = (j.tech || j.technician || '').trim().toLowerCase();
+        if (jt && (jt === target || jt.includes(target) || target.includes(jt))) {
+          total++;
+          const st = (j.status || '').trim();
+          if (st === 'เสร็จสิ้น' || st === 'ปิดงาน' || st === 'ยกเลิก') {
+            completed++;
+          } else {
+            active++;
+          }
+        }
+      });
+      return { active, completed, total };
     }
 
     const urgencyArr = ['ด่วนที่สุด (ภายใน 2 ชม.)', 'ด่วน (ภายใน 24 ชม.)', 'ปานกลาง (2-3 วัน)', 'ตามคิว (ทั่วไป)'];
@@ -1219,24 +1268,49 @@ const TrackUI = (() => {
       urgencyHtml += `<option value="${u}" ${selected}>${u}</option>`;
     });
 
-    let techOptionsHtml = '<option value="" data-email="">-- ยังไม่มอบหมายช่าง --</option>';
-    techList.forEach(t => {
-      const selected = (job.tech === t.name) ? 'selected' : '';
-      const label = t.email ? `${t.name} (${t.email})` : t.name;
-      techOptionsHtml += `<option value="${esc(t.name)}" data-email="${esc(t.email)}" ${selected}>${esc(label)}</option>`;
-    });
+    let techOptionsHtml = '<option value="" data-email="" data-phone="" data-skills="" data-role="" data-active="0" data-completed="0" data-total="0">-- ยังไม่มอบหมายช่าง --</option>';
+
+    if (techList.length > 0) {
+      techOptionsHtml += `<optgroup label="👤 เจ้าหน้าที่ / ช่างประจำระบบ">`;
+      techList.forEach(t => {
+        const selected = (job.tech === t.name) ? 'selected' : '';
+        const roleLabel = formatRoleName(t.role);
+        const stats = getTechWorkload(t.name);
+        const emailPart = t.email ? ` (${t.email} - ${roleLabel})` : ` (${roleLabel})`;
+        const label = `${t.name}${emailPart} [ค้าง: ${stats.active} | รวม: ${stats.total}]`;
+        techOptionsHtml += `<option value="${esc(t.name)}" data-email="${esc(t.email)}" data-role="${esc(roleLabel)}" data-phone="${esc(t.phone || '')}" data-skills="" data-active="${stats.active}" data-completed="${stats.completed}" data-total="${stats.total}" ${selected}>${esc(label)}</option>`;
+      });
+      techOptionsHtml += `</optgroup>`;
+    }
+
+    if (masterMechanics.length > 0) {
+      techOptionsHtml += `<optgroup label="🔨 ช่างภายนอก / ผู้รับเหมา (Master Data)">`;
+      masterMechanics.forEach(m => {
+        const selected = (job.tech === m.name) ? 'selected' : '';
+        const stats = getTechWorkload(m.name);
+        const phonePart = m.phone ? ` (${m.phone}` : ' (';
+        const skillPart = m.skills ? ` - ${m.skills})` : ')';
+        const label = `${m.name}${phonePart}${skillPart} [ค้าง: ${stats.active} | รวม: ${stats.total}]`;
+        techOptionsHtml += `<option value="${esc(m.name)}" data-email="" data-role="ช่างภายนอก / ผู้รับเหมา" data-phone="${esc(m.phone || '')}" data-skills="${esc(m.skills || '')}" data-active="${stats.active}" data-completed="${stats.completed}" data-total="${stats.total}" ${selected}>${esc(label)}</option>`;
+      });
+      techOptionsHtml += `</optgroup>`;
+    }
 
     const formHtml = `
-      <div class="text-left space-y-4 text-slate-800 mt-4 border-t pt-4">
+      <div class="text-left space-y-3.5 text-slate-800 mt-3 border-t pt-3">
         <div>
-          <label class="block text-xs font-semibold mb-2 text-slate-700">ช่างที่รับผิดชอบ (ชื่อ และ อีเมล)</label>
-          <select id="assignTechName" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none text-sm bg-slate-50">
+          <label class="block text-xs font-semibold mb-1.5 text-slate-700">ช่างที่รับผิดชอบ (ชื่อ, อีเมล/เบอร์โทร, ตำแหน่ง)</label>
+          <select id="assignTechName" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none text-xs bg-slate-50 font-medium">
             ${techOptionsHtml}
           </select>
         </div>
+        
+        <!-- ข้อมูลช่าง / สถิติงาน (Live Card จากรูป 2 & ข้อมูลสถิติ) -->
+        <div id="techDetailCard" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2 transition-all"></div>
+
         <div>
-          <label class="block text-xs font-semibold mb-2 text-slate-700">ความเร่งด่วน</label>
-          <select id="assignUrgency" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none text-sm bg-slate-50">
+          <label class="block text-xs font-semibold mb-1.5 text-slate-700">ระดับความเร่งด่วน</label>
+          <select id="assignUrgency" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none text-xs bg-slate-50 font-medium">
             ${urgencyHtml}
           </select>
         </div>
@@ -1251,17 +1325,73 @@ const TrackUI = (() => {
       confirmButtonColor: '#265D5A',
       cancelButtonText: 'ยกเลิก',
       cancelButtonColor: '#64748b',
+      didOpen: () => {
+        const select = document.getElementById('assignTechName');
+        const card = document.getElementById('techDetailCard');
+        if (!select || !card) return;
+        
+        function renderCard() {
+          const opt = select.options[select.selectedIndex];
+          if (!opt || !select.value) {
+            card.innerHTML = `
+              <div class="text-slate-400 text-center py-2 flex items-center justify-center gap-1.5 text-xs">
+                <i class="fa-solid fa-circle-info text-slate-400"></i> เลือกช่างเพื่อดูข้อมูลเบอร์โทร ทักษะ และสถิติภาระงาน
+              </div>`;
+            return;
+          }
+          const role = opt.dataset.role || 'ช่าง';
+          const email = opt.dataset.email || '';
+          const phone = opt.dataset.phone || '';
+          const skills = opt.dataset.skills || '';
+          const active = opt.dataset.active || '0';
+          const completed = opt.dataset.completed || '0';
+          const total = opt.dataset.total || '0';
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between pb-1.5 border-b border-slate-200">
+              <span class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-user-gear text-[#265D5A]"></i> ${esc(select.value)}
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#265D5A]/10 text-[#265D5A] border border-[#265D5A]/20">
+                ${esc(role)}
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1 text-slate-600 text-xs">
+              ${email ? `<div><span class="text-slate-400">อีเมล:</span> <span class="font-medium text-slate-700">${esc(email)}</span></div>` : ''}
+              <div><span class="text-slate-400">เบอร์โทร:</span> ${phone ? `<a href="tel:${esc(phone)}" class="text-blue-600 font-bold hover:underline">${esc(phone)} <i class="fa-solid fa-phone text-[10px] ml-0.5"></i></a>` : '<span class="text-slate-400">ไม่ระบุ</span>'}</div>
+              ${skills ? `<div class="col-span-2"><span class="text-slate-400">ทักษะ/ความชำนาญ:</span> <span class="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">${esc(skills)}</span></div>` : ''}
+            </div>
+            <div class="mt-2 pt-2 border-t border-slate-200 flex items-center justify-between text-[11px]">
+              <div class="flex items-center gap-1 text-amber-700 font-medium">
+                <i class="fa-solid fa-clock-rotate-left"></i> งานค้าง: <span class="font-bold text-amber-800 text-xs">${active}</span> งาน
+              </div>
+              <div class="flex items-center gap-1 text-emerald-700 font-medium">
+                <i class="fa-solid fa-circle-check"></i> สำเร็จ: <span class="font-bold text-emerald-800 text-xs">${completed}</span> งาน
+              </div>
+              <div class="flex items-center gap-1 text-slate-700 font-medium">
+                <i class="fa-solid fa-list-check"></i> รวม: <span class="font-bold text-slate-900 text-xs">${total}</span> งาน
+              </div>
+            </div>
+          `;
+        }
+        select.addEventListener('change', renderCard);
+        renderCard();
+      },
       preConfirm: () => {
         const select = document.getElementById('assignTechName');
+        const opt = select.options[select.selectedIndex];
         const techName = select.value;
-        const techEmail = select.options[select.selectedIndex]?.dataset?.email || '';
+        const techEmail = opt?.dataset?.email || '';
+        const techPhone = opt?.dataset?.phone || '';
+        const techSkills = opt?.dataset?.skills || '';
+        const techRole = opt?.dataset?.role || '';
         const urgency = document.getElementById('assignUrgency').value;
-        return { techName, techEmail, urgency };
+        return { techName, techEmail, techPhone, techSkills, techRole, urgency };
       }
     });
     
     if (formValues) {
-      const { techName, techEmail, urgency } = formValues;
+      const { techName, techEmail, techPhone, techSkills, techRole, urgency } = formValues;
       Swal.fire({title: 'กำลังบันทึกและแจ้งเตือนช่าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
       // กำหนดชื่อ Sheet ให้ตรงกับ CONFIG ใน Code.gs เสมอ ('Tasks' มี s)
@@ -1274,6 +1404,9 @@ const TrackUI = (() => {
             let updateData = {
               techName: techName,
               techEmail: techEmail,
+              techPhone: techPhone,
+              techSkills: techSkills,
+              techRole: techRole,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             if (techName && (!job.status || job.status === 'รอดำเนินการ')) {
@@ -1291,10 +1424,11 @@ const TrackUI = (() => {
            rowIndex: job.originalIndex,
            technician: techName,
            technicianEmail: techEmail,
+           technicianPhone: techPhone,
            urgency: urgency
          });
         
-        const successMsg = techEmail ? `มอบหมายงานและส่งอีเมลแจ้ง ${esc(techName)} (${esc(techEmail)}) เรียบร้อยแล้ว` : 'มอบหมายช่างสำเร็จ!';
+        const successMsg = techEmail ? `มอบหมายงานและส่งอีเมลแจ้ง ${esc(techName)} (${esc(techEmail)}) เรียบร้อยแล้ว` : (techName ? `มอบหมาย ${esc(techName)} เรียบร้อยแล้ว` : 'ยกเลิกการมอบหมายช่างสำเร็จ');
         Swal.fire({icon: 'success', title: 'สำเร็จ!', text: successMsg, confirmButtonColor: '#265D5A', timer: 2500});
       } catch (err) {
         console.error('assignTech error:', err);

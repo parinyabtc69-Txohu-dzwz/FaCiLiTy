@@ -215,6 +215,22 @@ const MasterData = (() => {
       saveCache();
       renderMasterDataUI();
       initFormDropdowns();
+
+      // Real-time listener สำหรับ Mechanics ใน Firestore
+      if (window.firestoreDb && !window._masterMechanicsListenerAttached) {
+        window._masterMechanicsListenerAttached = true;
+        window.firestoreDb.collection('master_data').doc('mechanics')
+          .onSnapshot(doc => {
+            if (doc.exists) {
+              const d = doc.data() || {};
+              if (Array.isArray(d.items)) {
+                state.mechanics = d.items;
+                saveCache();
+                renderMasterDataUI();
+              }
+            }
+          }, err => console.warn('Mechanics real-time sync error:', err));
+      }
     } catch (e) {
       console.error('MasterData load error:', e);
       if (!state.locations.length) state = { ...DEFAULT_DATA, loaded: true };

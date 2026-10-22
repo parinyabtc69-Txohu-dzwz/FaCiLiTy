@@ -35,5 +35,27 @@ const FirebaseChat = {
     };
 
     await firestoreDb.collection('chats').doc(ticketId).collection('messages').add(msgData);
+
+    // ส่งแจ้งเตือนข้อความแชทเข้า LINE กลุ่มหลัก (ทำแบบ Background / Cooldown 10 วินาทีป้องกันสแปม)
+    try {
+      if (!window._chatNotifyThrottle) window._chatNotifyThrottle = {};
+      const lastSent = window._chatNotifyThrottle[ticketId] || 0;
+      const nowMs = Date.now();
+      if (nowMs - lastSent > 10000) {
+        window._chatNotifyThrottle[ticketId] = nowMs;
+        if (typeof ResourceHubCore !== 'undefined' && ResourceHubCore.api && ResourceHubCore.api.post) {
+          ResourceHubCore.api.post({
+            action: 'notify_chat',
+            ticketId: ticketId,
+            senderName: senderName,
+            role: role,
+            message: message,
+            attachmentUrl: attachmentUrl
+          }).catch(err => console.warn('LINE chat notification warning:', err));
+        }
+      }
+    } catch (notifyErr) {
+      console.warn('LINE chat notify error:', notifyErr);
+    }
   }
 };
