@@ -8250,9 +8250,13 @@ const TrackUI = (() => {
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
     
-    // ใช้ Cache ของ Tech/AV list เพื่อให้โหลดไว
+    // ใช้ Cache ของ Tech/AV list เพื่อให้โหลดไว (กรองเฉพาะช่างเทคนิคและโสตฯ เท่านั้น ตัด Admin ทิ้งทุกกรณี)
     let techList = window.cachedTechList;
-    if (!techList) {
+    if (Array.isArray(techList)) {
+      techList = techList.filter(t => t && (t.role === 'Tech' || t.role === 'AV'));
+      window.cachedTechList = techList;
+    }
+    if (!techList || techList.length === 0) {
       Swal.fire({title: 'กำลังโหลดรายชื่อช่าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
       let gasUsers = [];
@@ -8303,11 +8307,12 @@ const TrackUI = (() => {
         }
       });
       
-      // กรองเฉพาะ Tech และ AV เท่านั้น (ไม่รวม Admin / ผู้ดูแลระบบ)
+      // กรองเฉพาะ Tech และ AV เท่านั้น (ตัด Admin และผู้ใช้อื่นๆ ออก 100%)
       techList = [];
       userMap.forEach(user => {
-        if (user.role === 'Tech' || user.role === 'AV') {
-          techList.push({ name: user.name, email: user.originalEmail, role: user.role, phone: user.phone || '' });
+        const r = (user.role || '').trim();
+        if (r === 'Tech' || r === 'AV') {
+          techList.push({ name: user.name, email: user.originalEmail, role: r, phone: user.phone || '' });
         }
       });
       
@@ -8381,6 +8386,7 @@ const TrackUI = (() => {
     if (techList.length > 0) {
       techOptionsHtml += `<optgroup label="👤 เจ้าหน้าที่ / ช่างประจำระบบ">`;
       techList.forEach(t => {
+        if (!t || t.role === 'Admin' || (t.role !== 'Tech' && t.role !== 'AV')) return;
         const selected = (job.tech === t.name) ? 'selected' : '';
         const roleLabel = formatRoleName(t.role);
         const stats = getTechWorkload(t.name);
