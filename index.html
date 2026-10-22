@@ -226,7 +226,7 @@
     <div class="flex items-center gap-2 relative">
       <!-- PWA Install Button Header -->
       <button id="btn-pwa-install-header" onclick="triggerPWAInstall()"
-        class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#265D5A] hover:bg-[#1f4b48] text-white text-xs font-semibold shadow-sm hover:shadow transition-all animate-pulse"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#265D5A] hover:bg-[#1f4b48] text-white text-xs font-semibold shadow-sm hover:shadow transition-all animate-pulse"
         title="ติดตั้งแอปลงหน้าจอหลัก">
         <i class="fa-solid fa-download"></i>
         <span class="hidden sm:inline">ติดตั้งแอป</span>
@@ -395,7 +395,7 @@
 
       <div class="px-3 pb-2 space-y-1.5">
         <button id="btn-pwa-install-sidebar" onclick="triggerPWAInstall()"
-          class="hidden w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#265D5A] to-[#347e7a] hover:from-[#1f4b48] hover:to-[#265D5A] text-white text-xs font-semibold items-center justify-center gap-2 shadow-sm transition-all"
+          class="flex w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#265D5A] to-[#347e7a] hover:from-[#1f4b48] hover:to-[#265D5A] text-white text-xs font-semibold items-center justify-center gap-2 shadow-sm transition-all"
           title="ติดตั้งแอปพลิเคชันลงหน้าจอหลัก">
           <i class="fa-solid fa-mobile-screen-button text-sm"></i>
           <span>ติดตั้งแอปลงเครื่อง</span>
@@ -9276,14 +9276,10 @@ window.addEventListener('appinstalled', () => {
 
 // เริ่มต้นระบบเมื่อโหลดหน้าเสร็จ
 window.addEventListener('DOMContentLoaded', () => {
-  // หากติดตั้งแล้ว ไม่ต้องแสดงปุ่ม
+  // หากติดตั้งแล้ว ให้ซ่อนปุ่ม แต่ถ้ายัง ให้แสดงปุ่มในทุกแพลตฟอร์ม
   if (isAppInstalled()) {
     hideInstallButtons();
-    return;
-  }
-
-  // หากเป็น iOS Safari และยังไม่ได้ติดตั้ง ให้แสดงปุ่มได้เลย
-  if (isIOS()) {
+  } else {
     showInstallButtons();
   }
 });

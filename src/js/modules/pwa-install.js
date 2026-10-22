@@ -167,14 +167,10 @@ window.addEventListener('appinstalled', () => {
 
 // เริ่มต้นระบบเมื่อโหลดหน้าเสร็จ
 window.addEventListener('DOMContentLoaded', () => {
-  // หากติดตั้งแล้ว ไม่ต้องแสดงปุ่ม
+  // หากติดตั้งแล้ว ให้ซ่อนปุ่ม แต่ถ้ายัง ให้แสดงปุ่มในทุกแพลตฟอร์ม
   if (isAppInstalled()) {
     hideInstallButtons();
-    return;
-  }
-
-  // หากเป็น iOS Safari และยังไม่ได้ติดตั้ง ให้แสดงปุ่มได้เลย
-  if (isIOS()) {
+  } else {
     showInstallButtons();
   }
 });
