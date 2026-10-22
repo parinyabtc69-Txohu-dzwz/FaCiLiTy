@@ -1,19 +1,26 @@
 # Dependencies
 node_modules/
 
-# Archives & Backups
+# Archives & Backups (ไม่ส่งขึ้น GitHub)
 *.zip
 *.rar
 *.tar.gz
 *.7z
 backup_*
 *_backup
+backups/
 
-# Temporary & Utility scripts (Local only)
+# Google Apps Script Backend (ไม่ส่งขึ้น GitHub Pages — บริหารบน Google Script Editor เท่านั้น)
+*.gs
+
+# Temporary & Utility scripts (Local only — ทำงานในเครื่องเท่านั้น)
 patch_*.js
 fix.ps1
 fix.bat
 *.bat
+
+# ไฟล์ช่วยเหลือที่ไม่จำเป็นสำหรับหน้าเว็บ
+img/logo_b64.txt
 
 # OS files
 Thumbs.db
@@ -24,3 +31,6 @@ Thumbs.db
 
 # Temp files
 *.tmp
+
+# index_app.html ซ้ำกับ index.html ทุกประการ สร้างอัตโนมัติโดย build.js
+index_app.html
