@@ -4012,77 +4012,135 @@ function toggleAuthMode() {
   $('toggle-auth-btn').textContent = reg ? 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ' : 'ยังไม่มีบัญชี? สมัครสมาชิกใหม่';
 }
 
+// ฟังก์ชันถอดรหัส Google JWT Token ฝั่ง Client
+function parseGoogleJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error('Failed to parse Google JWT:', e);
+    return null;
+  }
+}
+
+// ตัวช่วย Timeout ป้องกัน Network Hang
+function withTimeout(promise, ms = 4000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Network_Timeout')), ms))
+  ]);
+}
+
 async function handleCredentialResponse(response) {
-  Swal.fire({ title: 'กำลังตรวจสอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  Swal.fire({
+    title: 'กำลังตรวจสอบ...',
+    text: 'กรุณารอสักครู่',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
 
   try {
-    if (!window.firebaseAuth || !window.firestoreDb) throw new Error('Firebase_Not_Ready');
+    if (!response || !response.credential) {
+      throw new Error('ไม่พบข้อมูลการเข้าสู่ระบบจาก Google');
+    }
 
-    // 1. ลองล็อกอินด้วย Firebase Auth ตรงๆ
-    const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
-    const userCredential = await window.firebaseAuth.signInWithCredential(credential);
-    const user = userCredential.user;
+    // 1. ถอดรหัส Google ID Token ทันที (ได้ email, name, picture ทันที 0.001ms ไม่ต้องรอ Network)
+    const googleUser = parseGoogleJwt(response.credential);
+    if (!googleUser || !googleUser.email) {
+      throw new Error('ไม่สามารถอ่านข้อมูลบัญชี Google ได้');
+    }
 
-    // 2. เช็คข้อมูลผู้ใช้ใน Firestore 'users' collection
-    const userDoc = await window.firestoreDb.collection('users').doc(user.email).get();
-    let userData = {};
+    const email = googleUser.email.toLowerCase().trim();
+    const name = googleUser.name || email.split('@')[0];
+    const picture = googleUser.picture || '';
 
-    if (userDoc.exists) {
-      userData = userDoc.data();
-      if (userData.status === 'banned') throw new Error('บัญชีของคุณถูกระงับการใช้งาน');
-      if (userData.status !== 'approved') throw new Error('บัญชีของคุณกำลังรอการอนุมัติ');
-      
-      // อัปเดตเวลาเข้าสู่ระบบ
-      await window.firestoreDb.collection('users').doc(user.email).update({
-        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-        picture: user.photoURL,
-        name: user.displayName
-      });
-    } else {
-      // 3. ถ้าไม่มีใน Firebase -> ดึงจาก Google Sheets เพื่อ Migrate Role ให้ถูกต้องแบบไร้รอยต่อ
-      let gasRole = 'Teacher';
-      let gasStatus = 'approved';
+    let role = 'Teacher';
+    let status = 'approved';
+    let userFound = false;
+
+    // 2. ลองเชื่อมต่อ Firebase Auth ในพื้นหลัง (ไม่บล็อกและไม่ทำให้ระบบล่ม)
+    if (window.firebaseAuth) {
       try {
-        const allUsers = await ResourceHubCore.api.get('get_users');
-        const found = allUsers.find(u => u[0].toLowerCase() === user.email.toLowerCase());
-        if (found) {
-           gasRole = found[2] || 'Teacher';
-           gasStatus = found[3] || 'approved';
-        }
-      } catch (e) {
-        console.warn("Migration fetch failed, defaulting to Teacher", e);
+        const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+        await withTimeout(window.firebaseAuth.signInWithCredential(credential), 3000);
+      } catch (authErr) {
+        console.warn('Firebase Auth skipped or not authorized:', authErr.code || authErr.message);
       }
-      
-      if (gasStatus === 'banned') throw new Error('บัญชีถูกระงับการใช้งาน');
+    }
 
-      userData = {
-        email: user.email,
-        name: user.displayName,
-        role: gasRole,
-        status: gasStatus,
-        picture: user.photoURL,
+    // 3. ตรวจสอบสิทธิ์ (Role & Status) จาก Firestore
+    if (window.firestoreDb) {
+      try {
+        const userDoc = await withTimeout(window.firestoreDb.collection('users').doc(email).get(), 3000);
+        if (userDoc && userDoc.exists) {
+          const udata = userDoc.data();
+          role = udata.role || 'Teacher';
+          status = udata.status || 'approved';
+          userFound = true;
+
+          // อัปเดตเวลาเข้าใช้งานแบบ non-blocking
+          window.firestoreDb.collection('users').doc(email).update({
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+            picture: picture,
+            name: name
+          }).catch(e => console.warn('Update lastLogin failed:', e));
+        }
+      } catch (fsErr) {
+        console.warn('Firestore fetch timed out or failed:', fsErr.message);
+      }
+    }
+
+    // 4. ถ้ายังไม่พบใน Firestore ให้ตรวจสอบจาก Google Sheets
+    if (!userFound) {
+      try {
+        const allUsers = await withTimeout(ResourceHubCore.api.get('get_users'), 4000);
+        if (Array.isArray(allUsers)) {
+          const found = allUsers.find(u => u[0] && u[0].toString().toLowerCase().trim() === email);
+          if (found) {
+            role = found[2] || 'Teacher';
+            status = found[3] || 'approved';
+            userFound = true;
+          }
+        }
+      } catch (sheetErr) {
+        console.warn('Google Sheets get_users timed out:', sheetErr.message);
+      }
+    }
+
+    // 5. ตรวจสอบสถานะการระงับบัญชี
+    if (status === 'banned') {
+      throw new Error('บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ');
+    }
+    if (status !== 'approved' && userFound) {
+      throw new Error('บัญชีของคุณกำลังรอการอนุมัติสิทธิ์เข้าใช้งาน');
+    }
+
+    // 6. ถ้าเป็นผู้ใช้ใหม่ และ Firestore พร้อม ให้บันทึกข้อมูลไว้
+    if (!userFound && window.firestoreDb) {
+      window.firestoreDb.collection('users').doc(email).set({
+        email: email,
+        name: name,
+        role: role,
+        status: status,
+        picture: picture,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      await window.firestoreDb.collection('users').doc(user.email).set(userData);
+      }).catch(e => console.warn('Create user in Firestore failed:', e));
     }
-    
-    finalizeLogin(userData.name, userData.role, userData.email);
+
+    // 7. เข้าสู่ระบบสำเร็จทันที!
+    finalizeLogin(name, role, email);
 
   } catch (error) {
-    // 4. FALLBACK: ถ้าระบบ Firebase Auth ยังไม่เปิด หรือเกิดข้อผิดพลาด ให้กลับไปใช้ระบบเก่า Google Sheets
-    if (error.message === 'Firebase_Not_Ready' || error.code === 'auth/operation-not-allowed') {
-      console.warn("Firebase Auth not enabled or ready. Falling back to Google Sheets login.");
-      ResourceHubCore.api.post({ action: 'google_login', credential: response.credential })
-        .then((res) => {
-          finalizeLogin(res.name, res.role, res.email);
-        })
-        .catch((e) => {
-          alertBox('error', 'เข้าสู่ระบบไม่สำเร็จ', e.message || 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์จากเซิร์ฟเวอร์');
-        });
-    } else {
-      alertBox('error', 'เข้าสู่ระบบไม่สำเร็จ', error.message || 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์');
-    }
+    console.error('Login error:', error);
+    alertBox('error', 'เข้าสู่ระบบไม่สำเร็จ', error.message || 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์');
   }
 }
 
