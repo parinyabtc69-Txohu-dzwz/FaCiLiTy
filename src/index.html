@@ -14,6 +14,12 @@
   <title>FaCiLiTy</title>
   <link rel="icon" type="image/png" href="img/logo.png">
   <link rel="apple-touch-icon" href="img/logo.png">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#265D5A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="FaCiLiTy">
 
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -55,6 +61,14 @@
     </div>
 
     <div class="flex items-center gap-2 relative">
+      <!-- PWA Install Button Header -->
+      <button id="btn-pwa-install-header" onclick="triggerPWAInstall()"
+        class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#265D5A] hover:bg-[#1f4b48] text-white text-xs font-semibold shadow-sm hover:shadow transition-all animate-pulse"
+        title="ติดตั้งแอปลงหน้าจอหลัก">
+        <i class="fa-solid fa-download"></i>
+        <span class="hidden sm:inline">ติดตั้งแอป</span>
+      </button>
+
       <div class="relative">
         <button id="notification-bell" onclick="toggleNotificationDropdown()"
           class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors relative"
@@ -107,6 +121,10 @@
             <button onclick="toggleProfileDropdown(); openProfileModal();"
               class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-[#B0EDE6]/40 flex items-center gap-2 transition-colors">
               <i class="fa-solid fa-id-card text-[#265D5A]"></i> ดูข้อมูลบัญชีส่วนตัว
+            </button>
+            <button id="btn-pwa-install-dropdown" onclick="toggleProfileDropdown(); triggerPWAInstall();"
+              class="hidden w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#265D5A] hover:bg-[#B0EDE6]/40 flex items-center gap-2 transition-colors">
+              <i class="fa-solid fa-download"></i> ติดตั้งแอปลงหน้าจอหลัก
             </button>
             <button onclick="toggleProfileDropdown(); handleGlobalLogout();"
               class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors">
@@ -212,7 +230,14 @@
         </nav>
       </div>
 
-      <div class="px-3 pb-2">
+      <div class="px-3 pb-2 space-y-1.5">
+        <button id="btn-pwa-install-sidebar" onclick="triggerPWAInstall()"
+          class="hidden w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#265D5A] to-[#347e7a] hover:from-[#1f4b48] hover:to-[#265D5A] text-white text-xs font-semibold items-center justify-center gap-2 shadow-sm transition-all"
+          title="ติดตั้งแอปพลิเคชันลงหน้าจอหลัก">
+          <i class="fa-solid fa-mobile-screen-button text-sm"></i>
+          <span>ติดตั้งแอปลงเครื่อง</span>
+        </button>
+
         <button onclick="openBugReportModal('Sidebar')"
           class="w-full py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-medium flex items-center justify-center gap-2 transition-colors">
           <i class="fa-solid fa-bug"></i> แจ้งโปรแกรมเสีย / บั๊ก
@@ -282,8 +307,47 @@
       <i class="fa-solid fa-bars text-lg"></i>
       <span class="text-[10px] font-medium">เมนูอื่นๆ</span>
     </button>
-
   </nav>
+
+  <!-- iOS Safari Install Guide Modal -->
+  <div id="iosInstallModal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl border border-slate-100">
+      <div class="bg-gradient-to-r from-[#265D5A] to-[#347e7a] p-5 text-white text-center relative">
+        <button onclick="closeIosInstallModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
+          <i class="fa-solid fa-times"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-2 bg-white rounded-2xl shadow-md p-1.5 flex items-center justify-center">
+          <img src="img/logo.png" alt="FaCiLiTy" class="w-full h-full object-cover rounded-xl">
+        </div>
+        <h3 class="font-bold text-lg">ติดตั้งแอป FaCiLiTy</h3>
+        <p class="text-xs text-white/80 mt-0.5">บน iPhone / iPad ของคุณ</p>
+      </div>
+      <div class="p-5 space-y-4">
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-[#B0EDE6] text-[#265D5A] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
+          <div class="text-xs text-slate-700 leading-relaxed">
+            แตะที่ปุ่ม <b class="text-[#265D5A]">"แชร์" (Share)</b> <i class="fa-solid fa-arrow-up-from-bracket text-blue-500 font-bold mx-1"></i> ที่แถบด้านล่างของ Safari
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-[#B0EDE6] text-[#265D5A] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</div>
+          <div class="text-xs text-slate-700 leading-relaxed">
+            เลื่อนหน้าจอลงมา แล้วเลือก <b class="text-[#265D5A]">"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen)</b> <i class="fa-regular fa-square-plus text-slate-600 font-bold mx-1"></i>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-[#B0EDE6] text-[#265D5A] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</div>
+          <div class="text-xs text-slate-700 leading-relaxed">
+            แตะปุ่ม <b class="text-[#265D5A]">"เพิ่ม" (Add)</b> ที่มุมขวาบน เพื่อสร้างไอคอนแอป
+          </div>
+        </div>
+
+        <button onclick="closeIosInstallModal()" class="w-full py-3 bg-[#265D5A] hover:bg-[#1f4b48] text-white font-bold rounded-2xl shadow-md transition-all text-sm mt-2">
+          เข้าใจแล้ว
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- QR Code Scanner Modal -->
   <div id="qrScannerModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">

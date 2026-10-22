@@ -14,6 +14,12 @@
   <title>FaCiLiTy</title>
   <link rel="icon" type="image/png" href="img/logo.png">
   <link rel="apple-touch-icon" href="img/logo.png">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#265D5A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="FaCiLiTy">
 
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -218,6 +224,14 @@
     </div>
 
     <div class="flex items-center gap-2 relative">
+      <!-- PWA Install Button Header -->
+      <button id="btn-pwa-install-header" onclick="triggerPWAInstall()"
+        class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#265D5A] hover:bg-[#1f4b48] text-white text-xs font-semibold shadow-sm hover:shadow transition-all animate-pulse"
+        title="ติดตั้งแอปลงหน้าจอหลัก">
+        <i class="fa-solid fa-download"></i>
+        <span class="hidden sm:inline">ติดตั้งแอป</span>
+      </button>
+
       <div class="relative">
         <button id="notification-bell" onclick="toggleNotificationDropdown()"
           class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors relative"
@@ -270,6 +284,10 @@
             <button onclick="toggleProfileDropdown(); openProfileModal();"
               class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-[#B0EDE6]/40 flex items-center gap-2 transition-colors">
               <i class="fa-solid fa-id-card text-[#265D5A]"></i> ดูข้อมูลบัญชีส่วนตัว
+            </button>
+            <button id="btn-pwa-install-dropdown" onclick="toggleProfileDropdown(); triggerPWAInstall();"
+              class="hidden w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#265D5A] hover:bg-[#B0EDE6]/40 flex items-center gap-2 transition-colors">
+              <i class="fa-solid fa-download"></i> ติดตั้งแอปลงหน้าจอหลัก
             </button>
             <button onclick="toggleProfileDropdown(); handleGlobalLogout();"
               class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors">
@@ -375,7 +393,14 @@
         </nav>
       </div>
 
-      <div class="px-3 pb-2">
+      <div class="px-3 pb-2 space-y-1.5">
+        <button id="btn-pwa-install-sidebar" onclick="triggerPWAInstall()"
+          class="hidden w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#265D5A] to-[#347e7a] hover:from-[#1f4b48] hover:to-[#265D5A] text-white text-xs font-semibold items-center justify-center gap-2 shadow-sm transition-all"
+          title="ติดตั้งแอปพลิเคชันลงหน้าจอหลัก">
+          <i class="fa-solid fa-mobile-screen-button text-sm"></i>
+          <span>ติดตั้งแอปลงเครื่อง</span>
+        </button>
+
         <button onclick="openBugReportModal('Sidebar')"
           class="w-full py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-medium flex items-center justify-center gap-2 transition-colors">
           <i class="fa-solid fa-bug"></i> แจ้งโปรแกรมเสีย / บั๊ก
@@ -9082,6 +9107,201 @@ window.loadFbAdminTickets = function () {
 };
 
 
+// FaCiLiTy PWA Install Module
+// Developed by Taohx_dz_parinya
+
+let deferredInstallPrompt = null;
+
+/**
+ * ตรวจสอบว่าแอปทำงานในโหมด Standalone (ติดตั้งเป็นไอคอนแล้ว) หรือไม่
+ */
+function isAppInstalled() {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true ||
+    document.referrer.includes('android-app://')
+  );
+}
+
+/**
+ * ตรวจสอบว่าเป็นอุปกรณ์ iOS (iPhone / iPad / iPod) หรือไม่
+ */
+function isIOS() {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /iphone|ipad|ipod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+/**
+ * แสดงปุ่มติดตั้งแอปในทุกจุด
+ */
+function showInstallButtons() {
+  if (isAppInstalled()) {
+    hideInstallButtons();
+    return;
+  }
+  const headerBtn = document.getElementById('btn-pwa-install-header');
+  const sidebarBtn = document.getElementById('btn-pwa-install-sidebar');
+  const dropdownBtn = document.getElementById('btn-pwa-install-dropdown');
+
+  if (headerBtn) headerBtn.classList.remove('hidden');
+  if (sidebarBtn) sidebarBtn.classList.remove('hidden');
+  if (dropdownBtn) dropdownBtn.classList.remove('hidden');
+}
+
+/**
+ * ซ่อนปุ่มติดตั้งแอปทุกจุด
+ */
+function hideInstallButtons() {
+  const headerBtn = document.getElementById('btn-pwa-install-header');
+  const sidebarBtn = document.getElementById('btn-pwa-install-sidebar');
+  const dropdownBtn = document.getElementById('btn-pwa-install-dropdown');
+
+  if (headerBtn) headerBtn.classList.add('hidden');
+  if (sidebarBtn) sidebarBtn.classList.add('hidden');
+  if (dropdownBtn) dropdownBtn.classList.add('hidden');
+}
+
+/**
+ * ฟังก์ชันหลักเมื่อผู้ใช้กดปุ่ม 'ติดตั้งแอป'
+ */
+async function triggerPWAInstall() {
+  // หากติดตั้งแล้ว ให้แจ้งเตือนว่ามีแอปอยู่แล้ว
+  if (isAppInstalled()) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'info',
+        title: 'ติดตั้งแล้ว',
+        text: 'แอป FaCiLiTy อยู่บนหน้าจอหลักของคุณแล้ว สามารถเปิดใช้งานได้โดยตรง',
+        confirmButtonColor: '#265D5A',
+        confirmButtonText: 'ตกลง'
+      });
+    }
+    return;
+  }
+
+  // กรณีเป็น Android / Chrome / Edge และมี Event prompt พร้อม
+  if (deferredInstallPrompt) {
+    try {
+      deferredInstallPrompt.prompt();
+      const choiceResult = await deferredInstallPrompt.userChoice;
+      if (choiceResult && choiceResult.outcome === 'accepted') {
+        console.log('[PWA] ผู้ใช้ยอมรับการติดตั้งแอป');
+        hideInstallButtons();
+      } else {
+        console.log('[PWA] ผู้ใช้ยกเลิกการติดตั้งแอป');
+      }
+    } catch (err) {
+      console.warn('[PWA] ข้อผิดพลาดขณะเรียก prompt:', err);
+    }
+    deferredInstallPrompt = null;
+    return;
+  }
+
+  // กรณีเป็น iOS Safari (iPhone / iPad)
+  if (isIOS()) {
+    openIosInstallModal();
+    return;
+  }
+
+  // กรณีอื่นๆ (เช่น Desktop ที่ยังไม่ trigger หรือเบราว์เซอร์อื่นๆ)
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'info',
+      title: 'ติดตั้งแอปลงหน้าจอหลัก',
+      html: `
+        <div class="text-left text-sm space-y-3 text-slate-700 leading-relaxed">
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <p class="font-bold text-[#265D5A] mb-1"><i class="fa-brands fa-chrome mr-1"></i> บนมือถือ Android (Chrome):</p>
+            <p class="text-xs text-slate-600">กดปุ่มเมนู 3 จุด (<i class="fa-solid fa-ellipsis-vertical"></i>) ที่มุมขวาบนของเบราว์เซอร์ แล้วเลือก <b>"เพิ่มลงในหน้าจอหลัก"</b> หรือ <b>"ติดตั้งแอปพลิเคชัน"</b></p>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <p class="font-bold text-[#265D5A] mb-1"><i class="fa-solid fa-desktop mr-1"></i> บนคอมพิวเตอร์ (Chrome / Edge):</p>
+            <p class="text-xs text-slate-600">คลิกที่ไอคอนติดตั้ง <i class="fa-solid fa-download text-[#265D5A]"></i> บริเวณด้านขวาสุดของแถบกรอกที่อยู่เว็บ (Address bar) แล้วคลิก <b>"ติดตั้ง"</b></p>
+          </div>
+        </div>
+      `,
+      confirmButtonColor: '#265D5A',
+      confirmButtonText: 'เข้าใจแล้ว'
+    });
+  }
+}
+
+/**
+ * เปิดหน้าต่างแนะนำการติดตั้งบน iOS Safari
+ */
+function openIosInstallModal() {
+  const modal = document.getElementById('iosInstallModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+}
+
+/**
+ * ปิดหน้าต่างแนะนำการติดตั้งบน iOS Safari
+ */
+function closeIosInstallModal() {
+  const modal = document.getElementById('iosInstallModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+// ----------------- Event Listeners -----------------
+
+// ดักจับ Event เมื่อเบราว์เซอร์พร้อมติดตั้ง
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  console.log('[PWA] beforeinstallprompt event captured');
+  showInstallButtons();
+});
+
+// ดักจับเมื่อผู้ใช้ติดตั้งสำเร็จ
+window.addEventListener('appinstalled', () => {
+  console.log('[PWA] ติดตั้งแอป FaCiLiTy สำเร็จแล้ว!');
+  deferredInstallPrompt = null;
+  hideInstallButtons();
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'success',
+      title: 'ติดตั้งสำเร็จ!',
+      text: 'ไอคอนแอป FaCiLiTy ถูกเพิ่มไปยังหน้าจอหลักของคุณแล้ว สามารถเปิดใช้งานได้ตลอดเวลา',
+      confirmButtonColor: '#265D5A',
+      confirmButtonText: 'ตกลง'
+    });
+  }
+});
+
+// เริ่มต้นระบบเมื่อโหลดหน้าเสร็จ
+window.addEventListener('DOMContentLoaded', () => {
+  // หากติดตั้งแล้ว ไม่ต้องแสดงปุ่ม
+  if (isAppInstalled()) {
+    hideInstallButtons();
+    return;
+  }
+
+  // หากเป็น iOS Safari และยังไม่ได้ติดตั้ง ให้แสดงปุ่มได้เลย
+  if (isIOS()) {
+    showInstallButtons();
+  }
+});
+
+// ลงทะเบียน Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        console.log('[PWA] Service Worker ทำงานเรียบร้อย Scope:', reg.scope);
+      })
+      .catch(err => {
+        console.warn('[PWA] Service Worker เกิดข้อผิดพลาด:', err);
+      });
+  });
+}
+
+
 // === QR Code Scanner ===
 let html5QrcodeScanner = null;
 let currentQrTargetId = null;
@@ -9220,8 +9440,47 @@ function closeQrScanner() {
       <i class="fa-solid fa-bars text-lg"></i>
       <span class="text-[10px] font-medium">เมนูอื่นๆ</span>
     </button>
-
   </nav>
+
+  <!-- iOS Safari Install Guide Modal -->
+  <div id="iosInstallModal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl border border-slate-100">
+      <div class="bg-gradient-to-r from-[#265D5A] to-[#347e7a] p-5 text-white text-center relative">
+        <button onclick="closeIosInstallModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
+          <i class="fa-solid fa-times"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-2 bg-white rounded-2xl shadow-md p-1.5 flex items-center justify-center">
+          <img src="img/logo.png" alt="FaCiLiTy" class="w-full h-full object-cover rounded-xl">
+        </div>
+        <h3 class="font-bold text-lg">ติดตั้งแอป FaCiLiTy</h3>
+        <p class="text-xs text-white/80 mt-0.5">บน iPhone / iPad ของคุณ</p>
+      </div>
+      <div class="p-5 space-y-4">
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-[#B0EDE6] text-[#265D5A] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
+          <div class="text-xs text-slate-700 leading-relaxed">
+            แตะที่ปุ่ม <b class="text-[#265D5A]">"แชร์" (Share)</b> <i class="fa-solid fa-arrow-up-from-bracket text-blue-500 font-bold mx-1"></i> ที่แถบด้านล่างของ Safari
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-[#B0EDE6] text-[#265D5A] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</div>
+          <div class="text-xs text-slate-700 leading-relaxed">
+            เลื่อนหน้าจอลงมา แล้วเลือก <b class="text-[#265D5A]">"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen)</b> <i class="fa-regular fa-square-plus text-slate-600 font-bold mx-1"></i>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-[#B0EDE6] text-[#265D5A] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</div>
+          <div class="text-xs text-slate-700 leading-relaxed">
+            แตะปุ่ม <b class="text-[#265D5A]">"เพิ่ม" (Add)</b> ที่มุมขวาบน เพื่อสร้างไอคอนแอป
+          </div>
+        </div>
+
+        <button onclick="closeIosInstallModal()" class="w-full py-3 bg-[#265D5A] hover:bg-[#1f4b48] text-white font-bold rounded-2xl shadow-md transition-all text-sm mt-2">
+          เข้าใจแล้ว
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- QR Code Scanner Modal -->
   <div id="qrScannerModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">

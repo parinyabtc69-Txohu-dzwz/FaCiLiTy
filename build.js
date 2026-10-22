@@ -30,7 +30,8 @@ const loadOrder = [
   'av.js',
   'dashboard.js',
   'main.js',
-  'track.js'
+  'track.js',
+  'pwa-install.js'
 ];
 
 if (fs.existsSync(jsModulesDir)) {

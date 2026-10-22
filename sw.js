@@ -1,10 +1,11 @@
 // FaCiLiTy PWA Service Worker
 // Developed by Taohx_dz_parinya
 
-const CACHE_NAME = 'facility-v6.4';
+const CACHE_NAME = 'facility-v6.5';
 const STATIC_ASSETS = [
   './',
   './index.html',
+  './manifest.json',
   './img/logo.png'
 ];
 
