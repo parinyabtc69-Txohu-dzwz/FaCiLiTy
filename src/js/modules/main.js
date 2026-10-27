@@ -1070,6 +1070,129 @@ const ResourceHubCore = {
   }
 };
 
+// ==========================================
+// 👑 ระบบสนับสนุนแดชบอร์ดผู้บริหาร (Executive Dashboard Helpers)
+// ==========================================
+window.loadExecutivePendingProjects = async function() {
+  const container = document.getElementById('exec-pending-projects-list');
+  const badge = document.getElementById('exec-pending-proj-badge');
+  if (!container) return;
+
+  try {
+    let pendingList = [];
+    if (window.firestoreDb) {
+      const snap = await window.firestoreDb.collection('tickets')
+        .where('type', '==', 'project')
+        .get();
+      snap.forEach(doc => {
+        const d = doc.data();
+        const tid = d.ticketId || doc.id;
+        const status = d.status || '';
+        // รายการที่ยังไม่ได้รับการอนุมัติ / รอพิจารณา
+        if (!/อนุมัติ|เสร็จ|ปิดงาน|ยกเลิก|ปฏิเสธ/.test(status)) {
+          pendingList.push({ id: tid, ...d });
+        }
+      });
+    }
+
+    if (badge) badge.textContent = `${pendingList.length} รายการ`;
+
+    if (pendingList.length === 0) {
+      container.innerHTML = `
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center border border-white/15">
+          <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xl mx-auto mb-2 shadow-inner">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <h4 class="text-sm font-bold text-white">ไม่มีโครงการรอการอนุมัติในขณะนี้</h4>
+          <p class="text-xs text-purple-200/80 mt-1">ทุกโครงการได้รับการพิจารณาและลงนามเรียบร้อยแล้ว</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = pendingList.map(proj => {
+      const subject = proj.subject || proj.title || 'โครงการปรับปรุงและจัดซื้อ';
+      const budget = proj.budget || proj.cost || proj.estimatedBudget || '-';
+      const budgetText = (budget && budget !== '-') ? `${Number(budget).toLocaleString()} บาท` : 'ตามเสนอ';
+      const reporter = proj.reporter || proj.proposer || 'ไม่ระบุ';
+      const location = proj.location || 'สถานที่ตามเอกสารแนบ';
+      const tid = proj.id;
+
+      return `
+        <div class="bg-white text-slate-800 rounded-2xl p-4 md:p-5 shadow-sm border border-purple-200/60 hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center text-lg shrink-0 mt-0.5 shadow-inner">
+              <i class="fa-solid fa-file-signature"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="text-xs font-black text-violet-700 bg-violet-100 px-2 py-0.5 rounded-lg tracking-wide">${tid}</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block mr-1"></span>รอพิจารณาอนุมัติ
+                </span>
+                <span class="text-xs text-slate-500 font-normal">งบประมาณ: <strong class="text-slate-800 font-bold">${budgetText}</strong></span>
+              </div>
+              <h4 class="text-sm md:text-base font-bold text-slate-900">${sanitizeHtml(subject)}</h4>
+              <p class="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+                <span><i class="fa-solid fa-user-pen text-slate-400 mr-1"></i>ผู้เสนอ: <strong>${sanitizeHtml(reporter)}</strong></span>
+                <span>•</span>
+                <span><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${sanitizeHtml(location)}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="if(window.TrackUI) window.TrackUI.open('${tid}')" class="bg-violet-600 hover:bg-violet-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-magnifying-glass text-xs"></i> <span>ตรวจสอบและลงนาม</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('Error loading pending projects for executive:', err);
+    container.innerHTML = `
+      <div class="text-center py-4 text-purple-200 text-xs">
+        <i class="fa-solid fa-triangle-exclamation text-amber-300 mr-1"></i>ไม่สามารถโหลดรายการโครงการได้ในขณะนี้
+      </div>
+    `;
+  }
+};
+
+window.refreshExecutiveDashboard = async function() {
+  const icon = document.getElementById('exec-refresh-icon');
+  if (icon) icon.classList.add('fa-spin');
+  try {
+    await ResourceHubCore.ui.loadDashboard();
+    await window.loadExecutivePendingProjects();
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'อัปเดตข้อมูลภาพรวมเรียบร้อย',
+      showConfirmButton: false,
+      timer: 1500
+    });
+  } catch(e) {
+    console.error(e);
+  } finally {
+    if (icon) icon.classList.remove('fa-spin');
+  }
+};
+
+window.toggleExecutiveHomeView = function(viewMode) {
+  if (viewMode === 'form') {
+    document.getElementById('home-executive-view')?.classList.add('hidden');
+    document.getElementById('home-regular-view')?.classList.remove('hidden');
+  } else {
+    document.getElementById('home-regular-view')?.classList.add('hidden');
+    document.getElementById('home-executive-view')?.classList.remove('hidden');
+    ResourceHubCore.ui.loadDashboard();
+    window.loadExecutivePendingProjects();
+  }
+};
+
 const post = data => ResourceHubCore.api.post(data);
 const get = (action, params = {}) => ResourceHubCore.api.get(action, params);
 // =========================================================
@@ -1377,9 +1500,13 @@ function handleGlobalLogout() {
   localStorage.removeItem('logged_teacher');
   localStorage.removeItem('logged_admin');
   localStorage.removeItem('logged_email');
+  localStorage.removeItem('logged_role');
   currentTeacher = null;
   currentEmail = '';
+  currentRole = '';
   isAdminLoggedIn = false;
+  if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+  if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
   updateSessionUI();
   alertBox('info', 'ออกจากระบบเรียบร้อย', '', { timer: 1000, showConfirmButton: false });
   nav('page-auth');
@@ -1442,7 +1569,24 @@ function nav(pageId) {
     if (typeof fetchUsers === 'function') fetchUsers();
   }
 
-  if (pageId === 'page-dashboard') {
+  if (pageId === 'page-home') {
+    if (currentRole === 'Executive') {
+      if ($('home-regular-view')) $('home-regular-view').classList.add('hidden');
+      if ($('home-executive-view')) $('home-executive-view').classList.remove('hidden');
+      if ($('exec-user-name')) $('exec-user-name').textContent = currentTeacher || 'ผู้บริหาร (Executive)';
+      if ($('exec-live-clock')) {
+        const now = new Date();
+        $('exec-live-clock').textContent = now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      }
+      ResourceHubCore.ui.loadDashboard();
+      if (typeof window.loadExecutivePendingProjects === 'function') {
+        window.loadExecutivePendingProjects();
+      }
+    } else {
+      if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+      if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
+    }
+  } else if (pageId === 'page-dashboard') {
     // ซ่อนหน้านี้ไว้ชั่วคราวตามที่แจ้ง (ยังไม่ลบ) ให้กลับไปหน้าแรกแทน
     nav('page-home');
     return;
@@ -1526,6 +1670,24 @@ function updateSessionUI() {
     if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
     if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
+    // หน้าแรกของผู้บริหาร: แสดง Executive Dashboard
+    if ($('home-regular-view')) $('home-regular-view').classList.add('hidden');
+    if ($('home-executive-view')) $('home-executive-view').classList.remove('hidden');
+
+    if ($('exec-user-name')) {
+      $('exec-user-name').textContent = currentTeacher || 'ผู้บริหาร (Executive)';
+    }
+    if ($('exec-live-clock')) {
+      const now = new Date();
+      $('exec-live-clock').textContent = now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    // โหลดข้อมูล Dashboard และโครงการรออนุมัติทันที
+    ResourceHubCore.ui.loadDashboard();
+    if (typeof window.loadExecutivePendingProjects === 'function') {
+      window.loadExecutivePendingProjects();
+    }
+
     // เมนูหลักที่เปิดให้ผู้บริหารเข้าดู
     if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
     if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
@@ -1548,6 +1710,8 @@ function updateSessionUI() {
     }
 
   } else if (isAdminLoggedIn) {
+    if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+    if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
     // ซ่อนหน้ามอนิเตอร์ภาพรวมไว้ชั่วคราว (ยังไม่ลบโค้ด)
     if (dashNav) { dashNav.classList.add('hidden'); dashNav.classList.remove('flex'); }
     if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
@@ -1596,6 +1760,8 @@ function updateSessionUI() {
     }
 
   } else if (currentTeacher) {
+    if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+    if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
     if (dashNav) dashNav.classList.add('hidden');
     if (techNav) techNav.classList.add('hidden');
     if (avManageNav) avManageNav.classList.add('hidden');
@@ -1712,6 +1878,8 @@ function updateSessionUI() {
 
   } else {
     // Guest
+    if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+    if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
     if (dashNav) dashNav.classList.add('hidden');
     if (techNav) techNav.classList.add('hidden');
     if (avManageNav) avManageNav.classList.add('hidden');
@@ -3962,21 +4130,18 @@ window.submitSurvey = function () {
 // 📄 ระบบออกรายงาน PDF (Export Dashboard)
 // ==========================================
 window.exportDashboardToPDF = function () {
-  const element = document.getElementById('page-dashboard');
+  const element = document.getElementById('home-executive-view') || document.getElementById('page-dashboard');
   if (!element) return;
 
-  // เตรียมส่วนหัว (Header Bar) ที่มีปุ่ม จะซ่อนปุ่ม
-  const headerDiv = element.querySelector('.bg-gradient-to-r');
-  const buttons = headerDiv ? headerDiv.querySelectorAll('button') : [];
-
-  // ซ่อนปุ่มชั่วคราว
+  // เตรียมส่วนหัวที่มีปุ่ม จะซ่อนปุ่มและตัวเลือกเดือนชั่วคราว
+  const buttons = element.querySelectorAll('button, input[type="month"]');
   buttons.forEach(btn => btn.style.display = 'none');
 
   Swal.fire({ title: 'กำลังสร้างไฟล์ PDF...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
   const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `FaCiLiTy_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`,
+    margin: [8, 8, 8, 8],
+    filename: `Executive_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }

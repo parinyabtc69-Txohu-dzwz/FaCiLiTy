@@ -707,449 +707,539 @@
       </div>
 
 
+<!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
+<!-- หน้านี้รวมเข้ากับหน้าแรกของผู้บริหาร (Executive Dashboard บน page-home) เพื่อประสิทธิภาพและความสวยงามสูงสุด -->
+<div id="page-dashboard" class="page-section hidden"></div>
 
 <!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
-      <div id="page-dashboard" class="page-section">
-        <div class="max-w-7xl mx-auto space-y-6">
+<div id="page-home" class="page-section">
 
-          <!-- Header Bar -->
-          <div
-            class="bg-gradient-to-r from-[#265D5A] to-[#1a3f3d] text-white p-6 md:p-8 rounded-3xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <div class="text-xs uppercase tracking-widest text-[#B0EDE6] font-semibold mb-1">ระบบมอนิเตอร์ภาพรวม</div>
-              <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-                <i class="fa-solid fa-chart-pie text-[#B0EDE6]"></i>
-                <span>มอนิเตอร์ภาพรวมทรัพยากร</span>
-              </h1>
-              <p class="text-[#B0EDE6] text-sm mt-1">สรุปภาพรวมงานซ่อมบำรุงอาคารและงานโสตทัศนูปกรณ์แบบ Real-time</p>
-            </div>
-            <div class="flex gap-3 items-center flex-wrap">
-              <!-- Dropdown เลือกเดือน/ปี สำหรับ Dashboard ย้อนหลัง -->
-              <input type="month" id="dashboardMonthFilter" onchange="loadDashboard()"
-                class="bg-white text-[#265D5A] px-4 py-2.5 rounded-xl font-bold shadow-sm border-none outline-none focus:ring-2 focus:ring-[#B0EDE6] cursor-pointer"
-                title="เลือกเดือน/ปี">
-              <button onclick="loadDashboard()"
-                class="bg-white text-[#265D5A] px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm hover:bg-[#B0EDE6]">
-                <i class="fa-solid fa-rotate"></i> <span>รีเฟรช</span>
-              </button>
-              <button onclick="exportDashboardToPDF()"
-                class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm">
-                <i class="fa-solid fa-file-pdf"></i> <span class="hidden md:inline">Export PDF</span>
-              </button>
-              <button onclick="nav('page-home')"
-                class="bg-[#265D5A]/40 hover:bg-[#265D5A]/60 text-white px-5 py-2.5 rounded-xl font-bold flex gap-2 transition-colors border border-white/20 items-center">
-                <i class="fa-solid fa-house"></i> <span>หน้าหลัก</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- ส่วนที่ 1: การ์ดยอดรวมระบบทั้งหมด (Unified System KPIs) -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-            <div class="bg-white p-5 md:p-6 rounded-3xl border border-[#B0EDE6] relative overflow-hidden shadow-sm">
-              <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">งานทั้งหมดในระบบ</div>
-              <div class="text-3xl md:text-4xl font-extrabold text-slate-800" id="dash-total-all">0</div>
-              <div class="text-xs text-slate-400 mt-1">อาคาร + โสตทัศนูปกรณ์</div>
-              <i class="fa-solid fa-layer-group absolute right-4 bottom-4 text-4xl md:text-5xl text-[#265D5A]/10"></i>
-            </div>
-            <div class="bg-white p-5 md:p-6 rounded-3xl border border-amber-200 relative overflow-hidden shadow-sm">
-              <div class="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-1">รอดำเนินการ</div>
-              <div class="text-3xl md:text-4xl font-extrabold text-amber-500" id="dash-pending-all">0</div>
-              <div class="text-xs text-amber-400 mt-1">รอรับเรื่อง / รอยืนยัน</div>
-              <i class="fa-solid fa-clock absolute right-4 bottom-4 text-4xl md:text-5xl text-amber-400/10"></i>
-            </div>
-            <div class="bg-white p-5 md:p-6 rounded-3xl border border-[#B0EDE6] relative overflow-hidden shadow-sm">
-              <div class="text-xs font-semibold text-[#265D5A] uppercase tracking-wider mb-1">กำลังดำเนินการ</div>
-              <div class="text-3xl md:text-4xl font-extrabold text-[#265D5A]" id="dash-progress-all">0</div>
-              <div class="text-xs text-[#265D5A]/70 mt-1">กำลังซ่อม / กำลังใช้งาน</div>
-              <i
-                class="fa-solid fa-screwdriver-wrench absolute right-4 bottom-4 text-4xl md:text-5xl text-[#265D5A]/10"></i>
-            </div>
-            <div class="bg-white p-5 md:p-6 rounded-3xl border border-emerald-200 relative overflow-hidden shadow-sm">
-              <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1">เสร็จสิ้นเรียบร้อย</div>
-              <div class="text-3xl md:text-4xl font-extrabold text-emerald-600" id="dash-completed-all">0</div>
-              <div class="text-xs text-emerald-500 mt-1">ซ่อมเสร็จ / คืนของครบ</div>
-              <i
-                class="fa-solid fa-circle-check absolute right-4 bottom-4 text-4xl md:text-5xl text-emerald-500/10"></i>
-            </div>
-          </div>
-
-          <!-- ส่วนที่ 2: สถิติแยกหมวดหมู่งาน 2 ฝั่ง (อาคาร vs โสตฯ) -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-            <!-- ฝั่งซ้าย: งานซ่อมบำรุงอาคาร -->
-            <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm">
-              <div class="flex items-center justify-between border-b border-[#B0EDE6] pb-3">
-                <h2 class="text-base font-bold text-[#265D5A] flex items-center gap-2">
-                  <i class="fa-solid fa-building"></i> <span>งานซ่อมบำรุงอาคาร</span>
-                  <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                    <i class="fa-solid fa-star"></i> <span id="b-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="b-rating-count">0</span>)</span>
-                  </span>
-                </h2>
-                <button onclick="TrackUI.show({ type: 'building' })"
-                  class="text-xs text-[#265D5A] hover:text-[#1a3f3d] font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                </button>
-              </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div class="bg-[#edfaf8] p-4 rounded-2xl border border-[#B0EDE6] text-center">
-                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="b-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
-                </div>
-                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
-                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="b-pending">0</div>
-                  <div class="text-[11px] text-amber-500">รอซ่อม</div>
-                </div>
-                <div class="bg-[#edfaf8] p-4 rounded-2xl border border-[#B0EDE6] text-center">
-                  <div class="text-2xl font-bold text-[#265D5A] mb-0.5" id="b-progress">0</div>
-                  <div class="text-[11px] text-[#265D5A]">กำลังซ่อม</div>
-                </div>
-                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
-                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="b-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">ซ่อมเสร็จ</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- ฝั่งขวา: งานยืม-คืนโสตทัศนูปกรณ์ -->
-            <div class="bg-white p-6 rounded-3xl border border-[#FF5F5F]/20 space-y-4 shadow-sm">
-              <div class="flex items-center justify-between border-b border-[#FF5F5F]/20 pb-3">
-                <h2 class="text-base font-bold text-[#FF5F5F] flex items-center gap-2">
-                  <i class="fa-solid fa-microphone-lines"></i> <span>การยืม-คืนโสตทัศนูปกรณ์</span>
-                  <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                    <i class="fa-solid fa-star"></i> <span id="av-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="av-rating-count">0</span>)</span>
-                  </span>
-                </h2>
-                <button onclick="TrackUI.show({ type: 'av' })"
-                  class="text-xs text-[#FF5F5F] hover:text-[#8F1C26] font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                </button>
-              </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div class="bg-rose-50 p-4 rounded-2xl border border-[#FF5F5F]/20 text-center">
-                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="av-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
-                </div>
-                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
-                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="av-pending">0</div>
-                  <div class="text-[11px] text-amber-500">รอยืนยัน</div>
-                </div>
-                <div class="bg-rose-50 p-4 rounded-2xl border border-[#FF5F5F]/20 text-center">
-                  <div class="text-2xl font-bold text-[#FF5F5F] mb-0.5" id="av-active">0</div>
-                  <div class="text-[11px] text-[#FF5F5F]">ใช้งานอยู่</div>
-                </div>
-                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
-                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="av-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">คืนเรียบร้อย</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- งานซ่อมไอที -->
-            <div class="bg-white p-6 rounded-3xl border border-sky-200 space-y-4 shadow-sm">
-              <div class="flex items-center justify-between border-b border-sky-200 pb-3">
-                <h2 class="text-base font-bold text-sky-500 flex items-center gap-2">
-                  <i class="fa-solid fa-desktop"></i> <span>งานซ่อมไอที / เครือข่าย</span>
-                  <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                    <i class="fa-solid fa-star"></i> <span id="it-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="it-rating-count">0</span>)</span>
-                  </span>
-                </h2>
-                <button onclick="TrackUI.show({ type: 'it' })"
-                  class="text-xs text-sky-500 hover:text-sky-700 font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                </button>
-              </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div class="bg-sky-50 p-4 rounded-2xl border border-sky-200 text-center">
-                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="it-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
-                </div>
-                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
-                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="it-pending">0</div>
-                  <div class="text-[11px] text-amber-500">รอซ่อม</div>
-                </div>
-                <div class="bg-sky-50 p-4 rounded-2xl border border-sky-200 text-center">
-                  <div class="text-2xl font-bold text-sky-500 mb-0.5" id="it-progress">0</div>
-                  <div class="text-[11px] text-sky-500">กำลังซ่อม</div>
-                </div>
-                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
-                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="it-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">ซ่อมเสร็จ</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- งานซ่อมอุปกรณ์โสตฯ -->
-            <div class="bg-white p-6 rounded-3xl border border-amber-200 space-y-4 shadow-sm">
-              <div class="flex items-center justify-between border-b border-amber-200 pb-3">
-                <h2 class="text-base font-bold text-amber-500 flex items-center gap-2">
-                  <i class="fa-solid fa-camera"></i> <span>งานซ่อมอุปกรณ์โสตฯ</span>
-                  <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                    <i class="fa-solid fa-star"></i> <span id="avrep-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="avrep-rating-count">0</span>)</span>
-                  </span>
-                </h2>
-                <button onclick="TrackUI.show({ type: 'av' })"
-                  class="text-xs text-amber-500 hover:text-amber-700 font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                </button>
-              </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
-                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="avrep-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
-                </div>
-                <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200 text-center">
-                  <div class="text-2xl font-bold text-rose-500 mb-0.5" id="avrep-pending">0</div>
-                  <div class="text-[11px] text-rose-500">รอซ่อม</div>
-                </div>
-                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
-                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="avrep-progress">0</div>
-                  <div class="text-[11px] text-amber-500">กำลังซ่อม</div>
-                </div>
-                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
-                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="avrep-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">ซ่อมเสร็จ</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- เสนอโครงการ -->
-            <div class="bg-white p-6 rounded-3xl border border-violet-200 space-y-4 shadow-sm">
-              <div class="flex items-center justify-between border-b border-violet-200 pb-3">
-                <h2 class="text-base font-bold text-violet-500 flex items-center gap-2">
-                  <i class="fa-solid fa-building-circle-check"></i> <span>เสนอโครงการ / จัดซื้อ</span>
-                  <span class="ml-2 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                    <i class="fa-solid fa-star"></i> <span id="proj-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="proj-rating-count">0</span>)</span>
-                  </span>
-                </h2>
-                <button onclick="TrackUI.show({ type: 'project' })"
-                  class="text-xs text-violet-500 hover:text-violet-700 font-semibold flex items-center gap-1">
-                  <span>จัดการงาน</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                </button>
-              </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div class="bg-violet-50 p-4 rounded-2xl border border-violet-200 text-center">
-                  <div class="text-2xl font-bold text-slate-800 mb-0.5" id="proj-total">0</div>
-                  <div class="text-[11px] text-slate-500">ทั้งหมด</div>
-                </div>
-                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center">
-                  <div class="text-2xl font-bold text-amber-500 mb-0.5" id="proj-pending">0</div>
-                  <div class="text-[11px] text-amber-500">รออนุมัติ</div>
-                </div>
-                <div class="bg-violet-50 p-4 rounded-2xl border border-violet-200 text-center">
-                  <div class="text-2xl font-bold text-violet-500 mb-0.5" id="proj-progress">0</div>
-                  <div class="text-[11px] text-violet-500">กำลังดำเนินการ</div>
-                </div>
-                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center">
-                  <div class="text-2xl font-bold text-emerald-600 mb-0.5" id="proj-completed">0</div>
-                  <div class="text-[11px] text-emerald-600">เสร็จสิ้น</div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- ส่วนที่ 3: สัดส่วนงาน (Analytics) -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-            <!-- แถบสัดส่วนประเภทงาน -->
-            <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm">
-              <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-chart-column text-[#265D5A]"></i> <span>สัดส่วนและอัตราความสำเร็จ</span>
-              </h3>
-              <div class="space-y-4 pt-1">
-                <div>
-                  <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>งานซ่อมอาคาร (<span id="ratio-building-count">0</span>)</span>
-                    <span id="ratio-building-pct" class="text-[#265D5A] font-bold">50%</span>
-                  </div>
-                  <div class="h-2.5 bg-[#B0EDE6]/40 rounded-full overflow-hidden">
-                    <div id="ratio-building-bar" class="h-full bg-[#265D5A] rounded-full transition-all duration-500"
-                      style="width: 50%"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>งานบริการโสตฯ (<span id="ratio-av-count">0</span>)</span>
-                    <span id="ratio-av-pct" class="text-[#FF5F5F] font-bold">50%</span>
-                  </div>
-                  <div class="h-2.5 bg-[#FF5F5F]/10 rounded-full overflow-hidden">
-                    <div id="ratio-av-bar" class="h-full bg-[#FF5F5F] rounded-full transition-all duration-500"
-                      style="width: 50%"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>งานซ่อมไอที (<span id="ratio-it-count">0</span>)</span>
-                    <span id="ratio-it-pct" class="text-sky-500 font-bold">0%</span>
-                  </div>
-                  <div class="h-2.5 bg-sky-100 rounded-full overflow-hidden">
-                    <div id="ratio-it-bar" class="h-full bg-sky-500 rounded-full transition-all duration-500"
-                      style="width: 0%"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>งานซ่อมอุปกรณ์โสตฯ (<span id="ratio-av-repair-count">0</span>)</span>
-                    <span id="ratio-av-repair-pct" class="text-amber-500 font-bold">0%</span>
-                  </div>
-                  <div class="h-2.5 bg-amber-100 rounded-full overflow-hidden">
-                    <div id="ratio-av-repair-bar" class="h-full bg-amber-500 rounded-full transition-all duration-500"
-                      style="width: 0%"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>เสนอโครงการ (<span id="ratio-project-count">0</span>)</span>
-                    <span id="ratio-project-pct" class="text-violet-500 font-bold">0%</span>
-                  </div>
-                  <div class="h-2.5 bg-violet-100 rounded-full overflow-hidden">
-                    <div id="ratio-project-bar" class="h-full bg-violet-500 rounded-full transition-all duration-500"
-                      style="width: 0%"></div>
-                  </div>
-                </div>
-                <div class="pt-2 border-t border-[#B0EDE6]">
-                  <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
-                    <span>อัตรางานที่เสร็จสิ้นทั้งหมด (Overall Completion Rate)</span>
-                    <span id="overall-progress-text" class="text-emerald-600 font-bold">0%</span>
-                  </div>
-                  <div class="h-2.5 bg-emerald-100 rounded-full overflow-hidden">
-                    <div id="overall-progress-bar"
-                      class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- กราฟสถิติ (Chart.js) -->
-            <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm flex flex-col">
-              <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-chart-pie text-[#265D5A]"></i> <span>สัดส่วนสถานะงานทั้งหมด</span>
-              </h3>
-              <div class="flex-1 min-h-[200px] flex items-center justify-center relative">
-                <canvas id="dashboardChart"></canvas>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
+  <!-- ======================================================== -->
+  <!-- 1. ส่วนสำหรับครูและบุคลากรทั่วไป (Regular User / Teacher View) -->
+  <!-- ======================================================== -->
+  <div id="home-regular-view" class="max-w-4xl mx-auto py-4">
+    <div class="text-center mb-8">
+      <div
+        class="w-20 h-20 bg-[#B0EDE6] text-[#265D5A] rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 shadow-sm border border-[#265D5A]/20">
+        <i class="fa-solid fa-building"></i>
       </div>
+      <h1 class="text-3xl font-semibold text-slate-800 mb-2">ระบบบริการทรัพยากร</h1>
+      <p class="text-sm text-slate-500 font-light">เลือกบริการหรือหน่วยงานที่คุณต้องการติดต่อ</p>
+    </div>
 
+    <div class="text-center mb-6">
+      <button onclick="openTrackModal()" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-8 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 mx-auto w-full md:w-auto">
+        <i class="fa-solid fa-magnifying-glass text-xl"></i> <span>ติดตามสถานะงาน</span>
+      </button>
+    </div>
 
-<!-- x-sys-sig: RGV2ZWxvcGVkIGJ5IFRhb2h4X2R6X3BhcmlueWEsIFVJIERlc2lnbiBCeSBEcmVhbV9QYXRpcGF0LCBBSSBBc3Npc3RhbnQ6IEFudGlncmF2aXR5 -->
-﻿      <div id="page-home" class="page-section max-w-4xl mx-auto py-4">
-        <div class="text-center mb-8">
-          <div
-            class="w-20 h-20 bg-[#B0EDE6] text-[#265D5A] rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 shadow-sm border border-[#265D5A]/20">
-            <i class="fa-solid fa-building"></i>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="homeMenuGrid">
+
+      <button onclick="nav('page-repair-form')"
+        class="btn-card card-building flex items-center p-5 border border-[#B0EDE6] rounded-2xl bg-white hover:bg-[#E0F7F4] hover:border-[#265D5A]/30 transition-all text-left group shadow-sm">
+        <div
+          class="icon-wrapper w-12 h-12 rounded-xl bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-wrench"></i>
+        </div>
+        <div class="flex-grow">
+          <span class="block text-base font-medium text-slate-800">แจ้งซ่อม / แจ้งปัญหาอาคาร</span>
+          <span class="block text-xs text-slate-500 font-light">แจ้งซ่อมไฟฟ้า ประปา แอร์ หรือโครงสร้างอาคาร</span>
+        </div>
+        <div class="text-slate-300 font-bold text-lg group-hover:text-[#1a3f3d]">›</div>
+      </button>
+
+      <button onclick="nav('page-av-form')"
+        class="btn-card card-av flex items-center p-5 border border-[#B0EDE6] rounded-2xl bg-white hover:bg-[#E0F7F4] hover:border-[#265D5A]/30 transition-all text-left group shadow-sm">
+        <div
+          class="icon-wrapper w-12 h-12 rounded-xl bg-[#FF5F5F]/10 text-[#FF5F5F] flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-microphone-lines"></i>
+        </div>
+        <div class="flex-grow">
+          <span class="block text-base font-medium text-slate-800">ยืม-คืน / จัดเตรียมไมค์-โสตฯ</span>
+          <span class="block text-xs text-slate-500 font-light">ขอใช้เสียง โปรเจกเตอร์ หรือเตรียมห้องประชุม</span>
+        </div>
+        <div class="text-slate-300 font-bold text-lg group-hover:text-[#FF5F5F]">›</div>
+      </button>
+
+      <button id="home-card-it-repair" onclick="nav('page-it-repair')"
+        class="btn-card hidden items-center p-5 border border-sky-100 rounded-2xl bg-white hover:bg-sky-50 hover:border-sky-300 transition-all text-left group shadow-sm">
+        <div
+          class="icon-wrapper w-12 h-12 rounded-xl bg-sky-100 text-sky-500 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-desktop"></i>
+        </div>
+        <div class="flex-grow">
+          <span class="block text-base font-medium text-slate-800">แจ้งซ่อมไอที / เครือข่าย</span>
+          <span class="block text-xs text-slate-500 font-light">ซ่อมคอมพิวเตอร์ อินเทอร์เน็ต กล้องวงจรปิด</span>
+        </div>
+        <div class="text-slate-300 font-bold text-lg group-hover:text-sky-500">›</div>
+      </button>
+
+      <button id="home-card-av-repair" onclick="nav('page-av-repair')"
+        class="btn-card hidden items-center p-5 border border-amber-100 rounded-2xl bg-white hover:bg-amber-50 hover:border-amber-300 transition-all text-left group shadow-sm">
+        <div
+          class="icon-wrapper w-12 h-12 rounded-xl bg-amber-100 text-amber-500 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+        <div class="flex-grow">
+          <span class="block text-base font-medium text-slate-800">แจ้งซ่อมอุปกรณ์โสตฯ</span>
+          <span class="block text-xs text-slate-500 font-light">ซ่อมไมโครโฟน ลำโพง โปรเจคเตอร์ที่ชำรุด</span>
+        </div>
+        <div class="text-slate-300 font-bold text-lg group-hover:text-amber-500">›</div>
+      </button>
+
+      <button id="home-card-project" onclick="nav('page-project-form')"
+        class="btn-card hidden items-center p-5 border border-violet-100 rounded-2xl bg-white hover:bg-violet-50 hover:border-violet-300 transition-all text-left group shadow-sm">
+        <div
+          class="icon-wrapper w-12 h-12 rounded-xl bg-violet-100 text-violet-500 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-building-circle-check"></i>
+        </div>
+        <div class="flex-grow">
+          <span class="block text-base font-medium text-slate-800">เสนอโครงการ / จัดซื้อ</span>
+          <span class="block text-xs text-slate-500 font-light">โครงการปรับปรุงระยะยาวที่ต้องรออนุมัติ</span>
+        </div>
+        <div class="text-slate-300 font-bold text-lg group-hover:text-violet-500">›</div>
+      </button>
+
+      <button id="home-card-teacher-profile" onclick="nav('page-teacher-profile')"
+        class="btn-card hidden items-center p-5 border border-slate-200 rounded-2xl bg-white hover:bg-emerald-50/50 hover:border-emerald-200 transition-all text-left group shadow-sm">
+        <div
+          class="icon-wrapper w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div class="flex-grow">
+          <span class="block text-base font-medium text-slate-800">ประวัติแจ้งซ่อมอาคาร</span>
+          <span class="block text-xs text-slate-500 font-light">ติดตามสถานะงานซ่อมอาคารที่คุณได้ส่งเรื่องไว้</span>
+        </div>
+        <div class="text-slate-300 font-bold text-lg group-hover:text-emerald-600">›</div>
+      </button>
+
+      <button id="home-card-teacher-av-profile" onclick="nav('page-teacher-av-profile')"
+        class="btn-card hidden items-center p-5 border border-slate-200 rounded-2xl bg-white hover:bg-amber-50/50 hover:border-amber-200 transition-all text-left group shadow-sm">
+        <div
+          class="icon-wrapper w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-list-check"></i>
+        </div>
+        <div class="flex-grow">
+          <span class="block text-base font-medium text-slate-800">ประวัติยืมอุปกรณ์โสตฯ</span>
+          <span class="block text-xs text-slate-500 font-light">ติดตามสถานะการขอยืมและคืนอุปกรณ์โสตทัศนูปกรณ์</span>
+        </div>
+        <div class="text-slate-300 font-bold text-lg group-hover:text-amber-600">›</div>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 2. แดชบอร์ดผู้บริหารระดับสูง (Executive Command Dashboard) -->
+  <!-- ======================================================== -->
+  <div id="home-executive-view" class="hidden max-w-7xl mx-auto space-y-6 py-2">
+
+    <!-- 2.1 ส่วนหัวแบนเนอร์ผู้บริหาร (Executive Hero Banner) -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#13302e] via-[#265D5A] to-[#0f2422] text-white p-6 md:p-8 shadow-xl border border-[#B0EDE6]/20">
+      <div class="absolute -right-16 -top-16 w-72 h-72 bg-[#B0EDE6]/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute right-1/4 -bottom-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#B0EDE6]/20 border border-[#B0EDE6]/30 text-[#B0EDE6] text-xs font-semibold uppercase tracking-wider mb-3 backdrop-blur-md">
+            <i class="fa-solid fa-crown text-amber-300"></i>
+            <span>Executive Command Center • แดชบอร์ดภาพรวมผู้บริหาร</span>
           </div>
-          <h1 class="text-3xl font-semibold text-slate-800 mb-2">ระบบบริการทรัพยากร</h1>
-          <p class="text-sm text-slate-500 font-light">เลือกบริการหรือหน่วยงานที่คุณต้องการติดต่อ</p>
-        </div>
-
-        <div class="text-center mb-6">
-          <button onclick="openTrackModal()" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-8 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 mx-auto w-full md:w-auto">
-            <i class="fa-solid fa-magnifying-glass text-xl"></i> <span>ติดตามสถานะงาน</span>
-          </button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="homeMenuGrid">
-
+          <h1 class="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
+            <span>ศูนย์ควบคุมและรายงานสำหรับผู้บริหาร</span>
+          </h1>
+          <p class="text-slate-200 text-xs md:text-sm mt-2 max-w-2xl font-light leading-relaxed">
+            สรุปภาพรวมความพร้อมใช้ทรัพยากรทุกฝ่าย สถิติความพึงพอใจ และการพิจารณาอนุมัติโครงการสำคัญแบบ Real-time
+          </p>
           
-  
-          <button onclick="nav('page-repair-form')"
-            class="btn-card card-building flex items-center p-5 border border-[#B0EDE6] rounded-2xl bg-white hover:bg-[#E0F7F4] hover:border-[#265D5A]/30 transition-all text-left group shadow-sm">
-            <div
-              class="icon-wrapper w-12 h-12 rounded-xl bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
-              <i class="fa-solid fa-wrench"></i>
+          <div class="mt-4 flex flex-wrap items-center gap-2.5 text-xs text-[#B0EDE6]/90">
+            <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>ท่านผู้บริหาร: <strong id="exec-user-name" class="text-white font-bold">ผู้บริหาร</strong></span>
             </div>
-            <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">แจ้งซ่อม / แจ้งปัญหาอาคาร</span>
-              <span class="block text-xs text-slate-500 font-light">แจ้งซ่อมไฟฟ้า ประปา แอร์ หรือโครงสร้างอาคาร</span>
+            <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15">
+              <i class="fa-regular fa-calendar-check text-[#B0EDE6]"></i>
+              <span id="exec-live-clock">วันนี้</span>
             </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-[#1a3f3d]">›</div>
+          </div>
+        </div>
+
+        <!-- แถบเครื่องมือควบคุมด่วนสำหรับผู้บริหาร -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <input type="month" id="dashboardMonthFilter" onchange="ResourceHubCore.ui.loadDashboard()"
+            class="bg-white/15 hover:bg-white/20 text-white placeholder-white/70 px-3.5 py-2.5 rounded-2xl text-xs md:text-sm font-semibold border border-white/20 outline-none focus:ring-2 focus:ring-[#B0EDE6] backdrop-blur-md cursor-pointer transition shadow-sm"
+            title="เลือกดูสถิติตามเดือน">
+
+          <button onclick="refreshExecutiveDashboard()"
+            class="bg-[#B0EDE6] hover:bg-white text-[#13302e] px-4 py-2.5 rounded-2xl text-xs md:text-sm font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95">
+            <i class="fa-solid fa-rotate text-sm" id="exec-refresh-icon"></i> 
+            <span>รีเฟรช</span>
           </button>
 
-          <button onclick="nav('page-av-form')"
-            class="btn-card card-av flex items-center p-5 border border-[#B0EDE6] rounded-2xl bg-white hover:bg-[#E0F7F4] hover:border-[#265D5A]/30 transition-all text-left group shadow-sm">
-            <div
-              class="icon-wrapper w-12 h-12 rounded-xl bg-[#FF5F5F]/10 text-[#FF5F5F] flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
-              <i class="fa-solid fa-microphone-lines"></i>
-            </div>
-            <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">ยืม-คืน / จัดเตรียมไมค์-โสตฯ</span>
-              <span class="block text-xs text-slate-500 font-light">ขอใช้เสียง โปรเจกเตอร์ หรือเตรียมห้องประชุม</span>
-            </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-[#FF5F5F]">›</div>
+          <button onclick="exportDashboardToPDF()"
+            class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-4 py-2.5 rounded-2xl text-xs md:text-sm font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95">
+            <i class="fa-solid fa-file-pdf text-sm"></i>
+            <span>Export PDF</span>
           </button>
 
-          <button id="home-card-it-repair" onclick="nav('page-it-repair')"
-            class="btn-card hidden items-center p-5 border border-sky-100 rounded-2xl bg-white hover:bg-sky-50 hover:border-sky-300 transition-all text-left group shadow-sm">
-            <div
-              class="icon-wrapper w-12 h-12 rounded-xl bg-sky-100 text-sky-500 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
-              <i class="fa-solid fa-desktop"></i>
-            </div>
-            <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">แจ้งซ่อมไอที / เครือข่าย</span>
-              <span class="block text-xs text-slate-500 font-light">ซ่อมคอมพิวเตอร์ อินเทอร์เน็ต กล้องวงจรปิด</span>
-            </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-sky-500">›</div>
+          <button onclick="TrackUI.show({ type: 'all' })"
+            class="bg-white/10 hover:bg-white/20 text-white border border-white/25 px-4 py-2.5 rounded-2xl text-xs md:text-sm font-semibold flex items-center gap-2 backdrop-blur-md transition-all active:scale-95">
+            <i class="fa-solid fa-layer-group text-sm"></i>
+            <span class="hidden sm:inline">คิวงานทั้งหมด</span>
           </button>
-
-          <button id="home-card-av-repair" onclick="nav('page-av-repair')"
-            class="btn-card hidden items-center p-5 border border-amber-100 rounded-2xl bg-white hover:bg-amber-50 hover:border-amber-300 transition-all text-left group shadow-sm">
-            <div
-              class="icon-wrapper w-12 h-12 rounded-xl bg-amber-100 text-amber-500 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
-              <i class="fa-solid fa-camera"></i>
-            </div>
-            <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">แจ้งซ่อมอุปกรณ์โสตฯ</span>
-              <span class="block text-xs text-slate-500 font-light">ซ่อมไมโครโฟน ลำโพง โปรเจคเตอร์ที่ชำรุด</span>
-            </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-amber-500">›</div>
-          </button>
-
-          <button id="home-card-project" onclick="nav('page-project-form')"
-            class="btn-card hidden items-center p-5 border border-violet-100 rounded-2xl bg-white hover:bg-violet-50 hover:border-violet-300 transition-all text-left group shadow-sm">
-            <div
-              class="icon-wrapper w-12 h-12 rounded-xl bg-violet-100 text-violet-500 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
-              <i class="fa-solid fa-building-circle-check"></i>
-            </div>
-            <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">เสนอโครงการ / จัดซื้อ</span>
-              <span class="block text-xs text-slate-500 font-light">โครงการปรับปรุงระยะยาวที่ต้องรออนุมัติ</span>
-            </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-violet-500">›</div>
-          </button>
-
-          <button id="home-card-teacher-profile" onclick="nav('page-teacher-profile')"
-            class="btn-card hidden items-center p-5 border border-slate-200 rounded-2xl bg-white hover:bg-emerald-50/50 hover:border-emerald-200 transition-all text-left group shadow-sm">
-            <div
-              class="icon-wrapper w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
-              <i class="fa-solid fa-clock-rotate-left"></i>
-            </div>
-            <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">ประวัติแจ้งซ่อมอาคาร</span>
-              <span class="block text-xs text-slate-500 font-light">ติดตามสถานะงานซ่อมอาคารที่คุณได้ส่งเรื่องไว้</span>
-            </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-emerald-600">›</div>
-          </button>
-
-          <button id="home-card-teacher-av-profile" onclick="nav('page-teacher-av-profile')"
-            class="btn-card hidden items-center p-5 border border-slate-200 rounded-2xl bg-white hover:bg-amber-50/50 hover:border-amber-200 transition-all text-left group shadow-sm">
-            <div
-              class="icon-wrapper w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl mr-4 group-hover:scale-110 transition-transform">
-              <i class="fa-solid fa-list-check"></i>
-            </div>
-            <div class="flex-grow">
-              <span class="block text-base font-medium text-slate-800">ประวัติยืมอุปกรณ์โสตฯ</span>
-              <span class="block text-xs text-slate-500 font-light">ติดตามสถานะการขอยืมและคืนอุปกรณ์โสตทัศนูปกรณ์</span>
-            </div>
-            <div class="text-slate-300 font-bold text-lg group-hover:text-amber-600">›</div>
-          </button>
-
         </div>
       </div>
+    </div>
+
+    <!-- 2.2 การ์ดยอดรวมระบบ 4 ด้าน (Unified Executive KPIs) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+      <!-- การ์ด 1: งานทั้งหมด -->
+      <div class="group bg-white p-5 md:p-6 rounded-3xl border border-slate-200/80 hover:border-[#265D5A]/40 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">งานทั้งหมดในระบบ</span>
+          <div class="w-10 h-10 rounded-2xl bg-[#B0EDE6]/50 text-[#265D5A] flex items-center justify-center text-lg shadow-inner group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+        </div>
+        <div class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight" id="dash-total-all">0</div>
+        <p class="text-[11px] text-slate-400 mt-1 font-medium flex items-center gap-1">
+          <i class="fa-solid fa-cubes text-teal-600"></i> รวมทั้ง 4 หน่วยบริการ
+        </p>
+        <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-[#B0EDE6]/10 rounded-full pointer-events-none"></div>
+      </div>
+
+      <!-- การ์ด 2: รอดำเนินการ / อนุมัติ -->
+      <div class="group bg-gradient-to-br from-amber-50/70 to-white p-5 md:p-6 rounded-3xl border border-amber-200 hover:border-amber-300 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">รอดำเนินการ / อนุมัติ</span>
+          <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg shadow-inner group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+        </div>
+        <div class="text-3xl md:text-4xl font-black text-amber-600 tracking-tight" id="dash-pending-all">0</div>
+        <p class="text-[11px] text-amber-700/80 mt-1 font-medium flex items-center gap-1">
+          <span class="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> รอรับเรื่อง &amp; รอพิจารณาอนุมัติ
+        </p>
+        <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-amber-400/10 rounded-full pointer-events-none"></div>
+      </div>
+
+      <!-- การ์ด 3: กำลังดำเนินการ -->
+      <div class="group bg-gradient-to-br from-teal-50/60 to-white p-5 md:p-6 rounded-3xl border border-[#B0EDE6] hover:border-[#265D5A]/50 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-[#265D5A] uppercase tracking-wider">กำลังดำเนินการ</span>
+          <div class="w-10 h-10 rounded-2xl bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center text-lg shadow-inner group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+          </div>
+        </div>
+        <div class="text-3xl md:text-4xl font-black text-[#265D5A] tracking-tight" id="dash-progress-all">0</div>
+        <p class="text-[11px] text-[#265D5A]/80 mt-1 font-medium flex items-center gap-1">
+          <i class="fa-solid fa-arrows-rotate text-[#265D5A]"></i> ช่างกำลังปฏิบัติงาน / ใช้งานอยู่
+        </p>
+        <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-[#265D5A]/5 rounded-full pointer-events-none"></div>
+      </div>
+
+      <!-- การ์ด 4: เสร็จสิ้นเรียบร้อย -->
+      <div class="group bg-gradient-to-br from-emerald-50/70 to-white p-5 md:p-6 rounded-3xl border border-emerald-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">เสร็จสิ้นเรียบร้อย</span>
+          <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg shadow-inner group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+        </div>
+        <div class="text-3xl md:text-4xl font-black text-emerald-600 tracking-tight" id="dash-completed-all">0</div>
+        <p class="text-[11px] text-emerald-700/80 mt-1 font-medium flex items-center gap-1">
+          <i class="fa-solid fa-trophy text-amber-500"></i> ส่งมอบงานสำเร็จ / คืนของครบ
+        </p>
+        <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-400/10 rounded-full pointer-events-none"></div>
+      </div>
+    </div>
+
+    <!-- 2.3 ศูนย์พิจารณาอนุมัติโครงการสำหรับผู้บริหาร (Executive Approval Action Center) -->
+    <div class="bg-gradient-to-br from-violet-950 via-purple-900 to-indigo-950 text-white rounded-3xl p-6 md:p-7 shadow-lg relative overflow-hidden border border-purple-400/20">
+      <div class="absolute -right-12 -bottom-12 w-52 h-52 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
+      
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 text-white flex items-center justify-center text-xl shadow-md">
+            <i class="fa-solid fa-stamp"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-lg md:text-xl font-bold tracking-tight text-white">โครงการรอการพิจารณาอนุมัติ</h2>
+              <span id="exec-pending-proj-badge" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-400 text-slate-900 shadow-sm animate-pulse">
+                0 รายการ
+              </span>
+            </div>
+            <p class="text-xs text-purple-200 mt-0.5 font-light">
+              โครงการพัฒนาและจัดซื้อที่ต้องได้รับการตรวจสอบงบประมาณและลงนามอนุมัติจากท่านผู้บริหาร
+            </p>
+          </div>
+        </div>
+        
+        <button onclick="TrackUI.show({ type: 'project' })"
+          class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-xl transition border border-white/20 flex items-center gap-2 self-start md:self-auto">
+          <span>ดูโครงการทั้งหมด</span>
+          <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
+
+      <!-- รายการโครงการที่รออนุมัติ (โหลดแบบ Real-time) -->
+      <div id="exec-pending-projects-list" class="mt-4 space-y-3">
+        <div class="text-center py-6 text-purple-200/70 text-xs">
+          <i class="fa-solid fa-circle-notch fa-spin text-base mb-2 block"></i>
+          กำลังโหลดรายการโครงการรออนุมัติ...
+        </div>
+      </div>
+    </div>
+
+    <!-- 2.4 สถิติแยกตาม 4 กลุ่มงานบริการ (Department Breakdown) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <!-- งาน 1: ซ่อมบำรุงอาคาร -->
+      <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm hover:shadow-md transition">
+        <div class="flex items-center justify-between border-b border-[#B0EDE6]/60 pb-3">
+          <h2 class="text-base font-bold text-[#265D5A] flex items-center gap-2">
+            <i class="fa-solid fa-building"></i> <span>งานซ่อมบำรุงอาคารและสถานที่</span>
+            <span class="ml-1 text-xs font-semibold text-amber-500 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+              <i class="fa-solid fa-star"></i> <span id="b-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="b-rating-count">0</span>)</span>
+            </span>
+          </h2>
+          <button onclick="TrackUI.show({ type: 'building' })"
+            class="text-xs text-[#265D5A] hover:text-[#1a3f3d] font-bold flex items-center gap-1 px-3 py-1 bg-teal-50 hover:bg-teal-100 rounded-xl transition">
+            <span>ตรวจสอบ</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-[#edfaf8] p-3.5 rounded-2xl border border-[#B0EDE6] text-center">
+            <div class="text-2xl font-black text-slate-800" id="b-total">0</div>
+            <div class="text-[11px] text-slate-500 font-medium">ทั้งหมด</div>
+          </div>
+          <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-center">
+            <div class="text-2xl font-black text-amber-500" id="b-pending">0</div>
+            <div class="text-[11px] text-amber-600 font-medium">รอซ่อม</div>
+          </div>
+          <div class="bg-[#edfaf8] p-3.5 rounded-2xl border border-[#B0EDE6] text-center">
+            <div class="text-2xl font-black text-[#265D5A]" id="b-progress">0</div>
+            <div class="text-[11px] text-[#265D5A] font-medium">กำลังซ่อม</div>
+          </div>
+          <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 text-center">
+            <div class="text-2xl font-black text-emerald-600" id="b-completed">0</div>
+            <div class="text-[11px] text-emerald-600 font-medium">ซ่อมเสร็จ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- งาน 2: ยืม-คืนโสตทัศนูปกรณ์ -->
+      <div class="bg-white p-6 rounded-3xl border border-[#FF5F5F]/20 space-y-4 shadow-sm hover:shadow-md transition">
+        <div class="flex items-center justify-between border-b border-[#FF5F5F]/20 pb-3">
+          <h2 class="text-base font-bold text-[#FF5F5F] flex items-center gap-2">
+            <i class="fa-solid fa-microphone-lines"></i> <span>การยืม-คืนโสตทัศนูปกรณ์</span>
+            <span class="ml-1 text-xs font-semibold text-amber-500 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+              <i class="fa-solid fa-star"></i> <span id="av-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="av-rating-count">0</span>)</span>
+            </span>
+          </h2>
+          <button onclick="TrackUI.show({ type: 'av' })"
+            class="text-xs text-[#FF5F5F] hover:text-[#8F1C26] font-bold flex items-center gap-1 px-3 py-1 bg-rose-50 hover:bg-rose-100 rounded-xl transition">
+            <span>ตรวจสอบ</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-rose-50 p-3.5 rounded-2xl border border-[#FF5F5F]/20 text-center">
+            <div class="text-2xl font-black text-slate-800" id="av-total">0</div>
+            <div class="text-[11px] text-slate-500 font-medium">ทั้งหมด</div>
+          </div>
+          <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-center">
+            <div class="text-2xl font-black text-amber-500" id="av-pending">0</div>
+            <div class="text-[11px] text-amber-600 font-medium">รอยืนยัน</div>
+          </div>
+          <div class="bg-rose-50 p-3.5 rounded-2xl border border-[#FF5F5F]/20 text-center">
+            <div class="text-2xl font-black text-[#FF5F5F]" id="av-active">0</div>
+            <div class="text-[11px] text-[#FF5F5F] font-medium">ใช้งานอยู่</div>
+          </div>
+          <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 text-center">
+            <div class="text-2xl font-black text-emerald-600" id="av-completed">0</div>
+            <div class="text-[11px] text-emerald-600 font-medium">คืนครบแล้ว</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- งาน 3: ซ่อมไอทีและเครือข่าย -->
+      <div class="bg-white p-6 rounded-3xl border border-sky-200 space-y-4 shadow-sm hover:shadow-md transition">
+        <div class="flex items-center justify-between border-b border-sky-200 pb-3">
+          <h2 class="text-base font-bold text-sky-600 flex items-center gap-2">
+            <i class="fa-solid fa-desktop"></i> <span>งานซ่อมไอที / ระบบเครือข่าย</span>
+            <span class="ml-1 text-xs font-semibold text-amber-500 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+              <i class="fa-solid fa-star"></i> <span id="it-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="it-rating-count">0</span>)</span>
+            </span>
+          </h2>
+          <button onclick="TrackUI.show({ type: 'it' })"
+            class="text-xs text-sky-600 hover:text-sky-800 font-bold flex items-center gap-1 px-3 py-1 bg-sky-50 hover:bg-sky-100 rounded-xl transition">
+            <span>ตรวจสอบ</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-sky-50 p-3.5 rounded-2xl border border-sky-200 text-center">
+            <div class="text-2xl font-black text-slate-800" id="it-total">0</div>
+            <div class="text-[11px] text-slate-500 font-medium">ทั้งหมด</div>
+          </div>
+          <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-center">
+            <div class="text-2xl font-black text-amber-500" id="it-pending">0</div>
+            <div class="text-[11px] text-amber-600 font-medium">รอซ่อม</div>
+          </div>
+          <div class="bg-sky-50 p-3.5 rounded-2xl border border-sky-200 text-center">
+            <div class="text-2xl font-black text-sky-600" id="it-progress">0</div>
+            <div class="text-[11px] text-sky-600 font-medium">กำลังซ่อม</div>
+          </div>
+          <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 text-center">
+            <div class="text-2xl font-black text-emerald-600" id="it-completed">0</div>
+            <div class="text-[11px] text-emerald-600 font-medium">ซ่อมเสร็จ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- งาน 4: เสนอโครงการ / จัดซื้อ -->
+      <div class="bg-white p-6 rounded-3xl border border-violet-200 space-y-4 shadow-sm hover:shadow-md transition">
+        <div class="flex items-center justify-between border-b border-violet-200 pb-3">
+          <h2 class="text-base font-bold text-violet-600 flex items-center gap-2">
+            <i class="fa-solid fa-building-circle-check"></i> <span>โครงการพัฒนา / จัดซื้อจัดจ้าง</span>
+            <span class="ml-1 text-xs font-semibold text-amber-500 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+              <i class="fa-solid fa-star"></i> <span id="proj-rating">0.0</span> <span class="text-slate-400 font-normal ml-0.5">(<span id="proj-rating-count">0</span>)</span>
+            </span>
+          </h2>
+          <button onclick="TrackUI.show({ type: 'project' })"
+            class="text-xs text-violet-600 hover:text-violet-800 font-bold flex items-center gap-1 px-3 py-1 bg-violet-50 hover:bg-violet-100 rounded-xl transition">
+            <span>ตรวจสอบ</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-violet-50 p-3.5 rounded-2xl border border-violet-200 text-center">
+            <div class="text-2xl font-black text-slate-800" id="proj-total">0</div>
+            <div class="text-[11px] text-slate-500 font-medium">ทั้งหมด</div>
+          </div>
+          <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-center">
+            <div class="text-2xl font-black text-amber-500" id="proj-pending">0</div>
+            <div class="text-[11px] text-amber-600 font-medium">รออนุมัติ</div>
+          </div>
+          <div class="bg-violet-50 p-3.5 rounded-2xl border border-violet-200 text-center">
+            <div class="text-2xl font-black text-violet-600" id="proj-progress">0</div>
+            <div class="text-[11px] text-violet-600 font-medium">ดำเนินการ</div>
+          </div>
+          <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 text-center">
+            <div class="text-2xl font-black text-emerald-600" id="proj-completed">0</div>
+            <div class="text-[11px] text-emerald-600 font-medium">เสร็จสิ้น</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ซ่อนการ์ดซ่อมโสตฯ ดั้งเดิมไว้รองรับ ID binding -->
+    <div class="hidden">
+      <span id="avrep-total">0</span><span id="avrep-pending">0</span><span id="avrep-progress">0</span><span id="avrep-completed">0</span>
+      <span id="avrep-rating">0.0</span><span id="avrep-rating-count">0</span>
+    </div>
+
+    <!-- 2.5 สัดส่วนงานและกราฟสถิติ (Analytics & Charts) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+      <!-- แถบความก้าวหน้าและสัดส่วนภาระงานแต่ละฝ่าย -->
+      <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-chart-column text-[#265D5A]"></i> <span>สัดส่วนภาระงานและอัตราความสำเร็จ</span>
+        </h3>
+        <div class="space-y-4 pt-1">
+          <div>
+            <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
+              <span>งานซ่อมอาคาร (<span id="ratio-building-count">0 รายการ</span>)</span>
+              <span id="ratio-building-pct" class="text-[#265D5A] font-bold">0%</span>
+            </div>
+            <div class="h-2.5 bg-[#B0EDE6]/30 rounded-full overflow-hidden">
+              <div id="ratio-building-bar" class="h-full bg-[#265D5A] rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
+              <span>งานบริการโสตฯ (<span id="ratio-av-count">0 รายการ</span>)</span>
+              <span id="ratio-av-pct" class="text-[#FF5F5F] font-bold">0%</span>
+            </div>
+            <div class="h-2.5 bg-rose-100 rounded-full overflow-hidden">
+              <div id="ratio-av-bar" class="h-full bg-[#FF5F5F] rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
+              <span>งานซ่อมไอที (<span id="ratio-it-count">0 รายการ</span>)</span>
+              <span id="ratio-it-pct" class="text-sky-500 font-bold">0%</span>
+            </div>
+            <div class="h-2.5 bg-sky-100 rounded-full overflow-hidden">
+              <div id="ratio-it-bar" class="h-full bg-sky-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="hidden">
+            <span id="ratio-av-repair-count">0</span>
+            <span id="ratio-av-repair-pct">0%</span>
+            <div id="ratio-av-repair-bar" style="width:0%"></div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs text-slate-600 mb-1.5 font-medium">
+              <span>เสนอโครงการ / จัดซื้อ (<span id="ratio-project-count">0 รายการ</span>)</span>
+              <span id="ratio-project-pct" class="text-violet-600 font-bold">0%</span>
+            </div>
+            <div class="h-2.5 bg-violet-100 rounded-full overflow-hidden">
+              <div id="ratio-project-bar" class="h-full bg-violet-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100">
+            <div class="flex justify-between text-xs text-slate-700 mb-1.5 font-bold">
+              <span>อัตรางานที่เสร็จสิ้นทั้งหมด (Overall Completion Rate)</span>
+              <span id="overall-progress-text" class="text-emerald-600 font-extrabold text-sm">0%</span>
+            </div>
+            <div class="h-3 bg-emerald-100 rounded-full overflow-hidden">
+              <div id="overall-progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- กราฟวงกลมสถานะงาน (Chart.js) -->
+      <div class="bg-white p-6 rounded-3xl border border-[#B0EDE6] space-y-4 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-[#265D5A]"></i> <span>สัดส่วนสถานะงานภาพรวม</span>
+          </h3>
+          <span class="text-[11px] text-slate-400 font-medium">อัปเดตแบบ Real-time</span>
+        </div>
+        <div class="flex-1 min-h-[220px] flex items-center justify-center relative py-2">
+          <canvas id="dashboardChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 2.6 แถบลิงก์ลัดสำหรับผู้บริหาร (Executive Fast-Switch Footer) -->
+    <div class="p-4 md:p-5 rounded-2xl bg-slate-100/80 border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+      <div class="flex items-center gap-2 text-slate-600">
+        <i class="fa-solid fa-circle-info text-[#265D5A]"></i>
+        <span>หากท่านต้องการแจ้งคำขอใช้งานหรือแจ้งซ่อมด้วยตนเอง สามารถสลับไปยังมุมมองทั่วไปได้</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleExecutiveHomeView('form')" class="px-3.5 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm transition">
+          <i class="fa-solid fa-pen-to-square mr-1"></i> หน้ายื่นคำขอทั่วไป
+        </button>
+        <button onclick="nav('page-document')" class="px-3.5 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm transition">
+          <i class="fa-solid fa-folder-open mr-1"></i> คลังเอกสาร
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
 
       <div id="page-it-repair" class="page-section hidden">
         <div class="flex items-center justify-center min-h-[70vh] py-6">
@@ -3965,6 +4055,129 @@ const ResourceHubCore = {
   }
 };
 
+// ==========================================
+// 👑 ระบบสนับสนุนแดชบอร์ดผู้บริหาร (Executive Dashboard Helpers)
+// ==========================================
+window.loadExecutivePendingProjects = async function() {
+  const container = document.getElementById('exec-pending-projects-list');
+  const badge = document.getElementById('exec-pending-proj-badge');
+  if (!container) return;
+
+  try {
+    let pendingList = [];
+    if (window.firestoreDb) {
+      const snap = await window.firestoreDb.collection('tickets')
+        .where('type', '==', 'project')
+        .get();
+      snap.forEach(doc => {
+        const d = doc.data();
+        const tid = d.ticketId || doc.id;
+        const status = d.status || '';
+        // รายการที่ยังไม่ได้รับการอนุมัติ / รอพิจารณา
+        if (!/อนุมัติ|เสร็จ|ปิดงาน|ยกเลิก|ปฏิเสธ/.test(status)) {
+          pendingList.push({ id: tid, ...d });
+        }
+      });
+    }
+
+    if (badge) badge.textContent = `${pendingList.length} รายการ`;
+
+    if (pendingList.length === 0) {
+      container.innerHTML = `
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center border border-white/15">
+          <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xl mx-auto mb-2 shadow-inner">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <h4 class="text-sm font-bold text-white">ไม่มีโครงการรอการอนุมัติในขณะนี้</h4>
+          <p class="text-xs text-purple-200/80 mt-1">ทุกโครงการได้รับการพิจารณาและลงนามเรียบร้อยแล้ว</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = pendingList.map(proj => {
+      const subject = proj.subject || proj.title || 'โครงการปรับปรุงและจัดซื้อ';
+      const budget = proj.budget || proj.cost || proj.estimatedBudget || '-';
+      const budgetText = (budget && budget !== '-') ? `${Number(budget).toLocaleString()} บาท` : 'ตามเสนอ';
+      const reporter = proj.reporter || proj.proposer || 'ไม่ระบุ';
+      const location = proj.location || 'สถานที่ตามเอกสารแนบ';
+      const tid = proj.id;
+
+      return `
+        <div class="bg-white text-slate-800 rounded-2xl p-4 md:p-5 shadow-sm border border-purple-200/60 hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center text-lg shrink-0 mt-0.5 shadow-inner">
+              <i class="fa-solid fa-file-signature"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="text-xs font-black text-violet-700 bg-violet-100 px-2 py-0.5 rounded-lg tracking-wide">${tid}</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block mr-1"></span>รอพิจารณาอนุมัติ
+                </span>
+                <span class="text-xs text-slate-500 font-normal">งบประมาณ: <strong class="text-slate-800 font-bold">${budgetText}</strong></span>
+              </div>
+              <h4 class="text-sm md:text-base font-bold text-slate-900">${sanitizeHtml(subject)}</h4>
+              <p class="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+                <span><i class="fa-solid fa-user-pen text-slate-400 mr-1"></i>ผู้เสนอ: <strong>${sanitizeHtml(reporter)}</strong></span>
+                <span>•</span>
+                <span><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${sanitizeHtml(location)}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="if(window.TrackUI) window.TrackUI.open('${tid}')" class="bg-violet-600 hover:bg-violet-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-magnifying-glass text-xs"></i> <span>ตรวจสอบและลงนาม</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('Error loading pending projects for executive:', err);
+    container.innerHTML = `
+      <div class="text-center py-4 text-purple-200 text-xs">
+        <i class="fa-solid fa-triangle-exclamation text-amber-300 mr-1"></i>ไม่สามารถโหลดรายการโครงการได้ในขณะนี้
+      </div>
+    `;
+  }
+};
+
+window.refreshExecutiveDashboard = async function() {
+  const icon = document.getElementById('exec-refresh-icon');
+  if (icon) icon.classList.add('fa-spin');
+  try {
+    await ResourceHubCore.ui.loadDashboard();
+    await window.loadExecutivePendingProjects();
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'อัปเดตข้อมูลภาพรวมเรียบร้อย',
+      showConfirmButton: false,
+      timer: 1500
+    });
+  } catch(e) {
+    console.error(e);
+  } finally {
+    if (icon) icon.classList.remove('fa-spin');
+  }
+};
+
+window.toggleExecutiveHomeView = function(viewMode) {
+  if (viewMode === 'form') {
+    document.getElementById('home-executive-view')?.classList.add('hidden');
+    document.getElementById('home-regular-view')?.classList.remove('hidden');
+  } else {
+    document.getElementById('home-regular-view')?.classList.add('hidden');
+    document.getElementById('home-executive-view')?.classList.remove('hidden');
+    ResourceHubCore.ui.loadDashboard();
+    window.loadExecutivePendingProjects();
+  }
+};
+
 const post = data => ResourceHubCore.api.post(data);
 const get = (action, params = {}) => ResourceHubCore.api.get(action, params);
 // =========================================================
@@ -4272,9 +4485,13 @@ function handleGlobalLogout() {
   localStorage.removeItem('logged_teacher');
   localStorage.removeItem('logged_admin');
   localStorage.removeItem('logged_email');
+  localStorage.removeItem('logged_role');
   currentTeacher = null;
   currentEmail = '';
+  currentRole = '';
   isAdminLoggedIn = false;
+  if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+  if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
   updateSessionUI();
   alertBox('info', 'ออกจากระบบเรียบร้อย', '', { timer: 1000, showConfirmButton: false });
   nav('page-auth');
@@ -4337,7 +4554,24 @@ function nav(pageId) {
     if (typeof fetchUsers === 'function') fetchUsers();
   }
 
-  if (pageId === 'page-dashboard') {
+  if (pageId === 'page-home') {
+    if (currentRole === 'Executive') {
+      if ($('home-regular-view')) $('home-regular-view').classList.add('hidden');
+      if ($('home-executive-view')) $('home-executive-view').classList.remove('hidden');
+      if ($('exec-user-name')) $('exec-user-name').textContent = currentTeacher || 'ผู้บริหาร (Executive)';
+      if ($('exec-live-clock')) {
+        const now = new Date();
+        $('exec-live-clock').textContent = now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      }
+      ResourceHubCore.ui.loadDashboard();
+      if (typeof window.loadExecutivePendingProjects === 'function') {
+        window.loadExecutivePendingProjects();
+      }
+    } else {
+      if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+      if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
+    }
+  } else if (pageId === 'page-dashboard') {
     // ซ่อนหน้านี้ไว้ชั่วคราวตามที่แจ้ง (ยังไม่ลบ) ให้กลับไปหน้าแรกแทน
     nav('page-home');
     return;
@@ -4421,6 +4655,24 @@ function updateSessionUI() {
     if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
     if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
 
+    // หน้าแรกของผู้บริหาร: แสดง Executive Dashboard
+    if ($('home-regular-view')) $('home-regular-view').classList.add('hidden');
+    if ($('home-executive-view')) $('home-executive-view').classList.remove('hidden');
+
+    if ($('exec-user-name')) {
+      $('exec-user-name').textContent = currentTeacher || 'ผู้บริหาร (Executive)';
+    }
+    if ($('exec-live-clock')) {
+      const now = new Date();
+      $('exec-live-clock').textContent = now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    // โหลดข้อมูล Dashboard และโครงการรออนุมัติทันที
+    ResourceHubCore.ui.loadDashboard();
+    if (typeof window.loadExecutivePendingProjects === 'function') {
+      window.loadExecutivePendingProjects();
+    }
+
     // เมนูหลักที่เปิดให้ผู้บริหารเข้าดู
     if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
     if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
@@ -4443,6 +4695,8 @@ function updateSessionUI() {
     }
 
   } else if (isAdminLoggedIn) {
+    if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+    if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
     // ซ่อนหน้ามอนิเตอร์ภาพรวมไว้ชั่วคราว (ยังไม่ลบโค้ด)
     if (dashNav) { dashNav.classList.add('hidden'); dashNav.classList.remove('flex'); }
     if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
@@ -4491,6 +4745,8 @@ function updateSessionUI() {
     }
 
   } else if (currentTeacher) {
+    if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+    if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
     if (dashNav) dashNav.classList.add('hidden');
     if (techNav) techNav.classList.add('hidden');
     if (avManageNav) avManageNav.classList.add('hidden');
@@ -4607,6 +4863,8 @@ function updateSessionUI() {
 
   } else {
     // Guest
+    if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
+    if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
     if (dashNav) dashNav.classList.add('hidden');
     if (techNav) techNav.classList.add('hidden');
     if (avManageNav) avManageNav.classList.add('hidden');
@@ -6857,21 +7115,18 @@ window.submitSurvey = function () {
 // 📄 ระบบออกรายงาน PDF (Export Dashboard)
 // ==========================================
 window.exportDashboardToPDF = function () {
-  const element = document.getElementById('page-dashboard');
+  const element = document.getElementById('home-executive-view') || document.getElementById('page-dashboard');
   if (!element) return;
 
-  // เตรียมส่วนหัว (Header Bar) ที่มีปุ่ม จะซ่อนปุ่ม
-  const headerDiv = element.querySelector('.bg-gradient-to-r');
-  const buttons = headerDiv ? headerDiv.querySelectorAll('button') : [];
-
-  // ซ่อนปุ่มชั่วคราว
+  // เตรียมส่วนหัวที่มีปุ่ม จะซ่อนปุ่มและตัวเลือกเดือนชั่วคราว
+  const buttons = element.querySelectorAll('button, input[type="month"]');
   buttons.forEach(btn => btn.style.display = 'none');
 
   Swal.fire({ title: 'กำลังสร้างไฟล์ PDF...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
   const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `FaCiLiTy_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`,
+    margin: [8, 8, 8, 8],
+    filename: `Executive_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
