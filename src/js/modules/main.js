@@ -806,11 +806,26 @@ const ResourceHubCore = {
         });
 
         const monthFilter = $('dashboardMonthFilter') ? $('dashboardMonthFilter').value : '';
+        let d = null;
         let bTotal=0, bPending=0, bProgress=0, bCompleted=0;
         let avTotal=0, avPending=0, avActive=0, avCompleted=0;
         let itTotal=0, itPending=0, itProgress=0, itCompleted=0;
-        let avRepTotal=0, avRepPending=0, avRepProgress=0, avRepCompleted=0;
         let projTotal=0, projPending=0, projProgress=0, projCompleted=0;
+
+        let bRatingSum=0, bRatingCount=0;
+        let avRatingSum=0, avRatingCount=0;
+        let itRatingSum=0, itRatingCount=0;
+        let projRatingSum=0, projRatingCount=0;
+
+        function classifyTicket(status, tech) {
+          const s = String(status || '').trim();
+          if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return 'cancel';
+          if (/เสร็จ|เรียบร้อยแล้ว|ปิดงาน|คืนเรียบร้อย/.test(s)) return 'done';
+          if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return 'progress';
+          if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่/.test(s) && !/^รอ/.test(s)) return 'progress';
+          if (tech) return 'progress';
+          return 'pending';
+        }
 
         if (window.firestoreDb) {
            const snap = await window.firestoreDb.collection('tickets').get();
@@ -824,38 +839,58 @@ const ResourceHubCore = {
                  if (mStr !== monthFilter) return;
               }
               
-              const type = data.type;
-              const status = data.status || '';
+              let type = data.type || '';
               const ticketId = data.ticketId || doc.id || '';
-              
-              let cat = '';
-              if (type === 'building') cat = 'b';
-              else if (type === 'it') cat = 'it';
-              else if (type === 'project') cat = 'proj';
-              else if (type === 'av') {
-                 if (ticketId.includes('AV-REQ') || (data.subject && data.subject.includes('ยืม')) || Boolean(data.borrower)) cat = 'av';
-                 else cat = 'avRep';
+              if (!type) {
+                if (ticketId.startsWith('BLD')) type = 'building';
+                else if (ticketId.startsWith('IT')) type = 'it';
+                else if (ticketId.startsWith('AV')) type = 'av';
+                else if (ticketId.startsWith('PRJ')) type = 'project';
               }
-              
-              if (cat === 'b') { bTotal++; if (status === 'รอดำเนินการ' || status === 'รอรับเรื่อง') bPending++; else if (status === 'กำลังดำเนินการ') bProgress++; else if (status === 'เสร็จสิ้น') bCompleted++; }
-              else if (cat === 'it') { itTotal++; if (status === 'รอดำเนินการ' || status === 'รอรับเรื่อง') itPending++; else if (status === 'กำลังดำเนินการ' || status === 'กำลังซ่อม') itProgress++; else if (status === 'เสร็จสิ้น') itCompleted++; }
-              else if (cat === 'proj') { projTotal++; if (status === 'รอพิจารณาอนุมัติ' || status === 'รอดำเนินการ') projPending++; else if (status === 'กำลังดำเนินการ' || status === 'อนุมัติ') projProgress++; else if (status === 'เสร็จสิ้น') projCompleted++; }
-              else if (cat === 'avRep') { avRepTotal++; if (status === 'รอดำเนินการ' || status === 'รอรับเรื่อง') avRepPending++; else if (status === 'กำลังดำเนินการ' || status === 'กำลังซ่อม') avRepProgress++; else if (status === 'เสร็จสิ้น') avRepCompleted++; }
-              else if (cat === 'av') { avTotal++; if (status === 'จัดเตรียมแล้ว') avPending++; else if (status === 'ใช้งานอยู่') avActive++; else if (status === 'คืนเรียบร้อย' || status === 'เสร็จสิ้น/คืนเรียบร้อย') avCompleted++; }
+
+              const tech = data.techName || data.tech || '';
+              const status = data.status || '';
+              const group = classifyTicket(status, tech);
+              const rating = Number(data.rating) || 0;
+
+              if (type === 'building') {
+                bTotal++;
+                if (group === 'pending') bPending++;
+                else if (group === 'progress') bProgress++;
+                else if (group === 'done') bCompleted++;
+                if (rating > 0) { bRatingSum += rating; bRatingCount++; }
+              } else if (type === 'it') {
+                itTotal++;
+                if (group === 'pending') itPending++;
+                else if (group === 'progress') itProgress++;
+                else if (group === 'done') itCompleted++;
+                if (rating > 0) { itRatingSum += rating; itRatingCount++; }
+              } else if (type === 'av') {
+                avTotal++;
+                if (group === 'pending') avPending++;
+                else if (group === 'progress') avActive++;
+                else if (group === 'done') avCompleted++;
+                if (rating > 0) { avRatingSum += rating; avRatingCount++; }
+              } else if (type === 'project') {
+                projTotal++;
+                if (group === 'pending') projPending++;
+                else if (group === 'progress') projProgress++;
+                else if (group === 'done') projCompleted++;
+                if (rating > 0) { projRatingSum += rating; projRatingCount++; }
+              }
            });
         } else {
-           const d = await ResourceHubCore.dashboard.legacy({ month: monthFilter });
+           d = await ResourceHubCore.dashboard.legacy({ month: monthFilter });
            bTotal = Number(d?.building?.total) || 0; bPending = Number(d?.building?.pending) || 0; bProgress = Number(d?.building?.inProgress) || 0; bCompleted = Number(d?.building?.completed) || 0;
            avTotal = Number(d?.av?.total) || 0; avPending = Number(d?.av?.pending) || 0; avActive = Number(d?.av?.active) || 0; avCompleted = Number(d?.av?.completed) || 0;
            itTotal = Number(d?.it?.total) || 0; itPending = Number(d?.it?.pending) || 0; itProgress = Number(d?.it?.inProgress) || 0; itCompleted = Number(d?.it?.completed) || 0;
-           avRepTotal = Number(d?.avRep?.total) || 0; avRepPending = Number(d?.avRep?.pending) || 0; avRepProgress = Number(d?.avRep?.inProgress) || 0; avRepCompleted = Number(d?.avRep?.completed) || 0;
            projTotal = Number(d?.proj?.total) || 0; projPending = Number(d?.proj?.pending) || 0; projProgress = Number(d?.proj?.inProgress) || 0; projCompleted = Number(d?.proj?.completed) || 0;
         }
 
-        const totalAll = bTotal + avTotal + itTotal + avRepTotal + projTotal;
-        const pendingAll = bPending + avPending + itPending + avRepPending + projPending;
-        const progressAll = bProgress + avActive + itProgress + avRepProgress + projProgress;
-        const completedAll = bCompleted + avCompleted + itCompleted + avRepCompleted + projCompleted;
+        const totalAll = bTotal + avTotal + itTotal + projTotal;
+        const pendingAll = bPending + avPending + itPending + projPending;
+        const progressAll = bProgress + avActive + itProgress + projProgress;
+        const completedAll = bCompleted + avCompleted + itCompleted + projCompleted;
 
         // ยอดรวมระบบทั้งหมด
         if ($('dash-total-all')) $('dash-total-all').textContent = totalAll;
@@ -940,25 +975,6 @@ const ResourceHubCore = {
                          </div>`;
             }
 
-            // 4. งานซ่อมอุปกรณ์โสตฯ
-            const avRepUncleared = avRepPending + avRepProgress;
-            if (avRepUncleared > 0) {
-              html += `<div class="p-3 bg-white rounded-xl shadow-sm border border-purple-100 flex items-center justify-between mb-2 hover:bg-purple-50/30 transition-colors">
-                           <div class="flex items-center gap-3">
-                             <div class="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-500">
-                               <i class="fa-solid fa-sliders"></i>
-                             </div>
-                             <div>
-                               <p class="text-xs font-bold text-slate-700">ซ่อมอุปกรณ์โสตฯ</p>
-                               <p class="text-[10px] text-slate-500">
-                                 <span class="text-rose-600 font-semibold">รอดำเนินการ ${avRepPending}</span> | <span class="text-amber-600 font-semibold">กำลังซ่อม ${avRepProgress}</span>
-                               </p>
-                             </div>
-                           </div>
-                           <button onclick="toggleNotificationDropdown(); if(window.TrackUI) window.TrackUI.show({type:'av'});" class="text-xs font-bold text-[#265D5A] hover:underline px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200">จัดการ</button>
-                         </div>`;
-            }
-
             notifList.innerHTML = html;
           } else {
             notifList.innerHTML = '<div class="p-4 text-center text-xs text-slate-400"><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>ไม่มีงานค้าง ทุกรายการได้รับการแก้ไขและส่งมอบงานเรียบร้อยแล้ว</div>';
@@ -970,40 +986,36 @@ const ResourceHubCore = {
         if ($('b-pending')) $('b-pending').textContent = bPending;
         if ($('b-progress')) $('b-progress').textContent = bProgress;
         if ($('b-completed')) $('b-completed').textContent = bCompleted;
-        if ($('b-rating')) $('b-rating').textContent = d?.building?.rating?.avg || '0.0';
-        if ($('b-rating-count')) $('b-rating-count').textContent = d?.building?.rating?.count || '0';
+        const bAvg = bRatingCount > 0 ? (bRatingSum / bRatingCount).toFixed(1) : (d?.building?.rating?.avg || '0.0');
+        if ($('b-rating')) $('b-rating').textContent = bAvg;
+        if ($('b-rating-count')) $('b-rating-count').textContent = bRatingCount || d?.building?.rating?.count || '0';
 
         // งานยืม-คืนโสตฯ
         if ($('av-total')) $('av-total').textContent = avTotal;
         if ($('av-pending')) $('av-pending').textContent = avPending;
         if ($('av-active')) $('av-active').textContent = avActive;
         if ($('av-completed')) $('av-completed').textContent = avCompleted;
-        if ($('av-rating')) $('av-rating').textContent = d?.av?.rating?.avg || '0.0';
-        if ($('av-rating-count')) $('av-rating-count').textContent = d?.av?.rating?.count || '0';
+        const avAvg = avRatingCount > 0 ? (avRatingSum / avRatingCount).toFixed(1) : (d?.av?.rating?.avg || '0.0');
+        if ($('av-rating')) $('av-rating').textContent = avAvg;
+        if ($('av-rating-count')) $('av-rating-count').textContent = avRatingCount || d?.av?.rating?.count || '0';
 
         // งานซ่อมไอที
         if ($('it-total')) $('it-total').textContent = itTotal;
         if ($('it-pending')) $('it-pending').textContent = itPending;
         if ($('it-progress')) $('it-progress').textContent = itProgress;
         if ($('it-completed')) $('it-completed').textContent = itCompleted;
-        if ($('it-rating')) $('it-rating').textContent = d?.it?.rating?.avg || '0.0';
-        if ($('it-rating-count')) $('it-rating-count').textContent = d?.it?.rating?.count || '0';
-
-        // งานซ่อมโสตฯ
-        if ($('avrep-total')) $('avrep-total').textContent = avRepTotal;
-        if ($('avrep-pending')) $('avrep-pending').textContent = avRepPending;
-        if ($('avrep-progress')) $('avrep-progress').textContent = avRepProgress;
-        if ($('avrep-completed')) $('avrep-completed').textContent = avRepCompleted;
-        if ($('avrep-rating')) $('avrep-rating').textContent = d?.avRep?.rating?.avg || '0.0';
-        if ($('avrep-rating-count')) $('avrep-rating-count').textContent = d?.avRep?.rating?.count || '0';
+        const itAvg = itRatingCount > 0 ? (itRatingSum / itRatingCount).toFixed(1) : (d?.it?.rating?.avg || '0.0');
+        if ($('it-rating')) $('it-rating').textContent = itAvg;
+        if ($('it-rating-count')) $('it-rating-count').textContent = itRatingCount || d?.it?.rating?.count || '0';
 
         // เสนอโครงการ
         if ($('proj-total')) $('proj-total').textContent = projTotal;
         if ($('proj-pending')) $('proj-pending').textContent = projPending;
         if ($('proj-progress')) $('proj-progress').textContent = projProgress;
         if ($('proj-completed')) $('proj-completed').textContent = projCompleted;
-        if ($('proj-rating')) $('proj-rating').textContent = d?.proj?.rating?.avg || '0.0';
-        if ($('proj-rating-count')) $('proj-rating-count').textContent = d?.proj?.rating?.count || '0';
+        const projAvg = projRatingCount > 0 ? (projRatingSum / projRatingCount).toFixed(1) : (d?.proj?.rating?.avg || '0.0');
+        if ($('proj-rating')) $('proj-rating').textContent = projAvg;
+        if ($('proj-rating-count')) $('proj-rating-count').textContent = projRatingCount || d?.proj?.rating?.count || '0';
 
         // สถิติรายงานบั๊ก
         if ($('bug-count')) $('bug-count').textContent = d?.bugs || 0;
@@ -1012,25 +1024,21 @@ const ResourceHubCore = {
         if ($('ratio-building-count')) $('ratio-building-count').textContent = `${bTotal} รายการ`;
         if ($('ratio-av-count')) $('ratio-av-count').textContent = `${avTotal} รายการ`;
         if ($('ratio-it-count')) $('ratio-it-count').textContent = `${itTotal} รายการ`;
-        if ($('ratio-av-repair-count')) $('ratio-av-repair-count').textContent = `${avRepTotal} รายการ`;
         if ($('ratio-project-count')) $('ratio-project-count').textContent = `${projTotal} รายการ`;
 
         const bPct = totalAll > 0 ? Math.round((bTotal / totalAll) * 100) : 0;
         const avPct = totalAll > 0 ? Math.round((avTotal / totalAll) * 100) : 0;
         const itPct = totalAll > 0 ? Math.round((itTotal / totalAll) * 100) : 0;
-        const avRepPct = totalAll > 0 ? Math.round((avRepTotal / totalAll) * 100) : 0;
         const projPct = totalAll > 0 ? Math.round((projTotal / totalAll) * 100) : 0;
 
         if ($('ratio-building-bar')) $('ratio-building-bar').style.width = `${bPct}%`;
         if ($('ratio-av-bar')) $('ratio-av-bar').style.width = `${avPct}%`;
         if ($('ratio-it-bar')) $('ratio-it-bar').style.width = `${itPct}%`;
-        if ($('ratio-av-repair-bar')) $('ratio-av-repair-bar').style.width = `${avRepPct}%`;
         if ($('ratio-project-bar')) $('ratio-project-bar').style.width = `${projPct}%`;
 
         if ($('ratio-building-pct')) $('ratio-building-pct').textContent = `${bPct}%`;
         if ($('ratio-av-pct')) $('ratio-av-pct').textContent = `${avPct}%`;
         if ($('ratio-it-pct')) $('ratio-it-pct').textContent = `${itPct}%`;
-        if ($('ratio-av-repair-pct')) $('ratio-av-repair-pct').textContent = `${avRepPct}%`;
         if ($('ratio-project-pct')) $('ratio-project-pct').textContent = `${projPct}%`;
 
         const completedPct = totalAll > 0 ? Math.round((completedAll / totalAll) * 100) : 0;
@@ -1039,7 +1047,7 @@ const ResourceHubCore = {
 
         // กราฟวงกลม (Doughnut Chart)
         const ctx = document.getElementById('dashboardChart');
-        if (ctx) {
+        if (ctx && typeof Chart !== 'undefined') {
           if (window.dashboardChartInstance) {
             window.dashboardChartInstance.destroy();
           }
@@ -1059,7 +1067,7 @@ const ResourceHubCore = {
               maintainAspectRatio: false,
               cutout: '70%',
               plugins: {
-                legend: { position: 'bottom', labels: { font: { family: 'Prompt' }, usePointStyle: true, padding: 20 } }
+                legend: { position: 'bottom', labels: { font: { family: 'Prompt' }, usePointStyle: true, padding: 15 } }
               }
             }
           });
