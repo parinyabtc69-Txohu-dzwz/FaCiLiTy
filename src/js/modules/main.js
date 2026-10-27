@@ -148,6 +148,10 @@ let currentTeacher = localStorage.getItem('logged_teacher') || null;
 let currentRole = localStorage.getItem('logged_role') || null;
 let currentEmail = localStorage.getItem('logged_email') || '';
 let isAdminLoggedIn = localStorage.getItem('logged_admin') === 'true' || false;
+if (currentRole === 'Executive') {
+  isAdminLoggedIn = false;
+  localStorage.removeItem('logged_admin');
+}
 let isRegisterMode = false;
 
 // ฟังก์ชันย่อเพื่อเรียก DOM Elements แทนการใช้ document.getElementById หรือ querySelectorAll
@@ -588,7 +592,7 @@ const ResourceHubCore = {
       }
 
       const userRole = localStorage.getItem('logged_role') || '';
-      const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin' || userRole.toLowerCase() === 'executive' || userRole.toLowerCase() === 'director');
+      const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin');
       const currentTaskStatus = row ? row[4] : '';
 
       if (isSupervisor && currentTaskStatus === 'รอดำเนินการ') {
@@ -1159,12 +1163,13 @@ function handleLiffLogin() {
         currentTeacher = res.name;
         currentRole = res.role;
         currentEmail = res.email || email || '';
-        isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive' || res.role === 'Supervisor');
+        isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Supervisor');
 
         localStorage.setItem('logged_teacher', currentTeacher);
         localStorage.setItem('logged_role', currentRole);
         localStorage.setItem('logged_email', currentEmail);
         if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
+        else localStorage.removeItem('logged_admin');
         localStorage.setItem('session_login_time', Date.now().toString());
 
         updateSessionUI();
@@ -1341,12 +1346,13 @@ function finalizeLogin(name, role, email) {
   currentTeacher = name;
   currentRole = role;
   currentEmail = email || '';
-  isAdminLoggedIn = (role === 'Admin' || role === 'Executive' || role === 'Supervisor');
+  isAdminLoggedIn = (role === 'Admin' || role === 'Supervisor');
 
   localStorage.setItem('logged_teacher', currentTeacher);
   localStorage.setItem('logged_role', currentRole);
   localStorage.setItem('logged_email', currentEmail);
   if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
+  else localStorage.removeItem('logged_admin');
   localStorage.setItem('session_login_time', Date.now().toString());
 
   updateSessionUI();
@@ -1496,7 +1502,52 @@ function updateSessionUI() {
   const docNav = $('gnav-document');
   const homeCardDocument = $('home-card-document');
 
-  if (isAdminLoggedIn) {
+  if (currentRole === 'Executive') {
+    // ผู้บริหาร: เข้ามาดูภาพรวมทั้งหมด และอนุมัติเฉพาะโครงการใหญ่ (ซ่อนเมนูช่างและเมนูตั้งค่าระบบหลังบ้าน)
+    if (dashNav) { dashNav.classList.add('hidden'); dashNav.classList.remove('flex'); }
+    if (techNav) { techNav.classList.add('hidden'); techNav.classList.remove('flex'); }
+    if (avManageNav) { avManageNav.classList.add('hidden'); avManageNav.classList.remove('flex'); }
+    if (masterDataNav) { masterDataNav.classList.add('hidden'); masterDataNav.classList.remove('flex'); }
+    if ($('gnav-bug-manage')) { $('gnav-bug-manage').classList.add('hidden'); $('gnav-bug-manage').classList.remove('flex'); }
+    if ($('gnav-user-manage')) { $('gnav-user-manage').classList.add('hidden'); $('gnav-user-manage').classList.remove('flex'); }
+    if ($('gnav-it-manage')) { $('gnav-it-manage').classList.add('hidden'); $('gnav-it-manage').classList.remove('flex'); }
+    if ($('gnav-av-repair-manage')) { $('gnav-av-repair-manage').classList.add('hidden'); $('gnav-av-repair-manage').classList.remove('flex'); }
+    if ($('gnav-project-manage')) { $('gnav-project-manage').classList.add('hidden'); $('gnav-project-manage').classList.remove('flex'); }
+
+    if (docNav) { docNav.classList.remove('hidden'); docNav.classList.add('flex'); }
+    if (homeCardDocument) { homeCardDocument.classList.remove('hidden'); homeCardDocument.classList.add('flex'); }
+    if (teacherProfileNav) { teacherProfileNav.classList.remove('hidden'); teacherProfileNav.classList.add('flex'); }
+    if (teacherAVProfileNav) { teacherAVProfileNav.classList.remove('hidden'); teacherAVProfileNav.classList.add('flex'); }
+    if (homeCardDash) { homeCardDash.classList.add('hidden'); homeCardDash.classList.remove('flex'); }
+    if (homeCardTeacherProfile) { homeCardTeacherProfile.classList.remove('hidden'); homeCardTeacherProfile.classList.add('flex'); }
+    if (homeCardTeacherAVProfile) { homeCardTeacherAVProfile.classList.remove('hidden'); homeCardTeacherAVProfile.classList.add('flex'); }
+
+    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
+    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
+    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
+
+    // เมนูหลักที่เปิดให้ผู้บริหารเข้าดู
+    if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
+    if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
+    if (basicNavAV) { basicNavAV.classList.remove('hidden'); basicNavAV.classList.add('flex'); }
+    if (basicNavItRepair) { basicNavItRepair.classList.remove('hidden'); basicNavItRepair.classList.add('flex'); }
+    if (basicNavAvRepair) { basicNavAvRepair.classList.remove('hidden'); basicNavAvRepair.classList.add('flex'); }
+    if (basicNavProject) { basicNavProject.classList.remove('hidden'); basicNavProject.classList.add('flex'); }
+    if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
+
+    if ($('dropdown-user-name')) {
+      $('dropdown-user-name').textContent = 'ผู้บริหาร (Executive)';
+    }
+    if ($('dropdown-user-role')) {
+      $('dropdown-user-role').innerHTML = `สถานะ: ผู้บริหาร${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
+    }
+
+    if ($('page-auth').classList.contains('active')) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (!urlParams.get('ticketId')) nav('page-home');
+    }
+
+  } else if (isAdminLoggedIn) {
     // ซ่อนหน้ามอนิเตอร์ภาพรวมไว้ชั่วคราว (ยังไม่ลบโค้ด)
     if (dashNav) { dashNav.classList.add('hidden'); dashNav.classList.remove('flex'); }
     if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
@@ -1530,13 +1581,11 @@ function updateSessionUI() {
     if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
 
     if ($('dropdown-user-name')) {
-      if (currentRole === 'Executive') $('dropdown-user-name').textContent = 'ผู้บริหาร (Executive)';
-      else if (currentRole === 'Supervisor') $('dropdown-user-name').textContent = 'หัวหน้างาน (Supervisor)';
+      if (currentRole === 'Supervisor') $('dropdown-user-name').textContent = 'หัวหน้างาน (Supervisor)';
       else $('dropdown-user-name').textContent = 'ผู้ดูแลระบบ (Admin)';
     }
     if ($('dropdown-user-role')) {
       let textRole = 'เจ้าหน้าที่ / Admin';
-      if (currentRole === 'Executive') textRole = 'ผู้บริหาร';
       if (currentRole === 'Supervisor') textRole = 'หัวหน้างาน';
       $('dropdown-user-role').innerHTML = `สถานะ: ${textRole}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
     }
@@ -2498,7 +2547,7 @@ window.updateAdvTask = async function (type, index, currentStatus) {
 
   
     const userRole = localStorage.getItem('logged_role') || '';
-    const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin' || userRole.toLowerCase() === 'executive' || userRole.toLowerCase() === 'director');
+    const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin');
 
     if (isSupervisor && currentStatus === 'รอดำเนินการ') {
       let supHtml = detailsHtml + `

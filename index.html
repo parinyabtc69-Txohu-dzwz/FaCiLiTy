@@ -3043,6 +3043,10 @@ let currentTeacher = localStorage.getItem('logged_teacher') || null;
 let currentRole = localStorage.getItem('logged_role') || null;
 let currentEmail = localStorage.getItem('logged_email') || '';
 let isAdminLoggedIn = localStorage.getItem('logged_admin') === 'true' || false;
+if (currentRole === 'Executive') {
+  isAdminLoggedIn = false;
+  localStorage.removeItem('logged_admin');
+}
 let isRegisterMode = false;
 
 // ฟังก์ชันย่อเพื่อเรียก DOM Elements แทนการใช้ document.getElementById หรือ querySelectorAll
@@ -3483,7 +3487,7 @@ const ResourceHubCore = {
       }
 
       const userRole = localStorage.getItem('logged_role') || '';
-      const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin' || userRole.toLowerCase() === 'executive' || userRole.toLowerCase() === 'director');
+      const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin');
       const currentTaskStatus = row ? row[4] : '';
 
       if (isSupervisor && currentTaskStatus === 'รอดำเนินการ') {
@@ -4054,12 +4058,13 @@ function handleLiffLogin() {
         currentTeacher = res.name;
         currentRole = res.role;
         currentEmail = res.email || email || '';
-        isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Executive' || res.role === 'Supervisor');
+        isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Supervisor');
 
         localStorage.setItem('logged_teacher', currentTeacher);
         localStorage.setItem('logged_role', currentRole);
         localStorage.setItem('logged_email', currentEmail);
         if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
+        else localStorage.removeItem('logged_admin');
         localStorage.setItem('session_login_time', Date.now().toString());
 
         updateSessionUI();
@@ -4236,12 +4241,13 @@ function finalizeLogin(name, role, email) {
   currentTeacher = name;
   currentRole = role;
   currentEmail = email || '';
-  isAdminLoggedIn = (role === 'Admin' || role === 'Executive' || role === 'Supervisor');
+  isAdminLoggedIn = (role === 'Admin' || role === 'Supervisor');
 
   localStorage.setItem('logged_teacher', currentTeacher);
   localStorage.setItem('logged_role', currentRole);
   localStorage.setItem('logged_email', currentEmail);
   if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
+  else localStorage.removeItem('logged_admin');
   localStorage.setItem('session_login_time', Date.now().toString());
 
   updateSessionUI();
@@ -4391,7 +4397,52 @@ function updateSessionUI() {
   const docNav = $('gnav-document');
   const homeCardDocument = $('home-card-document');
 
-  if (isAdminLoggedIn) {
+  if (currentRole === 'Executive') {
+    // ผู้บริหาร: เข้ามาดูภาพรวมทั้งหมด และอนุมัติเฉพาะโครงการใหญ่ (ซ่อนเมนูช่างและเมนูตั้งค่าระบบหลังบ้าน)
+    if (dashNav) { dashNav.classList.add('hidden'); dashNav.classList.remove('flex'); }
+    if (techNav) { techNav.classList.add('hidden'); techNav.classList.remove('flex'); }
+    if (avManageNav) { avManageNav.classList.add('hidden'); avManageNav.classList.remove('flex'); }
+    if (masterDataNav) { masterDataNav.classList.add('hidden'); masterDataNav.classList.remove('flex'); }
+    if ($('gnav-bug-manage')) { $('gnav-bug-manage').classList.add('hidden'); $('gnav-bug-manage').classList.remove('flex'); }
+    if ($('gnav-user-manage')) { $('gnav-user-manage').classList.add('hidden'); $('gnav-user-manage').classList.remove('flex'); }
+    if ($('gnav-it-manage')) { $('gnav-it-manage').classList.add('hidden'); $('gnav-it-manage').classList.remove('flex'); }
+    if ($('gnav-av-repair-manage')) { $('gnav-av-repair-manage').classList.add('hidden'); $('gnav-av-repair-manage').classList.remove('flex'); }
+    if ($('gnav-project-manage')) { $('gnav-project-manage').classList.add('hidden'); $('gnav-project-manage').classList.remove('flex'); }
+
+    if (docNav) { docNav.classList.remove('hidden'); docNav.classList.add('flex'); }
+    if (homeCardDocument) { homeCardDocument.classList.remove('hidden'); homeCardDocument.classList.add('flex'); }
+    if (teacherProfileNav) { teacherProfileNav.classList.remove('hidden'); teacherProfileNav.classList.add('flex'); }
+    if (teacherAVProfileNav) { teacherAVProfileNav.classList.remove('hidden'); teacherAVProfileNav.classList.add('flex'); }
+    if (homeCardDash) { homeCardDash.classList.add('hidden'); homeCardDash.classList.remove('flex'); }
+    if (homeCardTeacherProfile) { homeCardTeacherProfile.classList.remove('hidden'); homeCardTeacherProfile.classList.add('flex'); }
+    if (homeCardTeacherAVProfile) { homeCardTeacherAVProfile.classList.remove('hidden'); homeCardTeacherAVProfile.classList.add('flex'); }
+
+    if ($('home-card-it-repair')) { $('home-card-it-repair').classList.remove('hidden'); $('home-card-it-repair').classList.add('flex'); }
+    if ($('home-card-av-repair')) { $('home-card-av-repair').classList.remove('hidden'); $('home-card-av-repair').classList.add('flex'); }
+    if ($('home-card-project')) { $('home-card-project').classList.remove('hidden'); $('home-card-project').classList.add('flex'); }
+
+    // เมนูหลักที่เปิดให้ผู้บริหารเข้าดู
+    if (basicNavHome) { basicNavHome.classList.remove('hidden'); basicNavHome.classList.add('flex'); }
+    if (basicNavRepair) { basicNavRepair.classList.remove('hidden'); basicNavRepair.classList.add('flex'); }
+    if (basicNavAV) { basicNavAV.classList.remove('hidden'); basicNavAV.classList.add('flex'); }
+    if (basicNavItRepair) { basicNavItRepair.classList.remove('hidden'); basicNavItRepair.classList.add('flex'); }
+    if (basicNavAvRepair) { basicNavAvRepair.classList.remove('hidden'); basicNavAvRepair.classList.add('flex'); }
+    if (basicNavProject) { basicNavProject.classList.remove('hidden'); basicNavProject.classList.add('flex'); }
+    if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
+
+    if ($('dropdown-user-name')) {
+      $('dropdown-user-name').textContent = 'ผู้บริหาร (Executive)';
+    }
+    if ($('dropdown-user-role')) {
+      $('dropdown-user-role').innerHTML = `สถานะ: ผู้บริหาร${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
+    }
+
+    if ($('page-auth').classList.contains('active')) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (!urlParams.get('ticketId')) nav('page-home');
+    }
+
+  } else if (isAdminLoggedIn) {
     // ซ่อนหน้ามอนิเตอร์ภาพรวมไว้ชั่วคราว (ยังไม่ลบโค้ด)
     if (dashNav) { dashNav.classList.add('hidden'); dashNav.classList.remove('flex'); }
     if (techNav) { techNav.classList.remove('hidden'); techNav.classList.add('flex'); }
@@ -4425,13 +4476,11 @@ function updateSessionUI() {
     if (basicNavCreateBtn) { basicNavCreateBtn.classList.remove('hidden'); }
 
     if ($('dropdown-user-name')) {
-      if (currentRole === 'Executive') $('dropdown-user-name').textContent = 'ผู้บริหาร (Executive)';
-      else if (currentRole === 'Supervisor') $('dropdown-user-name').textContent = 'หัวหน้างาน (Supervisor)';
+      if (currentRole === 'Supervisor') $('dropdown-user-name').textContent = 'หัวหน้างาน (Supervisor)';
       else $('dropdown-user-name').textContent = 'ผู้ดูแลระบบ (Admin)';
     }
     if ($('dropdown-user-role')) {
       let textRole = 'เจ้าหน้าที่ / Admin';
-      if (currentRole === 'Executive') textRole = 'ผู้บริหาร';
       if (currentRole === 'Supervisor') textRole = 'หัวหน้างาน';
       $('dropdown-user-role').innerHTML = `สถานะ: ${textRole}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
     }
@@ -5393,7 +5442,7 @@ window.updateAdvTask = async function (type, index, currentStatus) {
 
   
     const userRole = localStorage.getItem('logged_role') || '';
-    const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin' || userRole.toLowerCase() === 'executive' || userRole.toLowerCase() === 'director');
+    const isSupervisor = (userRole.toLowerCase() === 'supervisor' || userRole.toLowerCase() === 'admin');
 
     if (isSupervisor && currentStatus === 'รอดำเนินการ') {
       let supHtml = detailsHtml + `
@@ -7205,9 +7254,10 @@ const TrackUI = (() => {
   const normName = n => str(n).replace(/^(คุณครู|ครู|คุณ|นาย|นางสาว|นาง|นายช่าง|ช่าง|อาจารย์|อ\.)\s*/, '').replace(/\s+/g, '').toLowerCase();
 
   function getUserRole() {
-    if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) return 'Admin';
     const r = (typeof currentRole !== 'undefined' && currentRole) ? currentRole : (localStorage.getItem('logged_role') || '');
-    return r || 'Teacher';
+    if (r) return r;
+    if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) return 'Admin';
+    return 'Teacher';
   }
 
   function getTechEmailFromName(name) {
@@ -7231,9 +7281,12 @@ const TrackUI = (() => {
 
   function canManageJob(job) {
     if (!job) return false;
-    // 1. Role เป็น Admin, Executive หรือ Supervisor
     const role = getUserRole();
-    if (role === 'Executive' || role === 'Supervisor' || role === 'Admin') return true;
+    // ผู้บริหารเข้ามาดูภาพรวมเท่านั้น ไม่ปฏิบัติการหรือจัดการงานซ่อมรายวัน
+    if (role === 'Executive') return false;
+
+    // 1. Role เป็น Admin หรือ Supervisor
+    if (role === 'Supervisor' || role === 'Admin') return true;
 
     // 2. ตรวจสอบอีเมลช่าง
     const myEmail = ((typeof currentEmail === 'string' ? currentEmail : '') || (localStorage.getItem('logged_email') || '')).trim().toLowerCase();
@@ -7277,8 +7330,9 @@ const TrackUI = (() => {
   function canDeleteJob(job) {
     if (!job) return false;
     const role = getUserRole();
+    if (role === 'Executive') return false; // ผู้บริหารไม่ลบงานซ่อม ป้องกันข้อมูลสูญหาย
     // 1. ระดับหัวหน้างาน หรือ แอดมิน
-    if (role === 'Supervisor' || role === 'Admin' || role === 'Executive') return true;
+    if (role === 'Supervisor' || role === 'Admin') return true;
     // 2. ผู้แจ้งเรื่อง (เจ้าของงาน)
     if (isReporter(job)) return true;
     return false;
@@ -7286,6 +7340,8 @@ const TrackUI = (() => {
 
   function canSnoozeJob(job) {
     if (!job) return false;
+    const role = getUserRole();
+    if (role === 'Executive') return false; // ผู้บริหารไม่ปรับความเร่งด่วนหรือเลื่อนเวลา
     return canManageJob(job);
   }
 
@@ -7545,7 +7601,12 @@ const TrackUI = (() => {
       incident: incidentDate,
       contact: docData.contact || '',
       isArchived: Boolean(docData.isArchived),
-      snoozeNote: docData.snoozeNote || ''
+      snoozeNote: docData.snoozeNote || '',
+      approvedBy: docData.approvedBy || '',
+      approvedAt: docData.approvedAt ? (docData.approvedAt.toDate ? docData.approvedAt.toDate() : docData.approvedAt) : null,
+      approvalNote: docData.approvalNote || '',
+      allocatedBudget: docData.allocatedBudget || '',
+      rejectedBy: docData.rejectedBy || ''
     };
   }
 
@@ -8043,7 +8104,7 @@ const TrackUI = (() => {
           <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-regular fa-hourglass-half"></i></div>
           <div>ยังไม่มีช่างรับงาน<br><span class="text-xs text-slate-400">เมื่อมีการมอบหมายช่าง ข้อความและปุ่มจัดการจะแสดงที่นี่</span></div>
         </div>
-        ${(getUserRole() === 'Executive' || getUserRole() === 'Supervisor' || getUserRole() === 'Admin') ? 
+        ${(getUserRole() === 'Supervisor' || getUserRole() === 'Admin') ? 
           `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm w-full sm:w-auto flex items-center justify-center gap-1.5"><i class="fa-solid fa-user-plus"></i>มอบหมายงาน</button>` : ''}
       </div>`;
     }
@@ -8051,7 +8112,7 @@ const TrackUI = (() => {
     let extra = '';
     const canManage = canManageJob(job);
     const role = getUserRole();
-    const isSupervisor = (role === 'Executive' || role === 'Supervisor' || role === 'Admin');
+    const isSupervisor = (role === 'Supervisor' || role === 'Admin');
 
     if (job.tech && !isDone && !isCancelled && canManage) {
       if (!isInProgress) {
@@ -8090,6 +8151,102 @@ const TrackUI = (() => {
         ${job.cost ? `<div class="text-sm text-slate-600"><span class="text-xs text-slate-400 block">ค่าใช้จ่าย</span>${esc(job.cost)} บาท</div>` : ''}
       </div>` : ''}
     </section>`;
+  }
+
+  // ---------- ส่วนการพิจารณาอนุมัติโครงการสำหรับผู้บริหาร (Executive Approval Section) ----------
+  function renderProjectApprovalSection(job) {
+    if (!job || job.type !== 'project') return '';
+    const role = getUserRole();
+    const isExecutiveOrAdmin = (role === 'Executive' || role === 'Admin');
+    const isApproved = /อนุมัติ/.test(job.status) && !/รอ/.test(job.status);
+    const isRejected = /ไม่อนุมัติ|ยกเลิก|ปฏิเสธ/.test(job.status);
+    const isPending = !isApproved && !isRejected;
+
+    if (isPending) {
+      if (isExecutiveOrAdmin) {
+        return `<section class="rounded-2xl border-2 border-violet-300 bg-gradient-to-br from-violet-50/90 via-white to-purple-50/50 p-5 md:p-6 mb-4 shadow-sm">
+          <div class="flex items-start gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-[#8b5cf6] text-white flex items-center justify-center shrink-0 shadow-md text-lg">
+              <i class="fa-solid fa-stamp"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h3 class="font-bold text-slate-800 text-base">การพิจารณาอนุมัติโครงการ (สำหรับผู้บริหาร)</h3>
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-800">
+                  <span class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>รอการพิจารณา
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 leading-relaxed">โครงการนี้รอการตรวจสอบรายละเอียด งบประมาณ และลงนามอนุมัติจากท่านผู้บริหาร</p>
+              
+              <div class="mt-4 flex flex-wrap gap-2.5">
+                <button onclick="TrackUI.approveProject('${job.id}')" class="bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition shadow-sm flex items-center gap-2">
+                  <i class="fa-solid fa-circle-check text-sm"></i> <span>อนุมัติโครงการ</span>
+                </button>
+                <button onclick="TrackUI.rejectProject('${job.id}')" class="bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 active:scale-[0.98] px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition shadow-sm flex items-center gap-2">
+                  <i class="fa-solid fa-circle-xmark text-sm"></i> <span>ไม่อนุมัติ / ส่งกลับแก้ไข</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>`;
+      } else {
+        return `<section class="rounded-2xl border border-violet-200 bg-violet-50/60 p-4 mb-4 shadow-sm flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 text-base">
+            <i class="fa-solid fa-hourglass-half animate-pulse"></i>
+          </div>
+          <div class="text-xs text-violet-900 leading-relaxed">
+            <b class="block text-sm font-semibold text-violet-950 mb-0.5">รอการพิจารณาจากผู้บริหาร</b>
+            โครงการนี้อยู่ในขั้นตอนการพิจารณาอนุมัติงบประมาณและโครงการโดยฝ่ายบริหาร (Executive Approval Pending)
+          </div>
+        </section>`;
+      }
+    }
+
+    if (isApproved) {
+      return `<section class="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 to-white p-5 mb-4 shadow-sm">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm text-base">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
+              <h4 class="font-bold text-slate-800 text-sm md:text-base text-emerald-950 flex items-center gap-2">
+                โครงการได้รับการอนุมัติแล้ว
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Approved</span>
+              </h4>
+              ${job.allocatedBudget ? `<span class="text-xs font-bold bg-emerald-100/80 text-emerald-800 px-3 py-1 rounded-lg border border-emerald-200"><i class="fa-solid fa-coins mr-1"></i>งบที่จัดสรร: ${esc(job.allocatedBudget)} บาท</span>` : ''}
+            </div>
+            <div class="text-xs text-slate-500 mb-2">
+              ${job.approvedBy ? `ผู้อนุมัติ: <b class="text-slate-700">${esc(job.approvedBy)}</b>` : ''}
+              ${job.approvedAt ? ` &nbsp;·&nbsp; วันที่อนุมัติ: ${fmtDate(parseDate(job.approvedAt) || job.approvedAt)}` : ''}
+            </div>
+            ${job.approvalNote ? `<div class="bg-white p-3 rounded-xl border border-emerald-100 text-xs text-slate-700 shadow-2xs"><b>บันทึกความเห็นผู้บริหาร:</b> ${esc(job.approvalNote)}</div>` : ''}
+          </div>
+        </div>
+      </section>`;
+    }
+
+    if (isRejected) {
+      return `<section class="rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50/70 to-white p-5 mb-4 shadow-sm">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm text-base">
+            <i class="fa-solid fa-xmark"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-rose-950 text-sm md:text-base mb-1 flex items-center gap-2">
+              โครงการไม่ได้รับการอนุมัติ / ตีกลับ
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800">Rejected</span>
+            </h4>
+            <div class="text-xs text-slate-500 mb-2">
+              ${job.rejectedBy ? `พิจารณาโดย: <b class="text-slate-700">${esc(job.rejectedBy)}</b>` : ''}
+            </div>
+            ${job.approvalNote ? `<div class="bg-white p-3 rounded-xl border border-rose-100 text-xs text-rose-800 shadow-2xs"><b>เหตุผล:</b> ${esc(job.approvalNote)}</div>` : ''}
+          </div>
+        </div>
+      </section>`;
+    }
+
+    return '';
   }
 
   async function open(id) {
@@ -8136,7 +8293,8 @@ const TrackUI = (() => {
         ${stepper(job)}
       </section>
 
-      ${techMessage(job)}
+      ${job.type === 'project' ? renderProjectApprovalSection(job) : ''}
+      ${(job.type !== 'project' || job.tech) ? techMessage(job) : ''}
 
       <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
         <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-[#265D5A]"></i>รายละเอียดที่ผู้ใช้แจ้ง</h3>
@@ -8166,7 +8324,7 @@ const TrackUI = (() => {
     if (!job) return;
 
     const role = getUserRole();
-    const isSupervisor = (role === 'Executive' || role === 'Supervisor' || role === 'Admin');
+    const isSupervisor = (role === 'Supervisor' || role === 'Admin');
 
     const x = await Swal.fire({
       title: 'อัปเดต / ปิดงาน',
@@ -8243,7 +8401,7 @@ const TrackUI = (() => {
   // ---------- มอบหมายช่างซ่อม (Assign Technician) ----------
   async function assignTech(jobId) {
     const role = getUserRole();
-    if (role !== 'Admin' && role !== 'Supervisor' && role !== 'Executive') {
+    if (role !== 'Admin' && role !== 'Supervisor') {
       Swal.fire('ไม่มีสิทธิ์', 'เฉพาะหัวหน้างานหรือผู้ดูแลระบบเท่านั้นที่สามารถมอบหมายงานหรือเปลี่ยนช่างได้', 'warning');
       return;
     }
@@ -8551,6 +8709,187 @@ const TrackUI = (() => {
     }
   }
 
+  // ---------- ฟังก์ชันอนุมัติโครงการใหญ่ (สำหรับผู้บริหาร / Executive) ----------
+  async function approveProject(jobId) {
+    const role = getUserRole();
+    if (role !== 'Executive' && role !== 'Admin') {
+      Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้บริหารหรือผู้ดูแลระบบเท่านั้นที่สามารถอนุมัติโครงการได้', 'warning');
+      return;
+    }
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const { value: formValues } = await Swal.fire({
+      title: 'อนุมัติโครงการ',
+      html: `
+        <div class="text-left space-y-3 mt-3 text-slate-800 text-xs md:text-sm">
+          <div class="p-3 bg-violet-50 rounded-xl border border-violet-100">
+            <span class="text-xs text-violet-700 font-semibold block mb-0.5">โครงการที่เสนอ:</span>
+            <span class="font-bold text-slate-800 text-sm md:text-base">${esc(job.subject)}</span>
+            <div class="text-[11px] text-slate-500 mt-1">ผู้เสนอ: ${esc(job.reporter)} (${esc(job.dept || '-')})</div>
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-slate-700">บันทึกความเห็นการอนุมัติของผู้บริหาร <span class="text-rose-500">*</span></label>
+            <textarea id="apprNote" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-xs" placeholder="เช่น อนุมัติตามที่เสนอ ให้ฝ่ายอาคารเริ่มประสานงานผู้รับเหมา..."></textarea>
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-slate-700">งบประมาณที่จัดสรร (บาท) <span class="text-slate-400 font-normal">[ถ้ามี]</span></label>
+            <input type="number" id="apprBudget" class="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-xs" placeholder="เช่น 50000" min="0">
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-check mr-1"></i> ยืนยันอนุมัติโครงการ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#059669',
+      cancelButtonColor: '#64748b',
+      focusConfirm: false,
+      preConfirm: () => {
+        const note = (document.getElementById('apprNote')?.value || '').trim();
+        const budget = (document.getElementById('apprBudget')?.value || '').trim();
+        if (!note) {
+          Swal.showValidationMessage('กรุณากรอกบันทึกความเห็นการอนุมัติ');
+          return false;
+        }
+        return { note, budget };
+      }
+    });
+
+    if (!formValues) return;
+
+    Swal.fire({ title: 'กำลังบันทึกการอนุมัติโครงการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+      const approverName = ((typeof currentTeacher === 'string' && currentTeacher) || (localStorage.getItem('logged_teacher') || 'ผู้บริหาร')).trim();
+      const approverEmail = ((typeof currentEmail === 'string' && currentEmail) || (localStorage.getItem('logged_email') || '')).trim();
+
+      const updatePayload = {
+        status: 'อนุมัติแล้ว',
+        approvedBy: approverName + (approverEmail ? ` (${approverEmail})` : ''),
+        approvalNote: formValues.note,
+        allocatedBudget: formValues.budget || '',
+        approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      // 1. อัปเดต Firestore Collection 'tickets' ทันที (Real-time sync ทั่วระบบ)
+      if (window.firestoreDb) {
+        await window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true });
+      }
+
+      // 2. อัปเดต Google Sheet Backup (Facility_Projects)
+      try {
+        await ResourceHubCore.api.post({
+          action: 'update_adv_task',
+          tabType: 'project',
+          rowIndex: job.originalIndex,
+          status: 'อนุมัติแล้ว',
+          technician: approverName,
+          detail: `[อนุมัติแล้ว] ${formValues.note}${formValues.budget ? ` (งบประมาณ: ${formValues.budget} บาท)` : ''}`
+        });
+      } catch (sheetErr) {
+        console.warn('Sync to Sheet backup warning:', sheetErr);
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'อนุมัติโครงการเรียบร้อยแล้ว',
+        text: 'ระบบได้บันทึกการอนุมัติและอัปเดตสถานะโครงการเรียบร้อย',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+    } catch (e) {
+      console.error('Approve project error:', e);
+      Swal.fire('เกิดข้อผิดพลาด', e.message || 'ไม่สามารถบันทึกการอนุมัติได้', 'error');
+    }
+  }
+
+  // ---------- ฟังก์ชันไม่อนุมัติ / ส่งกลับแก้ไขโครงการ (สำหรับผู้บริหาร) ----------
+  async function rejectProject(jobId) {
+    const role = getUserRole();
+    if (role !== 'Executive' && role !== 'Admin') {
+      Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้บริหารหรือผู้ดูแลระบบเท่านั้น', 'warning');
+      return;
+    }
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const { value: formValues } = await Swal.fire({
+      title: 'ไม่อนุมัติ / ส่งกลับแก้ไข',
+      html: `
+        <div class="text-left space-y-3 mt-3 text-slate-800 text-xs md:text-sm">
+          <div class="p-3 bg-rose-50 rounded-xl border border-rose-100">
+            <span class="text-xs text-rose-700 font-semibold block mb-0.5">โครงการ:</span>
+            <span class="font-bold text-slate-800 text-sm md:text-base">${esc(job.subject)}</span>
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-rose-700">เหตุผลที่ไม่อนุมัติ หรือข้อเสนอแนะให้แก้ไข <span class="text-rose-500">*</span></label>
+            <textarea id="rejNote" rows="3" class="w-full p-2.5 border border-rose-300 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none text-xs" placeholder="ระบุเหตุผล เช่น เกินงบประมาณที่กำหนด, ขอให้ปรับแก้ขอบเขตงานและเสนอใหม่..."></textarea>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-ban mr-1"></i> ยืนยันไม่อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      focusConfirm: false,
+      preConfirm: () => {
+        const note = (document.getElementById('rejNote')?.value || '').trim();
+        if (!note) {
+          Swal.showValidationMessage('กรุณาระบุเหตุผล');
+          return false;
+        }
+        return { note };
+      }
+    });
+
+    if (!formValues) return;
+
+    Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+      const rejectorName = ((typeof currentTeacher === 'string' && currentTeacher) || (localStorage.getItem('logged_teacher') || 'ผู้บริหาร')).trim();
+
+      const updatePayload = {
+        status: 'ไม่อนุมัติ',
+        approvalNote: formValues.note,
+        rejectedBy: rejectorName,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      if (window.firestoreDb) {
+        await window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true });
+      }
+
+      try {
+        await ResourceHubCore.api.post({
+          action: 'update_adv_task',
+          tabType: 'project',
+          rowIndex: job.originalIndex,
+          status: 'ไม่อนุมัติ',
+          technician: rejectorName,
+          detail: `[ไม่อนุมัติ] ${formValues.note}`
+        });
+      } catch (sheetErr) {
+        console.warn('Sync to Sheet backup warning:', sheetErr);
+      }
+
+      Swal.fire({
+        icon: 'info',
+        title: 'บันทึกสถานะเรียบร้อย',
+        text: 'สถานะโครงการเปลี่ยนเป็น "ไม่อนุมัติ"',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+    } catch (e) {
+      console.error('Reject project error:', e);
+      Swal.fire('เกิดข้อผิดพลาด', e.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+    }
+  }
+
   // ---------- ช่างกดรับงานและเริ่มดำเนินงาน (Start Job) ----------
   async function startJob(jobId) {
     let job = state.jobs.find(j => j.id === jobId);
@@ -8734,12 +9073,18 @@ const TrackUI = (() => {
       return;
     }
     
-    const myName = isAdminLoggedIn ? 'Admin' : ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || 'Unknown'));
+    const uRole = getUserRole();
+    let myName = ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || '')).trim();
+    if (!myName) {
+      if (uRole === 'Executive') myName = 'ผู้บริหาร';
+      else if (uRole === 'Admin') myName = 'Admin';
+      else myName = 'Unknown';
+    }
     
     box.innerHTML = messages.map(msg => {
       const isMe = msg.senderName === myName;
       const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) : 'กำลังส่ง...';
-      const roleColor = (msg.role === 'admin' || msg.role === 'tech') ? 'text-[#265D5A]' : 'text-slate-500';
+      const roleColor = (msg.role === 'admin' || msg.role === 'tech') ? 'text-[#265D5A]' : (msg.role === 'executive' ? 'text-violet-700 font-bold' : 'text-slate-500');
       
       let attachmentHtml = '';
       if (msg.attachmentUrl) {
@@ -8798,8 +9143,14 @@ const TrackUI = (() => {
         }
       }
       
-      const senderName = isAdminLoggedIn ? 'Admin' : ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || 'Unknown'));
-      const role = isAdminLoggedIn ? 'admin' : 'user';
+      const uRole = getUserRole();
+      let senderName = ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || '')).trim();
+      if (!senderName) {
+        if (uRole === 'Executive') senderName = 'ผู้บริหาร';
+        else if (uRole === 'Admin') senderName = 'Admin';
+        else senderName = 'ผู้ใช้งาน';
+      }
+      const role = uRole === 'Admin' ? 'admin' : (uRole === 'Executive' ? 'executive' : (uRole === 'Tech' || uRole === 'AV' ? 'tech' : 'user'));
       
       await FirebaseChat.send(currentChatTicketId, senderName, role, msg, attachmentUrl);
       
@@ -9323,6 +9674,8 @@ const TrackUI = (() => {
     toggleArchived,
     assignTech,
     closeJob,
+    approveProject,
+    rejectProject,
     submitChat,
     previewChatImage,
     clearChatImage,

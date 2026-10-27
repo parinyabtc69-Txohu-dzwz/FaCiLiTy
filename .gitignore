@@ -8,6 +8,7 @@ node_modules/
 *.7z
 backup_*
 *_backup
+src_backup_*
 backups/
 
 # Google Apps Script Backend (ไม่ส่งขึ้น GitHub Pages — บริหารบน Google Script Editor เท่านั้น)
