@@ -2566,16 +2566,21 @@ function renderAdvTable(tbodyId, rows, type) {
 
     const rowBg = isDone ? 'bg-white hover:bg-slate-50' : 'bg-rose-50/30 hover:bg-rose-50/60';
     const advTech = (r[7] || '').toString().trim();
-    const techBadge = advTech && advTech !== '-' ? `<span class="text-[#265D5A] text-[10px] font-bold px-2 py-0.5 bg-teal-50 rounded-full border border-teal-100 ml-2 whitespace-nowrap"><i class="fa-solid fa-wrench text-[8px] mr-0.5"></i>${advTech}</span>` : '';
+    const safeAdvTech = sanitizeHtml(advTech);
+    const techBadge = safeAdvTech && safeAdvTech !== '-' ? `<span class="text-[#265D5A] text-[10px] font-bold px-2 py-0.5 bg-teal-50 rounded-full border border-teal-100 ml-2 whitespace-nowrap"><i class="fa-solid fa-wrench text-[8px] mr-0.5"></i>${safeAdvTech}</span>` : '';
+    const safeReporter = sanitizeHtml(reporter);
+    const safeSubject = sanitizeHtml(subject);
+    const safeDetail = sanitizeHtml(detail);
+
     return `<div onclick="updateAdvTask('${type}', ${i}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
         <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
-        <span class="truncate w-full pl-1 flex items-center">${reporter} ${techBadge} ${urgHtml}</span>
+        <span class="truncate w-full pl-1 flex items-center">${safeReporter} ${techBadge} ${urgHtml}</span>
       </div>
       <div class="flex flex-1 items-center gap-2 overflow-hidden px-2">
-        <span class="truncate max-w-[200px] ${!isDone ? 'text-slate-900' : 'text-slate-700'}">${subject}</span>
-        <span class="text-slate-400 truncate">- ${detail}</span>
+        <span class="truncate max-w-[200px] ${!isDone ? 'text-slate-900' : 'text-slate-700'}">${safeSubject}</span>
+        <span class="text-slate-400 truncate">- ${safeDetail}</span>
         <div class="shrink-0 scale-75 origin-left flex gap-1">${statusTagClass(status)}${img}</div>
       </div>
       <div class="flex items-center gap-4 shrink-0">
@@ -3268,20 +3273,25 @@ window.renderRepairTable = function () {
     const initials = getInitials(reporter);
     const avatarBg = avatarColor;
     const assignedTechName = (r[7] || '').toString().trim();
-    const techBadge = assignedTechName && assignedTechName !== '-' ? `<span class="text-[#265D5A] text-[10px] font-bold px-2 py-0.5 bg-teal-50 rounded-full border border-teal-100 ml-2 whitespace-nowrap"><i class="fa-solid fa-wrench text-[8px] mr-0.5"></i>${assignedTechName}</span>` : '';
+    const safeTechName = sanitizeHtml(assignedTechName);
+    const techBadge = safeTechName && safeTechName !== '-' ? `<span class="text-[#265D5A] text-[10px] font-bold px-2 py-0.5 bg-teal-50 rounded-full border border-teal-100 ml-2 whitespace-nowrap"><i class="fa-solid fa-wrench text-[8px] mr-0.5"></i>${safeTechName}</span>` : '';
     const fontClass = isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-700';
     const subjectFontClass = isUnread ? 'font-bold text-slate-800' : 'font-semibold text-slate-600';
     const paperclip = img ? '<i class="fa-solid fa-paperclip text-slate-400" title="มีรูปภาพแนบ"></i>' : '';
+
+    const safeReporter = sanitizeHtml(reporter);
+    const safeSubject = sanitizeHtml(subject);
+    const safeDetail = sanitizeHtml(detail);
 
     const html = `<div onclick="updateTask(${originalIndex})" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
         <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
-        <span class="truncate w-full pl-1 flex items-center">${reporter} ${techBadge} ${urgBadge}</span>
+        <span class="truncate w-full pl-1 flex items-center">${safeReporter} ${techBadge} ${urgBadge}</span>
       </div>
       <div class="flex flex-1 items-center gap-2 overflow-hidden px-2">
-        <span class="truncate max-w-[200px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}">${subject}</span>
-        <span class="text-slate-400 truncate">- ${detail}</span>
+        <span class="truncate max-w-[200px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}">${safeSubject}</span>
+        <span class="text-slate-400 truncate">- ${safeDetail}</span>
         <div class="shrink-0 scale-75 origin-left flex gap-1">${statusTagClass(status)}${img}</div>
       </div>
       <div class="flex items-center gap-4 shrink-0">
