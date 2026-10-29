@@ -1222,6 +1222,7 @@ const TrackUI = (() => {
           return ResourceHubCore.api.post({
             action: action,
             tabType: tabType,
+            ticketId: jobId,
             rowIndex: job.originalIndex,
             technician: x.value.techName,
             fixDetail: x.value.fixDetail,
@@ -1981,7 +1982,7 @@ const TrackUI = (() => {
         // ใช้ readFile(file) จาก main.js
         const fileData = await window.readFile(currentChatImageFile);
         if (fileData) {
-           const res = await ResourceHubCore.api.post({ action: 'upload_chat_image', file: fileData });
+           const res = await ResourceHubCore.api.post({ action: 'upload_chat_image', file: fileData, ticketId: currentChatTicketId });
            if (res && res.fileUrl) attachmentUrl = res.fileUrl;
         }
       }

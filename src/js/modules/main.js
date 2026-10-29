@@ -737,8 +737,16 @@ const ResourceHubCore = {
           if (x.value.receipt) {
             receiptFile = await readFile(x.value.receipt);
           }
+          let repairTicketId = '';
+          const row = window.allRepairTasks ? window.allRepairTasks[index] : null;
+          if (row) {
+            const seq = index + 1;
+            const seqStr = seq < 100 ? String(seq).padStart(2, '0') : String(seq);
+            repairTicketId = `BLD-${seqStr}`;
+          }
           return ResourceHubCore.api.post({
             action: 'update_task_proof',
+            ticketId: repairTicketId,
             rowIndex: index,
             technician: x.value.techName,
             fixDetail: x.value.fixDetail,
@@ -2872,9 +2880,15 @@ window.updateAdvTask = async function (type, index, currentStatus) {
       if (x.value.receipt) {
         receiptFile = await readFile(x.value.receipt);
       }
+      const prefix = type === 'it' ? 'IT' : (type === 'project' ? 'PRJ' : 'AV');
+      const seq = index + 1;
+      const seqStr = seq < 100 ? String(seq).padStart(2, '0') : String(seq);
+      const advTicketId = `${prefix}-${seqStr}`;
+
       return ResourceHubCore.api.post({
         action: 'update_adv_task',
         tabType: type,
+        ticketId: advTicketId,
         rowIndex: index,
         status: statusToSave,
         technician: x.value.techName,
