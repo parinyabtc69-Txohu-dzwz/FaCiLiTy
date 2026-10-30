@@ -1763,41 +1763,56 @@ const TrackUI = (() => {
 
     if (!isConfirmed) return;
 
+    // ⚡ Optimistic UI: อัปเดตสถานะและหน้าจอทันทีใน 0.05 วินาที
+    const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
+    const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
+
+    job.status = 'กำลังดำเนินการ';
+    job.step = 2;
+    job.group = 'progress';
+    if (note) job.fixDetail = note;
+    open(jobId);
+
+    // แสดง Toast แจ้งเตือนสั้นๆ แบบไม่บล็อกหน้าจอ
     Swal.fire({
-      title: 'กำลังเริ่มดำเนินงาน...',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'เริ่มดำเนินงานแล้ว',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true
     });
 
-    try {
-      const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
-      const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
+    // 🚀 Background Parallel Sync: ทำงานพร้อมกันในเบื้องหลังทันที
+    const tasks = [];
 
-      // 1. อัปเดต Firestore ทันที (Real-time 0.2s)
-      if (window.firestoreDb) {
-        const updatePayload = {
-          status: 'กำลังดำเนินการ',
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        if (note) {
-          updatePayload.fixDetail = note;
-        }
-        await window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true });
+    // 1. อัปเดต Firestore
+    if (window.firestoreDb) {
+      const updatePayload = {
+        status: 'กำลังดำเนินการ',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      if (note) updatePayload.fixDetail = note;
+      tasks.push(
+        window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true })
+          .catch(err => console.warn('Firestore startJob error:', err))
+      );
 
-        // ส่งข้อความแจ้งเตือนอัตโนมัติเข้าห้องแชทของงานนั้น
-        if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
-          const chatMsg = note ? `🔧 ช่าง ${techName} เริ่มดำเนินการแล้ว: ${note}` : `🔧 ช่าง ${techName} เริ่มดำเนินงานแล้ว`;
-          try {
-            await FirebaseChat.send(jobId, techName, 'tech', chatMsg);
-          } catch (chatErr) {
-            console.warn('Auto chat notification error:', chatErr);
-          }
-        }
+      // 2. ส่งข้อความแจ้งเตือนเข้าห้องแชทของงานนั้น
+      if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
+        const chatMsg = note ? `🔧 ช่าง ${techName} เริ่มดำเนินการแล้ว: ${note}` : `🔧 ช่าง ${techName} เริ่มดำเนินงานแล้ว`;
+        tasks.push(
+          FirebaseChat.send(jobId, techName, 'tech', chatMsg)
+            .catch(chatErr => console.warn('Auto chat notification error:', chatErr))
+        );
       }
+    }
 
-      // 2. ซิงค์ Google Sheets ในเบื้องหลัง
-      const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
-      const sheetName = sheetMap[job.type] || 'Tasks';
+    // 3. ซิงค์ Google Sheets ในเบื้องหลัง
+    const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
+    const sheetName = sheetMap[job.type] || 'Tasks';
+    tasks.push(
       ResourceHubCore.api.post({
         action: 'update_task_status',
         sheetName: sheetName,
@@ -1806,26 +1821,10 @@ const TrackUI = (() => {
         status: 'กำลังดำเนินการ',
         technician: techName,
         fixDetail: note || ''
-      }).catch(err => console.warn('Sync start status to Sheets error:', err));
+      }).catch(err => console.warn('Sync start status to Sheets error:', err))
+    );
 
-      // Local state update immediately
-      job.status = 'กำลังดำเนินการ';
-      job.step = 2;
-      job.group = 'progress';
-      if (note) job.fixDetail = note;
-      open(jobId);
-
-      Swal.fire({
-        icon: 'success',
-        title: 'เริ่มดำเนินงานแล้ว!',
-        text: 'สถานะเปลี่ยนเป็น "กำลังดำเนินการ" เรียบร้อยแล้ว',
-        timer: 1600,
-        showConfirmButton: false
-      });
-    } catch (err) {
-      console.error('startJob error:', err);
-      Swal.fire('Error', 'ไม่สามารถเริ่มงานได้: ' + (err.message || ''), 'error');
-    }
+    Promise.all(tasks).catch(err => console.error('Background startJob sync error:', err));
   }
 
   // ---------- ช่างแจ้งความคืบหน้าระหว่างซ่อม (Update Progress) ----------
@@ -1860,52 +1859,54 @@ const TrackUI = (() => {
 
     if (!isConfirmed || !note) return;
 
+    // ⚡ Optimistic UI: อัปเดตหน้าจอทันที
+    const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
+    const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
+
+    job.fixDetail = note;
+    open(jobId);
+
     Swal.fire({
-      title: 'กำลังบันทึกความคืบหน้า...',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'บันทึกความคืบหน้าแล้ว',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true
     });
 
-    try {
-      const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
-      const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
+    // 🚀 Background Parallel Sync
+    const tasks = [];
 
-      if (window.firestoreDb) {
-        await window.firestoreDb.collection('tickets').doc(jobId).set({
+    if (window.firestoreDb) {
+      tasks.push(
+        window.firestoreDb.collection('tickets').doc(jobId).set({
           fixDetail: note,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        }, { merge: true }).catch(err => console.warn('Firestore updateProgress error:', err))
+      );
 
-        if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
-          try {
-            await FirebaseChat.send(jobId, techName, 'tech', `📢 แจ้งความคืบหน้า: ${note}`);
-          } catch(e) {}
-        }
+      if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
+        tasks.push(
+          FirebaseChat.send(jobId, techName, 'tech', `📢 แจ้งความคืบหน้า: ${note}`)
+            .catch(e => console.warn('Chat notify error:', e))
+        );
       }
+    }
 
-      const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
-      const sheetName = sheetMap[job.type] || 'Tasks';
+    const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
+    const sheetName = sheetMap[job.type] || 'Tasks';
+    tasks.push(
       ResourceHubCore.api.post({
         action: 'append_task_details',
         sheetName: sheetName,
         rowIndex: job.originalIndex,
         newDetails: note
-      }).catch(err => console.warn('Sync progress note to Sheets error:', err));
+      }).catch(err => console.warn('Sync progress note to Sheets error:', err))
+    );
 
-      job.fixDetail = note;
-      open(jobId);
-
-      Swal.fire({
-        icon: 'success',
-        title: 'บันทึกสำเร็จ!',
-        text: 'แจ้งความคืบหน้าเรียบร้อยแล้ว',
-        timer: 1500,
-        showConfirmButton: false
-      });
-    } catch (err) {
-      console.error('updateProgress error:', err);
-      Swal.fire('Error', 'ไม่สามารถบันทึกได้: ' + (err.message || ''), 'error');
-    }
+    Promise.all(tasks).catch(err => console.error('Background updateProgress sync error:', err));
   }
 
   function renderChatMessages(messages) {
