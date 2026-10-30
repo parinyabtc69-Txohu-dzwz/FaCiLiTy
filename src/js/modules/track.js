@@ -1979,8 +1979,10 @@ const TrackUI = (() => {
       
       // Upload image to Drive via GAS if exists
       if (currentChatImageFile) {
-        // ใช้ readFile(file) จาก main.js
-        const fileData = await window.readFile(currentChatImageFile);
+        // ใช้ readFile(file) จาก main.js (รองรับทั้งแบบ global function และ window.readFile)
+        const fileFn = typeof readFile === 'function' ? readFile : (window.readFile || null);
+        if (!fileFn) throw new Error('ไม่พบฟังก์ชันสำหรับอ่านไฟล์ (readFile)');
+        const fileData = await fileFn(currentChatImageFile);
         if (fileData) {
            const res = await ResourceHubCore.api.post({ action: 'upload_chat_image', file: fileData, ticketId: currentChatTicketId });
            if (res && res.fileUrl) attachmentUrl = res.fileUrl;

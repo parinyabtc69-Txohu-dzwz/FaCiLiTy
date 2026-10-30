@@ -223,6 +223,7 @@ const readFile = file => new Promise((resolve, reject) => {
   r.onerror = reject;
   r.readAsDataURL(file);
 });
+window.readFile = readFile;
 
 // ==========================================
 // 6. ศูนย์กลางควบคุม API (ResourceHubCore)
