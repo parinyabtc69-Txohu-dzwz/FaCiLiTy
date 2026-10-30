@@ -271,8 +271,23 @@ const ResourceHubCore = {
         const json = text ? JSON.parse(text) : { status: 'success' };
         if (json.status === 'error') throw new Error(json.message);
         
-        // ล้าง Cache ทั้งหมดเมื่อมีการ POST (ข้อมูลเปลี่ยน)
-        ResourceHubCore._cache.clear();
+        // ล้างเฉพาะ Cache ที่เกี่ยวข้องกับการเปลี่ยนแปลง (Selective Smart Cache Invalidation)
+        const act = payload.action || '';
+        if (act === 'submit_repair' || act === 'update_task_status' || act === 'update_task_proof') {
+          ResourceHubCore._cache.delete('tasks{}');
+        } else if (act === 'submit_av' || act === 'update_av_status') {
+          ResourceHubCore._cache.delete('av_requests{}');
+        } else if (act === 'submit_it_repair' || act === 'submit_av_repair' || act === 'submit_project' || act === 'update_adv_task') {
+          ResourceHubCore._cache.delete('adv_tasks{}');
+        } else if (act === 'update_user' || act === 'delete_user') {
+          ResourceHubCore._cache.delete('get_users{}');
+          window.cachedUsers = null;
+          window.cachedTechList = null;
+          try { localStorage.removeItem('cached_tech_list'); } catch(e) {}
+        } else if (act === 'master_add' || act === 'master_delete') {
+          ResourceHubCore._cache.delete('master_data{}');
+        }
+        // คำขออื่นๆ เช่น notify_chat, upload_chat_image, edit_assignment ไม่จำเป็นต้องล้างแคชข้อมูลหลัก
         
         return json;
       } catch (e) {
