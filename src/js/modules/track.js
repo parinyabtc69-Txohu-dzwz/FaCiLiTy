@@ -1186,23 +1186,8 @@ const TrackUI = (() => {
     const chatSection = $('track-chat-section');
     if (chatSection) chatSection.classList.remove('hidden');
     
-    // ยกเลิก Listener แชทเดิมทันทีเพื่อป้องกันข้อความงานเดิมค้างหรือปะปน
-    if (currentChatUnsubscribe) {
-      currentChatUnsubscribe();
-      currentChatUnsubscribe = null;
-    }
+    const isSameTicket = (currentChatTicketId === id);
     currentChatTicketId = id;
-
-    // ล้างข้อความงานเดิมทิ้งทันที และแสดงสถานะกำลังโหลดของงานนี้โดยเฉพาะ
-    const chatBox = $('track-chat-messages');
-    if (chatBox) {
-      chatBox.innerHTML = `
-        <div class="flex flex-col items-center justify-center h-full text-slate-400 text-xs py-10">
-          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#265D5A] mb-2"></i>
-          <span>กำลังโหลดแชทของงาน #${id}...</span>
-        </div>
-      `;
-    }
 
     const chatTitle = $('track-chat-title');
     if (chatTitle) {
@@ -1213,13 +1198,43 @@ const TrackUI = (() => {
       chatSub.innerText = `${job.subject || 'ข้อความแบบ Real-time'}`;
     }
 
-    if (typeof FirebaseChat !== 'undefined' && FirebaseChat.listen) {
-       currentChatUnsubscribe = FirebaseChat.listen(id, renderChatMessages);
+    // สลับงานใหม่เท่านั้นจึงจะเคลียร์กล่องข้อความและเชื่อมต่อ Listener ใหม่
+    if (!isSameTicket) {
+      if (currentChatUnsubscribe) {
+        currentChatUnsubscribe();
+        currentChatUnsubscribe = null;
+      }
+
+      const chatBox = $('track-chat-messages');
+      if (chatBox) {
+        chatBox.innerHTML = `
+          <div class="flex flex-col items-center justify-center h-full text-slate-400 text-xs py-10">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#265D5A] mb-2"></i>
+            <span>กำลังโหลดแชทของงาน #${id}...</span>
+          </div>
+        `;
+      }
+
+      // ⏱️ Safety Fallback: ป้องกันหมุนค้างเกิน 1.2 วินาที หากโหลดช้าหรือยังไม่มีข้อความให้ตัดเข้าหน้าว่างพร้อมพิมพ์ทันที
+      clearTimeout(window._chatLoadingTimer);
+      window._chatLoadingTimer = setTimeout(() => {
+        const box = $('track-chat-messages');
+        if (box && box.innerHTML.includes('กำลังโหลดแชทของงาน')) {
+          renderChatMessages([]);
+        }
+      }, 1200);
+
+      if (typeof FirebaseChat !== 'undefined' && FirebaseChat.listen) {
+         currentChatUnsubscribe = FirebaseChat.listen(id, renderChatMessages);
+      } else {
+         renderChatMessages([]);
+      }
     }
 
     // ⚡ ระบบค้นหาและคืนค่ารูปภาพอัตโนมัติ (Self-Healing Image Sync)
     // หากรูปภาพใน Firebase ขาดหายไป ให้ค้นหาจาก Google Sheets แล้วดึงมาแสดงและอัปเดตลง Firebase ทันที
-    if (job && (!job.image || job.image === '-' || !job.image.trim())) {
+    if (job && (!job.image || job.image === '-' || !job.image.trim()) && !job._healAttempted) {
+      job._healAttempted = true;
       (async () => {
         try {
           let foundImg = '';
@@ -2042,6 +2057,7 @@ const TrackUI = (() => {
   }
 
   function renderChatMessages(messages) {
+    clearTimeout(window._chatLoadingTimer);
     const box = $('track-chat-messages');
     if (!box) return;
     
