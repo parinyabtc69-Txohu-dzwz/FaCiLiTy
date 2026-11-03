@@ -1920,8 +1920,8 @@
         <i class="fa-solid fa-comments"></i>
       </div>
       <div>
-        <h3 class="font-bold text-slate-800">แชทสอบถามช่าง / ผู้แจ้ง</h3>
-        <p class="text-xs text-slate-500">ข้อความแบบ Real-time</p>
+        <h3 id="track-chat-title" class="font-bold text-slate-800">แชทสอบถามช่าง / ผู้แจ้ง</h3>
+        <p id="track-chat-subtitle" class="text-xs text-slate-500">ข้อความแบบ Real-time</p>
       </div>
     </div>
     
@@ -8646,8 +8646,33 @@ const TrackUI = (() => {
     const chatSection = $('track-chat-section');
     if (chatSection) chatSection.classList.remove('hidden');
     
-    if (currentChatUnsubscribe) currentChatUnsubscribe();
+    // ยกเลิก Listener แชทเดิมทันทีเพื่อป้องกันข้อความงานเดิมค้างหรือปะปน
+    if (currentChatUnsubscribe) {
+      currentChatUnsubscribe();
+      currentChatUnsubscribe = null;
+    }
     currentChatTicketId = id;
+
+    // ล้างข้อความงานเดิมทิ้งทันที และแสดงสถานะกำลังโหลดของงานนี้โดยเฉพาะ
+    const chatBox = $('track-chat-messages');
+    if (chatBox) {
+      chatBox.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-full text-slate-400 text-xs py-10">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#265D5A] mb-2"></i>
+          <span>กำลังโหลดแชทของงาน #${id}...</span>
+        </div>
+      `;
+    }
+
+    const chatTitle = $('track-chat-title');
+    if (chatTitle) {
+      chatTitle.innerHTML = `แชทสนทนางาน <span class="text-[#265D5A]">#${id}</span>`;
+    }
+    const chatSub = $('track-chat-subtitle');
+    if (chatSub) {
+      chatSub.innerText = `${job.subject || 'ข้อความแบบ Real-time'}`;
+    }
+
     if (typeof FirebaseChat !== 'undefined' && FirebaseChat.listen) {
        currentChatUnsubscribe = FirebaseChat.listen(id, renderChatMessages);
     }
@@ -9480,8 +9505,14 @@ const TrackUI = (() => {
     const box = $('track-chat-messages');
     if (!box) return;
     
-    if (messages.length === 0) {
-      box.innerHTML = '<div class="text-center text-slate-400 text-sm mt-10">ยังไม่มีข้อความสนทนา เริ่มพิมพ์สอบถามได้เลยครับ</div>';
+    if (!messages || messages.length === 0) {
+      box.innerHTML = `
+        <div class="text-center text-slate-400 text-xs mt-12 py-6 border border-dashed border-slate-200 rounded-2xl mx-4 bg-white/60">
+          <i class="fa-regular fa-comments text-2xl text-slate-300 mb-2 block"></i>
+          <span class="font-medium text-slate-600">ยังไม่มีข้อความสนทนาในงาน #${currentChatTicketId || ''}</span>
+          <p class="text-[11px] text-slate-400 mt-1">เริ่มพิมพ์ข้อความสอบถามช่างหรือผู้แจ้งได้เลยครับ</p>
+        </div>
+      `;
       return;
     }
     
@@ -9495,7 +9526,24 @@ const TrackUI = (() => {
     
     box.innerHTML = messages.map(msg => {
       const isMe = msg.senderName === myName;
-      const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) : 'กำลังส่ง...';
+      let time = 'เมื่อสักครู่';
+      if (msg.timestamp) {
+        try {
+          if (typeof msg.timestamp.toDate === 'function') {
+            time = msg.timestamp.toDate().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+          } else if (msg.timestamp instanceof Date) {
+            time = msg.timestamp.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+          } else {
+            const d = new Date(msg.timestamp);
+            if (!isNaN(d)) time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+          }
+        } catch(e) {
+          time = 'เมื่อสักครู่';
+        }
+      } else if (msg.localTimestamp) {
+        time = new Date(msg.localTimestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+      }
+
       const roleColor = (msg.role === 'admin' || msg.role === 'tech') ? 'text-[#265D5A]' : (msg.role === 'executive' ? 'text-violet-700 font-bold' : 'text-slate-500');
       
       let attachmentHtml = '';
@@ -9536,6 +9584,31 @@ const TrackUI = (() => {
     const msg = input.value.trim();
     if (!msg && !currentChatImageFile) return;
     
+    const uRole = getUserRole();
+    let senderName = ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || '')).trim();
+    if (!senderName) {
+      if (uRole === 'Executive') senderName = 'ผู้บริหาร';
+      else if (uRole === 'Admin') senderName = 'Admin';
+      else senderName = 'ผู้ใช้งาน';
+    }
+    const role = uRole === 'Admin' ? 'admin' : (uRole === 'Executive' ? 'executive' : (uRole === 'Tech' || uRole === 'AV' ? 'tech' : 'user'));
+    const targetTicketId = currentChatTicketId;
+
+    // ⚡ ข้อความธรรมดา (ไม่มีรูป): ล้าง input ทันทีแบบ Instant ส่งในเบื้องหลัง ไม่มีแลค
+    if (!currentChatImageFile) {
+      input.value = '';
+      input.focus();
+      try {
+        await FirebaseChat.send(targetTicketId, senderName, role, msg, '');
+      } catch (err) {
+        console.error('Send chat error:', err);
+        input.value = msg;
+        alertBox('error', 'ส่งข้อความไม่สำเร็จ', err.message);
+      }
+      return;
+    }
+
+    // มีรูปแนบ: แสดงไอคอนกำลังอัปโหลดรูป
     const btn = $('track-chat-submit');
     const originalContent = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
@@ -9544,30 +9617,15 @@ const TrackUI = (() => {
     
     try {
       let attachmentUrl = '';
-      
-      // Upload image to Drive via GAS if exists
-      if (currentChatImageFile) {
-        // ใช้ readFile(file) จาก main.js (รองรับทั้งแบบ global function และ window.readFile)
-        const fileFn = typeof readFile === 'function' ? readFile : (window.readFile || null);
-        if (!fileFn) throw new Error('ไม่พบฟังก์ชันสำหรับอ่านไฟล์ (readFile)');
-        const fileData = await fileFn(currentChatImageFile);
-        if (fileData) {
-           const res = await ResourceHubCore.api.post({ action: 'upload_chat_image', file: fileData, ticketId: currentChatTicketId });
-           if (res && res.fileUrl) attachmentUrl = res.fileUrl;
-        }
+      const fileFn = typeof readFile === 'function' ? readFile : (window.readFile || null);
+      if (!fileFn) throw new Error('ไม่พบฟังก์ชันสำหรับอ่านไฟล์ (readFile)');
+      const fileData = await fileFn(currentChatImageFile);
+      if (fileData) {
+         const res = await ResourceHubCore.api.post({ action: 'upload_chat_image', file: fileData, ticketId: targetTicketId });
+         if (res && res.fileUrl) attachmentUrl = res.fileUrl;
       }
       
-      const uRole = getUserRole();
-      let senderName = ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || '')).trim();
-      if (!senderName) {
-        if (uRole === 'Executive') senderName = 'ผู้บริหาร';
-        else if (uRole === 'Admin') senderName = 'Admin';
-        else senderName = 'ผู้ใช้งาน';
-      }
-      const role = uRole === 'Admin' ? 'admin' : (uRole === 'Executive' ? 'executive' : (uRole === 'Tech' || uRole === 'AV' ? 'tech' : 'user'));
-      
-      await FirebaseChat.send(currentChatTicketId, senderName, role, msg, attachmentUrl);
-      
+      await FirebaseChat.send(targetTicketId, senderName, role, msg, attachmentUrl);
       input.value = '';
       clearChatImage();
       
@@ -10141,6 +10199,13 @@ const TrackUI = (() => {
     migrateFromSheets,
     reindexTickets,
     backToList() {
+      if (currentChatUnsubscribe) {
+        currentChatUnsubscribe();
+        currentChatUnsubscribe = null;
+      }
+      currentChatTicketId = null;
+      const chatBox = $('track-chat-messages');
+      if (chatBox) chatBox.innerHTML = '';
       state.currentJobId = null;
       nav('page-track');
     },
