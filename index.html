@@ -7922,11 +7922,11 @@ const TrackUI = (() => {
       status: status,
       group: cls.group,
       step: cls.step,
-      image: docData.fileUrl || '',
+      image: docData.fileUrl || docData.imageUrl || docData.image || docData.file || '',
       fixDetail: docData.fixDetail || '',
       tech: docData.techName || docData.tech || '',
       techEmail: docData.techEmail || '',
-      proof: docData.proofUrl || '',
+      proof: docData.proofUrl || docData.proof || '',
       cost: docData.cost || '',
       urgency: docData.urgency || '',
       dept: docData.dept || '',
@@ -8637,7 +8637,9 @@ const TrackUI = (() => {
         ${infoRow('fa-location-dot', 'สถานที่', esc(job.location))}
         ${infoRow('fa-calendar-day', job.type === 'project' ? 'วันที่ต้องการ' : 'วันที่พบปัญหา', job.incident ? fmtDate(job.incident) : '')}
         ${infoRow('fa-phone', 'ช่องทางติดต่อ', esc(job.contact))}
-        ${job.image ? `<div class="mt-4">${imageBlock(job.image, 'รูปที่ผู้แจ้งแนบมา')}</div>` : ''}
+        <div id="track-detail-user-image-wrap" class="mt-4 ${job.image ? '' : 'hidden'}">
+          ${job.image ? imageBlock(job.image, 'รูปที่ผู้แจ้งแนบมา') : ''}
+        </div>
       </section>`;
 
     // --- Chat Section Setup ---
@@ -8648,6 +8650,57 @@ const TrackUI = (() => {
     currentChatTicketId = id;
     if (typeof FirebaseChat !== 'undefined' && FirebaseChat.listen) {
        currentChatUnsubscribe = FirebaseChat.listen(id, renderChatMessages);
+    }
+
+    // ⚡ ระบบค้นหาและคืนค่ารูปภาพอัตโนมัติ (Self-Healing Image Sync)
+    // หากรูปภาพใน Firebase ขาดหายไป ให้ค้นหาจาก Google Sheets แล้วดึงมาแสดงและอัปเดตลง Firebase ทันที
+    if (job && (!job.image || job.image === '-' || !job.image.trim())) {
+      (async () => {
+        try {
+          let foundImg = '';
+          if (job.type === 'it' || job.type === 'av' || job.type === 'project') {
+            const adv = window.advTasksData || await ResourceHubCore.api.get('get_adv_tasks');
+            if (adv) {
+              window.advTasksData = adv;
+              const list = (job.type === 'it' ? adv.it : (job.type === 'av' ? adv.av : adv.project)) || [];
+              const match = list.find(r => 
+                (r[1] && job.subject && r[1].trim() === job.subject.trim()) &&
+                ((r[2] && job.detail && r[2].trim() === job.detail.trim()) || (r[3] && job.reporter && r[3].trim() === job.reporter.trim()))
+              );
+              if (match && match[5] && match[5].startsWith('http')) {
+                foundImg = match[5].trim();
+              }
+            }
+          } else if (job.type === 'building') {
+            const repairs = await ResourceHubCore.api.get('get_tasks');
+            if (Array.isArray(repairs)) {
+              const match = repairs.find(r => 
+                (r[1] && job.subject && r[1].trim() === job.subject.trim()) &&
+                ((r[2] && job.detail && r[2].trim() === job.detail.trim()) || (r[3] && job.reporter && r[3].trim() === job.reporter.trim()))
+              );
+              if (match && match[5] && match[5].startsWith('http')) {
+                foundImg = match[5].trim();
+              }
+            }
+          }
+
+          if (foundImg) {
+            job.image = foundImg;
+            const wrap = $('track-detail-user-image-wrap');
+            if (wrap && state.currentJobId === id) {
+              wrap.innerHTML = imageBlock(foundImg, 'รูปที่ผู้แจ้งแนบมา');
+              wrap.classList.remove('hidden');
+            }
+            if (window.firestoreDb) {
+              window.firestoreDb.collection('tickets').doc(job.docId || job.id).update({
+                fileUrl: foundImg
+              }).catch(e => console.warn('Auto image heal update error:', e));
+            }
+          }
+        } catch(e) {
+          console.warn('Auto image fetch error:', e);
+        }
+      })();
     }
   }
 
@@ -9660,7 +9713,16 @@ const TrackUI = (() => {
             detail: row[2] || '',
             reporterName: row[3] || '',
             status: row[4] || 'รอดำเนินการ',
-            urgency: row[6] || '',
+            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
+            proofUrl: (row[6] && row[6] !== '-') ? row[6] : '',
+            fixDetail: row[7] || '',
+            techName: row[8] || '',
+            cost: row[9] || '',
+            urgency: row[11] || '',
+            dept: row[12] || '',
+            location: row[13] || '',
+            incidentDate: parseDateToTs(row[14]),
+            contact: row[15] || '',
             createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             isMigrated: true
@@ -9679,7 +9741,16 @@ const TrackUI = (() => {
             detail: row[2] || '',
             reporterName: row[3] || '',
             status: row[4] || 'รอดำเนินการ',
-            urgency: row[6] || '',
+            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
+            proofUrl: (row[6] && row[6] !== '-') ? row[6] : '',
+            fixDetail: row[7] || '',
+            techName: row[8] || '',
+            cost: row[9] || '',
+            urgency: row[11] || '',
+            dept: row[12] || '',
+            location: row[13] || '',
+            incidentDate: parseDateToTs(row[14]),
+            contact: row[15] || '',
             createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             isMigrated: true
@@ -9698,7 +9769,16 @@ const TrackUI = (() => {
             detail: row[2] || '',
             reporterName: row[3] || '',
             status: row[4] || 'รอพิจารณาอนุมัติ',
-            urgency: row[6] || '',
+            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
+            proofUrl: (row[6] && row[6] !== '-') ? row[6] : '',
+            fixDetail: row[7] || '',
+            techName: row[8] || '',
+            cost: row[9] || '',
+            urgency: row[11] || '',
+            dept: row[12] || '',
+            location: row[13] || '',
+            targetDate: parseDateToTs(row[14]),
+            contact: row[15] || '',
             createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             isMigrated: true
@@ -9715,6 +9795,24 @@ const TrackUI = (() => {
       const existingSnap = await window.firestoreDb.collection('tickets').get();
       const existingIds = new Set();
       existingSnap.forEach(doc => existingIds.add(doc.id));
+
+      // ตรวจสอบเอกสารเดิมที่มีอยู่แล้ว หากขาด fileUrl แต่ใน Sheet มีรูป ให้ merge update คืนค่ารูปภาพทันที
+      const healBatch = window.firestoreDb.batch();
+      let healedCount = 0;
+      existingSnap.forEach(doc => {
+        const d = doc.data();
+        if (!d.fileUrl || d.fileUrl === '-' || !d.fileUrl.startsWith('http')) {
+          const match = items.find(it => it.ticketId === doc.id || (it.subject === d.subject && it.reporterName === d.reporterName));
+          if (match && match.fileUrl && match.fileUrl.startsWith('http')) {
+            healBatch.update(doc.ref, { fileUrl: match.fileUrl });
+            healedCount++;
+          }
+        }
+      });
+      if (healedCount > 0) {
+        await healBatch.commit();
+        console.log(`[AutoSync] Healed fileUrl for ${healedCount} existing tickets from Sheets.`);
+      }
 
       const newItems = items.filter(item => !existingIds.has(item.ticketId));
 
