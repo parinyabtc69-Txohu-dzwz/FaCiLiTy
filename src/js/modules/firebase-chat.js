@@ -4,7 +4,7 @@
 
 const FirebaseChat = {
   // เริ่มดึงแชทแบบ Real-time
-  listen: function(ticketId, callback) {
+  listen: function(roomId, callback) {
     const db = window.firestoreDb || (typeof firestoreDb !== 'undefined' ? firestoreDb : null);
     if (!db) {
       console.warn("Firestore is not ready yet for chat, returning empty");
@@ -22,7 +22,7 @@ const FirebaseChat = {
 
     try {
       // ดึงแชทจาก collection 'chats' -> document (ticketId) -> collection 'messages'
-      return db.collection('chats').doc(ticketId).collection('messages')
+      return db.collection('chats').doc(roomId).collection('messages')
         .orderBy('timestamp', 'asc')
         .onSnapshot((snapshot) => {
           hasReceived = true;
@@ -45,7 +45,8 @@ const FirebaseChat = {
   },
 
   // ส่งข้อความ
-  send: async function(ticketId, senderName, role, message, attachmentUrl = '') {
+  // roomId = รหัสห้องแชท (chatId) / ticketId = รหัสงานสำหรับแจ้งเตือน LINE (ถ้าไม่ส่งมาใช้ roomId)
+  send: async function(roomId, senderName, role, message, attachmentUrl = '', ticketId = roomId) {
     const db = window.firestoreDb || (typeof firestoreDb !== 'undefined' ? firestoreDb : null);
     if (!db) throw new Error("Firebase is not initialized");
     
@@ -62,7 +63,7 @@ const FirebaseChat = {
       localTimestamp: Date.now() // เผื่อไว้เรียงลำดับฝั่ง client
     };
 
-    await db.collection('chats').doc(ticketId).collection('messages').add(msgData);
+    await db.collection('chats').doc(roomId).collection('messages').add(msgData);
 
     // ส่งแจ้งเตือนข้อความแชทเข้า LINE กลุ่มหลัก (ทำแบบ Background / Cooldown 10 วินาทีป้องกันสแปม)
     try {

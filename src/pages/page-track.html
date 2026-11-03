@@ -133,8 +133,8 @@
       <div class="text-center text-slate-400 text-sm mt-10">กำลังโหลดข้อความ...</div>
     </div>
     
-    <!-- Chat Input -->
-    <div class="p-4 bg-white border-t border-slate-200">
+    <!-- Chat Input (ซ่อนเมื่องานปิดแล้ว) -->
+    <div id="track-chat-input-wrap" class="p-4 bg-white border-t border-slate-200">
       <form id="track-chat-form" onsubmit="TrackUI.submitChat(event)" class="flex items-end gap-2">
         <button type="button" onclick="document.getElementById('track-chat-image').click()" 
           class="shrink-0 w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors">
@@ -158,6 +158,9 @@
           <i class="fa-solid fa-paper-plane"></i>
         </button>
       </form>
+    </div>
+    <div id="track-chat-closed-note" class="hidden px-5 py-3 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
+      <i class="fa-solid fa-lock mr-1"></i>งานนี้ปิดแล้ว — ดูประวัติแชทย้อนหลังได้อย่างเดียว
     </div>
   </div>
 

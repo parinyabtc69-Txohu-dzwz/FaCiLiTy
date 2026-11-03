@@ -21,6 +21,7 @@ const TrackUI = (() => {
 
   let currentChatUnsubscribe = null;
   let currentChatTicketId = null;
+let currentChatRoomId = null; // รหัสห้องแชทจริงใน Firestore (chatId ของงาน) ไม่ซ้ำแม้รหัสงานถูกนำกลับมาใช้
   let currentChatImageFile = null;
 
   // ---------- ข้อมูลประเภทงาน ----------
@@ -329,7 +330,7 @@ const TrackUI = (() => {
           await window.firestoreDb.collection('tickets').doc(targetDocId).delete();
           // ล้างห้องแชทของงานนี้ด้วย เพื่อไม่ให้ข้อความตกค้างไปโผล่ในงานใหม่ที่ใช้รหัสซ้ำ
           try {
-            const chatSnap = await window.firestoreDb.collection('chats').doc(targetDocId).collection('messages').get();
+            const chatSnap = await window.firestoreDb.collection('chats').doc(job.chatId || targetDocId).collection('messages').get();
             if (!chatSnap.empty) {
               const b = window.firestoreDb.batch();
               chatSnap.forEach(m => b.delete(m.ref));
@@ -475,6 +476,7 @@ const TrackUI = (() => {
     return {
       id: docData.ticketId || docId || '',
       docId: docId || docData.ticketId || '',
+      chatId: docData.chatId || '',
       originalIndex: docData.originalIndex || 0,
       type: docData.type,
       created: createdDate,
@@ -1207,23 +1209,21 @@ const TrackUI = (() => {
       </section>`;
 
     // --- Chat Section Setup ---
-    // งานที่ปิดแล้ว (เสร็จสิ้น / ยกเลิก / ไม่อนุมัติ) -> ไม่แสดงแชท และลบข้อความของงานนั้นทิ้ง
+    // ห้องแชทผูกกับ chatId ของงาน (ไม่ซ้ำ แม้รหัสงานจะถูกนำกลับมาใช้) / งานเก่าที่ยังไม่มี chatId ใช้รหัสงานเดิมก่อน แล้วย้ายให้อัตโนมัติ
     const chatClosed = isClosedJob(job);
+    const chatRoomId = chatRoomOf(job, id);
     const chatSection = $('track-chat-section');
-    if (chatSection) chatSection.classList.toggle('hidden', chatClosed);
+    if (chatSection) chatSection.classList.remove('hidden');
 
-    if (chatClosed) {
-      if (currentChatUnsubscribe) {
-        currentChatUnsubscribe();
-        currentChatUnsubscribe = null;
-      }
-      clearTimeout(window._chatLoadingTimer);
-      currentChatTicketId = null;
-      purgeChatOnce(job.docId || id);
-    }
+    // งานที่ปิดแล้ว = อ่านประวัติแชทได้อย่างเดียว (ซ่อนช่องพิมพ์)
+    const chatInputWrap = $('track-chat-input-wrap');
+    const chatClosedNote = $('track-chat-closed-note');
+    if (chatInputWrap) chatInputWrap.classList.toggle('hidden', chatClosed);
+    if (chatClosedNote) chatClosedNote.classList.toggle('hidden', !chatClosed);
 
-    const isSameTicket = (currentChatTicketId === id);
-    if (!chatClosed) currentChatTicketId = id;
+    const isSameRoom = (currentChatRoomId === chatRoomId);
+    currentChatTicketId = id;
+    currentChatRoomId = chatRoomId;
 
     const chatTitle = $('track-chat-title');
     if (chatTitle) {
@@ -1231,11 +1231,11 @@ const TrackUI = (() => {
     }
     const chatSub = $('track-chat-subtitle');
     if (chatSub) {
-      chatSub.innerText = `${job.subject || 'ข้อความแบบ Real-time'}`;
+      chatSub.innerText = `${job.subject || 'ข้อความแบบ Real-time'}${chatClosed ? ' · ปิดงานแล้ว (อ่านอย่างเดียว)' : ''}`;
     }
 
-    // สลับงานใหม่เท่านั้นจึงจะเคลียร์กล่องข้อความและเชื่อมต่อ Listener ใหม่
-    if (!isSameTicket && !chatClosed) {
+    // สลับห้องแชทใหม่เท่านั้นจึงจะเคลียร์กล่องข้อความและเชื่อมต่อ Listener ใหม่
+    if (!isSameRoom) {
       if (currentChatUnsubscribe) {
         currentChatUnsubscribe();
         currentChatUnsubscribe = null;
@@ -1251,7 +1251,7 @@ const TrackUI = (() => {
         `;
       }
 
-      // ⏱️ Safety Fallback: ป้องกันหมุนค้างเกิน 1.2 วินาที หากโหลดช้าหรือยังไม่มีข้อความให้ตัดเข้าหน้าว่างพร้อมพิมพ์ทันที
+      // ⏱️ Safety Fallback: ป้องกันหมุนค้างเกิน 1.2 วินาที
       clearTimeout(window._chatLoadingTimer);
       window._chatLoadingTimer = setTimeout(() => {
         const box = $('track-chat-messages');
@@ -1261,11 +1261,14 @@ const TrackUI = (() => {
       }, 1200);
 
       if (typeof FirebaseChat !== 'undefined' && FirebaseChat.listen) {
-         currentChatUnsubscribe = FirebaseChat.listen(id, renderChatMessages);
+         currentChatUnsubscribe = FirebaseChat.listen(chatRoomId, renderChatMessages);
       } else {
          renderChatMessages([]);
       }
     }
+
+    // งานเก่าที่ยังไม่มี chatId -> ย้ายแชทเข้าห้องใหม่แบบไม่ซ้ำ (ครั้งเดียว ทำเบื้องหลัง)
+    if (!job.chatId) migrateLegacyChat(job);
 
     // ⚡ ระบบค้นหาและคืนค่ารูปภาพอัตโนมัติ (Self-Healing Image Sync)
     // หากรูปภาพใน Firebase ขาดหายไป ให้ค้นหาจาก Google Sheets แล้วดึงมาแสดงและอัปเดตลง Firebase ทันที
@@ -1376,9 +1379,6 @@ const TrackUI = (() => {
               cost: x.value.cost,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
-            // ปิดงานแล้ว -> ลบแชทของงานนี้ทิ้ง (ทำเบื้องหลัง ไม่รอ)
-            purgedClosedChats.add(jobId);
-            purgeChat(jobId).catch(err => console.warn('[ChatCleanup] purge on close error:', err));
           }
           
           return ResourceHubCore.api.post({
@@ -1989,7 +1989,7 @@ const TrackUI = (() => {
       if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
         const chatMsg = note ? `🔧 ช่าง ${techName} เริ่มดำเนินการแล้ว: ${note}` : `🔧 ช่าง ${techName} เริ่มดำเนินงานแล้ว`;
         tasks.push(
-          FirebaseChat.send(jobId, techName, 'tech', chatMsg)
+          FirebaseChat.send(chatRoomOf(job, jobId), techName, 'tech', chatMsg, '', jobId)
             .catch(chatErr => console.warn('Auto chat notification error:', chatErr))
         );
       }
@@ -2075,7 +2075,7 @@ const TrackUI = (() => {
 
       if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
         tasks.push(
-          FirebaseChat.send(jobId, techName, 'tech', `📢 แจ้งความคืบหน้า: ${note}`)
+          FirebaseChat.send(chatRoomOf(job, jobId), techName, 'tech', `📢 แจ้งความคืบหน้า: ${note}`, '', jobId)
             .catch(e => console.warn('Chat notify error:', e))
         );
       }
@@ -2103,7 +2103,7 @@ const TrackUI = (() => {
     // 🛡️ กรองเฉพาะข้อความที่เป็นของงานนี้จริงๆ (ไม่เอาข้อความเก่าที่ค้างมาจากงานเดิมที่เคยถูกลบไปแล้ว)
     const job = state.jobs.find(j => j.id === currentChatTicketId);
     let validMessages = messages || [];
-    if (job && job.created) {
+    if (job && job.created && !job.chatId) {
       const jobCreatedMs = job.created.getTime() - (5 * 60 * 1000); // เผื่อความคลาดเคลื่อนเวลา 5 นาที
       validMessages = (messages || []).filter(msg => {
         let msgMs = 0;
@@ -2130,7 +2130,7 @@ const TrackUI = (() => {
             const b = window.firestoreDb.batch();
             staleMessages.forEach(m => {
               if (m.id) {
-                b.delete(window.firestoreDb.collection('chats').doc(currentChatTicketId).collection('messages').doc(m.id));
+                b.delete(window.firestoreDb.collection('chats').doc(currentChatRoomId || currentChatTicketId).collection('messages').doc(m.id));
               }
             });
             await b.commit();
@@ -2213,15 +2213,37 @@ const TrackUI = (() => {
     setTimeout(() => { box.scrollTop = box.scrollHeight; }, 100);
   }
 
-  // งานที่ถือว่า "ปิดแล้ว" -> เสร็จสิ้น/ปิดงาน (done) และ ยกเลิก/ไม่อนุมัติ (cancel)
+  // งานที่ถือว่า "ปิดแล้ว" -> เสร็จสิ้น/ปิดงาน (done) และ ยกเลิก/ไม่อนุมัติ (cancel) = อ่านแชทได้อย่างเดียว
   function isClosedJob(job) {
     return !!job && (job.group === 'done' || job.group === 'cancel');
   }
 
-  // ลบข้อความแชททั้งหมดของงาน (chats/{ticketId}/messages)
-  async function purgeChat(ticketId) {
-    if (!ticketId || !window.firestoreDb) return 0;
-    const snap = await window.firestoreDb.collection('chats').doc(ticketId).collection('messages').get();
+  // รหัสห้องแชทของงาน: ใช้ chatId (ไม่ซ้ำ) ถ้ามี ไม่งั้น fallback เป็นรหัสงานเดิม (งานเก่า)
+  function chatRoomOf(job, fallbackId) {
+    return (job && job.chatId) || (job && job.docId) || fallbackId || '';
+  }
+
+  // เวลา (ms) ของข้อความแชท
+  function chatMsgMs(msg) {
+    if (!msg) return 0;
+    try {
+      const ts = msg.timestamp;
+      if (ts) {
+        if (typeof ts.toMillis === 'function') return ts.toMillis();
+        if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+        if (ts.seconds) return ts.seconds * 1000;
+        if (ts instanceof Date) return ts.getTime();
+        const d = new Date(ts);
+        if (!isNaN(d)) return d.getTime();
+      }
+    } catch (e) {}
+    return msg.localTimestamp || 0;
+  }
+
+  // ลบข้อความแชททั้งหมดของห้อง (chats/{roomId}/messages)
+  async function purgeChat(roomId) {
+    if (!roomId || !window.firestoreDb) return 0;
+    const snap = await window.firestoreDb.collection('chats').doc(roomId).collection('messages').get();
     if (snap.empty) return 0;
     const docs = snap.docs;
     for (let i = 0; i < docs.length; i += 450) {
@@ -2229,24 +2251,52 @@ const TrackUI = (() => {
       docs.slice(i, i + 450).forEach(d => b.delete(d.ref));
       await b.commit();
     }
-    console.log(`[ChatCleanup] Deleted ${docs.length} messages of closed job #${ticketId}`);
     return docs.length;
   }
 
-  // ลบแชทของงานที่ปิดแล้ว โดยเช็กเพียงครั้งเดียวต่อรหัสงานในแต่ละ session (ไม่ยิง query ซ้ำทุกครั้งที่ snapshot รีเฟรช)
-  const purgedClosedChats = new Set();
-  function purgeChatOnce(ticketId) {
-    if (!ticketId || purgedClosedChats.has(ticketId)) return;
-    purgedClosedChats.add(ticketId);
-    purgeChat(ticketId).catch(err => {
-      purgedClosedChats.delete(ticketId);
-      console.warn('[ChatCleanup] purge closed job chat error:', err);
-    });
+  // ย้ายแชทของงานเก่า (ห้องแชทตามรหัสงาน) ไปห้องใหม่ที่มี chatId ไม่ซ้ำ
+  // chatId กำหนดแบบตายตัว = {รหัสงาน}_{เวลาสร้างงาน} จึงปลอดภัยแม้หลายเครื่องเปิดพร้อมกัน (เขียนทับ doc เดิม)
+  // ข้อความที่ส่งก่อนเวลาสร้างงาน (ตกค้างจากงานเก่าที่รหัสซ้ำ) จะไม่ถูกย้ายและถูกลบทิ้ง
+  const migratingChats = new Set();
+  async function migrateLegacyChat(job) {
+    if (!job || job.chatId || !window.firestoreDb) return;
+    const legacyId = job.docId || job.id;
+    if (!legacyId || !job.created || isNaN(job.created) || migratingChats.has(legacyId)) return;
+    migratingChats.add(legacyId);
+    try {
+      const db = window.firestoreDb;
+      const createdMs = job.created.getTime();
+      const newChatId = `${legacyId}_${createdMs}`;
+      const floorMs = createdMs - 5 * 60 * 1000;
+
+      const oldSnap = await db.collection('chats').doc(legacyId).collection('messages').get();
+      const valid = oldSnap.docs.filter(d => { const ms = chatMsgMs(d.data()); return ms === 0 || ms >= floorMs; });
+
+      const newRef = db.collection('chats').doc(newChatId).collection('messages');
+      for (let i = 0; i < valid.length; i += 450) {
+        const b = db.batch();
+        valid.slice(i, i + 450).forEach(d => b.set(newRef.doc(d.id), d.data()));
+        await b.commit();
+      }
+
+      // ผูก chatId เข้ากับงาน (ถ้าสำเร็จ snapshot จะรีเฟรชแล้วสลับไปฟังห้องใหม่เอง)
+      await db.collection('tickets').doc(legacyId).update({ chatId: newChatId });
+
+      // ล้างห้องเก่า
+      for (let i = 0; i < oldSnap.docs.length; i += 450) {
+        const b = db.batch();
+        oldSnap.docs.slice(i, i + 450).forEach(d => b.delete(d.ref));
+        await b.commit();
+      }
+      console.log(`[ChatMigrate] #${legacyId} -> ${newChatId} (moved ${valid.length}, dropped ${oldSnap.size - valid.length})`);
+    } catch (err) {
+      console.warn('[ChatMigrate] error:', err);
+    }
   }
 
-  // ฟังก์ชันล้างประวัติแชท (สำหรับ Admin / Tech ล้างข้อความกรณีทดสอบระบบ)
+  // ฟังก์ชันล้างประวัติแชท (สำหรับ Admin / Tech ล้างข้อความกรณีทดสอบระบบ)  // ฟังก์ชันล้างประวัติแชท (สำหรับ Admin / Tech ล้างข้อความกรณีทดสอบระบบ)
   async function clearChatHistory(ticketId) {
-    const targetId = ticketId || currentChatTicketId;
+    const targetId = ticketId || currentChatRoomId || currentChatTicketId;
     if (!targetId) return;
     const role = getUserRole();
     if (role !== 'Admin' && role !== 'Supervisor' && role !== 'Tech' && role !== 'AV') {
@@ -2254,7 +2304,7 @@ const TrackUI = (() => {
     }
     const confirm = await Swal.fire({
       title: 'ล้างประวัติการสนทนา?',
-      text: `ต้องการลบข้อความแชททั้งหมดในงาน #${targetId} หรือไม่?`,
+      text: `ต้องการลบข้อความแชททั้งหมดในงาน #${currentChatTicketId || targetId} หรือไม่?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'ล้างข้อความ',
@@ -2282,6 +2332,12 @@ const TrackUI = (() => {
   async function submitChat(e) {
     e.preventDefault();
     if (!currentChatTicketId || !FirebaseChat) return;
+
+    // งานที่ปิดแล้วเป็นแบบอ่านอย่างเดียว
+    const chatJob = state.jobs.find(j => j.id === currentChatTicketId);
+    if (isClosedJob(chatJob)) {
+      return alertBox('info', 'งานนี้ปิดแล้ว', 'ดูประวัติแชทย้อนหลังได้อย่างเดียวครับ');
+    }
     
     const input = $('track-chat-input');
     const msg = input.value.trim();
@@ -2296,13 +2352,14 @@ const TrackUI = (() => {
     }
     const role = uRole === 'Admin' ? 'admin' : (uRole === 'Executive' ? 'executive' : (uRole === 'Tech' || uRole === 'AV' ? 'tech' : 'user'));
     const targetTicketId = currentChatTicketId;
+    const targetRoomId = currentChatRoomId || currentChatTicketId;
 
     // ⚡ ข้อความธรรมดา (ไม่มีรูป): ล้าง input ทันทีแบบ Instant ส่งในเบื้องหลัง ไม่มีแลค
     if (!currentChatImageFile) {
       input.value = '';
       input.focus();
       try {
-        await FirebaseChat.send(targetTicketId, senderName, role, msg, '');
+        await FirebaseChat.send(targetRoomId, senderName, role, msg, '', targetTicketId);
       } catch (err) {
         console.error('Send chat error:', err);
         input.value = msg;
@@ -2328,7 +2385,7 @@ const TrackUI = (() => {
          if (res && res.fileUrl) attachmentUrl = res.fileUrl;
       }
       
-      await FirebaseChat.send(targetTicketId, senderName, role, msg, attachmentUrl);
+      await FirebaseChat.send(targetRoomId, senderName, role, msg, attachmentUrl, targetTicketId);
       input.value = '';
       clearChatImage();
       
@@ -2792,7 +2849,7 @@ const TrackUI = (() => {
           // 1. คัดลอกข้อความแชท (chats/{oldId}/messages -> chats/{targetId}/messages)
           try {
             const oldChatRef = window.firestoreDb.collection('chats').doc(ch.oldId).collection('messages');
-            const chatSnap = await oldChatRef.get();
+            const chatSnap = (ch.data && ch.data.chatId) ? { empty: true } : await oldChatRef.get(); // งานที่มี chatId ไม่ต้องย้ายแชท
             if (!chatSnap.empty) {
               const chatBatch = window.firestoreDb.batch();
               const newChatRef = window.firestoreDb.collection('chats').doc(ch.targetId).collection('messages');
@@ -2908,6 +2965,7 @@ const TrackUI = (() => {
         currentChatUnsubscribe = null;
       }
       currentChatTicketId = null;
+      currentChatRoomId = null;
       const chatBox = $('track-chat-messages');
       if (chatBox) chatBox.innerHTML = '';
       state.currentJobId = null;

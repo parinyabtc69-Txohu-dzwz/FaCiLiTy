@@ -2376,6 +2376,8 @@ async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail
   // ตรวจสอบและเตรียม Document สำหรับ Firebase
   const docData = {
     ticketId,
+    // รหัสห้องแชทที่ไม่ซ้ำ ต่อให้รหัสงานถูกนำกลับมาใช้ใหม่ แชทก็ไม่ซ้อนกับงานเก่า
+    chatId: `${ticketId}_${Date.now()}`,
     type: typeForFirebase,
     subject:      subject  || '',
     detail:       detail   || '',
@@ -2398,18 +2400,6 @@ async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail
       }
       if (window.firestoreDb) {
         await window.firestoreDb.collection('tickets').doc(ticketId).set(docData);
-        // ล้างห้องแชทเก่าที่อาจตกค้างจากงานที่เคยถูกลบไปแล้ว เพื่อไม่ให้ข้อความงานเก่ามาโผล่ในงานใหม่
-        try {
-          const legacyChat = await window.firestoreDb.collection('chats').doc(ticketId).collection('messages').get();
-          if (!legacyChat.empty) {
-            const b = window.firestoreDb.batch();
-            legacyChat.forEach(m => b.delete(m.ref));
-            await b.commit();
-            console.log('🧹 Purged legacy chat for ticketId:', ticketId);
-          }
-        } catch(chatCleanErr) {
-          console.warn('Purge legacy chat error:', chatCleanErr);
-        }
         console.log('🔥 Instant Firebase save success for ticket:', ticketId);
         if (window.TrackUI && typeof window.TrackUI.load === 'function') {
           window.TrackUI.load(true);
