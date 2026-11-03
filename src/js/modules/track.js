@@ -327,6 +327,17 @@ const TrackUI = (() => {
         if (window.firestoreDb) {
           const targetDocId = job.docId || job.id;
           await window.firestoreDb.collection('tickets').doc(targetDocId).delete();
+          // ล้างห้องแชทของงานนี้ด้วย เพื่อไม่ให้ข้อความตกค้างไปโผล่ในงานใหม่ที่ใช้รหัสซ้ำ
+          try {
+            const chatSnap = await window.firestoreDb.collection('chats').doc(targetDocId).collection('messages').get();
+            if (!chatSnap.empty) {
+              const b = window.firestoreDb.batch();
+              chatSnap.forEach(m => b.delete(m.ref));
+              await b.commit();
+            }
+          } catch(chatErr) {
+            console.warn('Delete chat messages error:', chatErr);
+          }
         }
       } catch (err) {
         console.error('Delete job error in background:', err);
@@ -439,8 +450,21 @@ const TrackUI = (() => {
     const cls = classify(status, docData.techName);
     
     let createdDate = null;
-    if (docData.createdAt && docData.createdAt.toDate) {
-      createdDate = docData.createdAt.toDate();
+    if (docData.createdAt) {
+      if (typeof docData.createdAt.toDate === 'function') {
+        createdDate = docData.createdAt.toDate();
+      } else if (docData.createdAt instanceof Date) {
+        createdDate = docData.createdAt;
+      } else if (docData.createdAt.seconds) {
+        createdDate = new Date(docData.createdAt.seconds * 1000);
+      } else {
+        const parsed = parseDate(docData.createdAt);
+        if (parsed && !isNaN(parsed)) createdDate = parsed;
+        else {
+          const d = new Date(docData.createdAt);
+          if (!isNaN(d)) createdDate = d;
+        }
+      }
     }
     
     let incidentDate = null;
@@ -2061,7 +2085,49 @@ const TrackUI = (() => {
     const box = $('track-chat-messages');
     if (!box) return;
     
-    if (!messages || messages.length === 0) {
+    // 🛡️ กรองเฉพาะข้อความที่เป็นของงานนี้จริงๆ (ไม่เอาข้อความเก่าที่ค้างมาจากงานเดิมที่เคยถูกลบไปแล้ว)
+    const job = state.jobs.find(j => j.id === currentChatTicketId);
+    let validMessages = messages || [];
+    if (job && job.created) {
+      const jobCreatedMs = job.created.getTime() - (5 * 60 * 1000); // เผื่อความคลาดเคลื่อนเวลา 5 นาที
+      validMessages = (messages || []).filter(msg => {
+        let msgMs = 0;
+        if (msg.timestamp) {
+          try {
+            if (typeof msg.timestamp.toMillis === 'function') msgMs = msg.timestamp.toMillis();
+            else if (typeof msg.timestamp.toDate === 'function') msgMs = msg.timestamp.toDate().getTime();
+            else if (msg.timestamp.seconds) msgMs = msg.timestamp.seconds * 1000;
+            else if (msg.timestamp instanceof Date) msgMs = msg.timestamp.getTime();
+            else { const d = new Date(msg.timestamp); if (!isNaN(d)) msgMs = d.getTime(); }
+          } catch(e) {}
+        } else if (msg.localTimestamp) {
+          msgMs = msg.localTimestamp;
+        }
+        // ข้อความต้องถูกส่งหลังเวลาสร้างงานเท่านั้น ไม่เอาข้อความตกค้างจากงานเก่า
+        return msgMs === 0 || msgMs >= jobCreatedMs;
+      });
+
+      // หากพบว่ามีข้อความตกค้างจากงานเดิม ให้ล้างข้อความตกค้างออกจาก Firestore อัตโนมัติ
+      const staleMessages = (messages || []).filter(m => !validMessages.includes(m));
+      if (staleMessages.length > 0 && window.firestoreDb && currentChatTicketId) {
+        (async () => {
+          try {
+            const b = window.firestoreDb.batch();
+            staleMessages.forEach(m => {
+              if (m.id) {
+                b.delete(window.firestoreDb.collection('chats').doc(currentChatTicketId).collection('messages').doc(m.id));
+              }
+            });
+            await b.commit();
+            console.log(`[ChatCleanup] Purged ${staleMessages.length} orphaned messages from #${currentChatTicketId}`);
+          } catch(err) {
+            console.warn('[ChatCleanup] Error purging stale messages:', err);
+          }
+        })();
+      }
+    }
+
+    if (!validMessages || validMessages.length === 0) {
       box.innerHTML = `
         <div class="text-center text-slate-400 text-xs mt-12 py-6 border border-dashed border-slate-200 rounded-2xl mx-4 bg-white/60">
           <i class="fa-regular fa-comments text-2xl text-slate-300 mb-2 block"></i>
@@ -2080,7 +2146,7 @@ const TrackUI = (() => {
       else myName = 'Unknown';
     }
     
-    box.innerHTML = messages.map(msg => {
+    box.innerHTML = validMessages.map(msg => {
       const isMe = msg.senderName === myName;
       let time = 'เมื่อสักครู่';
       if (msg.timestamp) {
@@ -2130,6 +2196,41 @@ const TrackUI = (() => {
     
     // Auto scroll to bottom
     setTimeout(() => { box.scrollTop = box.scrollHeight; }, 100);
+  }
+
+  // ฟังก์ชันล้างประวัติแชท (สำหรับ Admin / Tech ล้างข้อความกรณีทดสอบระบบ)
+  async function clearChatHistory(ticketId) {
+    const targetId = ticketId || currentChatTicketId;
+    if (!targetId) return;
+    const role = getUserRole();
+    if (role !== 'Admin' && role !== 'Supervisor' && role !== 'Tech' && role !== 'AV') {
+      return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะช่างหรือผู้ดูแลระบบเท่านั้นที่สามารถล้างแชทได้', 'warning');
+    }
+    const confirm = await Swal.fire({
+      title: 'ล้างประวัติการสนทนา?',
+      text: `ต้องการลบข้อความแชททั้งหมดในงาน #${targetId} หรือไม่?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ล้างข้อความ',
+      confirmButtonColor: '#e11d48',
+      cancelButtonText: 'ยกเลิก'
+    });
+    if (!confirm.isConfirmed) return;
+
+    try {
+      if (window.firestoreDb) {
+        const snap = await window.firestoreDb.collection('chats').doc(targetId).collection('messages').get();
+        if (!snap.empty) {
+          const b = window.firestoreDb.batch();
+          snap.forEach(doc => b.delete(doc.ref));
+          await b.commit();
+        }
+      }
+      renderChatMessages([]);
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ล้างข้อความแชทเรียบร้อยแล้ว', timer: 2000, showConfirmButton: false });
+    } catch(err) {
+      Swal.fire('ข้อผิดพลาด', err.message, 'error');
+    }
   }
 
   async function submitChat(e) {
@@ -2752,6 +2853,7 @@ const TrackUI = (() => {
     submitChat,
     previewChatImage,
     clearChatImage,
+    clearChatHistory,
     migrateFromSheets,
     reindexTickets,
     backToList() {
