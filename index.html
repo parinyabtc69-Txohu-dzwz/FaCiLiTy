@@ -7761,18 +7761,47 @@ const TrackUI = (() => {
 
     if (!confirm.isConfirmed) return;
 
-    Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    try {
-      if (window.firestoreDb) {
-        await window.firestoreDb.collection('tickets').doc(job.id).delete();
-      }
-      state.jobs = state.jobs.filter(j => j.id !== jobId);
-      render();
-      Swal.fire('สำเร็จ', 'ลบงานเรียบร้อยแล้ว', 'success');
-    } catch (err) {
-      console.error('Delete job error:', err);
-      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบงานได้: ' + err.message, 'error');
+    // ⚡ Optimistic UI: นำรายการออกจากหน้าจอทันที (Instant 0.05s) ไม่ต้องรอเซิร์ฟเวอร์หมุนติ้วๆ
+    const originalIndex = state.jobs.findIndex(j => j.id === jobId);
+    state.jobs = state.jobs.filter(j => j.id !== jobId);
+    render();
+
+    // หากเปิดหน้ารายละเอียดของงานนี้ค้างอยู่ ให้กลับหน้ารวมทันที
+    if (state.currentJobId === jobId) {
+      TrackUI.backToList();
     }
+
+    // แจ้งเตือนแบบ Toast มุมขวาบนทันที ไม่บล็อกหน้าจอผู้ใช้
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: `ลบงาน #${job.id} เรียบร้อยแล้ว`,
+      showConfirmButton: false,
+      timer: 2000
+    });
+
+    // ดำเนินการลบใน Firebase Firestore ในเบื้องหลัง (Background Task)
+    (async () => {
+      try {
+        if (window.firestoreDb) {
+          const targetDocId = job.docId || job.id;
+          await window.firestoreDb.collection('tickets').doc(targetDocId).delete();
+        }
+      } catch (err) {
+        console.error('Delete job error in background:', err);
+        // หากเซิร์ฟเวอร์เกิดข้อผิดพลาด ให้คืนค่างานกลับมาแสดงที่เดิม
+        if (originalIndex !== -1 && !state.jobs.some(j => j.id === jobId)) {
+          state.jobs.splice(originalIndex, 0, job);
+          render();
+        }
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาดในการลบงาน',
+          text: 'ไม่สามารถลบงานจากเซิร์ฟเวอร์ได้: ' + (err.message || 'เครือข่ายขัดข้อง')
+        });
+      }
+    })();
   }
 
   // ---------- เลื่อนเวลา / ปรับความเร่งด่วน (Snooze) ----------
@@ -7865,7 +7894,7 @@ const TrackUI = (() => {
     }, idx);
   }
 
-  function fromFirebase(docData) {
+  function fromFirebase(docData, docId) {
     const status = docData.status || 'รอดำเนินการ';
     const cls = classify(status, docData.techName);
     
@@ -7880,7 +7909,8 @@ const TrackUI = (() => {
     }
     
     return {
-      id: docData.ticketId,
+      id: docData.ticketId || docId || '',
+      docId: docId || docData.ticketId || '',
       originalIndex: docData.originalIndex || 0,
       type: docData.type,
       created: createdDate,
@@ -8030,7 +8060,7 @@ const TrackUI = (() => {
             if (/\d{10,}/.test(tid) || tid.includes('-LEG-') || tid.includes('-REQ-') || tid.includes('-REP-')) {
               hasLegacyId = true;
             }
-            jobs.push(fromFirebase(data));
+            jobs.push(fromFirebase(data, doc.id));
           });
           
           state.jobs = jobs;
