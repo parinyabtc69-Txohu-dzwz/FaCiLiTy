@@ -1207,11 +1207,23 @@ const TrackUI = (() => {
       </section>`;
 
     // --- Chat Section Setup ---
+    // งานที่ปิดแล้ว (เสร็จสิ้น / ยกเลิก / ไม่อนุมัติ) -> ไม่แสดงแชท และลบข้อความของงานนั้นทิ้ง
+    const chatClosed = isClosedJob(job);
     const chatSection = $('track-chat-section');
-    if (chatSection) chatSection.classList.remove('hidden');
-    
+    if (chatSection) chatSection.classList.toggle('hidden', chatClosed);
+
+    if (chatClosed) {
+      if (currentChatUnsubscribe) {
+        currentChatUnsubscribe();
+        currentChatUnsubscribe = null;
+      }
+      clearTimeout(window._chatLoadingTimer);
+      currentChatTicketId = null;
+      purgeChatOnce(job.docId || id);
+    }
+
     const isSameTicket = (currentChatTicketId === id);
-    currentChatTicketId = id;
+    if (!chatClosed) currentChatTicketId = id;
 
     const chatTitle = $('track-chat-title');
     if (chatTitle) {
@@ -1223,7 +1235,7 @@ const TrackUI = (() => {
     }
 
     // สลับงานใหม่เท่านั้นจึงจะเคลียร์กล่องข้อความและเชื่อมต่อ Listener ใหม่
-    if (!isSameTicket) {
+    if (!isSameTicket && !chatClosed) {
       if (currentChatUnsubscribe) {
         currentChatUnsubscribe();
         currentChatUnsubscribe = null;
@@ -1364,6 +1376,9 @@ const TrackUI = (() => {
               cost: x.value.cost,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
+            // ปิดงานแล้ว -> ลบแชทของงานนี้ทิ้ง (ทำเบื้องหลัง ไม่รอ)
+            purgedClosedChats.add(jobId);
+            purgeChat(jobId).catch(err => console.warn('[ChatCleanup] purge on close error:', err));
           }
           
           return ResourceHubCore.api.post({
@@ -2196,6 +2211,37 @@ const TrackUI = (() => {
     
     // Auto scroll to bottom
     setTimeout(() => { box.scrollTop = box.scrollHeight; }, 100);
+  }
+
+  // งานที่ถือว่า "ปิดแล้ว" -> เสร็จสิ้น/ปิดงาน (done) และ ยกเลิก/ไม่อนุมัติ (cancel)
+  function isClosedJob(job) {
+    return !!job && (job.group === 'done' || job.group === 'cancel');
+  }
+
+  // ลบข้อความแชททั้งหมดของงาน (chats/{ticketId}/messages)
+  async function purgeChat(ticketId) {
+    if (!ticketId || !window.firestoreDb) return 0;
+    const snap = await window.firestoreDb.collection('chats').doc(ticketId).collection('messages').get();
+    if (snap.empty) return 0;
+    const docs = snap.docs;
+    for (let i = 0; i < docs.length; i += 450) {
+      const b = window.firestoreDb.batch();
+      docs.slice(i, i + 450).forEach(d => b.delete(d.ref));
+      await b.commit();
+    }
+    console.log(`[ChatCleanup] Deleted ${docs.length} messages of closed job #${ticketId}`);
+    return docs.length;
+  }
+
+  // ลบแชทของงานที่ปิดแล้ว โดยเช็กเพียงครั้งเดียวต่อรหัสงานในแต่ละ session (ไม่ยิง query ซ้ำทุกครั้งที่ snapshot รีเฟรช)
+  const purgedClosedChats = new Set();
+  function purgeChatOnce(ticketId) {
+    if (!ticketId || purgedClosedChats.has(ticketId)) return;
+    purgedClosedChats.add(ticketId);
+    purgeChat(ticketId).catch(err => {
+      purgedClosedChats.delete(ticketId);
+      console.warn('[ChatCleanup] purge closed job chat error:', err);
+    });
   }
 
   // ฟังก์ชันล้างประวัติแชท (สำหรับ Admin / Tech ล้างข้อความกรณีทดสอบระบบ)
