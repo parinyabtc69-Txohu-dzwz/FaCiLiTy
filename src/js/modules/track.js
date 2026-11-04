@@ -1436,14 +1436,17 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       let fbUsers = [];
       if (window.firestoreDb) {
         try {
-          const snap = await window.firestoreDb.collection('users').get();
+          const getSnapPromise = typeof window.withTimeout === 'function'
+            ? window.withTimeout(window.firestoreDb.collection('users').get(), 2000)
+            : window.firestoreDb.collection('users').get();
+          const snap = await getSnapPromise;
           snap.forEach(doc => {
             const data = doc.data();
             data.email = doc.id; // ใช้ Document ID เป็น email
             fbUsers.push(data);
           });
         } catch (e) {
-          console.warn('Cannot fetch from Firebase', e);
+          console.warn('Cannot fetch from Firebase (fallback to GAS):', e.message);
         }
       }
 

@@ -1998,6 +1998,14 @@ let firestoreDb = null;
 let firebaseStorage = null;
 let firebaseAuth = null;
 
+// Global timeout helper for async operations to prevent network hanging
+window.withTimeout = function(promise, ms = 3000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Operation_Timeout')), ms))
+  ]);
+};
+
 function initFirebase() {
   if (typeof firebase === 'undefined') {
     console.warn('Firebase SDK ยังไม่ถูกโหลดในหน้าเว็บ');
@@ -2416,7 +2424,8 @@ const MasterData = (() => {
 
     try {
       const colRef = window.firestoreDb.collection('master_data');
-      const snap = await colRef.get();
+      const getPromise = typeof window.withTimeout === 'function' ? window.withTimeout(colRef.get(), 2500) : colRef.get();
+      const snap = await getPromise;
 
       if (snap.empty) {
         // หากใน Firebase ยังไม่มีข้อมูล ให้สร้างชุดข้อมูลเริ่มต้นทันที (Auto-Seed)
@@ -3874,59 +3883,72 @@ const ResourceHubCore = {
           return 'pending';
         }
 
+        let ticketsLoaded = false;
         if (window.firestoreDb) {
-           const snap = await window.firestoreDb.collection('tickets').get();
-           snap.forEach(doc => {
-              const data = doc.data();
-              if (!data) return;
-              
-              if (monthFilter && data.createdAt && data.createdAt.toDate) {
-                 const date = data.createdAt.toDate();
-                 const mStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
-                 if (mStr !== monthFilter) return;
-              }
-              
-              let type = data.type || '';
-              const ticketId = data.ticketId || doc.id || '';
-              if (!type) {
-                if (ticketId.startsWith('BLD')) type = 'building';
-                else if (ticketId.startsWith('IT')) type = 'it';
-                else if (ticketId.startsWith('AV')) type = 'av';
-                else if (ticketId.startsWith('PRJ')) type = 'project';
-              }
+          try {
+            const getTicketsPromise = typeof window.withTimeout === 'function' 
+              ? window.withTimeout(window.firestoreDb.collection('tickets').get(), 2500)
+              : window.firestoreDb.collection('tickets').get();
+            const snap = await getTicketsPromise;
+            if (snap && !snap.empty) {
+              snap.forEach(doc => {
+                const data = doc.data();
+                if (!data) return;
+                
+                if (monthFilter && data.createdAt && data.createdAt.toDate) {
+                   const date = data.createdAt.toDate();
+                   const mStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+                   if (mStr !== monthFilter) return;
+                }
+                
+                let type = data.type || '';
+                const ticketId = data.ticketId || doc.id || '';
+                if (!type) {
+                  if (ticketId.startsWith('BLD')) type = 'building';
+                  else if (ticketId.startsWith('IT')) type = 'it';
+                  else if (ticketId.startsWith('AV')) type = 'av';
+                  else if (ticketId.startsWith('PRJ')) type = 'project';
+                }
 
-              const tech = data.techName || data.tech || '';
-              const status = data.status || '';
-              const group = classifyTicket(status, tech);
-              const rating = Number(data.rating) || 0;
+                const tech = data.techName || data.tech || '';
+                const status = data.status || '';
+                const group = classifyTicket(status, tech);
+                const rating = Number(data.rating) || 0;
 
-              if (type === 'building') {
-                bTotal++;
-                if (group === 'pending') bPending++;
-                else if (group === 'progress') bProgress++;
-                else if (group === 'done') bCompleted++;
-                if (rating > 0) { bRatingSum += rating; bRatingCount++; }
-              } else if (type === 'it') {
-                itTotal++;
-                if (group === 'pending') itPending++;
-                else if (group === 'progress') itProgress++;
-                else if (group === 'done') itCompleted++;
-                if (rating > 0) { itRatingSum += rating; itRatingCount++; }
-              } else if (type === 'av') {
-                avTotal++;
-                if (group === 'pending') avPending++;
-                else if (group === 'progress') avActive++;
-                else if (group === 'done') avCompleted++;
-                if (rating > 0) { avRatingSum += rating; avRatingCount++; }
-              } else if (type === 'project') {
-                projTotal++;
-                if (group === 'pending') projPending++;
-                else if (group === 'progress') projProgress++;
-                else if (group === 'done') projCompleted++;
-                if (rating > 0) { projRatingSum += rating; projRatingCount++; }
-              }
-           });
-        } else {
+                if (type === 'building') {
+                  bTotal++;
+                  if (group === 'pending') bPending++;
+                  else if (group === 'progress') bProgress++;
+                  else if (group === 'done') bCompleted++;
+                  if (rating > 0) { bRatingSum += rating; bRatingCount++; }
+                } else if (type === 'it') {
+                  itTotal++;
+                  if (group === 'pending') itPending++;
+                  else if (group === 'progress') itProgress++;
+                  else if (group === 'done') itCompleted++;
+                  if (rating > 0) { itRatingSum += rating; itRatingCount++; }
+                } else if (type === 'av') {
+                  avTotal++;
+                  if (group === 'pending') avPending++;
+                  else if (group === 'progress') avActive++;
+                  else if (group === 'done') avCompleted++;
+                  if (rating > 0) { avRatingSum += rating; avRatingCount++; }
+                } else if (type === 'project') {
+                  projTotal++;
+                  if (group === 'pending') projPending++;
+                  else if (group === 'progress') projProgress++;
+                  else if (group === 'done') projCompleted++;
+                  if (rating > 0) { projRatingSum += rating; projRatingCount++; }
+                }
+              });
+              ticketsLoaded = true;
+            }
+          } catch (fsErr) {
+            console.warn('Firestore tickets fetch fallback note:', fsErr.message);
+          }
+        }
+        
+        if (!ticketsLoaded) {
            d = await ResourceHubCore.dashboard.legacy({ month: monthFilter });
            bTotal = Number(d?.building?.total) || 0; bPending = Number(d?.building?.pending) || 0; bProgress = Number(d?.building?.inProgress) || 0; bCompleted = Number(d?.building?.completed) || 0;
            avTotal = Number(d?.av?.total) || 0; avPending = Number(d?.av?.pending) || 0; avActive = Number(d?.av?.active) || 0; avCompleted = Number(d?.av?.completed) || 0;
@@ -4416,8 +4438,8 @@ function withTimeout(promise, ms = 4000) {
 
 async function handleCredentialResponse(response) {
   Swal.fire({
-    title: 'กำลังตรวจสอบ...',
-    text: 'กรุณารอสักครู่',
+    title: 'กำลังเข้าสู่ระบบ...',
+    text: 'กรุณารอสักครู่ กำลังตรวจสอบสิทธิ์และบันทึกข้อมูล',
     allowOutsideClick: false,
     didOpen: () => Swal.showLoading()
   });
@@ -4427,91 +4449,90 @@ async function handleCredentialResponse(response) {
       throw new Error('ไม่พบข้อมูลการเข้าสู่ระบบจาก Google');
     }
 
-    // 1. ถอดรหัส Google ID Token ทันที (ได้ email, name, picture ทันที 0.001ms ไม่ต้องรอ Network)
+    // 1. ถอดรหัส Google ID Token เพื่อได้ email, name, picture
     const googleUser = parseGoogleJwt(response.credential);
     if (!googleUser || !googleUser.email) {
       throw new Error('ไม่สามารถอ่านข้อมูลบัญชี Google ได้');
     }
 
     const email = googleUser.email.toLowerCase().trim();
-    const name = googleUser.name || email.split('@')[0];
-    const picture = googleUser.picture || '';
-
+    let name = googleUser.name || email.split('@')[0];
+    let picture = googleUser.picture || '';
     let role = 'Teacher';
     let status = 'approved';
-    let userFound = false;
 
-    // 2. ลองเชื่อมต่อ Firebase Auth ในพื้นหลัง (ไม่บล็อกและไม่ทำให้ระบบล่ม)
-    if (window.firebaseAuth) {
-      try {
-        const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
-        await withTimeout(window.firebaseAuth.signInWithCredential(credential), 3000);
-      } catch (authErr) {
-        console.warn('Firebase Auth skipped or not authorized:', authErr.code || authErr.message);
-      }
-    }
+    // 2. เรียก Backend Google Apps Script (action: 'google_login')
+    // สำคัญ: ฟังก์ชันนี้จะบันทึกผู้ใช้ใหม่ลงในชีตแท็บ Users ทันที 100% พร้อมบันทึก LastLogin และ Role
+    try {
+      const loginRes = await withTimeout(
+        ResourceHubCore.api.post({ action: 'google_login', credential: response.credential }),
+        8000
+      );
 
-    // 3. ตรวจสอบสิทธิ์ (Role & Status) จาก Firestore
-    if (window.firestoreDb) {
-      try {
-        const userDoc = await withTimeout(window.firestoreDb.collection('users').doc(email).get(), 3000);
-        if (userDoc && userDoc.exists) {
-          const udata = userDoc.data();
-          role = udata.role || 'Teacher';
-          status = udata.status || 'approved';
-          userFound = true;
-
-          // อัปเดตเวลาเข้าใช้งานแบบ non-blocking
-          window.firestoreDb.collection('users').doc(email).update({
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-            picture: picture,
-            name: name
-          }).catch(e => console.warn('Update lastLogin failed:', e));
+      if (loginRes) {
+        if (loginRes.status === 'error') {
+          throw new Error(loginRes.message || 'การตรวจสอบสิทธิ์ล้มเหลว');
         }
-      } catch (fsErr) {
-        console.warn('Firestore fetch timed out or failed:', fsErr.message);
-      }
-    }
-
-    // 4. ถ้ายังไม่พบใน Firestore ให้ตรวจสอบจาก Google Sheets
-    if (!userFound) {
-      try {
-        const allUsers = await withTimeout(ResourceHubCore.api.get('get_users'), 4000);
-        if (Array.isArray(allUsers)) {
-          const found = allUsers.find(u => u[0] && u[0].toString().toLowerCase().trim() === email);
-          if (found) {
-            role = found[2] || 'Teacher';
-            status = found[3] || 'approved';
-            userFound = true;
-          }
+        if (loginRes.status === 'success') {
+          name = loginRes.name || name;
+          role = loginRes.role || role;
+          picture = loginRes.picture || picture;
+          status = loginRes.status || status;
         }
-      } catch (sheetErr) {
-        console.warn('Google Sheets get_users timed out:', sheetErr.message);
+      }
+    } catch (apiErr) {
+      console.warn('Google Apps Script login check warning:', apiErr);
+      if (apiErr.message && /ระงับ|รอการอนุมัติ/i.test(apiErr.message)) {
+        throw apiErr;
       }
     }
 
-    // 5. ตรวจสอบสถานะการระงับบัญชี
+    // 3. ตรวจสอบสถานะการระงับบัญชี
     if (status === 'banned') {
       throw new Error('บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ');
     }
-    if (status !== 'approved' && userFound) {
+    if (status !== 'approved' && status !== 'success') {
       throw new Error('บัญชีของคุณกำลังรอการอนุมัติสิทธิ์เข้าใช้งาน');
     }
 
-    // 6. ถ้าเป็นผู้ใช้ใหม่ และ Firestore พร้อม ให้บันทึกข้อมูลไว้
-    if (!userFound && window.firestoreDb) {
-      window.firestoreDb.collection('users').doc(email).set({
+    // 4. บันทึก/อัปเดตลง Firestore ในเบื้องหลัง (Non-blocking พร้อม Timeout ไม่ทำให้ระบบช้า)
+    if (window.firestoreDb) {
+      const fsData = {
         email: email,
         name: name,
         role: role,
         status: status,
         picture: picture,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(e => console.warn('Create user in Firestore failed:', e));
+        lastLogin: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+          ? firebase.firestore.FieldValue.serverTimestamp()
+          : new Date(),
+        updatedAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+          ? firebase.firestore.FieldValue.serverTimestamp()
+          : new Date()
+      };
+
+      withTimeout(
+        window.firestoreDb.collection('users').doc(email).set(fsData, { merge: true }),
+        2500
+      ).catch(e => console.warn('Firestore user sync warning:', e.message));
     }
 
-    // 7. เข้าสู่ระบบสำเร็จทันที!
+    // 5. อัปเดตแคชผู้ใช้ในเครื่องทันที
+    if (window.cachedUsers && Array.isArray(window.cachedUsers)) {
+      const existingIdx = window.cachedUsers.findIndex(u => (u[0] || '').toLowerCase() === email);
+      if (existingIdx >= 0) {
+        window.cachedUsers[existingIdx][1] = name;
+        window.cachedUsers[existingIdx][2] = role;
+        window.cachedUsers[existingIdx][3] = status;
+        window.cachedUsers[existingIdx][4] = picture;
+        window.cachedUsers[existingIdx][5] = new Date().toISOString();
+      } else {
+        window.cachedUsers.push([email, name, role, status, picture, new Date().toISOString()]);
+      }
+      try { localStorage.setItem('cached_system_users', JSON.stringify(window.cachedUsers)); } catch(e) {}
+    }
+
+    // 6. เข้าสู่ระบบสำเร็จทันที!
     finalizeLogin(name, role, email);
 
   } catch (error) {
@@ -6638,8 +6659,8 @@ async function fetchUsers(forceSheet = false) {
   // 1. ถ้าไม่บังคับโหลดจาก Sheet และเชื่อมต่อ Firebase แล้ว ให้ดึงจาก Firestore ก่อน (รวดเร็ว Real-time 0.1 วิ)
   if (!forceSheet && window.firestoreDb) {
     try {
-      const snap = await window.firestoreDb.collection('users').get();
-      if (!snap.empty) {
+      const snap = await withTimeout(window.firestoreDb.collection('users').get(), 2000);
+      if (snap && !snap.empty) {
         const users = [];
         snap.forEach(doc => {
           const d = doc.data() || {};
@@ -6665,7 +6686,7 @@ async function fetchUsers(forceSheet = false) {
         return;
       }
     } catch (fbErr) {
-      console.warn("Fetch users from Firestore warning:", fbErr);
+      console.warn("Fetch users from Firestore fallback note:", fbErr.message);
     }
   }
 
@@ -6684,9 +6705,9 @@ async function fetchUsers(forceSheet = false) {
       try { localStorage.setItem('cached_system_users', JSON.stringify(sheetData)); } catch(e) {}
       renderUserTable();
 
-      // Auto-sync ลง Firestore เงียบๆ ในเบื้องหลัง
+      // Auto-sync ลง Firestore เงียบๆ ในเบื้องหลัง (non-blocking)
       if (window.firestoreDb && sheetData.length > 0) {
-        silentSyncUsersToFirebase(sheetData).catch(e => console.warn('Silent sync users error:', e));
+        silentSyncUsersToFirebase(sheetData).catch(e => console.warn('Silent sync users note:', e.message));
       }
     } else {
       throw new Error(sheetData && sheetData.error ? sheetData.error : 'ไม่พบข้อมูลผู้ใช้');
@@ -6730,10 +6751,6 @@ async function fetchUsers(forceSheet = false) {
 
 // นำเข้าข้อมูลผู้ใช้ทั้งหมดจาก Google Sheet ลง Firebase Firestore
 async function migrateUsersFromSheets() {
-  if (!window.firestoreDb) {
-    return Swal.fire('Firebase ยังไม่พร้อม', 'กรุณารอระบบเชื่อมต่อ Firebase สักครู่ หรือรีเฟรชหน้าเว็บ', 'warning');
-  }
-
   Swal.fire({
     title: 'กำลังดึงข้อมูลจาก Google Sheet...',
     html: 'กำลังอ่านข้อมูลรายชื่อผู้ใช้จากแท็บ <b>Users</b> ใน Google Sheets<br><span class="text-xs text-slate-400">อาจใช้เวลาสักครู่...</span>',
@@ -6761,53 +6778,69 @@ async function migrateUsersFromSheets() {
     });
 
     let count = 0;
-    const batch = window.firestoreDb.batch ? window.firestoreDb.batch() : null;
-
-    for (const u of sheetUsers) {
-      const email = (u[0] || '').toString().trim().toLowerCase();
-      if (!email) continue;
-      const name = (u[1] || '').toString().trim();
-      const role = (u[2] || 'Teacher').toString().trim();
-      const status = (u[3] || 'approved').toString().trim();
-      const picture = (u[4] || '').toString().trim();
-      const lastLogin = u[5] ? new Date(u[5]) : new Date();
-
-      const docRef = window.firestoreDb.collection('users').doc(email);
-      const dataToSave = {
-        email: email,
-        name: name,
-        role: role,
-        status: status,
-        picture: picture,
-        lastLogin: (lastLogin && !isNaN(lastLogin.getTime())) ? lastLogin : new Date(),
-        migratedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
-      if (batch) {
-        batch.set(docRef, dataToSave, { merge: true });
-      } else {
-        await docRef.set(dataToSave, { merge: true });
-      }
-      count++;
-    }
+    const batch = (window.firestoreDb && window.firestoreDb.batch) ? window.firestoreDb.batch() : null;
 
     if (batch) {
-      await batch.commit();
+      for (const u of sheetUsers) {
+        const email = (u[0] || '').toString().trim().toLowerCase();
+        if (!email) continue;
+        const name = (u[1] || '').toString().trim();
+        const role = (u[2] || 'Teacher').toString().trim();
+        const status = (u[3] || 'approved').toString().trim();
+        const picture = (u[4] || '').toString().trim();
+        const lastLogin = u[5] ? new Date(u[5]) : new Date();
+
+        const docRef = window.firestoreDb.collection('users').doc(email);
+        const dataToSave = {
+          email: email,
+          name: name,
+          role: role,
+          status: status,
+          picture: picture,
+          lastLogin: (lastLogin && !isNaN(lastLogin.getTime())) ? lastLogin : new Date(),
+          migratedAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+            ? firebase.firestore.FieldValue.serverTimestamp()
+            : new Date()
+        };
+
+        batch.set(docRef, dataToSave, { merge: true });
+        count++;
+      }
     }
 
-    // อัปเดตตารางและแคช
+    let firestoreSaved = false;
+    if (batch) {
+      try {
+        await withTimeout(batch.commit(), 4000);
+        firestoreSaved = true;
+      } catch (fsErr) {
+        console.warn('Firestore batch.commit note (rules or network):', fsErr.message);
+      }
+    }
+
+    // อัปเดตตารางและแคชทันทีเสมอ
     allUsersList = sheetUsers;
     window.cachedUsers = sheetUsers;
     try { localStorage.setItem('cached_system_users', JSON.stringify(sheetUsers)); } catch(e) {}
     renderUserTable();
 
-    Swal.fire({
-      icon: 'success',
-      title: 'ดึงข้อมูลสำเร็จ!',
-      html: `นำเข้าข้อมูลผู้ใช้ <b>${count}</b> บัญชี ไปยัง Firebase เรียบร้อยแล้ว 🎉<br><span class="text-xs text-slate-500">ต่อไปนี้หน้าจัดการผู้ใช้จะโหลดได้ทันทีแบบ Real-time</span>`,
-      confirmButtonColor: '#265D5A',
-      confirmButtonText: 'ตกลง'
-    });
+    if (firestoreSaved) {
+      Swal.fire({
+        icon: 'success',
+        title: 'ดึงข้อมูลสำเร็จ!',
+        html: `นำเข้าข้อมูลผู้ใช้ <b>${sheetUsers.length}</b> บัญชี ไปยัง Firebase และอัปเดตระบบเรียบร้อยแล้ว 🎉`,
+        confirmButtonColor: '#265D5A',
+        confirmButtonText: 'ตกลง'
+      });
+    } else {
+      Swal.fire({
+        icon: 'info',
+        title: 'ดึงข้อมูลจาก Google Sheet สำเร็จ!',
+        html: `ดึงรายชื่อผู้ใช้จาก Google Sheet สำเร็จ <b>${sheetUsers.length}</b> บัญชี และอัปเดตลงตารางแล้ว<br><span class="text-xs text-slate-500">หมายเหตุ: ยังไม่สามารถเขียนลง Firestore ได้เนื่องจากติดสิทธิ์ Firestore Rules</span>`,
+        confirmButtonColor: '#265D5A',
+        confirmButtonText: 'ตกลง'
+      });
+    }
 
   } catch (e) {
     console.error('Migrate users error:', e);
@@ -8936,14 +8969,17 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       let fbUsers = [];
       if (window.firestoreDb) {
         try {
-          const snap = await window.firestoreDb.collection('users').get();
+          const getSnapPromise = typeof window.withTimeout === 'function'
+            ? window.withTimeout(window.firestoreDb.collection('users').get(), 2000)
+            : window.firestoreDb.collection('users').get();
+          const snap = await getSnapPromise;
           snap.forEach(doc => {
             const data = doc.data();
             data.email = doc.id; // ใช้ Document ID เป็น email
             fbUsers.push(data);
           });
         } catch (e) {
-          console.warn('Cannot fetch from Firebase', e);
+          console.warn('Cannot fetch from Firebase (fallback to GAS):', e.message);
         }
       }
 

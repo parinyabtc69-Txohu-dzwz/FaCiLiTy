@@ -18,6 +18,14 @@ let firestoreDb = null;
 let firebaseStorage = null;
 let firebaseAuth = null;
 
+// Global timeout helper for async operations to prevent network hanging
+window.withTimeout = function(promise, ms = 3000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Operation_Timeout')), ms))
+  ]);
+};
+
 function initFirebase() {
   if (typeof firebase === 'undefined') {
     console.warn('Firebase SDK ยังไม่ถูกโหลดในหน้าเว็บ');

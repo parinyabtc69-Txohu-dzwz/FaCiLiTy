@@ -186,7 +186,8 @@ const MasterData = (() => {
 
     try {
       const colRef = window.firestoreDb.collection('master_data');
-      const snap = await colRef.get();
+      const getPromise = typeof window.withTimeout === 'function' ? window.withTimeout(colRef.get(), 2500) : colRef.get();
+      const snap = await getPromise;
 
       if (snap.empty) {
         // หากใน Firebase ยังไม่มีข้อมูล ให้สร้างชุดข้อมูลเริ่มต้นทันที (Auto-Seed)
