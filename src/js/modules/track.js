@@ -1175,6 +1175,19 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     const box = $('track-detail-body');
     if (!box) return;
     const t = TYPES[job.type] || { label: 'งานทั่วไป', prefix: 'T', icon: 'fa-wrench', chip: 'bg-slate-100 text-slate-700' };
+
+    const userCanDelete = canDeleteJob(job);
+    const headerActions = $('track-detail-header-actions');
+    if (headerActions) {
+      headerActions.innerHTML = `
+        <button type="button" onclick="TrackUI.deleteJob('${job.id}', event)"
+          class="px-3.5 py-2 rounded-xl text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 transition-all font-medium text-xs sm:text-sm flex items-center gap-1.5 shadow-sm active:scale-95"
+          title="${userCanDelete ? 'ลบงานนี้' : 'สิทธิ์ลบงาน (เฉพาะผู้แจ้ง/หัวหน้างาน/แอดมิน)'}">
+          <i class="fa-regular fa-trash-can text-sm"></i>
+          <span class="inline">ลบงาน</span>
+        </button>
+      `;
+    }
     
     box.innerHTML = `
       <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 mb-4 shadow-sm">
@@ -1206,7 +1219,23 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         <div id="track-detail-user-image-wrap" class="mt-4 ${job.image ? '' : 'hidden'}">
           ${job.image ? imageBlock(job.image, 'รูปที่ผู้แจ้งแนบมา') : ''}
         </div>
-      </section>`;
+      </section>
+
+      <!-- แถบปุ่มจัดการงานด้านล่าง (สำหรับทั้งคอมและมือถือ) -->
+      <div class="mt-4 pt-1 flex items-center justify-between gap-3 flex-wrap">
+        <button type="button" onclick="TrackUI.backToList()"
+          class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs sm:text-sm font-medium transition flex items-center gap-2 shadow-sm">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>กลับหน้ารายการ</span>
+        </button>
+
+        <button type="button" onclick="TrackUI.deleteJob('${job.id}', event)"
+          class="px-4 py-2.5 rounded-xl text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 text-xs sm:text-sm font-medium transition flex items-center gap-2 shadow-sm active:scale-95"
+          title="${userCanDelete ? 'ลบงานนี้' : 'สิทธิ์ลบงาน (เฉพาะผู้แจ้ง/หัวหน้างาน/แอดมิน)'}">
+          <i class="fa-regular fa-trash-can"></i>
+          <span>ลบงาน #${job.id}</span>
+        </button>
+      </div>`;
 
     // --- Chat Section Setup ---
     // ห้องแชทผูกกับ chatId ของงาน (ไม่ซ้ำ แม้รหัสงานจะถูกนำกลับมาใช้) / งานเก่าที่ยังไม่มี chatId ใช้รหัสงานเดิมก่อน แล้วย้ายให้อัตโนมัติ
@@ -2971,6 +3000,8 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       currentChatRoomId = null;
       const chatBox = $('track-chat-messages');
       if (chatBox) chatBox.innerHTML = '';
+      const headerActions = $('track-detail-header-actions');
+      if (headerActions) headerActions.innerHTML = '';
       state.currentJobId = null;
       nav('page-track');
     },

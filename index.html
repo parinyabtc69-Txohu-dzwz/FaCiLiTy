@@ -1899,15 +1899,19 @@
 <!-- ================= ระบบติดตามงานซ่อม: รายละเอียดงาน ================= -->
 <div id="page-track-detail" class="page-section max-w-3xl mx-auto py-2">
 
-  <div class="flex items-center gap-3 mb-5">
-    <button onclick="TrackUI.backToList()" id="track-detail-back"
-      class="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:border-[#265D5A] transition-all">
-      <i class="fa-solid fa-arrow-left"></i>
-    </button>
-    <div>
-      <h2 class="text-xl font-semibold text-slate-800">รายละเอียดงาน</h2>
-      <p class="text-xs text-slate-500">ติดตามความคืบหน้าและข้อความจากช่าง</p>
+  <div class="flex items-center justify-between gap-3 mb-5">
+    <div class="flex items-center gap-3 min-w-0">
+      <button onclick="TrackUI.backToList()" id="track-detail-back"
+        class="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:border-[#265D5A] transition-all shrink-0">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <div class="min-w-0">
+        <h2 class="text-xl font-semibold text-slate-800 truncate">รายละเอียดงาน</h2>
+        <p class="text-xs text-slate-500 truncate">ติดตามความคืบหน้าและข้อความจากช่าง</p>
+      </div>
     </div>
+    <!-- ปุ่มลบงานด้านบน (แสดงทั้งคอมและมือถือ) -->
+    <div id="track-detail-header-actions" class="shrink-0 flex items-center gap-2"></div>
   </div>
 
   <div id="track-detail-body"></div>
@@ -8708,6 +8712,19 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     const box = $('track-detail-body');
     if (!box) return;
     const t = TYPES[job.type] || { label: 'งานทั่วไป', prefix: 'T', icon: 'fa-wrench', chip: 'bg-slate-100 text-slate-700' };
+
+    const userCanDelete = canDeleteJob(job);
+    const headerActions = $('track-detail-header-actions');
+    if (headerActions) {
+      headerActions.innerHTML = `
+        <button type="button" onclick="TrackUI.deleteJob('${job.id}', event)"
+          class="px-3.5 py-2 rounded-xl text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 transition-all font-medium text-xs sm:text-sm flex items-center gap-1.5 shadow-sm active:scale-95"
+          title="${userCanDelete ? 'ลบงานนี้' : 'สิทธิ์ลบงาน (เฉพาะผู้แจ้ง/หัวหน้างาน/แอดมิน)'}">
+          <i class="fa-regular fa-trash-can text-sm"></i>
+          <span class="inline">ลบงาน</span>
+        </button>
+      `;
+    }
     
     box.innerHTML = `
       <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 mb-4 shadow-sm">
@@ -8739,7 +8756,23 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         <div id="track-detail-user-image-wrap" class="mt-4 ${job.image ? '' : 'hidden'}">
           ${job.image ? imageBlock(job.image, 'รูปที่ผู้แจ้งแนบมา') : ''}
         </div>
-      </section>`;
+      </section>
+
+      <!-- แถบปุ่มจัดการงานด้านล่าง (สำหรับทั้งคอมและมือถือ) -->
+      <div class="mt-4 pt-1 flex items-center justify-between gap-3 flex-wrap">
+        <button type="button" onclick="TrackUI.backToList()"
+          class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs sm:text-sm font-medium transition flex items-center gap-2 shadow-sm">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>กลับหน้ารายการ</span>
+        </button>
+
+        <button type="button" onclick="TrackUI.deleteJob('${job.id}', event)"
+          class="px-4 py-2.5 rounded-xl text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 text-xs sm:text-sm font-medium transition flex items-center gap-2 shadow-sm active:scale-95"
+          title="${userCanDelete ? 'ลบงานนี้' : 'สิทธิ์ลบงาน (เฉพาะผู้แจ้ง/หัวหน้างาน/แอดมิน)'}">
+          <i class="fa-regular fa-trash-can"></i>
+          <span>ลบงาน #${job.id}</span>
+        </button>
+      </div>`;
 
     // --- Chat Section Setup ---
     // ห้องแชทผูกกับ chatId ของงาน (ไม่ซ้ำ แม้รหัสงานจะถูกนำกลับมาใช้) / งานเก่าที่ยังไม่มี chatId ใช้รหัสงานเดิมก่อน แล้วย้ายให้อัตโนมัติ
@@ -10504,6 +10537,8 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       currentChatRoomId = null;
       const chatBox = $('track-chat-messages');
       if (chatBox) chatBox.innerHTML = '';
+      const headerActions = $('track-detail-header-actions');
+      if (headerActions) headerActions.innerHTML = '';
       state.currentJobId = null;
       nav('page-track');
     },

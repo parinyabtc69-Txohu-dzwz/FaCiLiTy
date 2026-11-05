@@ -95,15 +95,19 @@
 <!-- ================= ระบบติดตามงานซ่อม: รายละเอียดงาน ================= -->
 <div id="page-track-detail" class="page-section max-w-3xl mx-auto py-2">
 
-  <div class="flex items-center gap-3 mb-5">
-    <button onclick="TrackUI.backToList()" id="track-detail-back"
-      class="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:border-[#265D5A] transition-all">
-      <i class="fa-solid fa-arrow-left"></i>
-    </button>
-    <div>
-      <h2 class="text-xl font-semibold text-slate-800">รายละเอียดงาน</h2>
-      <p class="text-xs text-slate-500">ติดตามความคืบหน้าและข้อความจากช่าง</p>
+  <div class="flex items-center justify-between gap-3 mb-5">
+    <div class="flex items-center gap-3 min-w-0">
+      <button onclick="TrackUI.backToList()" id="track-detail-back"
+        class="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#265D5A] hover:border-[#265D5A] transition-all shrink-0">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <div class="min-w-0">
+        <h2 class="text-xl font-semibold text-slate-800 truncate">รายละเอียดงาน</h2>
+        <p class="text-xs text-slate-500 truncate">ติดตามความคืบหน้าและข้อความจากช่าง</p>
+      </div>
     </div>
+    <!-- ปุ่มลบงานด้านบน (แสดงทั้งคอมและมือถือ) -->
+    <div id="track-detail-header-actions" class="shrink-0 flex items-center gap-2"></div>
   </div>
 
   <div id="track-detail-body"></div>
