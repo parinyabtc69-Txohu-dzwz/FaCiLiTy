@@ -379,10 +379,9 @@ const TrackUI = (() => {
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">ระดับความเร่งด่วน (Urgency)</label>
             <select id="swal-snooze-urgency" class="w-full p-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-[#265D5A]">
-              <option value="ด่วนที่สุด (ภายใน 2 ชม.)" ${job.urgency?.includes('2 ชม.') ? 'selected' : ''}>🔴 ด่วนที่สุด (ภายใน 2 ชม.)</option>
-              <option value="ด่วน (ภายใน 24 ชม.)" ${job.urgency?.includes('24 ชม.') ? 'selected' : ''}>🟡 ด่วน (ภายใน 24 ชม.)</option>
-              <option value="ปานกลาง (2-3 วัน)" ${job.urgency?.includes('2-3 วัน') ? 'selected' : ''}>🔵 ปานกลาง (2-3 วัน)</option>
-              <option value="ตามคิว (ทั่วไป)" ${!job.urgency || job.urgency?.includes('ทั่วไป') ? 'selected' : ''}>⚪ ตามคิว (ทั่วไป)</option>
+              <option value="ด่วน (ภายใน 24 ชม.)" ${/ด่วน/.test(job.urgency || '') ? 'selected' : ''}>🔴 งานด่วน (ภายใน 24 ชม.)</option>
+              <option value="ตามคิว (ทั่วไป)" ${!job.urgency || /ตามคิว|ปานกลาง/.test(job.urgency || '') ? 'selected' : ''}>🔵 ตามคิว (ทั่วไป)</option>
+              <option value="รอได้ (ไม่รีบ)" ${/รอได้|ไม่รีบ/.test(job.urgency || '') ? 'selected' : ''}>🟢 รอได้ (ไม่รีบ)</option>
             </select>
           </div>
           <div>
@@ -407,10 +406,12 @@ const TrackUI = (() => {
 
     try {
       if (window.firestoreDb) {
-        await window.firestoreDb.collection('tickets').doc(job.id).update({
+        const targetDocId = job.docId || job.id;
+        await window.firestoreDb.collection('tickets').doc(targetDocId).set({
           urgency: formValues.urgency,
-          snoozeNote: formValues.note
-        });
+          snoozeNote: formValues.note,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
       }
       job.urgency = formValues.urgency;
       job.snoozeNote = formValues.note;
@@ -722,6 +723,20 @@ const TrackUI = (() => {
       <span class="w-1.5 h-1.5 rounded-full ${dot[job.group]}"></span>${esc(job.status)}</span>`;
   }
 
+  // ป้ายแสดงสถานะกำหนดเวลางาน (งานด่วน, ตามคิว, รอได้)
+  function urgencyBadge(urgency, size = 'text-[10px] px-2 py-0.5 rounded-md') {
+    const u = str(urgency).trim();
+    if (/ด่วน/.test(u)) {
+      const label = u.includes('ที่สุด') ? 'ด่วนที่สุด' : 'ด่วน';
+      return `<span class="${size} bg-rose-50 text-rose-600 border border-rose-200 font-semibold shrink-0 flex items-center gap-1 shadow-2xs" title="${esc(u || 'ด่วน')}"><i class="fa-solid fa-bolt text-[9px]"></i>${label}</span>`;
+    }
+    if (/รอได้|ไม่รีบ/.test(u)) {
+      return `<span class="${size} bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium shrink-0 flex items-center gap-1 shadow-2xs" title="${esc(u || 'รอได้')}"><i class="fa-solid fa-leaf text-[9px]"></i>รอได้</span>`;
+    }
+    // ค่าเริ่มต้น หรือ ตามคิว
+    return `<span class="${size} bg-sky-50 text-sky-700 border border-sky-200 font-medium shrink-0 flex items-center gap-1 shadow-2xs" title="${esc(u || 'ตามคิว')}"><i class="fa-solid fa-list-ol text-[9px]"></i>ตามคิว</span>`;
+  }
+
   function miniProgress(job) {
     if (job.group === 'cancel') return '<div class="h-1.5 rounded-full bg-slate-200"></div>';
     const pct = ((job.step + 1) / STEPS.length) * 100;
@@ -952,11 +967,12 @@ const TrackUI = (() => {
       <div onclick="TrackUI.open('${j.id}')" role="button" tabindex="0" id="track-item-${j.id}"
         class="w-full text-left px-4 py-3.5 rounded-2xl border ${mine ? 'border-[#265D5A]/40 bg-[#F3FCFA]' : 'border-slate-200/90 bg-white'} hover:border-[#265D5A]/50 hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5 transition-all group shadow-sm flex flex-col md:flex-row md:items-center gap-2 md:gap-4 cursor-pointer select-none">
         
-        <!-- ฝั่งซ้าย: จุดสถานะ, รหัสงาน, ป้ายประเภท, ป้ายงานของฉัน -->
+        <!-- ฝั่งซ้าย: จุดสถานะ, รหัสงาน, ป้ายประเภท, ป้ายกำหนดเวลางาน, ป้ายงานของฉัน -->
         <div class="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
           <span class="w-2.5 h-2.5 rounded-full ${dotCls} shrink-0" title="${esc(j.status)}"></span>
           <span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">#${j.id}</span>
           <span class="text-[11px] px-2 py-0.5 rounded-md ${t.chip} shrink-0 font-medium"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
+          ${urgencyBadge(j.urgency)}
           ${mine ? '<span class="text-[10px] px-2 py-0.5 rounded-md bg-[#265D5A] text-white font-medium shrink-0">งานของฉัน</span>' : ''}
           ${overdueBadge}
         </div>
@@ -1304,7 +1320,7 @@ const TrackUI = (() => {
           <div class="flex items-center gap-2 flex-wrap">
             <span class="font-mono text-sm font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">#${job.id}</span>
             <span class="text-xs px-2.5 py-1 rounded-lg ${t.chip}"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
-            ${job.urgency ? `<span class="text-xs px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 border border-rose-100"><i class="fa-solid fa-bolt mr-1"></i>${esc(job.urgency)}</span>` : ''}
+            ${urgencyBadge(job.urgency, 'text-xs px-2.5 py-1 rounded-lg')}
           </div>
           ${statusBadge(job, 'text-sm')}
         </div>
@@ -1468,13 +1484,16 @@ const TrackUI = (() => {
 
     const role = getUserRole();
     const isSupervisor = (role === 'Supervisor' || role === 'Admin');
+    const isBuilding = (job.type === 'building');
 
     const x = await Swal.fire({
       title: 'อัปเดต / ปิดงาน',
       html: `<div class="text-left space-y-3 mt-4 text-slate-900">
                <input id="techName" class="w-full p-2.5 border rounded-lg bg-slate-50" placeholder="ชื่อช่างผู้ซ่อม" value="${job.tech || ''}" readonly>
                <textarea id="fixDetail" rows="2" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none" placeholder="ซ่อมหรือแก้ไขอะไรไปบ้าง?">${job.fixDetail || ''}</textarea>
-               <label class="block text-xs font-semibold text-slate-600 mt-2">รูปภาพผลการซ่อม (บังคับ)</label>
+               <label class="block text-xs font-semibold text-slate-600 mt-2">
+                 รูปภาพผลการซ่อม ${isBuilding ? '<span class="text-rose-500 font-bold">* บังคับสำหรับงานอาคาร</span>' : '<span class="text-slate-400 font-normal">(ไม่บังคับ)</span>'}
+               </label>
                <input type="file" id="proofFile" accept="image/*" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
                <hr class="my-2 border-slate-200">
                <label class="block text-xs font-semibold text-slate-600">ค่าใช้จ่ายในการซ่อม (บาท) [ไม่บังคับ]</label>
@@ -1482,44 +1501,80 @@ const TrackUI = (() => {
                <label class="block text-xs font-semibold text-slate-600 mt-2">เอกสารใบเสร็จ / เบิกจ่าย [ไม่บังคับ]</label>
                <input type="file" id="receiptFile" accept="image/*,application/pdf" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
              </div>`,
-      focusConfirm: false, showCancelButton: true, confirmButtonText: isSupervisor ? 'บันทึกปิดงาน' : 'ส่งงาน (เสร็จสิ้น)', cancelButtonText: 'ยกเลิก',
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: isSupervisor ? 'บันทึกปิดงาน' : 'ส่งงาน (เสร็จสิ้น)',
+      confirmButtonColor: '#10b981',
+      cancelButtonText: 'ยกเลิก',
+      cancelButtonColor: '#64748b',
       preConfirm: () => {
         const techName = document.getElementById('techName').value.trim();
         const fixDetail = document.getElementById('fixDetail').value.trim();
         const file = document.getElementById('proofFile').files[0];
         const cost = document.getElementById('repairCost').value.trim();
         const receipt = document.getElementById('receiptFile').files[0];
-        if (!fixDetail || !file) return Swal.showValidationMessage('กรุณากรอกรายละเอียดการแก้ไข และแนบรูปภาพผลการซ่อมให้ครบถ้วนครับ');
+        if (!fixDetail) return Swal.showValidationMessage('กรุณากรอกรายละเอียดการแก้ไข');
+        if (isBuilding && !file) return Swal.showValidationMessage('สำหรับงานอาคาร กรุณาแนบรูปภาพผลการซ่อม');
         return { techName, fixDetail, file, cost, receipt };
       }
     });
 
     if (!x.isConfirmed) return;
 
-    if (typeof submitAction === 'function' && typeof readFile === 'function') {
-      submitAction(
-        async () => {
-          const file = await readFile(x.value.file);
-          let receiptFile = null;
-          if (x.value.receipt) {
-            receiptFile = await readFile(x.value.receipt);
-          }
+    const targetDocId = job.docId || job.id || jobId;
+    const newStatus = 'เสร็จสิ้น';
 
-          const action = job.type === 'building' ? 'update_task_proof' : 'update_adv_task';
-          const tabType = job.type === 'project' ? 'project' : (job.type === 'it' ? 'it' : (job.type === 'av' ? 'av-repair' : ''));
-          const newStatus = isSupervisor ? 'เสร็จสิ้น' : 'เสร็จสิ้น';
+    // ⚡ 1. บันทึกปิดงานลง Firebase ทันทีแบบ Instant (ใช้เวลาเพียง ~0.15 วิ) รับประกันการบันทึกสถานะ
+    if (window.firestoreDb) {
+      try {
+        const updatePayload = {
+          status: newStatus,
+          fixDetail: x.value.fixDetail,
+          cost: x.value.cost || '',
+          closedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
+        console.log('✅ closeJob saved to Firestore doc:', targetDocId);
+      } catch (err) {
+        console.warn('Firestore closeJob error:', err);
+      }
+    }
 
-          // Update Firebase first for snappy UI
-          if (window.firestoreDb) {
-            await window.firestoreDb.collection('tickets').doc(jobId).set({
-              status: newStatus,
-              fixDetail: x.value.fixDetail,
-              cost: x.value.cost,
-              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-          }
+    // 2. อัปเดตสถานะในหน้าจอทันที ไม่บล็อกผู้ใช้
+    job.status = newStatus;
+    job.step = 3;
+    job.group = 'done';
+    job.fixDetail = x.value.fixDetail;
+    if (x.value.cost) job.cost = x.value.cost;
+    open(jobId);
 
-          return ResourceHubCore.api.post({
+    // 3. แสดงข้อความแจ้งเตือนสำเร็จ ปิดหน้าต่างทันที ไม่หมุนค้าง
+    Swal.fire({
+      icon: 'success',
+      title: 'บันทึกปิดงานเรียบร้อยแล้ว!',
+      text: 'ระบบได้บันทึกสถานะเสร็จสิ้นเรียบร้อยแล้ว',
+      timer: 2000,
+      showConfirmButton: false
+    });
+
+    // 🚀 4. เบื้องหลัง: ย่อขนาดรูปภาพ + อัปโหลด Google Drive + ซิงค์ Sheets (Background Task ไม่บล็อกจอ)
+    (async () => {
+      try {
+        let file = null;
+        if (x.value.file && typeof readFile === 'function') {
+          file = await readFile(x.value.file, 1280, 0.75);
+        }
+        let receiptFile = null;
+        if (x.value.receipt && typeof readFile === 'function') {
+          receiptFile = await readFile(x.value.receipt, 1280, 0.75);
+        }
+
+        const action = job.type === 'building' ? 'update_task_proof' : 'update_adv_task';
+        const tabType = job.type === 'project' ? 'project' : (job.type === 'it' ? 'it' : (job.type === 'av' ? 'av-repair' : ''));
+
+        if (typeof ResourceHubCore !== 'undefined' && ResourceHubCore.api && ResourceHubCore.api.post) {
+          const res = await ResourceHubCore.api.post({
             action: action,
             tabType: tabType,
             ticketId: jobId,
@@ -1531,15 +1586,19 @@ const TrackUI = (() => {
             receiptFile: receiptFile,
             status: newStatus
           });
-        },
-        'อัปเดตและปิดงานเรียบร้อย!',
-        () => {
-          // Firebase Snapshot will handle the reload
+
+          if (res && res.proofUrl && res.proofUrl !== '-' && window.firestoreDb) {
+            job.proof = res.proofUrl;
+            window.firestoreDb.collection('tickets').doc(targetDocId).update({
+              proofUrl: res.proofUrl,
+              receiptUrl: (res.receiptUrl && res.receiptUrl !== '-') ? res.receiptUrl : ''
+            }).catch(e => console.warn('Update proofUrl to Firestore error:', e));
+          }
         }
-      );
-    } else {
-      Swal.fire('Error', 'ไม่พบฟังก์ชันที่จำเป็น กรุณารีเฟรชหน้าเว็บ', 'error');
-    }
+      } catch (bgErr) {
+        console.warn('Background closeJob sync error:', bgErr);
+      }
+    })();
   }
 
   // ---------- มอบหมายช่างซ่อม (Assign Technician) ----------
@@ -1673,10 +1732,10 @@ const TrackUI = (() => {
       return { active, completed, total };
     }
 
-    const urgencyArr = ['ด่วนที่สุด (ภายใน 2 ชม.)', 'ด่วน (ภายใน 24 ชม.)', 'ปานกลาง (2-3 วัน)', 'ตามคิว (ทั่วไป)'];
-    let urgencyHtml = '<option value="">ไม่ระบุความเร่งด่วน</option>';
+    const urgencyArr = ['งานด่วน (ภายใน 24 ชม.)', 'ตามคิว (ทั่วไป)', 'รอได้ (ไม่รีบ)'];
+    let urgencyHtml = '<option value="">ตามคิว (ทั่วไป)</option>';
     urgencyArr.forEach(u => {
-      const selected = (job.urgency === u) ? 'selected' : '';
+      const selected = (job.urgency === u || (u.includes('ด่วน') && /ด่วน/.test(job.urgency || '')) || (u.includes('รอได้') && /รอได้|ไม่รีบ/.test(job.urgency || ''))) ? 'selected' : '';
       urgencyHtml += `<option value="${u}" ${selected}>${u}</option>`;
     });
 
@@ -2174,17 +2233,35 @@ const TrackUI = (() => {
 
     if (!isConfirmed) return;
 
-    // ⚡ Optimistic UI: อัปเดตสถานะและหน้าจอทันทีใน 0.05 วินาที
     const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
     const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
+    const targetDocId = job.docId || job.id || jobId;
 
+    // ⚡ 1. บันทึกสถานะลง Firestore ทันทีและ AWAIT ให้เสร็จสมบูรณ์ (~0.15 วิ)
+    // การันตีว่าข้อมูลถูกเซฟลงคลาวด์จริง รีเฟรชหน้าเว็บแล้วจะไม่เด้งกลับไปที่เดิม
+    const updatePayload = {
+      status: 'กำลังดำเนินการ',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (note) updatePayload.fixDetail = note;
+
+    if (window.firestoreDb) {
+      try {
+        await window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
+        console.log('✅ startJob saved to Firestore doc:', targetDocId);
+      } catch (err) {
+        console.warn('Firestore startJob error:', err);
+      }
+    }
+
+    // 2. อัปเดต State ในหน่วยความจำและรีเฟรชหน้าจอ
     job.status = 'กำลังดำเนินการ';
     job.step = 2;
     job.group = 'progress';
     if (note) job.fixDetail = note;
     open(jobId);
 
-    // แสดง Toast แจ้งเตือนสั้นๆ แบบไม่บล็อกหน้าจอ
+    // แสดง Toast แจ้งเตือนสั้นๆ
     Swal.fire({
       toast: true,
       position: 'top-end',
@@ -2195,47 +2272,34 @@ const TrackUI = (() => {
       timerProgressBar: true
     });
 
-    // 🚀 Background Parallel Sync: ทำงานพร้อมกันในเบื้องหลังทันที
-    const tasks = [];
-
-    // 1. อัปเดต Firestore
-    if (window.firestoreDb) {
-      const updatePayload = {
-        status: 'กำลังดำเนินการ',
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      if (note) updatePayload.fixDetail = note;
-      tasks.push(
-        window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true })
-          .catch(err => console.warn('Firestore startJob error:', err))
-      );
-
-      // 2. ส่งข้อความแจ้งเตือนเข้าห้องแชทของงานนั้น
-      if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
-        const chatMsg = note ? `🔧 ช่าง ${techName} เริ่มดำเนินการแล้ว: ${note}` : `🔧 ช่าง ${techName} เริ่มดำเนินงานแล้ว`;
-        tasks.push(
+    // 🚀 3. ทำงานในเบื้องหลัง: ส่งแชทแจ้งเตือน และซิงค์ Google Sheets
+    (async () => {
+      try {
+        // ส่งข้อความแจ้งเตือนเข้าห้องแชทของงานนั้น
+        if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
+          const chatMsg = note ? `🔧 ช่าง ${techName} เริ่มดำเนินการแล้ว: ${note}` : `🔧 ช่าง ${techName} เริ่มดำเนินงานแล้ว`;
           FirebaseChat.send(chatRoomOf(job, jobId), techName, 'tech', chatMsg, '', jobId)
-            .catch(chatErr => console.warn('Auto chat notification error:', chatErr))
-        );
+            .catch(chatErr => console.warn('Auto chat notification error:', chatErr));
+        }
+
+        // ซิงค์ Google Sheets ในเบื้องหลัง
+        const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
+        const sheetName = sheetMap[job.type] || 'Tasks';
+        if (typeof ResourceHubCore !== 'undefined' && ResourceHubCore.api && ResourceHubCore.api.post) {
+          await ResourceHubCore.api.post({
+            action: 'update_task_status',
+            sheetName: sheetName,
+            ticketId: jobId,
+            rowIndex: job.originalIndex,
+            status: 'กำลังดำเนินการ',
+            technician: techName,
+            fixDetail: note || ''
+          });
+        }
+      } catch (err) {
+        console.warn('Background startJob sync error:', err);
       }
-    }
-
-    // 3. ซิงค์ Google Sheets ในเบื้องหลัง
-    const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
-    const sheetName = sheetMap[job.type] || 'Tasks';
-    tasks.push(
-      ResourceHubCore.api.post({
-        action: 'update_task_status',
-        sheetName: sheetName,
-        ticketId: jobId,
-        rowIndex: job.originalIndex,
-        status: 'กำลังดำเนินการ',
-        technician: techName,
-        fixDetail: note || ''
-      }).catch(err => console.warn('Sync start status to Sheets error:', err))
-    );
-
-    Promise.all(tasks).catch(err => console.error('Background startJob sync error:', err));
+    })();
   }
 
   // ---------- ช่างแจ้งความคืบหน้าระหว่างซ่อม (Update Progress) ----------

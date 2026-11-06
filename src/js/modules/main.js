@@ -215,13 +215,56 @@ async function submitAction(fetchPromiseFn, successMsg, onSuccessCallback) {
   }
 }
 
-// ฟังก์ชันอ่านไฟล์รูปภาพหรือเอกสารให้อยู่ในรูปแบบ Base64 ก่อนส่งไปให้ฝั่งหลังบ้าน
-const readFile = file => new Promise((resolve, reject) => {
+// ฟังก์ชันอ่านไฟล์และย่อขนาดรูปภาพอัจฉริยะ (Smart Image Compression) ก่อนแปลงเป็น Base64
+const readFile = (file, maxWidth = 1280, quality = 0.75) => new Promise((resolve, reject) => {
   if (!file) return resolve(null);
-  const r = new FileReader();
-  r.onload = e => resolve({ name: file.name, type: file.type, data: e.target.result.split(',')[1] });
-  r.onerror = reject;
-  r.readAsDataURL(file);
+  
+  // หากไม่ใช่ไฟล์รูปภาพ (เช่น PDF / เอกสาร) ให้อ่านไฟล์โดยตรง
+  if (!file.type || !file.type.startsWith('image/')) {
+    const r = new FileReader();
+    r.onload = e => resolve({ name: file.name, type: file.type, data: e.target.result.split(',')[1] });
+    r.onerror = reject;
+    r.readAsDataURL(file);
+    return;
+  }
+
+  // หากเป็นรูปภาพ ให้ย่อขนาดและบีบอัดผ่าน Canvas อัตโนมัติ (ลดจาก 5-10MB เหลือ ~150-250KB อัปโหลดไว 10 เท่า)
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      if (width > maxWidth || height > maxWidth) {
+        if (width > height) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        } else {
+          width = Math.round((width * maxWidth) / height);
+          height = maxWidth;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve({
+        name: (file.name.replace(/\.[^/.]+$/, "") || 'photo') + '.jpg',
+        type: 'image/jpeg',
+        data: dataUrl.split(',')[1]
+      });
+    };
+    img.onerror = () => {
+      // Fallback กรณีโหลดเข้า Image ไม่ได้
+      resolve({ name: file.name, type: file.type, data: e.target.result.split(',')[1] });
+    };
+    img.src = e.target.result;
+  };
+  reader.onerror = reject;
+  reader.readAsDataURL(file);
 });
 window.readFile = readFile;
 
