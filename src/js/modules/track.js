@@ -816,17 +816,7 @@ const TrackUI = (() => {
       }
     }
 
-    // 4. ปุ่ม "ดึงข้อมูลจาก Sheet" (เฉพาะ Admin และ Supervisor)
-    const migrateBtn = $('track-migrate-btn');
-    if (migrateBtn) {
-      if (role === 'Admin' || role === 'Supervisor') {
-        migrateBtn.classList.remove('hidden');
-      } else {
-        migrateBtn.classList.add('hidden');
-      }
-    }
-
-    // 4.1 ปุ่ม "จัดลำดับเลขคิวใหม่" (เฉพาะ Admin และ Supervisor)
+    // 4. ปุ่ม "จัดลำดับเลขคิวใหม่" (เฉพาะ Admin และ Supervisor)
     const reindexBtn = $('track-reindex-btn');
     if (reindexBtn) {
       if (role === 'Admin' || role === 'Supervisor') {
@@ -2785,251 +2775,15 @@ const TrackUI = (() => {
 
 
 
-  // ---------- ดึงข้อมูลจาก Google Sheets เข้า Firebase (Optimized Batch Write & Silent Auto-Sync) ----------
+  // ---------- ย้ายข้อมูลจาก Sheet (ยกเลิกการดึงจาก Google Sheets แล้ว ระบบทำงานบน Firebase 100%) ----------
   async function migrateFromSheets(silent = false) {
-    if (!window.firestoreDb) {
-      if (!silent) alertBox('error', 'ข้อผิดพลาด', 'ยังไม่ได้เชื่อมต่อ Firebase');
-      return;
-    }
-
     if (!silent) {
-      const confirm = await Swal.fire({
-        title: 'ดึงข้อมูลจาก Google Sheet?',
-        html: 'ระบบจะดึงข้อมูลทั้งหมดจาก Google Sheets และบันทึกเข้า Firebase<br><b>รายการที่มีอยู่แล้วจะไม่ถูกทับ</b>',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: '<i class="fa-solid fa-cloud-arrow-down mr-1"></i> ดึงข้อมูลทันที',
-        confirmButtonColor: '#265D5A',
-        cancelButtonText: 'ยกเลิก',
-        cancelButtonColor: '#64748b'
-      });
-      if (!confirm.isConfirmed) return;
-
       Swal.fire({
-        title: 'กำลังซิงก์ข้อมูลจาก Sheet...',
-        html: 'กำลังเชื่อมต่อและดึงข้อมูลทุกหมวด<br>กรุณารอสักครู่ (ประมาณ 1-3 วินาที)',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
+        icon: 'info',
+        title: 'ระบบใช้ Firebase 100%',
+        text: 'ปัจจุบันระบบเชื่อมต่อและจัดเก็บข้อมูลบน Firebase Firestore โดยตรง ไม่จำเป็นต้องดึงจาก Sheet อีกต่อไป',
+        confirmButtonColor: '#265D5A'
       });
-    }
-
-    try {
-      const [buildingData, avData, advData] = await Promise.all([
-        ResourceHubCore.api.get('get_tasks').catch(() => []),
-        ResourceHubCore.api.get('get_av_requests').catch(() => []),
-        ResourceHubCore.api.get('get_adv_tasks').catch(() => ({ it: [], av: [], project: [] }))
-      ]);
-
-      const parseDateToTs = (v) => {
-        if (!v) return null;
-        if (v instanceof Date) return firebase.firestore.Timestamp.fromDate(v);
-        const parsed = parseDate(v);
-        if (parsed && !isNaN(parsed)) return firebase.firestore.Timestamp.fromDate(parsed);
-        const d = new Date(v);
-        return isNaN(d) ? null : firebase.firestore.Timestamp.fromDate(d);
-      };
-
-      const items = [];
-
-      const fmtSeq = (n) => (n < 100 ? String(n).padStart(2, '0') : String(n));
-
-      // 1. อาคาร
-      if (Array.isArray(buildingData)) {
-        buildingData.forEach((row, idx) => {
-          if (!row || !row[0]) return;
-          items.push({
-            ticketId: `BLD-${fmtSeq(idx + 1)}`,
-            type: 'building',
-            subject: row[1] || row[2] || 'แจ้งซ่อมบำรุงอาคาร',
-            detail: row[2] || '',
-            reporterName: row[3] || '',
-            status: row[4] || 'รอดำเนินการ',
-            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
-            fixDetail: row[6] || '',
-            techName: row[7] || '',
-            proofUrl: (row[8] && row[8] !== '-') ? row[8] : '',
-            cost: row[9] || '',
-            urgency: row[11] || '',
-            dept: row[12] || '',
-            location: row[13] || '',
-            incidentDate: parseDateToTs(row[14]),
-            contact: row[15] || '',
-            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            isMigrated: true
-          });
-        });
-      }
-
-      // 2. ยืมโสตฯ
-      if (Array.isArray(avData)) {
-        avData.forEach((row, idx) => {
-          if (!row || !row[0]) return;
-          items.push({
-            ticketId: `AV-${fmtSeq(idx + 1)}`,
-            type: 'av',
-            subject: 'ขอยืม-คืนโสตทัศนูปกรณ์',
-            detail: row[2] || '',
-            reporterName: row[1] || '',
-            status: row[5] || 'จัดเตรียมแล้ว',
-            location: row[4] ? String(row[4]) : '',
-            techName: row[6] || '',
-            incidentDate: parseDateToTs(row[3]),
-            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            isMigrated: true
-          });
-        });
-      }
-
-      // 3. IT
-      if (advData && Array.isArray(advData.it)) {
-        advData.it.forEach((row, idx) => {
-          if (!row || !row[0]) return;
-          items.push({
-            ticketId: `IT-${fmtSeq(idx + 1)}`,
-            type: 'it',
-            subject: row[1] || 'แจ้งซ่อมไอที',
-            detail: row[2] || '',
-            reporterName: row[3] || '',
-            status: row[4] || 'รอดำเนินการ',
-            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
-            proofUrl: (row[6] && row[6] !== '-') ? row[6] : '',
-            fixDetail: row[7] || '',
-            techName: row[8] || '',
-            cost: row[9] || '',
-            urgency: row[11] || '',
-            dept: row[12] || '',
-            location: row[13] || '',
-            incidentDate: parseDateToTs(row[14]),
-            contact: row[15] || '',
-            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            isMigrated: true
-          });
-        });
-      }
-
-      // 4. ซ่อมโสตฯ
-      if (advData && Array.isArray(advData.av)) {
-        advData.av.forEach((row, idx) => {
-          if (!row || !row[0]) return;
-          items.push({
-            ticketId: `AV-${fmtSeq((Array.isArray(avData) ? avData.length : 0) + idx + 1)}`,
-            type: 'av',
-            subject: row[1] || 'แจ้งซ่อมอุปกรณ์โสตฯ',
-            detail: row[2] || '',
-            reporterName: row[3] || '',
-            status: row[4] || 'รอดำเนินการ',
-            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
-            proofUrl: (row[6] && row[6] !== '-') ? row[6] : '',
-            fixDetail: row[7] || '',
-            techName: row[8] || '',
-            cost: row[9] || '',
-            urgency: row[11] || '',
-            dept: row[12] || '',
-            location: row[13] || '',
-            incidentDate: parseDateToTs(row[14]),
-            contact: row[15] || '',
-            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            isMigrated: true
-          });
-        });
-      }
-
-      // 5. โครงการ
-      if (advData && Array.isArray(advData.project)) {
-        advData.project.forEach((row, idx) => {
-          if (!row || !row[0]) return;
-          items.push({
-            ticketId: `PRJ-${fmtSeq(idx + 1)}`,
-            type: 'project',
-            subject: row[1] || 'เสนอโครงการ/จัดซื้อ',
-            detail: row[2] || '',
-            reporterName: row[3] || '',
-            status: row[4] || 'รอพิจารณาอนุมัติ',
-            fileUrl: (row[5] && row[5] !== '-') ? row[5] : '',
-            proofUrl: (row[6] && row[6] !== '-') ? row[6] : '',
-            fixDetail: row[7] || '',
-            techName: row[8] || '',
-            cost: row[9] || '',
-            urgency: row[11] || '',
-            dept: row[12] || '',
-            location: row[13] || '',
-            targetDate: parseDateToTs(row[14]),
-            contact: row[15] || '',
-            createdAt: parseDateToTs(row[0]) || firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            isMigrated: true
-          });
-        });
-      }
-
-      if (!items.length) {
-        if (!silent) throw new Error('ไม่พบข้อมูลจาก Google Sheet');
-        return;
-      }
-
-      // ตรวจสอบ ID ที่มีอยู่แล้วใน Firebase เพียง 1 query เดียว (ไม่ต้อง loop get)
-      const existingSnap = await window.firestoreDb.collection('tickets').get();
-      const existingIds = new Set();
-      existingSnap.forEach(doc => existingIds.add(doc.id));
-
-      // ตรวจสอบเอกสารเดิมที่มีอยู่แล้ว หากขาด fileUrl แต่ใน Sheet มีรูป ให้ merge update คืนค่ารูปภาพทันที
-      const healBatch = window.firestoreDb.batch();
-      let healedCount = 0;
-      existingSnap.forEach(doc => {
-        const d = doc.data();
-        if (!d.fileUrl || d.fileUrl === '-' || !d.fileUrl.startsWith('http')) {
-          const match = items.find(it => it.ticketId === doc.id || (it.subject === d.subject && it.reporterName === d.reporterName));
-          if (match && match.fileUrl && match.fileUrl.startsWith('http')) {
-            healBatch.update(doc.ref, { fileUrl: match.fileUrl });
-            healedCount++;
-          }
-        }
-      });
-      if (healedCount > 0) {
-        await healBatch.commit();
-        console.log(`[AutoSync] Healed fileUrl for ${healedCount} existing tickets from Sheets.`);
-      }
-
-      const newItems = items.filter(item => !existingIds.has(item.ticketId));
-
-      // บันทึกเฉพาะรายการใหม่ด้วย Batch Write (เร็วสูงสุด 500 รายการต่อ 1 request)
-      if (newItems.length > 0) {
-        const batchSize = 450;
-        for (let i = 0; i < newItems.length; i += batchSize) {
-          const chunk = newItems.slice(i, i + batchSize);
-          const batch = window.firestoreDb.batch();
-          chunk.forEach(item => {
-            const ref = window.firestoreDb.collection('tickets').doc(item.ticketId);
-            batch.set(ref, item);
-          });
-          await batch.commit();
-        }
-      }
-
-      const added = newItems.length;
-      state.loaded = false;
-      await load(true);
-
-      if (!silent) {
-        Swal.fire({
-          icon: 'success',
-          title: 'ซิงก์ข้อมูลสำเร็จ!',
-          html: `เพิ่มรายการใหม่ <b>${added}</b> รายการ (จากทั้งหมด ${items.length} รายการใน Sheet)`,
-          confirmButtonColor: '#265D5A'
-        });
-      } else {
-        console.log(`[AutoSync] Synced ${added} new items from Sheets into Firebase.`);
-      }
-
-    } catch (e) {
-      console.error(e);
-      if (!silent) {
-        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, confirmButtonColor: '#e11d48' });
-      }
     }
   }
 
@@ -3284,20 +3038,9 @@ const TrackUI = (() => {
     }
   }
 
-  // ตัวกระตุ้น Silent Auto-Sync เบื้องหลัง (ไม่รบกวนหน้าจอ ไม่เด้ง Modal)
-  let lastAutoSyncTime = 0;
+  // ตัวกระตุ้น Silent Auto-Sync เบื้องหลัง (ยกเลิกแล้ว - ระบบทำงานบน Firebase 100%)
   function triggerSilentAutoSync() {
-    const role = getUserRole();
-    const isManager = (role === 'Executive' || role === 'Supervisor' || role === 'Admin');
-    if (!isManager) return;
-    const now = Date.now();
-    // อนุญาตให้รันเบื้องหลังสูงสุด 1 ครั้งทุกๆ 10 นาที
-    if (now - lastAutoSyncTime > 10 * 60 * 1000) {
-      lastAutoSyncTime = now;
-      setTimeout(() => {
-        migrateFromSheets(true).catch(e => console.warn('Silent auto-sync:', e));
-      }, 3000);
-    }
+    // Disabled: 100% Firebase - no background Sheet sync needed
   }
 
   // ---------- Actions ----------
@@ -3386,7 +3129,6 @@ const TrackUI = (() => {
       nav('page-track');
       render();
       load(opts.force);
-      triggerSilentAutoSync();
     }
   };
 })();
