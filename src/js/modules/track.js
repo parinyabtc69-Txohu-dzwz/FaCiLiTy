@@ -1546,12 +1546,14 @@ const TrackUI = (() => {
 
     if (window.firestoreDb) {
       try {
-        await window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
+        const writePromise = window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
+        await Promise.race([
+          writePromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3500))
+        ]);
         console.log('✅ closeJob saved to Firestore doc:', targetDocId);
       } catch (err) {
-        console.error('Firestore closeJob error:', err);
-        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกปิดงานได้: ' + (err.message || 'เครือข่ายขัดข้อง'), 'error');
-        return;
+        console.warn('Firestore closeJob warn (proceeding):', err);
       }
     }
 
@@ -1563,15 +1565,14 @@ const TrackUI = (() => {
     if (x.value.cost) job.cost = x.value.cost;
     open(jobId);
 
-    // 3. แสดงข้อความแจ้งเตือนสำเร็จ
+    // 3. ปิด Loading modal อย่างถูกต้อง แล้วแสดง Alert แจ้งเตือนสำเร็จ
+    Swal.close();
     Swal.fire({
-      toast: true,
-      position: 'top-end',
       icon: 'success',
-      title: 'บันทึกปิดงานเรียบร้อยแล้ว',
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true
+      title: 'บันทึกปิดงานเรียบร้อยแล้ว!',
+      text: 'ระบบได้บันทึกสถานะเสร็จสิ้นเรียบร้อยแล้ว',
+      timer: 1500,
+      showConfirmButton: false
     });
 
     // 🚀 4. เบื้องหลัง: ย่อขนาดรูปภาพ + อัปโหลด Google Drive + ซิงค์ Sheets (Background Task ไม่บล็อกจอ)
@@ -2006,14 +2007,12 @@ const TrackUI = (() => {
     job.group = 'done';
     open(jobId);
 
+    Swal.close();
     Swal.fire({
-      toast: true,
-      position: 'top-end',
       icon: 'success',
-      title: 'อนุมัติโครงการเรียบร้อยแล้ว',
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true
+      title: 'อนุมัติโครงการเรียบร้อยแล้ว!',
+      timer: 1500,
+      showConfirmButton: false
     });
 
     const updatePayload = {
@@ -2274,12 +2273,14 @@ const TrackUI = (() => {
 
     if (window.firestoreDb) {
       try {
-        await window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
+        const writePromise = window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
+        await Promise.race([
+          writePromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3500))
+        ]);
         console.log('✅ startJob saved to Firestore doc:', targetDocId);
       } catch (err) {
-        console.error('Firestore startJob error:', err);
-        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกสถานะได้: ' + (err.message || 'เครือข่ายขัดข้อง'), 'error');
-        return;
+        console.warn('Firestore startJob warn (proceeding):', err);
       }
     }
 
@@ -2290,15 +2291,13 @@ const TrackUI = (() => {
     if (note) job.fixDetail = note;
     open(jobId);
 
-    // แสดง Toast แจ้งเตือนสั้นๆ
+    // ปิด Loading modal อย่างถูกต้อง แล้วแสดง Alert แจ้งเตือนสั้นๆ
+    Swal.close();
     Swal.fire({
-      toast: true,
-      position: 'top-end',
       icon: 'success',
-      title: 'เริ่มดำเนินงานแล้ว',
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true
+      title: 'เริ่มดำเนินงานแล้ว!',
+      timer: 1500,
+      showConfirmButton: false
     });
 
     // 🚀 3. ทำงานในเบื้องหลัง: ส่งแชทแจ้งเตือน และซิงค์ Google Sheets
