@@ -1806,7 +1806,8 @@
 <div id="page-track" class="page-section max-w-5xl mx-auto py-2">
 
   <!-- Header -->
-  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#265D5A] via-[#2f6f6b] to-[#1a3f3d] text-white p-6 md:p-8 mb-6 shadow-lg">
+  <div
+    class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#265D5A] via-[#2f6f6b] to-[#1a3f3d] text-white p-6 md:p-8 mb-6 shadow-lg">
     <div class="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10"></div>
     <div class="absolute right-16 -bottom-14 w-32 h-32 rounded-full bg-[#B0EDE6]/20"></div>
     <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -1818,7 +1819,8 @@
         </button>
         <div>
           <h1 class="text-2xl md:text-3xl font-semibold">ติดตามงานซ่อม</h1>
-          <p class="text-sm text-white/75 font-light mt-1" id="track-header-subtitle">ดูคิวงานทั้งหมดในระบบ กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง</p>
+          <p class="text-sm text-white/75 font-light mt-1" id="track-header-subtitle">ดูคิวงานทั้งหมดในระบบ
+            กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง</p>
         </div>
       </div>
       <div class="flex flex-col md:flex-row items-start md:items-center gap-3">
@@ -1831,7 +1833,8 @@
           <i class="fa-solid fa-cloud-arrow-up"></i> ดึงข้อมูลจาก Sheet
         </button>
         <button onclick="TrackUI.reindexTickets(true)" id="track-reindex-btn"
-          class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center gap-2 transition-colors" title="รันเลขคิวงานทั้งหมดใหม่เริ่มต้นที่ 01">
+          class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center gap-2 transition-colors"
+          title="รันเลขคิวงานทั้งหมดใหม่เริ่มต้นที่ 01">
           <i class="fa-solid fa-arrow-down-1-9"></i> จัดลำดับเลขคิวใหม่
         </button>
       </div>
@@ -1855,20 +1858,26 @@
     </button>
     <button onclick="TrackUI.setStatus('pending')" data-status="pending"
       class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
-      <div class="text-xs text-rose-500 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500"></span>รอรับเรื่อง</div>
+      <div class="text-xs text-rose-500 flex items-center gap-1.5"><span
+          class="w-2 h-2 rounded-full bg-rose-500"></span>รอรับเรื่อง</div>
       <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-pending">-</div>
     </button>
     <button onclick="TrackUI.setStatus('progress')" data-status="progress"
       class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
-      <div class="text-xs text-amber-600 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span>กำลังดำเนินการ</div>
+      <div class="text-xs text-amber-600 flex items-center gap-1.5"><span
+          class="w-2 h-2 rounded-full bg-amber-500"></span>กำลังดำเนินการ</div>
       <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-progress">-</div>
     </button>
     <button onclick="TrackUI.setStatus('done')" data-status="done"
       class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
-      <div class="text-xs text-emerald-600 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>เสร็จสิ้น</div>
+      <div class="text-xs text-emerald-600 flex items-center gap-1.5"><span
+          class="w-2 h-2 rounded-full bg-emerald-500"></span>เสร็จสิ้น</div>
       <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-done">-</div>
     </button>
   </div>
+
+  <!-- แถบแจ้งเตือนงานมอบหมายแล้วยังไม่เริ่มทำ (ค้างเกินกำหนด) -->
+  <div id="track-unstarted-alert" class="hidden mb-5"></div>
 
   <!-- Filters -->
   <div class="flex flex-wrap items-center gap-2 mb-5">
@@ -1877,16 +1886,26 @@
       <i class="fa-solid fa-user"></i> เฉพาะงานของฉัน
     </button>
     <button onclick="TrackUI.toggleArchived()" id="track-archived-btn"
-      class="hidden px-3.5 py-2 rounded-full text-xs font-medium border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-colors items-center gap-1.5" title="ดูงานที่จัดเก็บไว้">
+      class="hidden px-3.5 py-2 rounded-full text-xs font-medium border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-colors items-center gap-1.5"
+      title="ดูงานที่จัดเก็บไว้">
       <i class="fa-solid fa-box-archive text-slate-400"></i> คลังจัดเก็บ
     </button>
     <span class="w-px h-6 bg-slate-200 mx-1 hidden md:inline-block"></span>
     <div class="flex flex-wrap gap-2" id="track-type-filters">
-      <button onclick="TrackUI.setType('all')" data-type="all" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors">ทุกประเภท</button>
-      <button onclick="TrackUI.setType('building')" data-type="building" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-wrench mr-1"></i>อาคาร</button>
-      <button onclick="TrackUI.setType('it')" data-type="it" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-desktop mr-1"></i>ไอที</button>
-      <button onclick="TrackUI.setType('av')" data-type="av" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-camera mr-1"></i>โสตฯ</button>
-      <button onclick="TrackUI.setType('project')" data-type="project" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-building-circle-check mr-1"></i>โครงการ</button>
+      <button onclick="TrackUI.setType('all')" data-type="all"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors">ทุกประเภท</button>
+      <button onclick="TrackUI.setType('building')" data-type="building"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i
+          class="fa-solid fa-wrench mr-1"></i>อาคาร</button>
+      <button onclick="TrackUI.setType('it')" data-type="it"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i
+          class="fa-solid fa-desktop mr-1"></i>ไอที</button>
+      <button onclick="TrackUI.setType('av')" data-type="av"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i
+          class="fa-solid fa-camera mr-1"></i>โสตฯ</button>
+      <button onclick="TrackUI.setType('project')" data-type="project"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i
+          class="fa-solid fa-building-circle-check mr-1"></i>โครงการ</button>
     </div>
   </div>
 
@@ -1917,7 +1936,8 @@
   <div id="track-detail-body"></div>
 
   <!-- Chat System (Firebase) -->
-  <div id="track-chat-section" class="mt-8 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden hidden">
+  <div id="track-chat-section"
+    class="mt-8 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden hidden">
     <!-- Chat Header -->
     <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -1929,51 +1949,56 @@
           <p id="track-chat-subtitle" class="text-xs text-slate-500">ข้อความแบบ Real-time</p>
         </div>
       </div>
-      <button type="button" onclick="TrackUI.clearChatHistory()" class="text-xs text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl border border-transparent hover:border-rose-200 transition flex items-center gap-1.5" title="ล้างข้อความในงานนี้">
+      <button type="button" onclick="TrackUI.clearChatHistory()"
+        class="text-xs text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl border border-transparent hover:border-rose-200 transition flex items-center gap-1.5"
+        title="ล้างข้อความในงานนี้">
         <i class="fa-regular fa-trash-can"></i>
         <span class="hidden sm:inline">ล้างแชท</span>
       </button>
     </div>
-    
+
     <!-- Chat Messages -->
     <div id="track-chat-messages" class="p-5 h-80 overflow-y-auto flex flex-col gap-4 bg-slate-50/50">
       <!-- Messages will be injected here -->
       <div class="text-center text-slate-400 text-sm mt-10">กำลังโหลดข้อความ...</div>
     </div>
-    
+
     <!-- Chat Input (ซ่อนเมื่องานปิดแล้ว) -->
     <div id="track-chat-input-wrap" class="p-4 bg-white border-t border-slate-200">
       <form id="track-chat-form" onsubmit="TrackUI.submitChat(event)" class="flex items-end gap-2">
-        <button type="button" onclick="document.getElementById('track-chat-image').click()" 
+        <button type="button" onclick="document.getElementById('track-chat-image').click()"
           class="shrink-0 w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors">
           <i class="fa-solid fa-image"></i>
         </button>
-        <input type="file" id="track-chat-image" accept="image/*" class="hidden" onchange="TrackUI.previewChatImage(this)">
-        
+        <input type="file" id="track-chat-image" accept="image/*" class="hidden"
+          onchange="TrackUI.previewChatImage(this)">
+
         <div class="flex-1 relative">
-          <div id="track-chat-preview" class="hidden absolute bottom-full left-0 mb-2 bg-slate-100 p-2 rounded-lg border shadow-sm">
+          <div id="track-chat-preview"
+            class="hidden absolute bottom-full left-0 mb-2 bg-slate-100 p-2 rounded-lg border shadow-sm">
             <img src="" id="track-chat-preview-img" class="h-16 w-auto rounded object-cover">
-            <button type="button" onclick="TrackUI.clearChatImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+            <button type="button" onclick="TrackUI.clearChatImage()"
+              class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
               <i class="fa-solid fa-times"></i>
             </button>
           </div>
           <input type="text" id="track-chat-input" placeholder="พิมพ์ข้อความที่นี่..." required
             class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
         </div>
-        
+
         <button type="submit" id="track-chat-submit"
           class="shrink-0 w-12 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors shadow-md">
           <i class="fa-solid fa-paper-plane"></i>
         </button>
       </form>
     </div>
-    <div id="track-chat-closed-note" class="hidden px-5 py-3 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
+    <div id="track-chat-closed-note"
+      class="hidden px-5 py-3 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
       <i class="fa-solid fa-lock mr-1"></i>งานนี้ปิดแล้ว — ดูประวัติแชทย้อนหลังได้อย่างเดียว
     </div>
   </div>
 
 </div>
-
 
       
       <!-- Firebase SDK -->
@@ -7553,12 +7578,13 @@ const TrackUI = (() => {
     type: 'all',     // all | building | it | av | project
     mineOnly: false,
     showArchived: false,
+    overdueFilter: false,
     searchTimer: null
   };
 
   let currentChatUnsubscribe = null;
   let currentChatTicketId = null;
-let currentChatRoomId = null; // รหัสห้องแชทจริงใน Firestore (chatId ของงาน) ไม่ซ้ำแม้รหัสงานถูกนำกลับมาใช้
+  let currentChatRoomId = null; // รหัสห้องแชทจริงใน Firestore (chatId ของงาน) ไม่ซ้ำแม้รหัสงานถูกนำกลับมาใช้
   let currentChatImageFile = null;
 
   // ---------- ข้อมูลประเภทงาน ----------
@@ -7650,7 +7676,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       try {
         const raw = localStorage.getItem('cached_system_users');
         if (raw) users = JSON.parse(raw);
-      } catch (e) {}
+      } catch (e) { }
     }
     if (Array.isArray(users)) {
       for (const u of users) {
@@ -7732,7 +7758,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       const userKey = (typeof currentEmail === 'string' && currentEmail) || (typeof currentTeacher === 'string' && currentTeacher) || 'guest';
       const raw = localStorage.getItem('read_tickets_' + userKey);
       return new Set(raw ? JSON.parse(raw) : []);
-    } catch(e) {
+    } catch (e) {
       return new Set();
     }
   }
@@ -7741,7 +7767,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     try {
       const userKey = (typeof currentEmail === 'string' && currentEmail) || (typeof currentTeacher === 'string' && currentTeacher) || 'guest';
       localStorage.setItem('read_tickets_' + userKey, JSON.stringify([...readSet]));
-    } catch(e) {}
+    } catch (e) { }
   }
 
   function toggleRead(jobId, event) {
@@ -7873,7 +7899,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
               chatSnap.forEach(m => b.delete(m.ref));
               await b.commit();
             }
-          } catch(chatErr) {
+          } catch (chatErr) {
             console.warn('Delete chat messages error:', chatErr);
           }
         }
@@ -7986,7 +8012,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
   function fromFirebase(docData, docId) {
     const status = docData.status || 'รอดำเนินการ';
     const cls = classify(status, docData.techName);
-    
+
     let createdDate = null;
     if (docData.createdAt) {
       if (typeof docData.createdAt.toDate === 'function') {
@@ -8004,12 +8030,12 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         }
       }
     }
-    
+
     let incidentDate = null;
     if (docData.incidentDate && docData.incidentDate.toDate) {
       incidentDate = docData.incidentDate.toDate();
     }
-    
+
     return {
       id: docData.ticketId || docId || '',
       docId: docId || docData.ticketId || '',
@@ -8038,6 +8064,8 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       contact: docData.contact || '',
       isArchived: Boolean(docData.isArchived),
       snoozeNote: docData.snoozeNote || '',
+      assignedAt: docData.assignedAt ? (docData.assignedAt.toDate ? docData.assignedAt.toDate() : (docData.assignedAt.seconds ? new Date(docData.assignedAt.seconds * 1000) : new Date(docData.assignedAt))) : null,
+      lastPingedAt: docData.lastPingedAt ? (docData.lastPingedAt.toDate ? docData.lastPingedAt.toDate() : (docData.lastPingedAt.seconds ? new Date(docData.lastPingedAt.seconds * 1000) : new Date(docData.lastPingedAt))) : null,
       approvedBy: docData.approvedBy || '',
       approvedAt: docData.approvedAt ? (docData.approvedAt.toDate ? docData.approvedAt.toDate() : docData.approvedAt) : null,
       approvalNote: docData.approvalNote || '',
@@ -8131,11 +8159,11 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
 
   // ---------- โหลดข้อมูล ----------
   let unsubscribeTickets = null;
-  
+
   async function load(force = false) {
     if (state.loading) return;
     if (state.loaded && !force) { render(); return; }
-    
+
 
 
     state.loading = true;
@@ -8150,7 +8178,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
 
     try {
       if (unsubscribeTickets) unsubscribeTickets();
-      
+
       // ดึงข้อมูล Real-time จาก Firebase Collection 'tickets'
       unsubscribeTickets = window.firestoreDb.collection('tickets')
         .orderBy('createdAt', 'desc')
@@ -8165,21 +8193,21 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
             }
             jobs.push(fromFirebase(data, doc.id));
           });
-          
+
           state.jobs = jobs;
           state.loaded = true;
-          
+
           if (state.loading) {
             state.loading = false;
             if (btn) btn.querySelector('i')?.classList.remove('fa-spin');
           }
-          
+
           render();
-          
+
           // ถ้าเปิดหน้ารายละเอียดค้างไว้ ให้ดึงข้อมูลมาอัปเดตแบบเนียนๆ
           const detailPage = $('page-track-detail');
           if (detailPage && detailPage.classList.contains('active') && state.currentJobId) {
-             open(state.currentJobId);
+            open(state.currentJobId);
           }
 
           // ตรวจจับและปรับรหัสคิวงานเก่าให้เป็นรหัสสั้นใหม่อัตโนมัติ (BLD-01)
@@ -8192,7 +8220,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
           state.loading = false;
           if (btn) btn.querySelector('i')?.classList.remove('fa-spin');
         });
-        
+
     } catch (e) {
       console.error('Track load error:', e);
       const list = $('track-list');
@@ -8220,6 +8248,15 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       }
       if (state.type !== 'all' && j.type !== state.type) return false;
       if (state.mineOnly && !isMine(j)) return false;
+      if (state.overdueFilter) {
+        const isUnstarted = Boolean(j.tech) && !(/กำลัง|รอตรวจรับ|แก้ไข/.test(j.status) || j.step === 2) && j.group !== 'done' && j.group !== 'cancel';
+        if (!isUnstarted) return false;
+        const aDate = j.assignedAt || j.created;
+        const eDays = aDate ? Math.floor((Date.now() - new Date(aDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+        const u = /ด่วน/.test(j.urgency || '');
+        const isOverdue = (u && eDays >= 1) || (!u && eDays >= 4);
+        if (!isOverdue) return false;
+      }
       if (!ignoreStatus && state.status !== 'all') {
         if (state.status === 'progress' && j.group !== 'progress') return false;
         if (state.status === 'pending' && j.group !== 'pending') return false;
@@ -8384,6 +8421,51 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       }
     }
 
+    // แถบแจ้งเตือนงานมอบหมายแล้วยังไม่เริ่มทำ (ค้างเกินกำหนด: ด่วน > 1 วัน, ปกติ > 4 วัน)
+    const overdueUnstartedList = state.jobs.filter(j => {
+      const isUnstarted = Boolean(j.tech) && !(/กำลัง|รอตรวจรับ|แก้ไข/.test(j.status) || j.step === 2) && j.group !== 'done' && j.group !== 'cancel';
+      if (!isUnstarted) return false;
+      const aDate = j.assignedAt || j.created;
+      const eDays = aDate ? Math.floor((Date.now() - new Date(aDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+      const u = /ด่วน/.test(j.urgency || '');
+      return (u && eDays >= 1) || (!u && eDays >= 4);
+    });
+
+    const unstartedAlert = $('track-unstarted-alert');
+    if (unstartedAlert) {
+      if (overdueUnstartedList.length > 0) {
+        const myOverdue = overdueUnstartedList.filter(j => isMine(j));
+        const isTechUser = (role === 'Tech' || role === 'AV');
+        const showMyNotice = isTechUser && myOverdue.length > 0;
+
+        unstartedAlert.innerHTML = `
+          <div class="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-900 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 font-bold text-sm shadow-sm">
+                <i class="fa-solid fa-bell animate-bounce"></i>
+              </span>
+              <div class="min-w-0 text-xs sm:text-sm">
+                ${showMyNotice ? `
+                  <b class="text-amber-950">แจ้งเตือนช่าง:</b> คุณมีงานที่ได้รับมอบหมายเกินกำหนด <span class="font-bold text-rose-600 underline">${myOverdue.length} รายการ</span> ที่ยังไม่ได้กดเริ่มงาน
+                ` : `
+                  <b class="text-amber-950">ติดตามงานมอบหมาย:</b> มีงานที่ช่างยังไม่กดเริ่มทำเกินกำหนด <span class="font-bold text-amber-800 underline">${overdueUnstartedList.length} รายการ</span> (ระบบจะสรุปส่ง LINE กลุ่มทุกเช้า 08:30 น.)
+                `}
+              </div>
+            </div>
+            <button onclick="TrackUI.filterOverdueUnstarted()"
+              class="shrink-0 px-3.5 py-1.5 rounded-xl ${state.overdueFilter ? 'bg-slate-700 hover:bg-slate-800 text-white' : 'bg-amber-600 hover:bg-amber-700 text-white'} text-xs font-semibold transition shadow-sm flex items-center gap-1.5 active:scale-95 w-full sm:w-auto justify-center">
+              <span>${state.overdueFilter ? 'แสดงทั้งหมด' : 'ดูเฉพาะงานค้าง (' + overdueUnstartedList.length + ')'}</span>
+              <i class="fa-solid ${state.overdueFilter ? 'fa-xmark' : 'fa-arrow-right'} text-[11px]"></i>
+            </button>
+          </div>
+        `;
+        unstartedAlert.classList.remove('hidden');
+      } else {
+        unstartedAlert.innerHTML = '';
+        unstartedAlert.classList.add('hidden');
+      }
+    }
+
     if (!items.length) {
       if (role === 'Teacher') {
         list.innerHTML = `<div class="col-span-full p-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
@@ -8417,16 +8499,28 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       const isRead = readSet.has(j.id);
       const userCanDelete = canDeleteJob(j);
 
+      const isUnstartedAssigned = Boolean(j.tech) && !(/กำลัง|รอตรวจรับ|แก้ไข/.test(j.status) || j.step === 2) && j.group !== 'done' && j.group !== 'cancel';
+      let overdueBadge = '';
+      if (isUnstartedAssigned) {
+        const aDate = j.assignedAt || j.created;
+        const eDays = aDate ? Math.floor((Date.now() - new Date(aDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+        const u = /ด่วน/.test(j.urgency || '');
+        if ((u && eDays >= 1) || (!u && eDays >= 4)) {
+          overdueBadge = `<span class="text-[10px] px-2 py-0.5 rounded-md ${u ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-amber-100 text-amber-800 border border-amber-200'} font-semibold shrink-0 flex items-center gap-1 animate-pulse" title="มอบหมายแล้ว ${eDays > 0 ? eDays + ' วัน' : 'วันนี้'} ยังไม่กดเริ่มงาน"><i class="fa-solid fa-clock"></i>ค้างเริ่มงาน ${eDays > 0 ? eDays + ' วัน' : 'วันนี้'}</span>`;
+        }
+      }
+
       return `
       <div onclick="TrackUI.open('${j.id}')" role="button" tabindex="0" id="track-item-${j.id}"
         class="w-full text-left px-4 py-3.5 rounded-2xl border ${mine ? 'border-[#265D5A]/40 bg-[#F3FCFA]' : 'border-slate-200/90 bg-white'} hover:border-[#265D5A]/50 hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5 transition-all group shadow-sm flex flex-col md:flex-row md:items-center gap-2 md:gap-4 cursor-pointer select-none">
         
         <!-- ฝั่งซ้าย: จุดสถานะ, รหัสงาน, ป้ายประเภท, ป้ายงานของฉัน -->
-        <div class="flex items-center gap-2.5 shrink-0">
+        <div class="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
           <span class="w-2.5 h-2.5 rounded-full ${dotCls} shrink-0" title="${esc(j.status)}"></span>
           <span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">#${j.id}</span>
           <span class="text-[11px] px-2 py-0.5 rounded-md ${t.chip} shrink-0 font-medium"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
           ${mine ? '<span class="text-[10px] px-2 py-0.5 rounded-md bg-[#265D5A] text-white font-medium shrink-0">งานของฉัน</span>' : ''}
+          ${overdueBadge}
         </div>
 
         <!-- ส่วนกลาง: ชื่อหัวข้องานหนา - รายละเอียดงานสีเทา บังคับบรรทัดเดียว (Truncate) -->
@@ -8447,6 +8541,12 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
 
           <!-- Gmail Action Icons (แสดงแทนที่ช่าง/เวลาเมื่อ Hover บน Desktop) -->
           <div class="hidden md:group-hover:flex items-center gap-1.5 absolute right-0 transition-all">
+            <!-- 0. เตือนช่าง (เฉพาะงานที่มีช่างแล้วแต่ยังไม่เริ่มทำ) -->
+            ${isUnstartedAssigned ? `
+            <button type="button" onclick="TrackUI.pingTech('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors" title="สะกิดเตือนช่างทาง LINE">
+              <i class="fa-solid fa-bell text-sm"></i>
+            </button>` : ''}
+
             <!-- 1. Snooze / Urgency นาฬิกา (เฉพาะช่างที่รับผิดชอบ/หัวหน้า/แอดมิน) -->
             ${canSnoozeJob(j) ? `
             <button type="button" onclick="TrackUI.openSnooze('${j.id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors" title="ตั้งเตือน / ปรับความเร่งด่วน">
@@ -8471,21 +8571,21 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     }
     return `<ol class="relative grid grid-cols-4 gap-1">
       ${STEPS.map((s, i) => {
-        const done = i <= job.step;
-        const current = i === job.step && job.group !== 'done';
-        const circle = done
-          ? (current ? 'bg-amber-400 text-white ring-4 ring-amber-100' : 'bg-[#265D5A] text-white')
-          : 'bg-white text-slate-300 border-2 border-slate-200';
-        const line = i < STEPS.length - 1
-          ? `<span class="absolute top-5 left-1/2 w-full h-1 ${i < job.step ? 'bg-[#265D5A]' : 'bg-slate-200'}"></span>` : '';
-        return `<li class="relative flex flex-col items-center text-center">
+      const done = i <= job.step;
+      const current = i === job.step && job.group !== 'done';
+      const circle = done
+        ? (current ? 'bg-amber-400 text-white ring-4 ring-amber-100' : 'bg-[#265D5A] text-white')
+        : 'bg-white text-slate-300 border-2 border-slate-200';
+      const line = i < STEPS.length - 1
+        ? `<span class="absolute top-5 left-1/2 w-full h-1 ${i < job.step ? 'bg-[#265D5A]' : 'bg-slate-200'}"></span>` : '';
+      return `<li class="relative flex flex-col items-center text-center">
           ${line}
           <span class="relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${circle} transition-all">
             <i class="fa-solid ${done && !current ? 'fa-check' : s.icon} text-sm"></i></span>
           <span class="mt-2 text-[11px] md:text-xs leading-tight ${done ? 'text-slate-800 font-semibold' : 'text-slate-400'}">${s.label}</span>
           ${current ? '<span class="mt-1 text-[10px] text-amber-600 font-medium">ขั้นตอนปัจจุบัน</span>' : ''}
         </li>`;
-      }).join('')}
+    }).join('')}
     </ol>`;
   }
 
@@ -8528,23 +8628,54 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         ? '<span class="text-xs text-emerald-600 font-semibold flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>ช่างเริ่มดำเนินการแล้ว และกำลังปฏิบัติงาน</span>'
         : '<span class="text-xs text-amber-600 font-medium flex items-center gap-1.5 mt-1"><i class="fa-regular fa-clock"></i>มอบหมายช่างแล้ว (รอช่างเริ่มดำเนินงาน)</span>';
 
+      const assignDate = job.assignedAt || job.created;
+      const elapsedDays = assignDate ? Math.floor((Date.now() - new Date(assignDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+      const isUrgent = /ด่วน/.test(job.urgency || '');
+      const isOverdue = !isInProgress && ((isUrgent && elapsedDays >= 1) || (!isUrgent && elapsedDays >= 4));
+
+      const overdueBanner = isOverdue ? `
+        <div class="mt-3.5 p-3 sm:p-4 rounded-2xl ${isUrgent ? 'bg-rose-50 border border-rose-200 text-rose-900' : 'bg-amber-50 border border-amber-200 text-amber-900'} shadow-sm">
+          <div class="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl ${isUrgent ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'} flex items-center justify-center shrink-0 text-sm font-bold shadow-xs">
+                <i class="fa-solid fa-triangle-exclamation animate-bounce"></i>
+              </span>
+              <div>
+                <div class="font-bold text-xs sm:text-sm flex items-center gap-1.5 flex-wrap">
+                  <span>มอบหมายแล้ว ${elapsedDays > 0 ? elapsedDays + ' วัน' : 'วันนี้'} ยังไม่ได้เริ่มดำเนินงาน</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full ${isUrgent ? 'bg-rose-200/70 text-rose-800' : 'bg-amber-200/70 text-amber-800'} font-bold">
+                    ${isUrgent ? 'ด่วน (เกินเกณฑ์ 1 วัน)' : 'ปกติ (เกินเกณฑ์ 4 วัน)'}
+                  </span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-0.5">ระบบจะแจ้งเตือนช่างทาง LINE กลุ่มรอบเช้า 08:30 น. หรือกดสะกิดเตือนได้ทันที</div>
+              </div>
+            </div>
+            <button type="button" onclick="TrackUI.pingTech('${job.id}', event)"
+              class="px-3.5 py-2 rounded-xl ${isUrgent ? 'bg-rose-600 hover:bg-rose-700' : 'bg-amber-600 hover:bg-amber-700'} text-white font-medium text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition shrink-0 w-full sm:w-auto justify-center">
+              <i class="fa-solid fa-bell"></i>
+              <span>สะกิดเตือนช่าง (LINE)</span>
+            </button>
+          </div>
+        </div>
+      ` : '';
+
       body = `<div class="flex items-center gap-3 text-sm text-slate-500">
         <div class="w-10 h-10 rounded-full bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-user-gear"></i></div>
         <div>
           <b class="text-slate-800 font-semibold">${esc(job.tech)}</b> ${job.techEmail ? `<span class="text-xs text-slate-400 font-normal">(${esc(job.techEmail)})</span>` : ''} รับผิดชอบงานนี้
           <br>${statusNotice}
-        </div></div>`;
+        </div></div>${overdueBanner}`;
     } else {
       body = `<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm text-slate-500">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-regular fa-hourglass-half"></i></div>
           <div>ยังไม่มีช่างรับงาน<br><span class="text-xs text-slate-400">เมื่อมีการมอบหมายช่าง ข้อความและปุ่มจัดการจะแสดงที่นี่</span></div>
         </div>
-        ${(getUserRole() === 'Supervisor' || getUserRole() === 'Admin') ? 
+        ${(getUserRole() === 'Supervisor' || getUserRole() === 'Admin') ?
           `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm w-full sm:w-auto flex items-center justify-center gap-1.5"><i class="fa-solid fa-user-plus"></i>มอบหมายงาน</button>` : ''}
       </div>`;
     }
-    
+
     let extra = '';
     const canManage = canManageJob(job);
     const role = getUserRole();
@@ -8554,10 +8685,13 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       if (!isInProgress) {
         // ขั้นตอนที่ 2: มอบหมายช่างแล้ว แต่ยังไม่เริ่มทำ -> แสดงปุ่มเด่น "รับงาน / เริ่มดำเนินงาน"
         extra = `<div class="mt-4 flex flex-wrap gap-2 justify-end border-t border-[#B0EDE6]/50 pt-3">
+          <button onclick="TrackUI.pingTech('${job.id}', event)" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition shadow-sm flex items-center gap-1.5 active:scale-95" title="ส่งแจ้งเตือนช่างเข้า LINE">
+            <i class="fa-solid fa-bell"></i> <span>เตือนช่าง (LINE)</span>
+          </button>
           <button onclick="TrackUI.startJob('${job.id}')" class="bg-[#265D5A] hover:bg-[#1a3f3d] text-white px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
             <i class="fa-solid fa-screwdriver-wrench"></i> <span>รับงาน / เริ่มดำเนินงาน</span>
           </button>
-          ${isSupervisor ? 
+          ${isSupervisor ?
             `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-white border border-[#265D5A] text-[#265D5A] hover:bg-[#F3FCFA] px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-user-pen"></i>เปลี่ยนช่าง</button>` : ''}
         </div>`;
       } else {
@@ -8569,7 +8703,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
           <button onclick="TrackUI.closeJob('${job.id}')" class="bg-[#10b981] hover:bg-[#059669] text-white px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
             <i class="fa-solid fa-check-circle"></i> <span>ซ่อมเสร็จแล้ว / ปิดงาน</span>
           </button>
-          ${isSupervisor ? 
+          ${isSupervisor ?
             `<button onclick="TrackUI.assignTech('${job.id}')" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1"><i class="fa-solid fa-user-pen"></i>เปลี่ยนช่าง</button>` : ''}
         </div>`;
       }
@@ -8694,7 +8828,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         readSet.add(id);
         saveReadSet(readSet);
       }
-    } catch(e) {}
+    } catch (e) { }
     let job = state.jobs.find(j => j.id === id);
     if (!job && window.firestoreDb) {
       try {
@@ -8725,7 +8859,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         </button>
       `;
     }
-    
+
     box.innerHTML = `
       <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 mb-4 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
@@ -8827,9 +8961,9 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       }, 1200);
 
       if (typeof FirebaseChat !== 'undefined' && FirebaseChat.listen) {
-         currentChatUnsubscribe = FirebaseChat.listen(chatRoomId, renderChatMessages);
+        currentChatUnsubscribe = FirebaseChat.listen(chatRoomId, renderChatMessages);
       } else {
-         renderChatMessages([]);
+        renderChatMessages([]);
       }
     }
 
@@ -8848,7 +8982,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
             if (adv) {
               window.advTasksData = adv;
               const list = (job.type === 'it' ? adv.it : (job.type === 'av' ? adv.av : adv.project)) || [];
-              const match = list.find(r => 
+              const match = list.find(r =>
                 (r[1] && job.subject && r[1].trim() === job.subject.trim()) &&
                 ((r[2] && job.detail && r[2].trim() === job.detail.trim()) || (r[3] && job.reporter && r[3].trim() === job.reporter.trim()))
               );
@@ -8859,7 +8993,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
           } else if (job.type === 'building') {
             const repairs = await ResourceHubCore.api.get('get_tasks');
             if (Array.isArray(repairs)) {
-              const match = repairs.find(r => 
+              const match = repairs.find(r =>
                 (r[1] && job.subject && r[1].trim() === job.subject.trim()) &&
                 ((r[2] && job.detail && r[2].trim() === job.detail.trim()) || (r[3] && job.reporter && r[3].trim() === job.reporter.trim()))
               );
@@ -8882,7 +9016,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
               }).catch(e => console.warn('Auto image heal update error:', e));
             }
           }
-        } catch(e) {
+        } catch (e) {
           console.warn('Auto image fetch error:', e);
         }
       })();
@@ -8946,7 +9080,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
           }
-          
+
           return ResourceHubCore.api.post({
             action: action,
             tabType: tabType,
@@ -8979,7 +9113,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     }
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
-    
+
     // ⚡ ใช้ Cache ของ Tech/AV list เพื่อให้โหลดไวใน 0.01 วิ (Memory -> LocalStorage)
     let techList = window.cachedTechList;
     if (!techList || !Array.isArray(techList) || techList.length === 0) {
@@ -8989,7 +9123,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
           techList = JSON.parse(stored);
           window.cachedTechList = techList;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (Array.isArray(techList)) {
@@ -9043,7 +9177,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
 
       if (techList.length > 0) {
         window.cachedTechList = techList;
-        try { localStorage.setItem('cached_tech_list', JSON.stringify(techList)); } catch(e) {}
+        try { localStorage.setItem('cached_tech_list', JSON.stringify(techList)); } catch (e) { }
       }
     }
 
@@ -9170,7 +9304,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         const select = document.getElementById('assignTechName');
         const card = document.getElementById('techDetailCard');
         if (!select || !card) return;
-        
+
         function renderCard() {
           const opt = select.options[select.selectedIndex];
           if (!opt || !select.value) {
@@ -9230,7 +9364,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         return { techName, techEmail, techPhone, techSkills, techRole, urgency };
       }
     });
-    
+
     if (formValues) {
       const { techName, techEmail, techPhone, techSkills, techRole, urgency } = formValues;
 
@@ -9238,6 +9372,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       job.tech = techName;
       if (techName && (!job.status || job.status === 'รอดำเนินการ')) {
         job.status = 'มอบหมายช่างแล้ว';
+        job.assignedAt = new Date();
         job.step = 1;
         job.group = 'progress';
       }
@@ -9272,6 +9407,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         };
         if (techName && (!job.status || job.status === 'รอดำเนินการ')) {
           updateData.status = 'มอบหมายช่างแล้ว';
+          updateData.assignedAt = firebase.firestore.FieldValue.serverTimestamp();
         }
         if (urgency) updateData.urgency = urgency;
         syncTasks.push(
@@ -9489,6 +9625,88 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     Promise.all(rejectTasks).catch(err => console.error('Background rejectProject sync error:', err));
   }
 
+  // ---------- สะกิดเตือนช่างรับผิดชอบงานทาง LINE (Manual Ping) ----------
+  async function pingTech(jobId, event) {
+    if (event) event.stopPropagation();
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    if (!job.tech) {
+      return Swal.fire('ไม่พบช่าง', 'งานนี้ยังไม่ได้มอบหมายช่างผู้รับผิดชอบ', 'info');
+    }
+
+    // Cooldown check (5 นาทีป้องกันการกดส่งซ้ำถี่เกินไป)
+    if (job.lastPingedAt) {
+      const pingMs = (job.lastPingedAt instanceof Date) ? job.lastPingedAt.getTime() : new Date(job.lastPingedAt).getTime();
+      const diffMin = Math.floor((Date.now() - pingMs) / (1000 * 60));
+      if (diffMin < 5) {
+        return Swal.fire({
+          icon: 'info',
+          title: 'เพิ่งส่งแจ้งเตือนไปเมื่อสักครู่',
+          text: `กรุณารออีก ${5 - diffMin} นาที เพื่อป้องกันการส่งข้อความซ้ำซ้อนเข้า LINE`
+        });
+      }
+    }
+
+    const assignDate = job.assignedAt || job.created;
+    const elapsedDays = assignDate ? Math.floor((Date.now() - new Date(assignDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const isUrgent = /ด่วน/.test(job.urgency || '');
+
+    const myName = (typeof currentTeacher === 'string' && currentTeacher) || localStorage.getItem('logged_teacher') || 'ผู้ดูแลระบบ';
+
+    const confirm = await Swal.fire({
+      title: 'สะกิดเตือนช่าง?',
+      html: `ต้องการส่งข้อความเตือน <b>${esc(job.tech)}</b> ทาง LINE กลุ่มหลัก เพื่อให้เริ่มดำเนินงาน <b>#${job.id}</b> หรือไม่?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#f59e0b',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: '<i class="fa-solid fa-bell mr-1"></i> ส่งเตือนเข้า LINE',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    // Toast แจ้งทันทีแบบ Optimistic
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: `ส่งข้อความเตือนช่าง ${esc(job.tech)} ทาง LINE เรียบร้อยแล้ว`,
+      showConfirmButton: false,
+      timer: 2500
+    });
+
+    // อัปเดต Firestore lastPingedAt
+    const now = new Date();
+    job.lastPingedAt = now;
+    if (window.firestoreDb) {
+      window.firestoreDb.collection('tickets').doc(job.docId || job.id).update({
+        lastPingedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(e => console.warn('Update lastPingedAt error:', e));
+    }
+
+    // ยิง API หลังบ้าน Google Apps Script ให้ส่ง Flex Message เข้า LINE
+    if (typeof ResourceHubCore !== 'undefined' && ResourceHubCore.api && ResourceHubCore.api.post) {
+      ResourceHubCore.api.post({
+        action: 'ping_technician',
+        ticketId: job.id,
+        subject: job.subject,
+        technician: job.tech,
+        technicianEmail: job.techEmail || '',
+        urgency: job.urgency || 'ปกติ',
+        pingedBy: myName,
+        elapsedDays: elapsedDays,
+        taskType: job.type || 'building'
+      }).catch(err => console.warn('Ping technician API error:', err));
+    }
+  }
+
+  function filterOverdueUnstarted() {
+    state.overdueFilter = !state.overdueFilter;
+    render();
+  }
+
   // ---------- ช่างกดรับงานและเริ่มดำเนินงาน (Start Job) ----------
   async function startJob(jobId) {
     let job = state.jobs.find(j => j.id === jobId);
@@ -9668,7 +9886,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     clearTimeout(window._chatLoadingTimer);
     const box = $('track-chat-messages');
     if (!box) return;
-    
+
     // 🛡️ กรองเฉพาะข้อความที่เป็นของงานนี้จริงๆ (ไม่เอาข้อความเก่าที่ค้างมาจากงานเดิมที่เคยถูกลบไปแล้ว)
     const job = state.jobs.find(j => j.id === currentChatTicketId);
     let validMessages = messages || [];
@@ -9683,7 +9901,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
             else if (msg.timestamp.seconds) msgMs = msg.timestamp.seconds * 1000;
             else if (msg.timestamp instanceof Date) msgMs = msg.timestamp.getTime();
             else { const d = new Date(msg.timestamp); if (!isNaN(d)) msgMs = d.getTime(); }
-          } catch(e) {}
+          } catch (e) { }
         } else if (msg.localTimestamp) {
           msgMs = msg.localTimestamp;
         }
@@ -9704,7 +9922,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
             });
             await b.commit();
             console.log(`[ChatCleanup] Purged ${staleMessages.length} orphaned messages from #${currentChatTicketId}`);
-          } catch(err) {
+          } catch (err) {
             console.warn('[ChatCleanup] Error purging stale messages:', err);
           }
         })();
@@ -9721,7 +9939,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       `;
       return;
     }
-    
+
     const uRole = getUserRole();
     let myName = ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || '')).trim();
     if (!myName) {
@@ -9729,7 +9947,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       else if (uRole === 'Admin') myName = 'Admin';
       else myName = 'Unknown';
     }
-    
+
     box.innerHTML = validMessages.map(msg => {
       const isMe = msg.senderName === myName;
       let time = 'เมื่อสักครู่';
@@ -9743,7 +9961,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
             const d = new Date(msg.timestamp);
             if (!isNaN(d)) time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
           }
-        } catch(e) {
+        } catch (e) {
           time = 'เมื่อสักครู่';
         }
       } else if (msg.localTimestamp) {
@@ -9751,12 +9969,12 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       }
 
       const roleColor = (msg.role === 'admin' || msg.role === 'tech') ? 'text-[#265D5A]' : (msg.role === 'executive' ? 'text-violet-700 font-bold' : 'text-slate-500');
-      
+
       let attachmentHtml = '';
       if (msg.attachmentUrl) {
         attachmentHtml = `<div class="mt-2"><img src="${driveThumb(msg.attachmentUrl)}" onclick="showImageModal('${esc(msg.attachmentUrl)}')" class="rounded-lg max-w-full h-auto max-h-40 object-cover cursor-pointer hover:opacity-90 border"></div>`;
       }
-      
+
       if (isMe) {
         return `
         <div class="flex flex-col items-end w-full">
@@ -9777,7 +9995,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         </div>`;
       }
     }).join('');
-    
+
     // Auto scroll to bottom
     setTimeout(() => { box.scrollTop = box.scrollHeight; }, 100);
   }
@@ -9805,7 +10023,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
         const d = new Date(ts);
         if (!isNaN(d)) return d.getTime();
       }
-    } catch (e) {}
+    } catch (e) { }
     return msg.localTimestamp || 0;
   }
 
@@ -9893,7 +10111,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
       }
       renderChatMessages([]);
       Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ล้างข้อความแชทเรียบร้อยแล้ว', timer: 2000, showConfirmButton: false });
-    } catch(err) {
+    } catch (err) {
       Swal.fire('ข้อผิดพลาด', err.message, 'error');
     }
   }
@@ -9907,11 +10125,11 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     if (isClosedJob(chatJob)) {
       return alertBox('info', 'งานนี้ปิดแล้ว', 'ดูประวัติแชทย้อนหลังได้อย่างเดียวครับ');
     }
-    
+
     const input = $('track-chat-input');
     const msg = input.value.trim();
     if (!msg && !currentChatImageFile) return;
-    
+
     const uRole = getUserRole();
     let senderName = ((typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (currentTeacher?.name || '')).trim();
     if (!senderName) {
@@ -9943,21 +10161,21 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     btn.disabled = true;
     input.disabled = true;
-    
+
     try {
       let attachmentUrl = '';
       const fileFn = typeof readFile === 'function' ? readFile : (window.readFile || null);
       if (!fileFn) throw new Error('ไม่พบฟังก์ชันสำหรับอ่านไฟล์ (readFile)');
       const fileData = await fileFn(currentChatImageFile);
       if (fileData) {
-         const res = await ResourceHubCore.api.post({ action: 'upload_chat_image', file: fileData, ticketId: targetTicketId });
-         if (res && res.fileUrl) attachmentUrl = res.fileUrl;
+        const res = await ResourceHubCore.api.post({ action: 'upload_chat_image', file: fileData, ticketId: targetTicketId });
+        if (res && res.fileUrl) attachmentUrl = res.fileUrl;
       }
-      
+
       await FirebaseChat.send(targetRoomId, senderName, role, msg, attachmentUrl, targetTicketId);
       input.value = '';
       clearChatImage();
-      
+
     } catch (err) {
       console.error(err);
       alertBox('error', 'ส่งข้อความไม่สำเร็จ', err.message);
@@ -9972,7 +10190,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
   function previewChatImage(input) {
     const file = input.files[0];
     if (!file) return clearChatImage();
-    
+
     currentChatImageFile = file;
     const reader = new FileReader();
     reader.onload = e => {
@@ -9981,7 +10199,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
     };
     reader.readAsDataURL(file);
   }
-  
+
   function clearChatImage() {
     currentChatImageFile = null;
     if ($('track-chat-image')) $('track-chat-image').value = '';
@@ -10448,7 +10666,7 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
           if (!isTarget) {
             try {
               await window.firestoreDb.collection('tickets').doc(ch.oldId).delete();
-            } catch (_) {}
+            } catch (_) { }
           }
         }
       }
@@ -10511,6 +10729,8 @@ let currentChatRoomId = null; // รหัสห้องแชทจริง�
   return {
     load,
     open,
+    pingTech,
+    filterOverdueUnstarted,
     startJob,
     updateProgress,
     deleteJob,

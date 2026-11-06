@@ -2,7 +2,8 @@
 <div id="page-track" class="page-section max-w-5xl mx-auto py-2">
 
   <!-- Header -->
-  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#265D5A] via-[#2f6f6b] to-[#1a3f3d] text-white p-6 md:p-8 mb-6 shadow-lg">
+  <div
+    class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#265D5A] via-[#2f6f6b] to-[#1a3f3d] text-white p-6 md:p-8 mb-6 shadow-lg">
     <div class="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10"></div>
     <div class="absolute right-16 -bottom-14 w-32 h-32 rounded-full bg-[#B0EDE6]/20"></div>
     <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -14,7 +15,8 @@
         </button>
         <div>
           <h1 class="text-2xl md:text-3xl font-semibold">ติดตามงานซ่อม</h1>
-          <p class="text-sm text-white/75 font-light mt-1" id="track-header-subtitle">ดูคิวงานทั้งหมดในระบบ กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง</p>
+          <p class="text-sm text-white/75 font-light mt-1" id="track-header-subtitle">ดูคิวงานทั้งหมดในระบบ
+            กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง</p>
         </div>
       </div>
       <div class="flex flex-col md:flex-row items-start md:items-center gap-3">
@@ -27,7 +29,8 @@
           <i class="fa-solid fa-cloud-arrow-up"></i> ดึงข้อมูลจาก Sheet
         </button>
         <button onclick="TrackUI.reindexTickets(true)" id="track-reindex-btn"
-          class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center gap-2 transition-colors" title="รันเลขคิวงานทั้งหมดใหม่เริ่มต้นที่ 01">
+          class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center gap-2 transition-colors"
+          title="รันเลขคิวงานทั้งหมดใหม่เริ่มต้นที่ 01">
           <i class="fa-solid fa-arrow-down-1-9"></i> จัดลำดับเลขคิวใหม่
         </button>
       </div>
@@ -51,20 +54,26 @@
     </button>
     <button onclick="TrackUI.setStatus('pending')" data-status="pending"
       class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
-      <div class="text-xs text-rose-500 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500"></span>รอรับเรื่อง</div>
+      <div class="text-xs text-rose-500 flex items-center gap-1.5"><span
+          class="w-2 h-2 rounded-full bg-rose-500"></span>รอรับเรื่อง</div>
       <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-pending">-</div>
     </button>
     <button onclick="TrackUI.setStatus('progress')" data-status="progress"
       class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
-      <div class="text-xs text-amber-600 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span>กำลังดำเนินการ</div>
+      <div class="text-xs text-amber-600 flex items-center gap-1.5"><span
+          class="w-2 h-2 rounded-full bg-amber-500"></span>กำลังดำเนินการ</div>
       <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-progress">-</div>
     </button>
     <button onclick="TrackUI.setStatus('done')" data-status="done"
       class="track-stat text-left p-4 rounded-2xl border bg-white hover:shadow-md transition-all">
-      <div class="text-xs text-emerald-600 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>เสร็จสิ้น</div>
+      <div class="text-xs text-emerald-600 flex items-center gap-1.5"><span
+          class="w-2 h-2 rounded-full bg-emerald-500"></span>เสร็จสิ้น</div>
       <div class="text-2xl font-semibold text-slate-800 mt-1" id="track-count-done">-</div>
     </button>
   </div>
+
+  <!-- แถบแจ้งเตือนงานมอบหมายแล้วยังไม่เริ่มทำ (ค้างเกินกำหนด) -->
+  <div id="track-unstarted-alert" class="hidden mb-5"></div>
 
   <!-- Filters -->
   <div class="flex flex-wrap items-center gap-2 mb-5">
@@ -73,16 +82,26 @@
       <i class="fa-solid fa-user"></i> เฉพาะงานของฉัน
     </button>
     <button onclick="TrackUI.toggleArchived()" id="track-archived-btn"
-      class="hidden px-3.5 py-2 rounded-full text-xs font-medium border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-colors items-center gap-1.5" title="ดูงานที่จัดเก็บไว้">
+      class="hidden px-3.5 py-2 rounded-full text-xs font-medium border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-colors items-center gap-1.5"
+      title="ดูงานที่จัดเก็บไว้">
       <i class="fa-solid fa-box-archive text-slate-400"></i> คลังจัดเก็บ
     </button>
     <span class="w-px h-6 bg-slate-200 mx-1 hidden md:inline-block"></span>
     <div class="flex flex-wrap gap-2" id="track-type-filters">
-      <button onclick="TrackUI.setType('all')" data-type="all" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors">ทุกประเภท</button>
-      <button onclick="TrackUI.setType('building')" data-type="building" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-wrench mr-1"></i>อาคาร</button>
-      <button onclick="TrackUI.setType('it')" data-type="it" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-desktop mr-1"></i>ไอที</button>
-      <button onclick="TrackUI.setType('av')" data-type="av" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-camera mr-1"></i>โสตฯ</button>
-      <button onclick="TrackUI.setType('project')" data-type="project" class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i class="fa-solid fa-building-circle-check mr-1"></i>โครงการ</button>
+      <button onclick="TrackUI.setType('all')" data-type="all"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors">ทุกประเภท</button>
+      <button onclick="TrackUI.setType('building')" data-type="building"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i
+          class="fa-solid fa-wrench mr-1"></i>อาคาร</button>
+      <button onclick="TrackUI.setType('it')" data-type="it"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i
+          class="fa-solid fa-desktop mr-1"></i>ไอที</button>
+      <button onclick="TrackUI.setType('av')" data-type="av"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i
+          class="fa-solid fa-camera mr-1"></i>โสตฯ</button>
+      <button onclick="TrackUI.setType('project')" data-type="project"
+        class="track-type px-3.5 py-2 rounded-full text-xs font-medium border transition-colors"><i
+          class="fa-solid fa-building-circle-check mr-1"></i>โครงการ</button>
     </div>
   </div>
 
@@ -113,7 +132,8 @@
   <div id="track-detail-body"></div>
 
   <!-- Chat System (Firebase) -->
-  <div id="track-chat-section" class="mt-8 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden hidden">
+  <div id="track-chat-section"
+    class="mt-8 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden hidden">
     <!-- Chat Header -->
     <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -125,45 +145,51 @@
           <p id="track-chat-subtitle" class="text-xs text-slate-500">ข้อความแบบ Real-time</p>
         </div>
       </div>
-      <button type="button" onclick="TrackUI.clearChatHistory()" class="text-xs text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl border border-transparent hover:border-rose-200 transition flex items-center gap-1.5" title="ล้างข้อความในงานนี้">
+      <button type="button" onclick="TrackUI.clearChatHistory()"
+        class="text-xs text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl border border-transparent hover:border-rose-200 transition flex items-center gap-1.5"
+        title="ล้างข้อความในงานนี้">
         <i class="fa-regular fa-trash-can"></i>
         <span class="hidden sm:inline">ล้างแชท</span>
       </button>
     </div>
-    
+
     <!-- Chat Messages -->
     <div id="track-chat-messages" class="p-5 h-80 overflow-y-auto flex flex-col gap-4 bg-slate-50/50">
       <!-- Messages will be injected here -->
       <div class="text-center text-slate-400 text-sm mt-10">กำลังโหลดข้อความ...</div>
     </div>
-    
+
     <!-- Chat Input (ซ่อนเมื่องานปิดแล้ว) -->
     <div id="track-chat-input-wrap" class="p-4 bg-white border-t border-slate-200">
       <form id="track-chat-form" onsubmit="TrackUI.submitChat(event)" class="flex items-end gap-2">
-        <button type="button" onclick="document.getElementById('track-chat-image').click()" 
+        <button type="button" onclick="document.getElementById('track-chat-image').click()"
           class="shrink-0 w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors">
           <i class="fa-solid fa-image"></i>
         </button>
-        <input type="file" id="track-chat-image" accept="image/*" class="hidden" onchange="TrackUI.previewChatImage(this)">
-        
+        <input type="file" id="track-chat-image" accept="image/*" class="hidden"
+          onchange="TrackUI.previewChatImage(this)">
+
         <div class="flex-1 relative">
-          <div id="track-chat-preview" class="hidden absolute bottom-full left-0 mb-2 bg-slate-100 p-2 rounded-lg border shadow-sm">
+          <div id="track-chat-preview"
+            class="hidden absolute bottom-full left-0 mb-2 bg-slate-100 p-2 rounded-lg border shadow-sm">
             <img src="" id="track-chat-preview-img" class="h-16 w-auto rounded object-cover">
-            <button type="button" onclick="TrackUI.clearChatImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+            <button type="button" onclick="TrackUI.clearChatImage()"
+              class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
               <i class="fa-solid fa-times"></i>
             </button>
           </div>
           <input type="text" id="track-chat-input" placeholder="พิมพ์ข้อความที่นี่..." required
             class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
         </div>
-        
+
         <button type="submit" id="track-chat-submit"
           class="shrink-0 w-12 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors shadow-md">
           <i class="fa-solid fa-paper-plane"></i>
         </button>
       </form>
     </div>
-    <div id="track-chat-closed-note" class="hidden px-5 py-3 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
+    <div id="track-chat-closed-note"
+      class="hidden px-5 py-3 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
       <i class="fa-solid fa-lock mr-1"></i>งานนี้ปิดแล้ว — ดูประวัติแชทย้อนหลังได้อย่างเดียว
     </div>
   </div>
