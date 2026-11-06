@@ -1325,6 +1325,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ticketIdParam) {
     const tryOpenTicket = (retry = 0) => {
       if (window.TrackUI && typeof window.TrackUI.open === 'function') {
+        if (typeof window.TrackUI.load === 'function' && typeof window.TrackUI.isLoaded === 'function' && !window.TrackUI.isLoaded()) {
+          window.TrackUI.load();
+        }
         window.TrackUI.open(ticketIdParam);
       } else if (retry < 25) {
         setTimeout(() => tryOpenTicket(retry + 1), 200);

@@ -4386,6 +4386,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ticketIdParam) {
     const tryOpenTicket = (retry = 0) => {
       if (window.TrackUI && typeof window.TrackUI.open === 'function') {
+        if (typeof window.TrackUI.load === 'function' && typeof window.TrackUI.isLoaded === 'function' && !window.TrackUI.isLoaded()) {
+          window.TrackUI.load();
+        }
         window.TrackUI.open(ticketIdParam);
       } else if (retry < 25) {
         setTimeout(() => tryOpenTicket(retry + 1), 200);
@@ -8891,6 +8894,8 @@ const TrackUI = (() => {
     return '';
   }
 
+  let currentDocUnsubscribe = null;
+
   async function open(id) {
     state.currentJobId = id;
     // มาร์กว่าอ่านแล้วอัตโนมัติเมื่อเปิดดูรายละเอียด
@@ -8901,19 +8906,51 @@ const TrackUI = (() => {
         saveReadSet(readSet);
       }
     } catch (e) { }
+
     let job = state.jobs.find(j => j.id === id);
-    if (!job && window.firestoreDb) {
+    // ดึงข้อมูลล่าสุดจาก Firestore ทุกครั้ง เพื่อป้องกันข้อมูลแคชเก่าค้าง
+    if (window.firestoreDb) {
       try {
         const docSnap = await window.firestoreDb.collection('tickets').doc(id).get();
         if (docSnap.exists) {
-          job = fromFirebase(docSnap.data());
-          state.jobs.unshift(job);
+          const freshJob = fromFirebase(docSnap.data(), docSnap.id);
+          const existingIdx = state.jobs.findIndex(j => j.id === id);
+          if (existingIdx !== -1) {
+            state.jobs[existingIdx] = freshJob;
+          } else {
+            state.jobs.unshift(freshJob);
+          }
+          job = freshJob;
         }
       } catch (e) {
         console.warn('Fallback get ticket from Firestore:', e);
       }
     }
+
     if (!job) return alertBox('warning', 'ไม่พบงาน', 'อาจถูกลบหรือย้ายไปแล้ว กรุณารีเฟรชรายการ');
+    renderDetailBody(job);
+
+    // สมัคร Real-time listener ประจำตัว Ticket นี้ ให้หน้าจอเปลี่ยนสถานะสดทันทีถ้ามีการอัปเดตจากเครื่องอื่น
+    if (currentDocUnsubscribe) {
+      currentDocUnsubscribe();
+      currentDocUnsubscribe = null;
+    }
+    if (window.firestoreDb) {
+      currentDocUnsubscribe = window.firestoreDb.collection('tickets').doc(id).onSnapshot((docSnap) => {
+        if (docSnap.exists && state.currentJobId === id) {
+          const liveJob = fromFirebase(docSnap.data(), docSnap.id);
+          const existingIdx = state.jobs.findIndex(j => j.id === id);
+          if (existingIdx !== -1) {
+            state.jobs[existingIdx] = liveJob;
+          }
+          renderDetailBody(liveJob);
+        }
+      }, err => console.warn('Ticket doc listen error:', err));
+    }
+  }
+
+  function renderDetailBody(job) {
+    const id = job.id;
     nav('page-track-detail');
     const box = $('track-detail-body');
     if (!box) return;
@@ -10897,6 +10934,10 @@ const TrackUI = (() => {
     migrateFromSheets,
     reindexTickets,
     backToList() {
+      if (currentDocUnsubscribe) {
+        currentDocUnsubscribe();
+        currentDocUnsubscribe = null;
+      }
       if (currentChatUnsubscribe) {
         currentChatUnsubscribe();
         currentChatUnsubscribe = null;
@@ -10910,6 +10951,7 @@ const TrackUI = (() => {
       state.currentJobId = null;
       nav('page-track');
     },
+    isLoaded: () => state.loaded,
     onSearch(v) {
       clearTimeout(state.searchTimer);
       state.searchTimer = setTimeout(() => { state.search = str(v); render(); }, 150);
