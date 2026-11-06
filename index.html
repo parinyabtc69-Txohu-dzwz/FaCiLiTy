@@ -4351,6 +4351,19 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(tryOpenTicket, 200);
   }
 
+  // Check for page parameter (Direct Link to a specific page e.g. page=track)
+  const pageParam = params.get('page');
+  if (pageParam && !ticketIdParam) {
+    const tryOpenPage = (retry = 0) => {
+      if (typeof nav === 'function') {
+        nav('page-' + pageParam.replace(/^page-/, ''));
+      } else if (retry < 25) {
+        setTimeout(() => tryOpenPage(retry + 1), 200);
+      }
+    };
+    setTimeout(tryOpenPage, 200);
+  }
+
   if (LIFF_ID && LIFF_ID !== "ใส่_LIFF_ID_ที่นี่") {
     liff.init({ liffId: LIFF_ID }).then(() => {
       if (liff.isLoggedIn()) {
