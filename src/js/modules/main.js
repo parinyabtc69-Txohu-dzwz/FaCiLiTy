@@ -3934,9 +3934,8 @@ function renderUserTable() {
     }
 
     let statusBadge = '';
-    if (status === 'approved') statusBadge = '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-md">Approved</span>';
-    else if (status === 'pending') statusBadge = '<span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-md">Pending</span>';
-    else statusBadge = '<span class="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-md">Banned</span>';
+    if (status === 'pending') statusBadge = '<div class="mt-0.5"><span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-md">Pending</span></div>';
+    else if (status === 'banned') statusBadge = '<div class="mt-0.5"><span class="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-md">Banned</span></div>';
 
     const safeEmailId = (user[0] || '').replace(/[^a-zA-Z0-9]/g, '');
 
@@ -3948,7 +3947,7 @@ function renderUserTable() {
         ${picture ? `<img src="${picture}" class="w-8 h-8 rounded-full shadow-sm object-cover" alt="profile" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=265D5A&color=fff'">` : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500"><i class="fa-solid fa-user"></i></div>`}
         <div>
           <span class="font-medium text-slate-800">${name}</span>
-          <div class="mt-0.5">${statusBadge}</div>
+          ${statusBadge}
         </div>
       </div>
     </td>
