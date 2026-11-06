@@ -253,6 +253,7 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => {
+        reg.update(); // เช็คอัปเดต Service Worker ทันที
         console.log('[PWA] Service Worker ทำงานเรียบร้อย Scope:', reg.scope);
       })
       .catch(err => {

@@ -2237,6 +2237,17 @@ const TrackUI = (() => {
     const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
     const targetDocId = job.docId || job.id || jobId;
 
+    Swal.fire({
+      title: 'กำลังเริ่มดำเนินงาน...',
+      text: 'กำลังบันทึกข้อมูลลงระบบ',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    if (!window.firestoreDb && typeof initFirebase === 'function') {
+      initFirebase();
+    }
+
     // ⚡ 1. บันทึกสถานะลง Firestore ทันทีและ AWAIT ให้เสร็จสมบูรณ์ (~0.15 วิ)
     // การันตีว่าข้อมูลถูกเซฟลงคลาวด์จริง รีเฟรชหน้าเว็บแล้วจะไม่เด้งกลับไปที่เดิม
     const updatePayload = {
@@ -2250,7 +2261,9 @@ const TrackUI = (() => {
         await window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
         console.log('✅ startJob saved to Firestore doc:', targetDocId);
       } catch (err) {
-        console.warn('Firestore startJob error:', err);
+        console.error('Firestore startJob error:', err);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกสถานะได้: ' + (err.message || 'เครือข่ายขัดข้อง'), 'error');
+        return;
       }
     }
 
