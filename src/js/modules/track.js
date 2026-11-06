@@ -1523,8 +1523,19 @@ const TrackUI = (() => {
     const x = await Swal.fire({
       title: 'อัปเดต / ปิดงาน',
       html: `<div class="text-left space-y-3 mt-4 text-slate-900">
+               <label class="block text-xs font-semibold text-slate-600 mt-1">ชื่อช่างผู้ซ่อม</label>
                <input id="techName" class="w-full p-2.5 border rounded-lg bg-slate-50" placeholder="ชื่อช่างผู้ซ่อม" value="${job.tech || ''}" readonly>
-               <textarea id="fixDetail" rows="2" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none" placeholder="ซ่อมหรือแก้ไขอะไรไปบ้าง?">${job.fixDetail || ''}</textarea>
+               <label class="block text-xs font-semibold text-slate-600 mt-2">รายละเอียดการแก้ไข / สิ่งที่ได้ทำ <span class="text-rose-500">*</span></label>
+               <select id="fixPresetSelect" onchange="const el=document.getElementById('fixDetail'); if(this.value==='custom'){el.value='';el.focus();}else if(this.value){el.value=this.value;}" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#265D5A] outline-none font-medium mb-1.5 text-slate-700">
+                 <option value="">-- เลือกรูปแบบการแก้ไขด่วน (หรือพิมพ์ระบุเองด้านล่าง) --</option>
+                 <option value="ซ่อมแซมและปรับตั้งค่าเรียบร้อย ใช้งานได้ปกติ">🔧 ซ่อมแซมและปรับตั้งค่าเรียบร้อย ใช้งานได้ปกติ</option>
+                 <option value="เปลี่ยนอะไหล่/อุปกรณ์ชิ้นใหม่เรียบร้อย">🔄 เปลี่ยนอะไหล่/อุปกรณ์ชิ้นใหม่เรียบร้อย</option>
+                 <option value="ทำความสะอาดและบำรุงรักษาเรียบร้อย">🧹 ทำความสะอาดและบำรุงรักษาเรียบร้อย</option>
+                 <option value="แก้ไขระบบสายไฟ/ปลั๊ก/การเชื่อมต่อเรียบร้อย">⚡ แก้ไขระบบสายไฟ/ปลั๊ก/การเชื่อมต่อเรียบร้อย</option>
+                 <option value="ติดตั้งและทดสอบการใช้งานเรียบร้อย">✅ ติดตั้งและทดสอบการใช้งานเรียบร้อย</option>
+                 <option value="custom">✏️ อื่นๆ (พิมพ์ระบุรายละเอียดเอง)</option>
+               </select>
+               <textarea id="fixDetail" rows="2" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#265D5A] outline-none text-sm" placeholder="พิมพ์ระบุรายละเอียดเพิ่มเติม...">${job.fixDetail || ''}</textarea>
                <label class="block text-xs font-semibold text-slate-600 mt-2">
                  รูปภาพผลการซ่อม ${isBuilding ? '<span class="text-rose-500 font-bold">* บังคับสำหรับงานอาคาร</span>' : '<span class="text-slate-400 font-normal">(ไม่บังคับ)</span>'}
                </label>

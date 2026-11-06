@@ -767,7 +767,17 @@ const ResourceHubCore = {
         title: isSupervisor ? 'ปิดงานซ่อม' : 'แจ้งเสร็จสิ้น (ส่งมอบงาน)',
         html: `<div class="text-left space-y-3 mt-4 text-slate-900">
                          <input id="techName" class="w-full p-2.5 border rounded-lg" placeholder="ชื่อช่างผู้ซ่อม">
-                         <textarea id="fixDetail" rows="2" class="w-full p-2.5 border rounded-lg" placeholder="ซ่อมหรือแก้ไขอะไรไปบ้าง?"></textarea>
+                         <label class="block text-xs font-semibold text-slate-600 mt-1">รายละเอียดการแก้ไข / สิ่งที่ได้ดำเนินการ <span class="text-rose-500">*</span></label>
+                         <select id="fixPresetSelectAdmin" onchange="const el=document.getElementById('fixDetail'); if(this.value==='custom'){el.value='';el.focus();}else if(this.value){el.value=this.value;}" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#265D5A]">
+                           <option value="">-- เลือกรูปแบบการแก้ไขด่วน (หรือพิมพ์ระบุเองด้านล่าง) --</option>
+                           <option value="ซ่อมแซมและปรับตั้งค่าเรียบร้อย ใช้งานได้ปกติ">🔧 ซ่อมแซมและปรับตั้งค่าเรียบร้อย ใช้งานได้ปกติ</option>
+                           <option value="เปลี่ยนอะไหล่/อุปกรณ์ชิ้นใหม่เรียบร้อย">🔄 เปลี่ยนอะไหล่/อุปกรณ์ชิ้นใหม่เรียบร้อย</option>
+                           <option value="ทำความสะอาดและบำรุงรักษาเรียบร้อย">🧹 ทำความสะอาดและบำรุงรักษาเรียบร้อย</option>
+                           <option value="แก้ไขระบบสายไฟ/ปลั๊ก/การเชื่อมต่อเรียบร้อย">⚡ แก้ไขระบบสายไฟ/ปลั๊ก/การเชื่อมต่อเรียบร้อย</option>
+                           <option value="ติดตั้งและทดสอบการใช้งานเรียบร้อย">✅ ติดตั้งและทดสอบการใช้งานเรียบร้อย</option>
+                           <option value="custom">✏️ อื่นๆ (พิมพ์ระบุรายละเอียดเอง)</option>
+                         </select>
+                         <textarea id="fixDetail" rows="2" class="w-full p-2.5 border rounded-lg" placeholder="พิมพ์ระบุรายละเอียดเพิ่มเติม..."></textarea>
                          <label class="block text-xs font-semibold text-slate-600 mt-2">รูปภาพผลการซ่อม (บังคับ)</label>
                          <input type="file" id="proofFile" accept="image/*" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
                          <hr class="my-2 border-slate-200">
@@ -3911,7 +3921,7 @@ function renderUserTable() {
   if (!tbody) return;
   tbody.innerHTML = '';
   if (!allUsersList || allUsersList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">ไม่พบข้อมูลผู้ใช้</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">ไม่พบข้อมูลผู้ใช้</td></tr>';
     return;
   }
 
@@ -3933,10 +3943,6 @@ function renderUserTable() {
       }
     }
 
-    let statusBadge = '';
-    if (status === 'pending') statusBadge = '<div class="mt-0.5"><span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-md">Pending</span></div>';
-    else if (status === 'banned') statusBadge = '<div class="mt-0.5"><span class="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-md">Banned</span></div>';
-
     const safeEmailId = (user[0] || '').replace(/[^a-zA-Z0-9]/g, '');
 
     const tr = document.createElement('tr');
@@ -3947,13 +3953,12 @@ function renderUserTable() {
         ${picture ? `<img src="${picture}" class="w-8 h-8 rounded-full shadow-sm object-cover" alt="profile" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=265D5A&color=fff'">` : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500"><i class="fa-solid fa-user"></i></div>`}
         <div>
           <span class="font-medium text-slate-800">${name}</span>
-          ${statusBadge}
         </div>
       </div>
     </td>
     <td class="px-4 py-3 text-slate-600 font-mono text-xs">${email}</td>
     <td class="px-4 py-3">
-      <select class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none" onchange="updateUserRole('${email}', this.value, '${status}')">
+      <select id="role-select-${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none" onchange="handleUserChange('${email}', '${safeEmailId}')">
         <option value="Teacher" ${role === 'Teacher' ? 'selected' : ''}>Teacher (ครู)</option>
         <option value="Tech" ${role === 'Tech' ? 'selected' : ''}>Tech (ช่าง)</option>
         <option value="AV" ${role === 'AV' ? 'selected' : ''}>AV (โสตฯ)</option>
@@ -3962,10 +3967,17 @@ function renderUserTable() {
         <option value="Executive" ${role === 'Executive' ? 'selected' : ''}>Executive (ผู้บริหาร)</option>
       </select>
     </td>
+    <td class="px-4 py-3">
+      <select id="status-select-${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none font-medium" onchange="handleUserChange('${email}', '${safeEmailId}')">
+        <option value="approved" ${status === 'approved' ? 'selected' : ''}>🟢 ใช้งานปกติ (Approved)</option>
+        <option value="pending" ${status === 'pending' ? 'selected' : ''}>🟡 รออนุมัติ (Pending)</option>
+        <option value="banned" ${status === 'banned' ? 'selected' : ''}>🔴 ระงับการใช้งาน (Banned)</option>
+      </select>
+    </td>
     <td class="px-4 py-3 text-xs text-slate-500">${lastLoginText}</td>
     <td class="px-4 py-3 text-center">
       <div class="flex items-center justify-center gap-2">
-        <span class="text-slate-400 text-xs inline-flex items-center gap-1" title="บันทึกอัตโนมัติเมื่อเลือกสิทธิ์">
+        <span class="text-slate-400 text-xs inline-flex items-center gap-1" title="บันทึกอัตโนมัติเมื่อเลือกสิทธิ์หรือสถานะ">
           <i class="fa-solid fa-check text-emerald-500 hidden" id="check-${safeEmailId}"></i>
           <span class="text-slate-400 hidden sm:inline">ออโต้</span>
         </span>
@@ -3979,12 +3991,22 @@ function renderUserTable() {
   });
 }
 
+function handleUserChange(email, safeEmailId) {
+  const roleEl = document.getElementById('role-select-' + safeEmailId);
+  const statusEl = document.getElementById('status-select-' + safeEmailId);
+  const role = roleEl ? roleEl.value : 'Teacher';
+  const status = statusEl ? statusEl.value : 'approved';
+  saveUserChanges(email, role, status);
+}
+
 function updateUserRole(email, newRole, currentStatus) {
-  saveUserChanges(email, newRole, currentStatus);
+  const safeEmailId = (email || '').replace(/[^a-zA-Z0-9]/g, '');
+  handleUserChange(email, safeEmailId);
 }
 
 function updateUserStatus(email, currentRole, newStatus) {
-  saveUserChanges(email, currentRole, newStatus);
+  const safeEmailId = (email || '').replace(/[^a-zA-Z0-9]/g, '');
+  handleUserChange(email, safeEmailId);
 }
 
 function saveUserChanges(email, role, status) {
