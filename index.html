@@ -224,6 +224,35 @@
   animation: toastProgress 6s linear forwards;
 }
 
+/* ==========================================================================
+   🔔 ศูนย์การแจ้งเตือน (Notification Dropdown) Responsive Positioning
+   ========================================================================== */
+@media (max-width: 639px) {
+  #notification-dropdown {
+    position: fixed !important;
+    top: 68px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: 480px !important;
+    margin: 0 auto !important;
+    transform: none !important;
+    z-index: 9999 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.15) !important;
+  }
+}
+@media (min-width: 640px) {
+  #notification-dropdown {
+    position: absolute !important;
+    top: 100% !important;
+    right: 0 !important;
+    left: auto !important;
+    width: 384px !important;
+    margin-top: 8px !important;
+    z-index: 50 !important;
+  }
+}
+
 
 /* ===== Gmail Style Specifics ===== */
 .gmail-row { border-bottom: 1px solid #f2f6fc; transition: box-shadow 0.2s; }
@@ -5452,12 +5481,32 @@ function toggleNotificationDropdown() {
   const dropdown = $('notification-dropdown');
   if (dropdown) {
     dropdown.classList.toggle('hidden');
-    if (!dropdown.classList.contains('hidden') && window.NotificationHub) {
-      if (typeof window.NotificationHub.updatePermissionUI === 'function') {
-        window.NotificationHub.updatePermissionUI();
+    if (!dropdown.classList.contains('hidden')) {
+      if (window.innerWidth < 640) {
+        dropdown.style.setProperty('position', 'fixed', 'important');
+        dropdown.style.setProperty('top', '68px', 'important');
+        dropdown.style.setProperty('left', '12px', 'important');
+        dropdown.style.setProperty('right', '12px', 'important');
+        dropdown.style.setProperty('width', 'calc(100vw - 24px)', 'important');
+        dropdown.style.setProperty('max-width', '480px', 'important');
+        dropdown.style.setProperty('margin', '0 auto', 'important');
+      } else {
+        dropdown.style.position = '';
+        dropdown.style.top = '';
+        dropdown.style.left = '';
+        dropdown.style.right = '';
+        dropdown.style.width = '';
+        dropdown.style.maxWidth = '';
+        dropdown.style.margin = '';
       }
-      if (typeof window.NotificationHub.renderList === 'function') {
-        window.NotificationHub.renderList();
+
+      if (window.NotificationHub) {
+        if (typeof window.NotificationHub.updatePermissionUI === 'function') {
+          window.NotificationHub.updatePermissionUI();
+        }
+        if (typeof window.NotificationHub.renderList === 'function') {
+          window.NotificationHub.renderList();
+        }
       }
     }
   }
