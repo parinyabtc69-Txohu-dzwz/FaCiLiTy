@@ -1632,6 +1632,10 @@ function finalizeLogin(name, role, email) {
   currentEmail = email || '';
   isAdminLoggedIn = (role === 'Admin' || role === 'Supervisor');
 
+  window.currentTeacher = currentTeacher;
+  window.currentRole = currentRole;
+  window.currentEmail = currentEmail;
+
   localStorage.setItem('logged_teacher', currentTeacher);
   localStorage.setItem('logged_role', currentRole);
   localStorage.setItem('logged_email', currentEmail);
@@ -1642,6 +1646,11 @@ function finalizeLogin(name, role, email) {
   updateSessionUI();
   // ดึงข้อมูลหลักใน background ทันที เพื่อให้ Dashboard โหลดเร็วขึ้น
   if (isAdminLoggedIn) prefetchAllData();
+
+  if (window.NotificationHub && typeof window.NotificationHub.renderList === 'function') {
+    window.NotificationHub.renderList();
+    window.NotificationHub.updateBadge();
+  }
   
   alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
     .then(() => {
@@ -1702,6 +1711,7 @@ function nav(pageId) {
 
   if (pageId === 'page-auth') {
     if (typeof checkLineOrWebView === 'function') checkLineOrWebView();
+    if (typeof checkLocalhostDev === 'function') checkLocalhostDev();
     if (typeof renderGoogleSignInButton === 'function') renderGoogleSignInButton();
   }
 
@@ -2159,7 +2169,17 @@ function toggleProfileDropdown() {
 
 function toggleNotificationDropdown() {
   const dropdown = $('notification-dropdown');
-  if (dropdown) dropdown.classList.toggle('hidden');
+  if (dropdown) {
+    dropdown.classList.toggle('hidden');
+    if (!dropdown.classList.contains('hidden') && window.NotificationHub) {
+      if (typeof window.NotificationHub.updatePermissionUI === 'function') {
+        window.NotificationHub.updatePermissionUI();
+      }
+      if (typeof window.NotificationHub.renderList === 'function') {
+        window.NotificationHub.renderList();
+      }
+    }
+  }
   const profileDropdown = $('profile-dropdown');
   if (profileDropdown && !profileDropdown.classList.contains('hidden')) {
     profileDropdown.classList.add('hidden');
@@ -4494,6 +4514,59 @@ window.archiveAdvTask = async function(type, index) {
 // 🔐 ระบบจัดการการล็อกอินบนอุปกรณ์เคลื่อนที่และเบราว์เซอร์ภายนอก (Mobile Auth Helpers)
 // ============================================================================
 const GOOGLE_CLIENT_ID = '309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com';
+let isGisInitialized = false;
+
+function checkLocalhostDev() {
+  const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.protocol === 'file:';
+  const devEl = $('localhost-dev-login');
+  if (devEl) {
+    if (isLocal) {
+      devEl.classList.remove('hidden');
+    } else {
+      devEl.classList.add('hidden');
+    }
+  }
+}
+
+function localDevLogin(name, role, email) {
+  currentTeacher = name;
+  currentRole = role;
+  currentEmail = email || '';
+  isAdminLoggedIn = (role === 'Admin' || role === 'Supervisor');
+
+  window.currentTeacher = currentTeacher;
+  window.currentRole = currentRole;
+  window.currentEmail = currentEmail;
+
+  localStorage.setItem('logged_teacher', currentTeacher);
+  localStorage.setItem('logged_role', currentRole);
+  localStorage.setItem('logged_email', currentEmail);
+  if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
+  else localStorage.removeItem('logged_admin');
+  localStorage.setItem('session_login_time', Date.now().toString());
+
+  updateSessionUI();
+  if (isAdminLoggedIn) prefetchAllData();
+
+  if (window.NotificationHub && typeof window.NotificationHub.renderList === 'function') {
+    window.NotificationHub.renderList();
+    window.NotificationHub.updateBadge();
+  }
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'success',
+      title: 'เข้าสู่ระบบโหมดทดสอบสำเร็จ! ⚡',
+      text: `ยินดีต้อนรับ คุณ ${currentTeacher} (${role})`,
+      timer: 1200,
+      showConfirmButton: false
+    }).then(() => {
+      nav('page-home');
+    });
+  } else {
+    nav('page-home');
+  }
+}
 
 function checkLineOrWebView() {
   const isLine = /Line/i.test(navigator.userAgent) || /FBAV/i.test(navigator.userAgent) || /Instagram/i.test(navigator.userAgent);
@@ -4533,15 +4606,26 @@ function renderGoogleSignInButton() {
     return;
   }
 
+  // ปิดปุ่ม fallback เสมอสำหรับเบราว์เซอร์ปกติ ไม่ให้แสดงซ้อน 2 ปุ่ม
+  const fallback = $('fallback-google-btn-wrapper');
+  if (fallback) {
+    fallback.classList.add('hidden');
+    fallback.classList.remove('flex');
+  }
+
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     try {
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse,
-        auto_select: false
-      });
+      if (!isGisInitialized) {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse,
+          auto_select: false
+        });
+        isGisInitialized = true;
+      }
       const container = $('google-signin-btn-container');
       if (container) {
+        container.innerHTML = ''; // ป้องกันการเรนเดอร์ปุ่มซ้ำซ้อน
         container.classList.remove('hidden');
         google.accounts.id.renderButton(container, {
           type: 'standard',
@@ -4551,24 +4635,9 @@ function renderGoogleSignInButton() {
           shape: 'rectangular',
           width: 300
         });
-
-        // หลังจาก 2 วินาที ตรวจสอบว่า iframe ขึ้นหรือไม่ หากไม่ขึ้นค่อยแสดง fallback (ไม่แสดงซ้ำ 2 ปุ่ม)
-        setTimeout(() => {
-          const hasIframe = container.querySelector('iframe');
-          const fallback = $('fallback-google-btn-wrapper');
-          if (!hasIframe && fallback) {
-            fallback.classList.remove('hidden');
-            fallback.classList.add('flex');
-          }
-        }, 2000);
       }
     } catch (e) {
       console.warn('[Google Auth] renderButton error:', e);
-      const fallback = $('fallback-google-btn-wrapper');
-      if (fallback) {
-        fallback.classList.remove('hidden');
-        fallback.classList.add('flex');
-      }
     }
   } else {
     setTimeout(renderGoogleSignInButton, 600);
@@ -4583,11 +4652,14 @@ function handleManualGoogleSignIn() {
   }
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     try {
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse,
-        auto_select: false
-      });
+      if (!isGisInitialized) {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse,
+          auto_select: false
+        });
+        isGisInitialized = true;
+      }
       google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
           console.warn('Google One Tap suppressed:', notification.getNotDisplayedReason());
@@ -4623,6 +4695,7 @@ function checkAndPromptOneTap() {
   if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) return;
 
   checkLineOrWebView();
+  checkLocalhostDev();
   renderGoogleSignInButton();
 
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
@@ -4634,5 +4707,6 @@ function checkAndPromptOneTap() {
 
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof initFirebase === 'function') initFirebase();
+  checkLocalhostDev();
   checkAndPromptOneTap();
 });

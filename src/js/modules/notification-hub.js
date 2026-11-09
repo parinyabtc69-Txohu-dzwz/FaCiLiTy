@@ -39,47 +39,70 @@ const NotificationHub = (function() {
 
   // ── 2. ระบบเสียงแจ้งเตือนสังเคราะห์ (Web Audio API Chime) ─────────────────
   // ไม่ต้องดาวน์โหลดไฟล์ภายนอก โหลดเร็วระดับ 0ms และไม่ติดปัญหาลิขสิทธิ์
+  function unlockAudioContext() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!audioContextInstance && AudioCtx) {
+        audioContextInstance = new AudioCtx();
+      }
+      if (audioContextInstance && audioContextInstance.state === 'suspended') {
+        audioContextInstance.resume();
+      }
+    } catch (_) {}
+  }
+
+  // ฟังก์ชันกำเนิดโทนเสียงระฆัง/กระดิ่งแก้ว (Chime Tone Generator)
+  function playBellTone(ctx, freq, startTime, duration, volume = 0.16) {
+    // 1. คลื่นความถี่หลัก (Fundamental Sine) ให้เสียงทุ้มอุ่น ละมุน ("ตึ้ง")
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(freq, startTime);
+    // ป้องกันเสียงแปร่งหรือเสียงคลิก (Smooth Attack)
+    gain1.gain.setValueAtTime(0.001, startTime);
+    gain1.gain.linearRampToValueAtTime(volume, startTime + 0.018);
+    // หางเสียงทอดยาวอย่างนุ่มนวลแบบ Exponential Decay
+    gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(startTime);
+    osc1.stop(startTime + duration);
+
+    // 2. คลื่นความถี่โอเวอร์โทน (Harmonic Overtone) ให้เสียงใสกังวานเหมือนระฆังจริง
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(freq * 2.0, startTime);
+    gain2.gain.setValueAtTime(0.001, startTime);
+    gain2.gain.linearRampToValueAtTime(volume * 0.28, startTime + 0.015);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration * 0.75));
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(startTime);
+    osc2.stop(startTime + duration);
+  }
+
   function playChime() {
     try {
       const soundEnabled = localStorage.getItem(STORAGE_SOUND_KEY) !== 'false';
       if (!soundEnabled) return;
 
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-
-      if (!audioContextInstance || audioContextInstance.state === 'suspended') {
-        audioContextInstance = new AudioCtx();
-      }
+      unlockAudioContext();
       const ctx = audioContextInstance;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      if (!ctx) return;
 
       const now = ctx.currentTime;
 
-      // ตัวโน้ตที่ 1: D5 (587.33 Hz) เสียงกระดิ่งแรก
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(587.33, now);
-      gain1.gain.setValueAtTime(0.12, now);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start(now);
-      osc1.stop(now + 0.35);
+      // 🔔 ตึ้ง ครั้งที่ 1: โน้ต C5 (523.25 Hz) เสียงกังวานยาว 0.65 วินาที
+      playBellTone(ctx, 523.25, now, 0.65, 0.18);
 
-      // ตัวโน้ตที่ 2: A5 (880.00 Hz) คู่ฮาร์มอนิกก้องกังวานแบบ Messenger
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(880.00, now + 0.09);
-      gain2.gain.setValueAtTime(0.15, now + 0.09);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.start(now + 0.09);
-      osc2.stop(now + 0.6);
+      // 🔔 ตึ้ง ครั้งที่ 2: เว้นจังหวะ 0.38 วินาที แล้วดังโน้ต G5 (783.99 Hz) หางเสียงทอดยาวก้องกังวาน 0.95 วินาที
+      playBellTone(ctx, 783.99, now + 0.38, 0.95, 0.22);
+
+      // ระบบสั่นมือถือ 2 จังหวะ "ตึ้ง... ตึ้ง..." สอดคล้องกับเสียง
+      if (navigator.vibrate) {
+        try { navigator.vibrate([180, 180, 280]); } catch (_) {}
+      }
 
     } catch (err) {
       console.warn('[NotificationHub] Audio chime error:', err);
@@ -364,46 +387,250 @@ const NotificationHub = (function() {
     return false;
   }
 
-  // ── 12. ยิงส่ง Web Push ผ่าน Service Worker ────────────────────────────────
-  function showWebPush(item) {
-    try {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        const title = item.title || 'FaCiLiTy • มีการแจ้งเตือนใหม่';
-        const options = {
-          body: item.body || item.subject || 'มีงานแจ้งซ่อมหรืออัปเดตใหม่ในระบบ',
-          icon: './img/icon-192.png',
-          badge: './img/logo.png',
-          data: {
-            url: window.location.origin + window.location.pathname + '?ticketId=' + encodeURIComponent(item.ticketId || ''),
-            ticketId: item.ticketId
-          }
-        };
+  // ── 12. ระบบจัดการสิทธิ์การแจ้งเตือนบนอุปกรณ์ (Device Push & Native Permission) ───
+  function checkNotificationPermission() {
+    if (!('Notification' in window)) {
+      return 'unsupported';
+    }
+    return Notification.permission; // 'default' | 'granted' | 'denied'
+  }
 
-        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification(title, options);
-          });
-        } else {
-          new Notification(title, options);
-        }
+  function updatePermissionUI() {
+    const perm = checkNotificationPermission();
+    const dropdownBanner = document.getElementById('notif-permission-status');
+    const homeBanners = document.querySelectorAll('.notif-permission-prompt-card');
+
+    if (perm === 'granted') {
+      // ✅ ได้รับอนุญาตแล้ว: ปิดซ่อนการแจ้งเตือนขอสิทธิ์ซ้ำซ้อน 100%
+      homeBanners.forEach(el => el.classList.add('hidden'));
+
+      if (dropdownBanner) {
+        dropdownBanner.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-[11px] font-semibold text-emerald-800">เปิดการแจ้งเตือนบนอุปกรณ์แล้ว</span>
+          </div>
+          <button onclick="NotificationHub.testDeviceNotification()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-[10px] font-bold shadow-sm transition-all flex items-center gap-1">
+            <i class="fa-solid fa-bell"></i> ยิงทดสอบเตือน
+          </button>
+        `;
+        dropdownBanner.className = 'px-3 py-1.5 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between text-xs';
+        dropdownBanner.classList.remove('hidden');
       }
-    } catch (e) {
-      console.warn('[NotificationHub] Web Push error:', e);
+    } else if (perm === 'denied') {
+      // ⚠️ ผู้ใช้เคยกดปฏิเสธไว้
+      homeBanners.forEach(el => el.classList.add('hidden'));
+
+      if (dropdownBanner) {
+        dropdownBanner.innerHTML = `
+          <div class="flex items-center gap-2 text-rose-700 text-[11px]">
+            <i class="fa-solid fa-bell-slash text-rose-500 shrink-0"></i>
+            <span>การแจ้งเตือนถูกปิดกั้นในเบราว์เซอร์ (แตะรูปกุญแจหน้า URL เพื่ออนุญาต)</span>
+          </div>
+        `;
+        dropdownBanner.className = 'px-3 py-1.5 bg-rose-50 border-b border-rose-100 flex items-center justify-between text-xs';
+        dropdownBanner.classList.remove('hidden');
+      }
+    } else if (perm === 'default') {
+      // 🔔 ยังไม่เคยขออนุญาต: แสดงปุ่มขออนุญาตให้ผู้ใช้เปิดใช้งาน
+      homeBanners.forEach(el => el.classList.remove('hidden'));
+
+      if (dropdownBanner) {
+        dropdownBanner.innerHTML = `
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-bell text-amber-500 animate-bounce text-sm"></i>
+            <div>
+              <p class="text-xs font-bold text-amber-900">เปิดการแจ้งเตือนบนโทรศัพท์</p>
+              <p class="text-[10px] text-amber-700">รับเสียงเตือนงานซ่อมทันทีแม้พับจอ</p>
+            </div>
+          </div>
+          <button onclick="NotificationHub.requestNativePermission()" class="px-3 py-1.5 bg-[#265D5A] hover:bg-[#1a403d] active:scale-95 text-white rounded-xl text-xs font-bold shadow transition-all shrink-0">
+            เปิดใช้งาน
+          </button>
+        `;
+        dropdownBanner.className = 'px-3 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 flex items-center justify-between gap-2 text-xs';
+        dropdownBanner.classList.remove('hidden');
+      }
+    } else {
+      // 📱 unsupported (เช่น Safari บน iOS ที่ยังไม่ได้ Add to Home Screen)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+      if (isIOS && !isStandalone) {
+        homeBanners.forEach(el => {
+          el.innerHTML = `
+            <div class="flex items-start sm:items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-[#265D5A] text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
+                <i class="fa-solid fa-arrow-up-from-bracket"></i>
+              </div>
+              <div>
+                <p class="text-xs sm:text-sm font-bold text-slate-800">เพิ่มแอปลงหน้าจอโฮมเพื่อเปิดการแจ้งเตือน (iOS)</p>
+                <p class="text-[11px] text-slate-500">แตะปุ่มแชร์ <i class="fa-solid fa-arrow-up-from-bracket"></i> ใน Safari แล้วเลือก <strong>"เพิ่มไปยังหน้าจอโฮม (Add to Home Screen)"</strong> เพื่อรับเสียงเตือนเต็มรูปแบบ</p>
+              </div>
+            </div>
+          `;
+          el.classList.remove('hidden');
+        });
+      } else {
+        homeBanners.forEach(el => el.classList.add('hidden'));
+      }
+      if (dropdownBanner) dropdownBanner.classList.add('hidden');
     }
   }
 
-  function requestPushPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          showToast({
-            title: '✅ เปิดรับการแจ้งเตือนสำเร็จ',
-            body: 'คุณจะได้รับการแจ้งเตือนงานซ่อมแม้ขณะพับหน้าจอครับ',
-            category: 'ทั่วไป'
+  async function requestNativePermission() {
+    unlockAudioContext();
+
+    // 1. ตรวจสอบว่าอนุญาตไปแล้วหรือยัง เพื่อป้องกันการแจ้งเตือนซ้ำซ้อน
+    if ('Notification' in window && Notification.permission === 'granted') {
+      updatePermissionUI();
+      testDeviceNotification();
+      return;
+    }
+
+    if (!('Notification' in window)) {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (isIOS) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'info',
+            title: 'วิธีเปิดการแจ้งเตือนบน iPhone / iPad',
+            html: `
+              <div class="text-left text-xs text-slate-600 space-y-2">
+                <p>1. แตะปุ่ม <strong>แชร์ (Share <i class="fa-solid fa-arrow-up-from-bracket"></i>)</strong> ด้านล่างของ Safari</p>
+                <p>2. เลื่อนลงแล้วเลือก <strong>"เพิ่มไปยังหน้าจอโฮม (Add to Home Screen)"</strong></p>
+                <p>3. เปิดแอปจากหน้าจอโฮม จะสามารถเปิดเสียงเตือนและ Web Push ได้ 100% ครับ</p>
+              </div>
+            `,
+            confirmButtonText: 'รับทราบ',
+            confirmButtonColor: '#265D5A'
           });
-          playChime();
         }
+      } else {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'info',
+            title: 'การแจ้งเตือนในระบบ',
+            text: 'ระบบแจ้งเตือนแบบ In-App และเสียงสังเคราะห์พร้อมใช้งานแล้วครับ'
+          });
+        }
+      }
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      updatePermissionUI();
+
+      if (permission === 'granted') {
+        playChime();
+
+        showToast({
+          id: 'perm_ok_' + Date.now(),
+          title: '✅ เปิดรับการแจ้งเตือนบนอุปกรณ์สำเร็จ!',
+          body: 'คุณจะได้รับเสียงเตือนและข้อความงานซ่อมแบบเรียลไทม์ แม้พับหน้าจอครับ',
+          category: 'ทั่วไป'
+        });
+
+        showDeviceNotification('🎉 FaCiLiTy เปิดการแจ้งเตือนบนเครื่องแล้ว', {
+          body: 'ระบบพร้อมส่งเสียงเตือนและแจ้งเตือนงานซ่อมทันทีเมื่อมีรายการใหม่ครับ',
+          tag: 'facility-welcome'
+        });
+
+      } else if (permission === 'denied') {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'การแจ้งเตือนถูกปิดกั้น',
+            text: 'คุณครูได้กดปฏิเสธไว้ หากต้องการเปิดรับเสียงแจ้งเตือน ให้แตะไอคอนแม่กุญแจหน้า URL แล้วเลือก "อนุญาตการแจ้งเตือน" ครับ',
+            confirmButtonText: 'เข้าใจแล้ว',
+            confirmButtonColor: '#265D5A'
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('[NotificationHub] requestPermission error:', err);
+    }
+  }
+
+  function showDeviceNotification(title, options = {}) {
+    try {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+
+      const defaultOpts = {
+        body: options.body || 'มีงานแจ้งซ่อมหรืออัปเดตใหม่ในระบบ',
+        icon: './img/icon-192.png',
+        badge: './img/logo.png',
+        vibrate: [200, 100, 200],
+        tag: options.tag || ('facility-notif-' + Date.now()),
+        renotify: true,
+        data: {
+          url: options.url || (window.location.origin + window.location.pathname + (options.ticketId ? ('?ticketId=' + encodeURIComponent(options.ticketId)) : '')),
+          ticketId: options.ticketId || ''
+        }
+      };
+
+      if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, defaultOpts);
+        }).catch(() => {
+          try { new Notification(title, defaultOpts); } catch(e) {}
+        });
+      } else {
+        try { new Notification(title, defaultOpts); } catch(e) {}
+      }
+    } catch (e) {
+      console.warn('[NotificationHub] showDeviceNotification error:', e);
+    }
+  }
+
+  function showWebPush(item) {
+    showDeviceNotification(item.title || 'FaCiLiTy • มีการแจ้งเตือนใหม่', {
+      body: item.body || item.subject || 'มีงานแจ้งซ่อมหรืออัปเดตใหม่ในระบบ',
+      ticketId: item.ticketId
+    });
+  }
+
+  function testDeviceNotification() {
+    unlockAudioContext();
+
+    // 1. เสียงกระดิ่งสังเคราะห์ Web Audio API
+    playChime();
+
+    // 2. ป้าย Toast ลอยในตัวแอพ
+    const testId = 'FAC-TEST-' + Math.floor(1000 + Math.random() * 9000);
+    showToast({
+      id: 'test_toast_' + Date.now(),
+      ticketId: testId,
+      title: '🔔 ทดสอบเสียงเตือนบนอุปกรณ์',
+      body: 'ระบบเสียงกระดิ่ง Chime และการแจ้งเตือนของ FaCiLiTy ทำงานเรียบร้อยโดยไม่ต้องผ่าน LINE ครับ!',
+      category: 'แอร์',
+      taskType: 'building',
+      location: 'ห้องศูนย์ควบคุม FaCiLiTy',
+      createdAt: new Date()
+    });
+
+    // 3. แจ้งเตือนระดับระบบปฏิบัติการ (OS / PWA Home Screen Notification)
+    if ('Notification' in window && Notification.permission === 'granted') {
+      showDeviceNotification('🔔 FaCiLiTy • มีการแจ้งเตือนงานซ่อมใหม่', {
+        body: `[ทดสอบ ${testId}] แจ้งซ่อมแอร์ไม่เย็น (ห้องศูนย์ควบคุม) - มีเสียงเตือนบนเครื่องเรียบร้อย`,
+        tag: 'facility-test-' + Date.now(),
+        ticketId: testId
       });
+    }
+
+    // 4. บันทึกทดสอบลง Firestore (ถ้ามีเชื่อมต่อ) เพื่อให้ทุกเครื่องที่เปิดอยู่ได้รับแจ้งเตือนพร้อมกัน
+    if (window.firestoreDb) {
+      publish({
+        ticketId: testId,
+        title: '🔔 ทดสอบการแจ้งเตือนแบบเรียลไทม์',
+        body: 'ทดสอบเสียงเตือนและแจ้งเตือนบนเครื่องผ่านแอพหน้าจอหลักสำเร็จ 100%',
+        category: 'งานซ่อม',
+        taskType: 'repair',
+        location: 'ศูนย์ FaCiLiTy',
+        reporterName: window.currentTeacher || 'ครูเต้าหู้ (Admin)'
+      }).catch(() => {});
     }
   }
 
@@ -536,19 +763,30 @@ const NotificationHub = (function() {
     }
     updateBadge();
     renderList();
+    updatePermissionUI();
+
+    // ปลดล็อกระบบเสียงบนอุปกรณ์เคลื่อนที่เมื่อผู้ใช้แตะหน้าจอครั้งแรก
+    document.addEventListener('touchstart', unlockAudioContext, { once: true, passive: true });
+    document.addEventListener('click', unlockAudioContext, { once: true, passive: true });
   }
 
   return {
     init,
     playChime,
+    unlockAudioContext,
     showToast,
     dismissToast,
     setTab,
     markAllAsRead,
     openTicketAndDismiss,
-    requestPushPermission,
+    requestPushPermission: requestNativePermission,
+    requestNativePermission,
+    checkNotificationPermission,
+    updatePermissionUI,
+    showDeviceNotification,
+    testDeviceNotification,
     publish,
-    test,
+    test: testDeviceNotification,
     renderList,
     updateBadge
   };
