@@ -356,6 +356,11 @@ const NotificationHub = (function() {
 
   // ── 11. ตรวจสอบสิทธิ์ผู้รับตามบทบาทหน้าที่ (Role Filtering) ───────────────
   function isTargetRecipient(item) {
+    // การแจ้งเตือนทดสอบระบบ (Test Notification) ให้ส่งถึงทุกเครื่องเสมอ 100%
+    if ((item.ticketId && item.ticketId.includes('TEST')) || (item.title && item.title.includes('ทดสอบ'))) {
+      return true;
+    }
+
     const userRole = (window.currentRole || 'Teacher').toLowerCase();
     const userEmail = (window.currentEmail || '').toLowerCase();
     const userName = (window.currentTeacher || '').toLowerCase();
@@ -655,14 +660,29 @@ const NotificationHub = (function() {
             if (change.type === 'added') {
               newItems.push(data);
 
-              // ถ้าไม่ใช่การโหลดหน้าครั้งแรก และงานถูกสร้างใน 25 วินาทีล่าสุด
+              // ถ้าไม่ใช่การโหลดหน้าครั้งแรก
               if (!isFirstLoad) {
-                let createdMs = 0;
-                if (data.createdAt && data.createdAt.toMillis) createdMs = data.createdAt.toMillis();
-                else if (data.createdAt) createdMs = new Date(data.createdAt).getTime();
+                // ข้ามถ้าเป็นเครื่องตัวเองที่เพิ่งสั่งยิง เพื่อไม่ให้ดังซ้ำ 2 รอบ
+                if (data.senderSessionId && data.senderSessionId === CURRENT_SESSION_ID) {
+                  return;
+                }
 
-                const isRecent = createdMs > (initialTimestamp - 20000);
-                if (isRecent && isTargetRecipient(data)) {
+                // ตรวจสอบความสดใหม่ของข้อมูล (ไม่เกิน 2 นาที หรือถ้าไม่มีเวลา ให้ถือเป็นงานใหม่ทันที)
+                let itemTime = Date.now();
+                if (data.clientTimestamp) {
+                  itemTime = data.clientTimestamp;
+                } else if (data.createdAt && data.createdAt.toMillis) {
+                  itemTime = data.createdAt.toMillis();
+                } else if (data.createdAt && data.createdAt.seconds) {
+                  itemTime = data.createdAt.seconds * 1000;
+                } else if (data.createdAt instanceof Date) {
+                  itemTime = data.createdAt.getTime();
+                }
+
+                const isFresh = Math.abs(Date.now() - itemTime) < 120000;
+
+                if (isFresh && isTargetRecipient(data)) {
+                  console.log('[NotificationHub] 🔔 Real-time alert triggered on this device:', data.title);
                   showToast(data);
                   playChime();
                   showWebPush(data);
@@ -722,13 +742,19 @@ const NotificationHub = (function() {
   }
 
   // ── 14. ฟังก์ชันสำหรับยิงแจ้งเตือนใหม่เข้า Firestore ───────────────────────
+  const CURRENT_SESSION_ID = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+
   async function publish(dataObj) {
     if (!window.firestoreDb) return false;
     try {
       const notifId = 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
       const payload = {
         id: notifId,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        senderSessionId: CURRENT_SESSION_ID,
+        clientTimestamp: Date.now(),
+        createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+          ? firebase.firestore.FieldValue.serverTimestamp()
+          : new Date(),
         ...dataObj
       };
       await window.firestoreDb.collection('notifications').doc(notifId).set(payload);
