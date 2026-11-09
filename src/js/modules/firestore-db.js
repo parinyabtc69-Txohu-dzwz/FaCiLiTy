@@ -40,6 +40,26 @@ const FirestoreDB = {
     };
 
     await firestoreDb.collection('tickets').doc(ticketId).set(ticketData);
+
+    // ยิงแจ้งเตือนเข้า Notification Hub อัตโนมัติ (เด้ง Toast บนหน้าจอแอดมินและช่างทุกคนทันที)
+    try {
+      if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+        NotificationHub.publish({
+          ticketId: ticketId,
+          taskType: type,
+          category: data.category || 'งานซ่อม',
+          title: `🛠️ มีงานแจ้งซ่อมใหม่ #${ticketId}`,
+          body: `${data.subject || data.title || 'งานแจ้งซ่อม'} (${data.location || 'ไม่ระบุสถานที่'})`,
+          reporterName: data.reporter || data.reporterName || 'ผู้แจ้ง',
+          reporterEmail: data.reporterEmail || '',
+          location: data.location || '',
+          targetRoles: ['admin', 'tech', 'supervisor']
+        });
+      }
+    } catch (ne) {
+      console.warn('Auto notification create error:', ne);
+    }
+
     return ticketId;
   },
 

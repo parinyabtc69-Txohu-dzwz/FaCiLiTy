@@ -1646,6 +1646,19 @@ const TrackUI = (() => {
               receiptUrl: (res.receiptUrl && res.receiptUrl !== '-') ? res.receiptUrl : ''
             }).catch(e => console.warn('Update proofUrl to Firestore error:', e));
           }
+
+          // ยิง Real-time In-App Notification แจ้งเตือนผู้แจ้งว่างานซ่อมเสร็จเรียบร้อยแล้ว
+          if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+            NotificationHub.publish({
+              ticketId: jobId,
+              taskType: job.type || 'building',
+              category: job.category || 'งานซ่อม',
+              title: '✅ งานซ่อมเสร็จสิ้นแล้ว #' + jobId,
+              body: (job.subject || job.title || 'งานซ่อม') + ' ดำเนินการซ่อมเสร็จสิ้น โดย ' + (x.value.techName || 'ช่าง'),
+              reporterName: x.value.techName,
+              targetUserEmail: job.reporterEmail || ''
+            });
+          }
         }
       } catch (bgErr) {
         console.warn('Background closeJob sync error:', bgErr);
@@ -2343,6 +2356,19 @@ const TrackUI = (() => {
           const chatMsg = note ? `🔧 ช่าง ${techName} เริ่มดำเนินการแล้ว: ${note}` : `🔧 ช่าง ${techName} เริ่มดำเนินงานแล้ว`;
           FirebaseChat.send(chatRoomOf(job, jobId), techName, 'tech', chatMsg, '', jobId)
             .catch(chatErr => console.warn('Auto chat notification error:', chatErr));
+        }
+
+        // ยิง Real-time In-App Notification แจ้งเตือนผู้แจ้งว่าช่างเริ่มดำเนินงานแล้ว
+        if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+          NotificationHub.publish({
+            ticketId: jobId,
+            taskType: job.type || 'building',
+            category: job.category || 'งานซ่อม',
+            title: '🔧 ช่างรับงานแล้ว #' + jobId,
+            body: techName + ' กำลังดำเนินการซ่อม: ' + (job.subject || job.title || 'งานซ่อม'),
+            reporterName: techName,
+            targetUserEmail: job.reporterEmail || ''
+          });
         }
 
         // ซิงค์ Google Sheets ในเบื้องหลัง

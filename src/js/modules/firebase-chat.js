@@ -65,6 +65,22 @@ const FirebaseChat = {
 
     await db.collection('chats').doc(roomId).collection('messages').add(msgData);
 
+    // ยิงแจ้งเตือน Real-time In-App Notification ทันที
+    try {
+      if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+        NotificationHub.publish({
+          ticketId: ticketId,
+          taskType: 'chat',
+          category: 'แชท',
+          title: `💬 ข้อความใหม่ในงาน #${ticketId}`,
+          body: `${senderName}: ${message || (attachmentUrl ? '[รูปภาพแนบ]' : 'มีข้อความใหม่')}`,
+          reporterName: senderName
+        });
+      }
+    } catch (notifErr) {
+      console.warn('In-App chat notify warning:', notifErr);
+    }
+
     // ส่งแจ้งเตือนข้อความแชทเข้า LINE กลุ่มหลัก (ทำแบบ Background / Cooldown 10 วินาทีป้องกันสแปม)
     try {
       if (!window._chatNotifyThrottle) window._chatNotifyThrottle = {};

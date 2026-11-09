@@ -31,6 +31,7 @@ const loadOrder = [
   'dashboard.js',
   'main.js',
   'track.js',
+  'notification-hub.js',
   'pwa-install.js'
 ];
 
