@@ -103,8 +103,16 @@
         <i class="fa-solid fa-bug text-lg"></i>
       </button>
 
-      <div class="relative">
-        <button onclick="toggleProfileDropdown()"
+      <!-- Direct Login Button in Header (Visible when guest) -->
+      <button id="header-login-btn" onclick="nav('page-auth')"
+        class="hidden px-3.5 py-1.5 rounded-full bg-[#265D5A] hover:bg-[#1f4b48] text-white text-xs font-semibold shadow-sm items-center gap-1.5 transition-all active:scale-95"
+        title="เข้าสู่ระบบ">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span>เข้าสู่ระบบ</span>
+      </button>
+
+      <div id="header-profile-container" class="relative">
+        <button id="header-user-btn" onclick="toggleProfileDropdown()"
           class="w-10 h-10 rounded-full bg-[#FF5F5F] text-white font-semibold flex items-center justify-center text-sm shadow hover:bg-[#8F1C26] transition-colors focus:outline-none"
           title="ข้อมูลส่วนตัว">
           <i class="fa-solid fa-user"></i>
@@ -118,6 +126,12 @@
             <p id="dropdown-user-role" class="text-xs text-slate-500">สถานะ: ทั่วไป</p>
           </div>
           <div class="space-y-1">
+            <div id="dropdown-login-item">
+              <button onclick="toggleProfileDropdown(); nav('page-auth');"
+                class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 flex items-center gap-2 transition-colors mb-1 shadow-sm">
+                <i class="fa-solid fa-right-to-bracket text-emerald-600"></i> เข้าสู่ระบบ (Log in)
+              </button>
+            </div>
             <button onclick="toggleProfileDropdown(); openProfileModal();"
               class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-[#B0EDE6]/40 flex items-center gap-2 transition-colors">
               <i class="fa-solid fa-id-card text-[#265D5A]"></i> ดูข้อมูลบัญชีส่วนตัว
@@ -126,10 +140,12 @@
               class="hidden w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#265D5A] hover:bg-[#B0EDE6]/40 flex items-center gap-2 transition-colors">
               <i class="fa-solid fa-download"></i> ติดตั้งแอปลงหน้าจอหลัก
             </button>
-            <button onclick="toggleProfileDropdown(); handleGlobalLogout();"
-              class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors">
-              <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
-            </button>
+            <div id="dropdown-logout-item">
+              <button onclick="toggleProfileDropdown(); handleGlobalLogout();"
+                class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors">
+                <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -295,11 +311,11 @@
         class="absolute top-0 right-2 bg-rose-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
     </button>
 
-    <!-- Profile/Auth -->
-    <button onclick="toggleProfileDropdown()"
-      class="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-[#FF5F5F] w-16 transition-colors">
-      <i class="fa-solid fa-user text-lg"></i>
-      <span class="text-[10px] font-medium">ฉัน</span>
+    <!-- Profile/Auth (Dynamic: shows เข้าสู่ระบบ when guest, ฉัน when logged in) -->
+    <button id="mbnav-auth-btn" onclick="handleMobileAuthClick()"
+      class="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-[#265D5A] w-16 transition-colors">
+      <i id="mbnav-auth-icon" class="fa-solid fa-right-to-bracket text-lg text-[#265D5A]"></i>
+      <span id="mbnav-auth-text" class="text-[10px] font-bold text-[#265D5A]">เข้าสู่ระบบ</span>
     </button>
     <!-- More Menu (Mobile) -->
     <button onclick="toggleMobileSidebar()"

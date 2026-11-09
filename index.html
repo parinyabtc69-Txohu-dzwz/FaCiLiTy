@@ -266,8 +266,16 @@
         <i class="fa-solid fa-bug text-lg"></i>
       </button>
 
-      <div class="relative">
-        <button onclick="toggleProfileDropdown()"
+      <!-- Direct Login Button in Header (Visible when guest) -->
+      <button id="header-login-btn" onclick="nav('page-auth')"
+        class="hidden px-3.5 py-1.5 rounded-full bg-[#265D5A] hover:bg-[#1f4b48] text-white text-xs font-semibold shadow-sm items-center gap-1.5 transition-all active:scale-95"
+        title="เข้าสู่ระบบ">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span>เข้าสู่ระบบ</span>
+      </button>
+
+      <div id="header-profile-container" class="relative">
+        <button id="header-user-btn" onclick="toggleProfileDropdown()"
           class="w-10 h-10 rounded-full bg-[#FF5F5F] text-white font-semibold flex items-center justify-center text-sm shadow hover:bg-[#8F1C26] transition-colors focus:outline-none"
           title="ข้อมูลส่วนตัว">
           <i class="fa-solid fa-user"></i>
@@ -281,6 +289,12 @@
             <p id="dropdown-user-role" class="text-xs text-slate-500">สถานะ: ทั่วไป</p>
           </div>
           <div class="space-y-1">
+            <div id="dropdown-login-item">
+              <button onclick="toggleProfileDropdown(); nav('page-auth');"
+                class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 flex items-center gap-2 transition-colors mb-1 shadow-sm">
+                <i class="fa-solid fa-right-to-bracket text-emerald-600"></i> เข้าสู่ระบบ (Log in)
+              </button>
+            </div>
             <button onclick="toggleProfileDropdown(); openProfileModal();"
               class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-[#B0EDE6]/40 flex items-center gap-2 transition-colors">
               <i class="fa-solid fa-id-card text-[#265D5A]"></i> ดูข้อมูลบัญชีส่วนตัว
@@ -289,10 +303,12 @@
               class="hidden w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#265D5A] hover:bg-[#B0EDE6]/40 flex items-center gap-2 transition-colors">
               <i class="fa-solid fa-download"></i> ติดตั้งแอปลงหน้าจอหลัก
             </button>
-            <button onclick="toggleProfileDropdown(); handleGlobalLogout();"
-              class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors">
-              <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
-            </button>
+            <div id="dropdown-logout-item">
+              <button onclick="toggleProfileDropdown(); handleGlobalLogout();"
+                class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors">
+                <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -413,50 +429,80 @@
       class="flex-1 overflow-y-auto p-4 md:p-6 bg-white md:m-3 md:rounded-3xl md:shadow-sm md:border md:border-[#B0EDE6]">
 
       <!-- Pages will be dynamically loaded here -->
-            <div id="page-auth" class="page-section active max-w-md mx-auto py-10">
-        <div class="bg-white w-full rounded-3xl shadow-sm p-8 border border-slate-200 text-center">
-          <div class="w-16 h-16 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">
+            <div id="page-auth" class="page-section active max-w-md mx-auto py-6 px-3">
+        <div class="bg-white w-full rounded-3xl shadow-sm p-6 sm:p-8 border border-slate-200 text-center">
+          <div class="w-16 h-16 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">
             <i class="fa-solid fa-chalkboard-user"></i>
           </div>
-          <h2 class="text-2xl font-bold text-slate-800 mb-2" id="auth-title">ยินดีต้อนรับสู่ FaCiLiTy</h2>
-          <p class="text-sm text-slate-500 mb-8" id="auth-subtitle">ระบบจัดการทรัพยากรภายในโรงเรียน</p>
+          <h2 class="text-2xl font-bold text-slate-800 mb-1" id="auth-title">ยินดีต้อนรับสู่ FaCiLiTy</h2>
+          <p class="text-xs sm:text-sm text-slate-500 mb-6" id="auth-subtitle">ระบบจัดการงานซ่อมและทรัพยากรภายใน</p>
 
-          <!-- Google Sign-In Button -->
-          <div id="g_id_onload"
-               data-client_id="309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com"
-               data-context="signin"
-               data-ux_mode="popup"
-               data-callback="handleCredentialResponse"
-               data-auto_prompt="false">
-          </div>
-          
-          <div class="g_id_signin flex justify-center w-full"
-               data-type="standard"
-               data-shape="rectangular"
-               data-theme="outline"
-               data-text="signin_with"
-               data-size="large"
-               data-logo_alignment="left"
-               data-width="300">
+          <!-- LINE / In-App Browser Detection Alert -->
+          <div id="line-browser-alert" class="hidden mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-left">
+            <div class="flex items-start gap-2.5">
+              <i class="fa-solid fa-circle-exclamation text-amber-500 text-lg mt-0.5 shrink-0"></i>
+              <div class="text-xs text-amber-800">
+                <p class="font-bold mb-1">เปิดใช้งานผ่านแอพ LINE</p>
+                <p class="text-amber-700 leading-relaxed mb-2.5">ความปลอดภัยของ Google กำหนดให้เข้าสู่ระบบผ่านเบราว์เซอร์หลักของเครื่อง (Safari / Chrome)</p>
+                <button onclick="openInExternalBrowser()" class="w-full py-2.5 px-3 bg-[#265D5A] hover:bg-[#1f4b48] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-colors text-xs">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                  กดเพื่อเปิดใน Safari / Chrome ทันที
+                </button>
+              </div>
+            </div>
           </div>
 
-          <!-- LINE Group Button -->
-          <div class="mt-4 flex justify-center w-full">
-            <button onclick="joinLineGroup()" class="w-[300px] h-[40px] bg-[#06C755] hover:bg-[#05b34c] text-white font-medium rounded text-sm flex items-center justify-center gap-3 transition-colors shadow-sm">
-              <i class="fa-brands fa-line text-xl"></i>
-              เข้าร่วมกลุ่ม LINE แจ้งเตือน
+          <!-- Google Sign-In Button Container (Official GIS) -->
+          <div id="google-signin-btn-container" class="flex justify-center w-full min-h-[44px]">
+            <div id="g_id_onload"
+                 data-client_id="309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            
+            <div class="g_id_signin flex justify-center w-full"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left"
+                 data-width="300">
+            </div>
+          </div>
+
+          <!-- Custom Google Sign-In Button (รับประกันปุ่มแสดง 100% บนมือถือทุกเครื่อง) -->
+          <div id="fallback-google-btn-wrapper" class="mt-2.5 flex justify-center w-full">
+            <button id="btn-custom-google-signin" onclick="handleManualGoogleSignIn()"
+              class="w-[300px] h-[44px] bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-semibold text-sm rounded-xl border border-slate-300 shadow-sm flex items-center justify-center gap-3 transition-all active:scale-95">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>เข้าสู่ระบบด้วย Google</span>
             </button>
           </div>
 
-          <div class="mt-8 text-center flex flex-col gap-2">
+          <!-- LINE Group Button -->
+          <div class="mt-3.5 flex justify-center w-full">
+            <button onclick="joinLineGroup()" class="w-[300px] h-[44px] bg-[#06C755] hover:bg-[#05b34c] text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2.5 transition-colors shadow-sm active:scale-95">
+              <i class="fa-brands fa-line text-xl"></i>
+              <span>เข้าร่วมกลุ่ม LINE แจ้งเตือน</span>
+            </button>
+          </div>
+
+          <div class="mt-6 text-center flex flex-col gap-1">
             <p class="text-xs text-slate-400">
-              <i class="fa-solid fa-shield-halved mr-1"></i>
-              เข้าสู่ระบบอย่างปลอดภัยด้วย Google OAuth
+              <i class="fa-solid fa-shield-halved mr-1 text-emerald-600"></i>
+              เข้าสู่ระบบอย่างปลอดภัยด้วย Google OAuth 2.0
             </p>
           </div>
         </div>
       </div>
-
       <div id="page-av-form" class="page-section">
         <div class="flex items-center justify-center min-h-[70vh]">
           <div class="bg-white w-full max-w-lg rounded-3xl shadow-sm p-8 my-4 border border-slate-200">
@@ -4755,6 +4801,11 @@ function nav(pageId) {
   if ($(pageId)) $(pageId).classList.add('active');
   window.scrollTo(0, 0);
 
+  if (pageId === 'page-auth') {
+    if (typeof checkLineOrWebView === 'function') checkLineOrWebView();
+    if (typeof renderGoogleSignInButton === 'function') renderGoogleSignInButton();
+  }
+
   $$('.gmail-nav-item').forEach(el => el.classList.remove('active'));
   const activeMap = {
     'page-home': 'gnav-home',
@@ -5128,6 +5179,36 @@ function updateSessionUI() {
     if ($('dropdown-user-role')) $('dropdown-user-role').textContent = 'สถานะ: ทั่วไป';
 
     nav('page-auth');
+  }
+
+  // ── อัปเดตสถานะปุ่มเข้าสู่ระบบ / โปรไฟล์ ทั้งบน Header, Mobile Nav และ Dropdown ──
+  const isUserLoggedIn = !!(currentTeacher || isAdminLoggedIn);
+  const headerLoginBtn = $('header-login-btn');
+  const headerProfileBtn = $('header-user-btn');
+  const mbAuthIcon = $('mbnav-auth-icon');
+  const mbAuthText = $('mbnav-auth-text');
+  const dropdownLoginItem = $('dropdown-login-item');
+  const dropdownLogoutItem = $('dropdown-logout-item');
+
+  if (isUserLoggedIn) {
+    if (headerLoginBtn) { headerLoginBtn.classList.add('hidden'); headerLoginBtn.classList.remove('flex'); }
+    if (headerProfileBtn) { headerProfileBtn.classList.remove('hidden'); }
+    if (mbAuthIcon) mbAuthIcon.className = 'fa-solid fa-user text-lg text-slate-500';
+    if (mbAuthText) {
+      mbAuthText.textContent = 'ฉัน';
+      mbAuthText.className = 'text-[10px] font-medium text-slate-500';
+    }
+    if (dropdownLoginItem) dropdownLoginItem.classList.add('hidden');
+    if (dropdownLogoutItem) dropdownLogoutItem.classList.remove('hidden');
+  } else {
+    if (headerLoginBtn) { headerLoginBtn.classList.remove('hidden'); headerLoginBtn.classList.add('flex'); }
+    if (mbAuthIcon) mbAuthIcon.className = 'fa-solid fa-right-to-bracket text-lg text-emerald-600';
+    if (mbAuthText) {
+      mbAuthText.textContent = 'เข้าสู่ระบบ';
+      mbAuthText.className = 'text-[10px] font-bold text-emerald-600';
+    }
+    if (dropdownLoginItem) dropdownLoginItem.classList.remove('hidden');
+    if (dropdownLogoutItem) dropdownLogoutItem.classList.add('hidden');
   }
 
   updateNotificationBadges();
@@ -7510,6 +7591,94 @@ window.archiveAdvTask = async function(type, index) {
 
 
 
+// ============================================================================
+// 🔐 ระบบจัดการการล็อกอินบนอุปกรณ์เคลื่อนที่และเบราว์เซอร์ภายนอก (Mobile Auth Helpers)
+// ============================================================================
+const GOOGLE_CLIENT_ID = '309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com';
+
+function checkLineOrWebView() {
+  const isLine = /Line/i.test(navigator.userAgent) || /FBAV/i.test(navigator.userAgent) || /Instagram/i.test(navigator.userAgent);
+  const alertEl = $('line-browser-alert');
+  if (alertEl) {
+    if (isLine) alertEl.classList.remove('hidden');
+    else alertEl.classList.add('hidden');
+  }
+}
+
+function openInExternalBrowser() {
+  let url = window.location.href;
+  if (!url.includes('openExternalBrowser=1')) {
+    url += (url.includes('?') ? '&' : '?') + 'openExternalBrowser=1';
+  }
+  window.location.href = url;
+}
+
+function renderGoogleSignInButton() {
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    try {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false
+      });
+      const container = $('google-signin-btn-container');
+      if (container) {
+        google.accounts.id.renderButton(container, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'signin_with',
+          shape: 'rectangular',
+          width: 300
+        });
+      }
+    } catch (e) {
+      console.warn('[Google Auth] renderButton error:', e);
+    }
+  } else {
+    setTimeout(renderGoogleSignInButton, 600);
+  }
+}
+
+function handleManualGoogleSignIn() {
+  const isLine = /Line/i.test(navigator.userAgent) || /FBAV/i.test(navigator.userAgent);
+  if (isLine) {
+    openInExternalBrowser();
+    return;
+  }
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    try {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false
+      });
+      google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          console.warn('Google One Tap suppressed:', notification.getNotDisplayedReason());
+        }
+      });
+    } catch (e) {
+      console.warn('Manual Google Sign In error:', e);
+    }
+  } else {
+    Swal.fire({
+      icon: 'info',
+      title: 'กำลังเชื่อมต่อ Google...',
+      text: 'ระบบกำลังโหลดบริการ Google Identity กรุณารอสักครู่แล้วลองกดใหม่อีกครั้งครับ',
+      timer: 3000
+    });
+  }
+}
+
+function handleMobileAuthClick() {
+  if (currentTeacher || isAdminLoggedIn) {
+    toggleProfileDropdown();
+  } else {
+    nav('page-auth');
+  }
+}
+
 // Handle conditional Google One Tap prompt
 function checkAndPromptOneTap() {
   // If already logged in, do nothing
@@ -7518,12 +7687,16 @@ function checkAndPromptOneTap() {
   // If in LINE app, don't prompt Google One Tap
   if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) return;
 
+  checkLineOrWebView();
+  renderGoogleSignInButton();
+
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     google.accounts.id.prompt();
   } else {
     setTimeout(checkAndPromptOneTap, 1000); // Try again in 1s if Google script is still loading
   }
 }
+
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof initFirebase === 'function') initFirebase();
   checkAndPromptOneTap();
@@ -11068,11 +11241,11 @@ function closeQrScanner() {
         class="absolute top-0 right-2 bg-rose-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
     </button>
 
-    <!-- Profile/Auth -->
-    <button onclick="toggleProfileDropdown()"
-      class="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-[#FF5F5F] w-16 transition-colors">
-      <i class="fa-solid fa-user text-lg"></i>
-      <span class="text-[10px] font-medium">ฉัน</span>
+    <!-- Profile/Auth (Dynamic: shows เข้าสู่ระบบ when guest, ฉัน when logged in) -->
+    <button id="mbnav-auth-btn" onclick="handleMobileAuthClick()"
+      class="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-[#265D5A] w-16 transition-colors">
+      <i id="mbnav-auth-icon" class="fa-solid fa-right-to-bracket text-lg text-[#265D5A]"></i>
+      <span id="mbnav-auth-text" class="text-[10px] font-bold text-[#265D5A]">เข้าสู่ระบบ</span>
     </button>
     <!-- More Menu (Mobile) -->
     <button onclick="toggleMobileSidebar()"

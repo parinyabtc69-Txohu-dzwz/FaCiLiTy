@@ -1700,6 +1700,11 @@ function nav(pageId) {
   if ($(pageId)) $(pageId).classList.add('active');
   window.scrollTo(0, 0);
 
+  if (pageId === 'page-auth') {
+    if (typeof checkLineOrWebView === 'function') checkLineOrWebView();
+    if (typeof renderGoogleSignInButton === 'function') renderGoogleSignInButton();
+  }
+
   $$('.gmail-nav-item').forEach(el => el.classList.remove('active'));
   const activeMap = {
     'page-home': 'gnav-home',
@@ -2073,6 +2078,36 @@ function updateSessionUI() {
     if ($('dropdown-user-role')) $('dropdown-user-role').textContent = 'สถานะ: ทั่วไป';
 
     nav('page-auth');
+  }
+
+  // ── อัปเดตสถานะปุ่มเข้าสู่ระบบ / โปรไฟล์ ทั้งบน Header, Mobile Nav และ Dropdown ──
+  const isUserLoggedIn = !!(currentTeacher || isAdminLoggedIn);
+  const headerLoginBtn = $('header-login-btn');
+  const headerProfileBtn = $('header-user-btn');
+  const mbAuthIcon = $('mbnav-auth-icon');
+  const mbAuthText = $('mbnav-auth-text');
+  const dropdownLoginItem = $('dropdown-login-item');
+  const dropdownLogoutItem = $('dropdown-logout-item');
+
+  if (isUserLoggedIn) {
+    if (headerLoginBtn) { headerLoginBtn.classList.add('hidden'); headerLoginBtn.classList.remove('flex'); }
+    if (headerProfileBtn) { headerProfileBtn.classList.remove('hidden'); }
+    if (mbAuthIcon) mbAuthIcon.className = 'fa-solid fa-user text-lg text-slate-500';
+    if (mbAuthText) {
+      mbAuthText.textContent = 'ฉัน';
+      mbAuthText.className = 'text-[10px] font-medium text-slate-500';
+    }
+    if (dropdownLoginItem) dropdownLoginItem.classList.add('hidden');
+    if (dropdownLogoutItem) dropdownLogoutItem.classList.remove('hidden');
+  } else {
+    if (headerLoginBtn) { headerLoginBtn.classList.remove('hidden'); headerLoginBtn.classList.add('flex'); }
+    if (mbAuthIcon) mbAuthIcon.className = 'fa-solid fa-right-to-bracket text-lg text-emerald-600';
+    if (mbAuthText) {
+      mbAuthText.textContent = 'เข้าสู่ระบบ';
+      mbAuthText.className = 'text-[10px] font-bold text-emerald-600';
+    }
+    if (dropdownLoginItem) dropdownLoginItem.classList.remove('hidden');
+    if (dropdownLogoutItem) dropdownLogoutItem.classList.add('hidden');
   }
 
   updateNotificationBadges();
@@ -4455,6 +4490,94 @@ window.archiveAdvTask = async function(type, index) {
 
 
 
+// ============================================================================
+// 🔐 ระบบจัดการการล็อกอินบนอุปกรณ์เคลื่อนที่และเบราว์เซอร์ภายนอก (Mobile Auth Helpers)
+// ============================================================================
+const GOOGLE_CLIENT_ID = '309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com';
+
+function checkLineOrWebView() {
+  const isLine = /Line/i.test(navigator.userAgent) || /FBAV/i.test(navigator.userAgent) || /Instagram/i.test(navigator.userAgent);
+  const alertEl = $('line-browser-alert');
+  if (alertEl) {
+    if (isLine) alertEl.classList.remove('hidden');
+    else alertEl.classList.add('hidden');
+  }
+}
+
+function openInExternalBrowser() {
+  let url = window.location.href;
+  if (!url.includes('openExternalBrowser=1')) {
+    url += (url.includes('?') ? '&' : '?') + 'openExternalBrowser=1';
+  }
+  window.location.href = url;
+}
+
+function renderGoogleSignInButton() {
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    try {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false
+      });
+      const container = $('google-signin-btn-container');
+      if (container) {
+        google.accounts.id.renderButton(container, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'signin_with',
+          shape: 'rectangular',
+          width: 300
+        });
+      }
+    } catch (e) {
+      console.warn('[Google Auth] renderButton error:', e);
+    }
+  } else {
+    setTimeout(renderGoogleSignInButton, 600);
+  }
+}
+
+function handleManualGoogleSignIn() {
+  const isLine = /Line/i.test(navigator.userAgent) || /FBAV/i.test(navigator.userAgent);
+  if (isLine) {
+    openInExternalBrowser();
+    return;
+  }
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    try {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false
+      });
+      google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          console.warn('Google One Tap suppressed:', notification.getNotDisplayedReason());
+        }
+      });
+    } catch (e) {
+      console.warn('Manual Google Sign In error:', e);
+    }
+  } else {
+    Swal.fire({
+      icon: 'info',
+      title: 'กำลังเชื่อมต่อ Google...',
+      text: 'ระบบกำลังโหลดบริการ Google Identity กรุณารอสักครู่แล้วลองกดใหม่อีกครั้งครับ',
+      timer: 3000
+    });
+  }
+}
+
+function handleMobileAuthClick() {
+  if (currentTeacher || isAdminLoggedIn) {
+    toggleProfileDropdown();
+  } else {
+    nav('page-auth');
+  }
+}
+
 // Handle conditional Google One Tap prompt
 function checkAndPromptOneTap() {
   // If already logged in, do nothing
@@ -4463,12 +4586,16 @@ function checkAndPromptOneTap() {
   // If in LINE app, don't prompt Google One Tap
   if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) return;
 
+  checkLineOrWebView();
+  renderGoogleSignInButton();
+
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     google.accounts.id.prompt();
   } else {
     setTimeout(checkAndPromptOneTap, 1000); // Try again in 1s if Google script is still loading
   }
 }
+
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof initFirebase === 'function') initFirebase();
   checkAndPromptOneTap();
