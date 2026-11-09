@@ -48,6 +48,14 @@ const NotificationHub = (function() {
       if (audioContextInstance && audioContextInstance.state === 'suspended') {
         audioContextInstance.resume();
       }
+      // ปลดล็อก audio pipeline บน iOS WebKit ให้พร้อมรับเสียงจาก WebSocket ตลอดเวลา
+      if (audioContextInstance && audioContextInstance.state === 'running') {
+        const buffer = audioContextInstance.createBuffer(1, 1, 22050);
+        const source = audioContextInstance.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioContextInstance.destination);
+        source.start(0);
+      }
     } catch (_) {}
   }
 
@@ -641,12 +649,17 @@ const NotificationHub = (function() {
 
   // ── 13. เชื่อมต่อ Firebase Firestore Real-Time Listener ───────────────────
   function initListener() {
-    if (isListenerActive || !window.firestoreDb) return;
+    if (isListenerActive) return;
+    if (!window.firestoreDb) {
+      setTimeout(initListener, 400);
+      return;
+    }
 
     try {
       isListenerActive = true;
       let isFirstLoad = true;
       const initialTimestamp = Date.now();
+      console.log('[NotificationHub] 🎧 Firestore Real-Time listener connected successfully!');
 
       window.firestoreDb.collection('notifications')
         .orderBy('createdAt', 'desc')
@@ -782,11 +795,7 @@ const NotificationHub = (function() {
 
   // ── 16. เริ่มการทำงาน (Init) ──────────────────────────────────────────────
   function init() {
-    if (typeof window.firestoreDb !== 'undefined') {
-      initListener();
-    } else {
-      setTimeout(init, 800);
-    }
+    initListener();
     updateBadge();
     renderList();
     updatePermissionUI();

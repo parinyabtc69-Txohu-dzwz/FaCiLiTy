@@ -47,6 +47,11 @@ function initFirebase() {
     window.firebaseStorage = firebaseStorage;
     window.firebaseAuth = firebaseAuth;
     console.log('🔥 Firebase Services initialized successfully');
+
+    // เรียก NotificationHub ทันทีที่ Firestore พร้อมใช้งาน
+    if (window.NotificationHub && typeof window.NotificationHub.init === 'function') {
+      window.NotificationHub.init();
+    }
     return true;
   } catch (err) {
     console.error('Firebase initialization error:', err);
