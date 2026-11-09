@@ -559,3 +559,4 @@ window.NotificationHub = NotificationHub;
 document.addEventListener('DOMContentLoaded', () => {
   NotificationHub.init();
 });
+
