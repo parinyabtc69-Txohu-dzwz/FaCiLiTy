@@ -42,8 +42,8 @@
             </div>
           </div>
 
-          <!-- Custom Google Sign-In Button (รับประกันปุ่มแสดง 100% บนมือถือทุกเครื่อง) -->
-          <div id="fallback-google-btn-wrapper" class="mt-2.5 flex justify-center w-full">
+          <!-- Custom Google Sign-In Button (สำรองกรณีอยู่ใน LINE หรือ iframe โหลดไม่สำเร็จ) -->
+          <div id="fallback-google-btn-wrapper" class="hidden mt-2.5 justify-center w-full">
             <button id="btn-custom-google-signin" onclick="handleManualGoogleSignIn()"
               class="w-[300px] h-[44px] bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-semibold text-sm rounded-xl border border-slate-300 shadow-sm flex items-center justify-center gap-3 transition-all active:scale-95">
               <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">

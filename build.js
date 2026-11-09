@@ -72,9 +72,15 @@ if (fs.existsSync(pagesDir)) {
   htmlTemplate = htmlTemplate.replace('<!-- INCLUDE_PAGES -->', () => pagesContent);
 }
 
-fs.writeFileSync(indexHtmlPath, htmlTemplate);
+// บันทึก index_app.html เสมอ
 const indexAppPath = path.join(__dirname, 'index_app.html');
-if (fs.existsSync(indexAppPath)) {
-  fs.writeFileSync(indexAppPath, htmlTemplate);
+fs.writeFileSync(indexAppPath, htmlTemplate);
+
+// ถ้าไม่ได้อยู่ในโหมดปิดปรับปรุง ให้บันทึก index.html ด้วย
+const isMaintenanceMode = fs.existsSync(indexHtmlPath) && fs.readFileSync(indexHtmlPath, 'utf8').includes('ปิดปรับปรุงระบบชั่วคราว');
+if (!isMaintenanceMode) {
+  fs.writeFileSync(indexHtmlPath, htmlTemplate);
+} else {
+  console.log('[Maintenance Mode Active] index.html preserved as maintenance page. index_app.html updated.');
 }
 console.log('Build successful!');

@@ -4498,9 +4498,23 @@ const GOOGLE_CLIENT_ID = '309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.goo
 function checkLineOrWebView() {
   const isLine = /Line/i.test(navigator.userAgent) || /FBAV/i.test(navigator.userAgent) || /Instagram/i.test(navigator.userAgent);
   const alertEl = $('line-browser-alert');
-  if (alertEl) {
-    if (isLine) alertEl.classList.remove('hidden');
-    else alertEl.classList.add('hidden');
+  const googleContainer = $('google-signin-btn-container');
+  const fallbackWrapper = $('fallback-google-btn-wrapper');
+
+  if (isLine) {
+    if (alertEl) alertEl.classList.remove('hidden');
+    if (googleContainer) googleContainer.classList.add('hidden');
+    if (fallbackWrapper) {
+      fallbackWrapper.classList.remove('hidden');
+      fallbackWrapper.classList.add('flex');
+    }
+  } else {
+    if (alertEl) alertEl.classList.add('hidden');
+    if (googleContainer) googleContainer.classList.remove('hidden');
+    if (fallbackWrapper) {
+      fallbackWrapper.classList.add('hidden');
+      fallbackWrapper.classList.remove('flex');
+    }
   }
 }
 
@@ -4513,6 +4527,12 @@ function openInExternalBrowser() {
 }
 
 function renderGoogleSignInButton() {
+  const isLine = /Line/i.test(navigator.userAgent) || /FBAV/i.test(navigator.userAgent) || /Instagram/i.test(navigator.userAgent);
+  if (isLine) {
+    checkLineOrWebView();
+    return;
+  }
+
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     try {
       google.accounts.id.initialize({
@@ -4522,6 +4542,7 @@ function renderGoogleSignInButton() {
       });
       const container = $('google-signin-btn-container');
       if (container) {
+        container.classList.remove('hidden');
         google.accounts.id.renderButton(container, {
           type: 'standard',
           theme: 'outline',
@@ -4530,9 +4551,24 @@ function renderGoogleSignInButton() {
           shape: 'rectangular',
           width: 300
         });
+
+        // หลังจาก 2 วินาที ตรวจสอบว่า iframe ขึ้นหรือไม่ หากไม่ขึ้นค่อยแสดง fallback (ไม่แสดงซ้ำ 2 ปุ่ม)
+        setTimeout(() => {
+          const hasIframe = container.querySelector('iframe');
+          const fallback = $('fallback-google-btn-wrapper');
+          if (!hasIframe && fallback) {
+            fallback.classList.remove('hidden');
+            fallback.classList.add('flex');
+          }
+        }, 2000);
       }
     } catch (e) {
       console.warn('[Google Auth] renderButton error:', e);
+      const fallback = $('fallback-google-btn-wrapper');
+      if (fallback) {
+        fallback.classList.remove('hidden');
+        fallback.classList.add('flex');
+      }
     }
   } else {
     setTimeout(renderGoogleSignInButton, 600);
