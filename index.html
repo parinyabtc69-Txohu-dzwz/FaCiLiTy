@@ -11985,17 +11985,36 @@ const NotificationHub = (function() {
         });
 
       // ดักฟัง Ticket ใหม่ในตาราง tickets โดยตรงแบบ Real-time เผื่อกรณีสร้างงานซ่อมผ่านหน้าฟอร์ม
+      let isTicketsFirstLoad = true;
       window.firestoreDb.collection('tickets')
         .orderBy('createdAt', 'desc')
         .limit(1)
         .onSnapshot(snap => {
-          if (isFirstLoad) return;
+          if (isTicketsFirstLoad) {
+            snap.docs.forEach(doc => {
+              const t = doc.data() || {};
+              const tid = t.ticketId || doc.id;
+              if (tid) knownDocIds.add('ticket_' + tid);
+            });
+            isTicketsFirstLoad = false;
+            return;
+          }
           snap.docChanges().forEach(change => {
             if (change.type === 'added') {
               const ticket = change.doc.data() || {};
               const ticketId = ticket.ticketId || change.doc.id;
               if (!ticketId || knownDocIds.has('ticket_' + ticketId)) return;
               knownDocIds.add('ticket_' + ticketId);
+
+              // ตรวจสอบอายุของ ticket (ต้องสร้างไม่เกิน 3 นาที เพื่อป้องกันงานเก่าเด้งซ้ำ)
+              let ticketTime = 0;
+              if (ticket.createdAt && ticket.createdAt.toMillis) ticketTime = ticket.createdAt.toMillis();
+              else if (ticket.createdAt && ticket.createdAt.seconds) ticketTime = ticket.createdAt.seconds * 1000;
+              else if (ticket.createdAt instanceof Date) ticketTime = ticket.createdAt.getTime();
+
+              if (ticketTime && (Date.now() - ticketTime > 180000)) {
+                return; // งานเก่า ไม่ต้องแจ้งเตือนซ้ำ
+              }
 
               // ตรวจสอบว่ามี notification ในคอลเลกชัน notifications แล้วหรือยัง หากยังไม่มีให้เด้ง Toast
               const exists = notifications.some(n => n.ticketId === ticketId);
