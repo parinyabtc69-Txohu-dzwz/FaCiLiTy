@@ -46,6 +46,18 @@ function initFirebase() {
     window.firestoreDb = firestoreDb;
     window.firebaseStorage = firebaseStorage;
     window.firebaseAuth = firebaseAuth;
+
+    // ตรวจสอบและเริ่มต้น Firebase Cloud Messaging (Web Push)
+    try {
+      if (typeof firebase.messaging === 'function' && firebase.messaging.isSupported && firebase.messaging.isSupported()) {
+        firebaseMessaging = firebase.messaging();
+        window.firebaseMessaging = firebaseMessaging;
+        console.log('📡 Firebase Messaging initialized successfully');
+      }
+    } catch (me) {
+      console.warn('Firebase Messaging init note:', me);
+    }
+
     console.log('🔥 Firebase Services initialized successfully');
 
     // เรียก NotificationHub ทันทีที่ Firestore พร้อมใช้งาน

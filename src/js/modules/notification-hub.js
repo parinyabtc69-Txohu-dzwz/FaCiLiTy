@@ -23,6 +23,11 @@ const NotificationHub = (function () {
   const STORAGE_DELETED_KEY = 'facility_deleted_notif_ids_v1';
   const STORAGE_SOUND_KEY = 'facility_notif_sound_enabled';
 
+  // คีย์ VAPID สำหรับ Firebase Cloud Messaging Web Push (ล็อกหน้าจอ / สลีป)
+  const FCM_VAPID_KEY = 'BAU_fcE9IXe9lm6ExVioCModZ_tSUJi5D6T5WjcelG772_jGcdN4lRhU88NQxIT_SudIcPFzXcrUuhDvR2jBwfo';
+  let isFcmListenerSet = false;
+  let currentFcmToken = null;
+
   // ── 1. ระบบจำสถานะการอ่านและรายการที่ถูกลบ (Read / Deleted) ────────────────
   function getReadIds() {
     try {
@@ -715,6 +720,9 @@ const NotificationHub = (function () {
           tag: 'facility-welcome'
         });
 
+        // 2. ขอ FCM Web Push Token และบันทึกลง Firestore (fcm_tokens) สำหรับแจ้งเตือนตอนล็อกหน้าจอ
+        requestFCMToken();
+
       } else if (permission === 'denied') {
         if (typeof Swal !== 'undefined') {
           Swal.fire({
@@ -768,6 +776,142 @@ const NotificationHub = (function () {
       body: item.body || item.subject || 'มีงานแจ้งซ่อมหรืออัปเดตใหม่ในระบบ',
       ticketId: item.ticketId
     });
+  }
+
+  // ── 11.1 ขอสิทธิ์และดึง FCM Token สำหรับ Web Push ล็อกหน้าจอ ────────────
+  async function requestFCMToken(retryCount = 0) {
+    try {
+      if (!('Notification' in window) || Notification.permission !== 'granted') {
+        console.log('[NotificationHub] Notification permission not granted, skipping FCM token request');
+        return null;
+      }
+
+      if (!window.firebaseMessaging) {
+        if (retryCount < 5) {
+          setTimeout(() => requestFCMToken(retryCount + 1), 600);
+        } else {
+          console.warn('[NotificationHub] Firebase Messaging not available after retry');
+        }
+        return null;
+      }
+
+      // รอ Service Worker registration ให้พร้อม
+      let swReg = null;
+      if (navigator.serviceWorker) {
+        swReg = await navigator.serviceWorker.ready.catch(() => null);
+      }
+
+      console.log('[NotificationHub] 📲 Requesting FCM Token with VAPID Key...');
+      const tokenOptions = {
+        vapidKey: FCM_VAPID_KEY
+      };
+      if (swReg) {
+        tokenOptions.serviceWorkerRegistration = swReg;
+      }
+
+      const token = await window.firebaseMessaging.getToken(tokenOptions);
+      if (token) {
+        currentFcmToken = token;
+        console.log('[NotificationHub] 🎯 FCM Token obtained successfully:', token.substring(0, 15) + '...');
+        await saveFCMTokenToFirestore(token);
+        setupFCMForegroundListener();
+        return token;
+      } else {
+        console.warn('[NotificationHub] No FCM token returned. Check notification permission and VAPID key.');
+        return null;
+      }
+    } catch (err) {
+      console.warn('[NotificationHub] FCM getToken error:', err);
+      return null;
+    }
+  }
+
+  // ── 11.2 บันทึก FCM Token ลง Firestore (fcm_tokens) ───────────────────────
+  async function saveFCMTokenToFirestore(token) {
+    if (!token) return;
+    if (!window.firestoreDb) {
+      setTimeout(() => saveFCMTokenToFirestore(token), 1000);
+      return;
+    }
+
+    try {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      const platform = isIOS ? (isStandalone ? 'ios_pwa' : 'ios_safari') : (isMobile ? 'android' : 'desktop');
+      const currentUser = window.currentTeacher || localStorage.getItem('last_active_user') || 'ครูผู้ใช้งาน';
+      const userRole = (typeof currentUserRole !== 'undefined' ? currentUserRole : '') || localStorage.getItem('user_role') || 'user';
+
+      const safeTokenId = token.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 80);
+
+      await window.firestoreDb.collection('fcm_tokens').doc(safeTokenId).set({
+        token: token,
+        userName: currentUser,
+        role: userRole,
+        platform: platform,
+        isStandalone: isStandalone,
+        userAgent: navigator.userAgent,
+        updatedAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+          ? firebase.firestore.FieldValue.serverTimestamp()
+          : new Date(),
+        updatedAtMs: Date.now()
+      }, { merge: true });
+
+      console.log('[NotificationHub] 💾 FCM Token saved to Firestore (fcm_tokens):', platform, currentUser);
+
+      // บันทึกลง Google Sheets ผ่าน Apps Script ควบคู่ไปด้วยสำหรับการส่ง Web Push จากหลังบ้าน
+      try {
+        const scriptEndpoint = (typeof scriptURL !== 'undefined') ? scriptURL : 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec';
+        fetch(scriptEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'register_fcm_token',
+            token: token,
+            userName: currentUser,
+            role: userRole,
+            platform: platform,
+            isStandalone: isStandalone,
+            userAgent: navigator.userAgent
+          })
+        }).catch(() => { });
+      } catch (errSync) { }
+    } catch (e) {
+      console.warn('[NotificationHub] saveFCMToken error:', e);
+    }
+  }
+
+  // ── 11.3 ดักฟังข้อความ FCM เมื่อเปิดแอปอยู่หน้าจอ (Foreground Listener) ─────────
+  function setupFCMForegroundListener() {
+    if (isFcmListenerSet || !window.firebaseMessaging) return;
+    try {
+      window.firebaseMessaging.onMessage(payload => {
+        console.log('[NotificationHub] 🔔 FCM Foreground message received:', payload);
+        const title = (payload.notification && payload.notification.title) ||
+                      (payload.data && payload.data.title) ||
+                      'FaCiLiTy แจ้งเตือน';
+        const body = (payload.notification && payload.notification.body) ||
+                     (payload.data && payload.data.body) ||
+                     '';
+        const ticketId = (payload.data && payload.data.ticketId) || '';
+
+        playChime();
+        showToast({
+          id: 'fcm_' + Date.now(),
+          ticketId: ticketId,
+          title: title,
+          body: body,
+          category: 'งานซ่อม',
+          taskType: 'repair',
+          location: 'ศูนย์ FaCiLiTy',
+          createdAt: new Date()
+        });
+      });
+      isFcmListenerSet = true;
+      console.log('[NotificationHub] 🎧 FCM Foreground listener configured');
+    } catch (e) {
+      console.warn('[NotificationHub] setupFCMForegroundListener error:', e);
+    }
   }
 
   function testDeviceNotification() {
@@ -1054,6 +1198,13 @@ const NotificationHub = (function () {
     renderList();
     updatePermissionUI();
 
+    // ขอ / ต่ออายุ FCM Web Push Token อัตโนมัติหากผู้ใช้เคยให้สิทธิ์แล้ว
+    if ('Notification' in window && Notification.permission === 'granted') {
+      setTimeout(() => {
+        requestFCMToken();
+      }, 1200);
+    }
+
     // ปลดล็อกระบบเสียงบนอุปกรณ์เคลื่อนที่เมื่อผู้ใช้แตะหรือคลิกหน้าจอ
     const unlockHandler = () => {
       unlockAudioContext();
@@ -1115,6 +1266,8 @@ const NotificationHub = (function () {
     openTicketAndDismiss,
     requestPushPermission: requestNativePermission,
     requestNativePermission,
+    requestFCMToken,
+    getFCMToken: () => currentFcmToken,
     checkNotificationPermission,
     updatePermissionUI,
     showDeviceNotification,
