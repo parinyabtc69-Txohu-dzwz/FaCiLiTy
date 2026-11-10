@@ -126,7 +126,7 @@ async function triggerPWAInstall() {
           hideInstallButtons();
         }
         deferredInstallPrompt = null;
-      } catch (err) {}
+      } catch (err) { }
       return;
     }
 
@@ -291,8 +291,8 @@ if ('serviceWorker' in navigator) {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       navigator.serviceWorker.getRegistration().then(reg => {
-        if (reg) reg.update().catch(() => {});
-      }).catch(() => {});
+        if (reg) reg.update().catch(() => { });
+      }).catch(() => { });
     }
   });
 }
