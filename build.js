@@ -76,11 +76,7 @@ if (fs.existsSync(pagesDir)) {
 const indexAppPath = path.join(__dirname, 'index_app.html');
 fs.writeFileSync(indexAppPath, htmlTemplate);
 
-// ถ้าอยู่ในโหมดปิดปรับปรุงระบบ ให้คงหน้า maintenance ไว้ที่ index.html
-const isMaintenanceMode = fs.existsSync(indexHtmlPath) && fs.readFileSync(indexHtmlPath, 'utf8').includes('ปิดปรับปรุงระบบชั่วคราว');
-if (!isMaintenanceMode) {
-  fs.writeFileSync(indexHtmlPath, htmlTemplate);
-} else {
-  console.log('[Maintenance Mode Active] index.html preserved as maintenance page. index_app.html updated.');
-}
+// บันทึก index.html (โหมดออนไลน์ Production พร้อมใช้งาน 100%)
+fs.writeFileSync(indexHtmlPath, htmlTemplate);
+console.log('[Production Online Mode] index.html updated and live!');
 console.log('Build successful!');
