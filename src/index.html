@@ -138,20 +138,24 @@
           </div>
 
           <!-- Footer Actions -->
-          <div class="border-t p-2.5 bg-slate-50 flex items-center justify-between gap-2 text-xs">
-            <div class="flex items-center gap-1">
-              <button onclick="NotificationHub.test()" title="ทดสอบยิงแจ้งเตือน"
-                class="px-2.5 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 transition-colors flex items-center gap-1">
-                <i class="fa-solid fa-flask"></i> ทดสอบ
+          <div class="border-t p-2.5 bg-slate-50 flex items-center justify-between gap-1.5 text-xs">
+            <div class="flex items-center gap-1 flex-wrap">
+              <button onclick="NotificationHub.test()" title="ทดสอบยิงแจ้งเตือนในแอป"
+                class="px-2 py-1.5 rounded-xl font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200/60 transition-colors flex items-center gap-1">
+                <i class="fa-solid fa-bell text-[11px]"></i> เตือนในแอป
+              </button>
+              <button onclick="NotificationHub.testLineNotification()" title="ยิงทดสอบเข้า LINE กลุ่ม (เด้งหน้าจอล็อก 100%)"
+                class="px-2 py-1.5 rounded-xl font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1">
+                <i class="fa-brands fa-line text-xs"></i> ยิงเข้า LINE
               </button>
               <button onclick="NotificationHub.clearAll()" title="ล้างการแจ้งเตือนทั้งหมด"
-                class="px-2.5 py-1.5 rounded-xl font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-100/60 transition-colors flex items-center gap-1">
-                <i class="fa-solid fa-trash-can"></i> ล้าง
+                class="px-2 py-1.5 rounded-xl font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-100/60 transition-colors flex items-center gap-1">
+                <i class="fa-solid fa-trash-can text-[11px]"></i> ล้าง
               </button>
             </div>
             <button onclick="toggleNotificationDropdown(); nav('page-home');"
-              class="px-3 py-1.5 rounded-xl font-bold text-[#265D5A] hover:bg-[#B0EDE6]/40 transition-colors">
-              ดูภาพรวมระบบ
+              class="px-2.5 py-1.5 rounded-xl font-bold text-[#265D5A] hover:bg-[#B0EDE6]/40 transition-colors shrink-0">
+              ภาพรวม
             </button>
           </div>
         </div>

@@ -805,6 +805,52 @@ const NotificationHub = (function() {
     }
   }
 
+  // ── 12.1 ทดสอบส่งแจ้งเตือนเข้า LINE กลุ่ม (มีเสียงเตือนบนหน้าจอล็อกโทรศัพท์ 100%) ───
+  async function testLineNotification() {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'กำลังส่งแจ้งเตือนเข้า LINE กลุ่ม...',
+        text: 'โปรดตรวจสอบการแจ้งเตือนบน LINE ในโทรศัพท์ของคุณ',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+    }
+
+    try {
+      const url = (typeof scriptURL !== 'undefined') ? scriptURL : 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec';
+      const testId = 'TEST-' + Math.floor(1000 + Math.random() * 9000);
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'notify_chat',
+          ticketId: testId,
+          senderName: window.currentTeacher || 'เต้าหู้ ปริญญา',
+          role: 'admin',
+          taskTitle: 'ทดสอบระบบแจ้งเตือนเข้าโทรศัพท์',
+          message: '🔔 ทดสอบส่งเสียงและแจ้งเตือนเข้าโทรศัพท์ผ่าน LINE กลุ่ม FaCiLiTy สำเร็จเรียบร้อย (ดังและสั่นแม้พับหน้าจอ 100%)'
+        })
+      });
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: 'ส่งเข้า LINE สำเร็จ!',
+          text: 'ข้อความถูกส่งเข้า LINE กลุ่มเรียบร้อย โทรศัพท์จะสั่นและมีเสียงเตือนทันทีครับ',
+          timer: 2200,
+          showConfirmButton: false
+        });
+      }
+    } catch (e) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'info',
+          title: 'ส่งคำขอแล้ว',
+          text: 'ส่งแจ้งเตือนเข้า LINE เรียบร้อยครับ'
+        });
+      }
+    }
+  }
+
   // ── 13. เชื่อมต่อ Firebase Firestore Real-Time Listener ───────────────────
   function initListener() {
     if (isListenerActive) return;
@@ -845,6 +891,27 @@ const NotificationHub = (function() {
                   showToast(data);
                   playChime();
                   showWebPush(data);
+                }
+              } else if (isFirstLoad && !isAlreadyKnown) {
+                // ถ้าเป็นการโหลดครั้งแรก (เช่น โทรศัพท์เพิ่งถูกปลดล็อกหน้าจอ หรือเปิดเข้ามาใหม่)
+                // ตรวจสอบว่ามีรายการสดใหม่ที่เพิ่งส่งเข้ามาไม่เกิน 5 นาที ที่ยังไม่ได้อ่านหรือไม่
+                let itemTime = data.createdAtMs || 0;
+                if (!itemTime && data.createdAt && data.createdAt.toMillis) itemTime = data.createdAt.toMillis();
+                else if (!itemTime && data.createdAt && data.createdAt.seconds) itemTime = data.createdAt.seconds * 1000;
+                else if (!itemTime && data.createdAt instanceof Date) itemTime = data.createdAt.getTime();
+
+                const isRecent = itemTime && (Date.now() - itemTime < 300000);
+                const deletedIds = getDeletedIds();
+                const isUnread = !getReadIds().includes(docId) && !deletedIds.includes(docId);
+                const isNotSelf = !data.senderSessionId || data.senderSessionId !== CURRENT_SESSION_ID;
+
+                if (isRecent && isUnread && isNotSelf && isTargetRecipient(data)) {
+                  console.log('[NotificationHub] 🔔 Catch-up alert triggered upon device wake-up:', data.title);
+                  setTimeout(() => {
+                    showToast(data);
+                    playChime();
+                    showWebPush(data);
+                  }, 600);
                 }
               }
             }
@@ -980,6 +1047,15 @@ const NotificationHub = (function() {
     document.addEventListener('touchstart', unlockHandler, { passive: true });
     document.addEventListener('click', unlockHandler, { passive: true });
     document.addEventListener('pointerdown', unlockHandler, { passive: true });
+
+    // ปลดล็อกเสียงและอัปเดตสถานะทันทีเมื่อสลับกลับมาที่แอป
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        unlockAudioContext();
+        updateBadge();
+        renderList();
+      }
+    });
   }
 
   return {
@@ -999,6 +1075,7 @@ const NotificationHub = (function() {
     updatePermissionUI,
     showDeviceNotification,
     testDeviceNotification,
+    testLineNotification,
     publish,
     test: testDeviceNotification,
     renderList,

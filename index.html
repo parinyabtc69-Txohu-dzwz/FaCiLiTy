@@ -374,20 +374,24 @@
           </div>
 
           <!-- Footer Actions -->
-          <div class="border-t p-2.5 bg-slate-50 flex items-center justify-between gap-2 text-xs">
-            <div class="flex items-center gap-1">
-              <button onclick="NotificationHub.test()" title="ทดสอบยิงแจ้งเตือน"
-                class="px-2.5 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 transition-colors flex items-center gap-1">
-                <i class="fa-solid fa-flask"></i> ทดสอบ
+          <div class="border-t p-2.5 bg-slate-50 flex items-center justify-between gap-1.5 text-xs">
+            <div class="flex items-center gap-1 flex-wrap">
+              <button onclick="NotificationHub.test()" title="ทดสอบยิงแจ้งเตือนในแอป"
+                class="px-2 py-1.5 rounded-xl font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200/60 transition-colors flex items-center gap-1">
+                <i class="fa-solid fa-bell text-[11px]"></i> เตือนในแอป
+              </button>
+              <button onclick="NotificationHub.testLineNotification()" title="ยิงทดสอบเข้า LINE กลุ่ม (เด้งหน้าจอล็อก 100%)"
+                class="px-2 py-1.5 rounded-xl font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1">
+                <i class="fa-brands fa-line text-xs"></i> ยิงเข้า LINE
               </button>
               <button onclick="NotificationHub.clearAll()" title="ล้างการแจ้งเตือนทั้งหมด"
-                class="px-2.5 py-1.5 rounded-xl font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-100/60 transition-colors flex items-center gap-1">
-                <i class="fa-solid fa-trash-can"></i> ล้าง
+                class="px-2 py-1.5 rounded-xl font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-100/60 transition-colors flex items-center gap-1">
+                <i class="fa-solid fa-trash-can text-[11px]"></i> ล้าง
               </button>
             </div>
             <button onclick="toggleNotificationDropdown(); nav('page-home');"
-              class="px-3 py-1.5 rounded-xl font-bold text-[#265D5A] hover:bg-[#B0EDE6]/40 transition-colors">
-              ดูภาพรวมระบบ
+              class="px-2.5 py-1.5 rounded-xl font-bold text-[#265D5A] hover:bg-[#B0EDE6]/40 transition-colors shrink-0">
+              ภาพรวม
             </button>
           </div>
         </div>
@@ -12048,6 +12052,52 @@ const NotificationHub = (function() {
     }
   }
 
+  // ── 12.1 ทดสอบส่งแจ้งเตือนเข้า LINE กลุ่ม (มีเสียงเตือนบนหน้าจอล็อกโทรศัพท์ 100%) ───
+  async function testLineNotification() {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'กำลังส่งแจ้งเตือนเข้า LINE กลุ่ม...',
+        text: 'โปรดตรวจสอบการแจ้งเตือนบน LINE ในโทรศัพท์ของคุณ',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+    }
+
+    try {
+      const url = (typeof scriptURL !== 'undefined') ? scriptURL : 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec';
+      const testId = 'TEST-' + Math.floor(1000 + Math.random() * 9000);
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'notify_chat',
+          ticketId: testId,
+          senderName: window.currentTeacher || 'เต้าหู้ ปริญญา',
+          role: 'admin',
+          taskTitle: 'ทดสอบระบบแจ้งเตือนเข้าโทรศัพท์',
+          message: '🔔 ทดสอบส่งเสียงและแจ้งเตือนเข้าโทรศัพท์ผ่าน LINE กลุ่ม FaCiLiTy สำเร็จเรียบร้อย (ดังและสั่นแม้พับหน้าจอ 100%)'
+        })
+      });
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: 'ส่งเข้า LINE สำเร็จ!',
+          text: 'ข้อความถูกส่งเข้า LINE กลุ่มเรียบร้อย โทรศัพท์จะสั่นและมีเสียงเตือนทันทีครับ',
+          timer: 2200,
+          showConfirmButton: false
+        });
+      }
+    } catch (e) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'info',
+          title: 'ส่งคำขอแล้ว',
+          text: 'ส่งแจ้งเตือนเข้า LINE เรียบร้อยครับ'
+        });
+      }
+    }
+  }
+
   // ── 13. เชื่อมต่อ Firebase Firestore Real-Time Listener ───────────────────
   function initListener() {
     if (isListenerActive) return;
@@ -12088,6 +12138,27 @@ const NotificationHub = (function() {
                   showToast(data);
                   playChime();
                   showWebPush(data);
+                }
+              } else if (isFirstLoad && !isAlreadyKnown) {
+                // ถ้าเป็นการโหลดครั้งแรก (เช่น โทรศัพท์เพิ่งถูกปลดล็อกหน้าจอ หรือเปิดเข้ามาใหม่)
+                // ตรวจสอบว่ามีรายการสดใหม่ที่เพิ่งส่งเข้ามาไม่เกิน 5 นาที ที่ยังไม่ได้อ่านหรือไม่
+                let itemTime = data.createdAtMs || 0;
+                if (!itemTime && data.createdAt && data.createdAt.toMillis) itemTime = data.createdAt.toMillis();
+                else if (!itemTime && data.createdAt && data.createdAt.seconds) itemTime = data.createdAt.seconds * 1000;
+                else if (!itemTime && data.createdAt instanceof Date) itemTime = data.createdAt.getTime();
+
+                const isRecent = itemTime && (Date.now() - itemTime < 300000);
+                const deletedIds = getDeletedIds();
+                const isUnread = !getReadIds().includes(docId) && !deletedIds.includes(docId);
+                const isNotSelf = !data.senderSessionId || data.senderSessionId !== CURRENT_SESSION_ID;
+
+                if (isRecent && isUnread && isNotSelf && isTargetRecipient(data)) {
+                  console.log('[NotificationHub] 🔔 Catch-up alert triggered upon device wake-up:', data.title);
+                  setTimeout(() => {
+                    showToast(data);
+                    playChime();
+                    showWebPush(data);
+                  }, 600);
                 }
               }
             }
@@ -12223,6 +12294,15 @@ const NotificationHub = (function() {
     document.addEventListener('touchstart', unlockHandler, { passive: true });
     document.addEventListener('click', unlockHandler, { passive: true });
     document.addEventListener('pointerdown', unlockHandler, { passive: true });
+
+    // ปลดล็อกเสียงและอัปเดตสถานะทันทีเมื่อสลับกลับมาที่แอป
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        unlockAudioContext();
+        updateBadge();
+        renderList();
+      }
+    });
   }
 
   return {
@@ -12242,6 +12322,7 @@ const NotificationHub = (function() {
     updatePermissionUI,
     showDeviceNotification,
     testDeviceNotification,
+    testLineNotification,
     publish,
     test: testDeviceNotification,
     renderList,
@@ -12509,6 +12590,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // ลงทะเบียน Service Worker
 if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      console.log('[PWA] ตรวจพบเวอร์ชันใหม่ กำลังรีโหลดเพื่ออัปเดตระบบ...');
+      window.location.reload();
+    }
+  });
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => {
