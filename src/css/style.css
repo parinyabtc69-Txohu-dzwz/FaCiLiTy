@@ -194,6 +194,26 @@
 }
 
 /* ==========================================================================
+   🔔 กล่องแจ้งเตือนลอยหน้าจอ (Floating Toast Notification Container)
+   ให้อยู่เหนือ Dropdown และ Modal ทุกชนิด (z-index 99999999) และเว้นขอบ Dynamic Island บน iPhone
+   ========================================================================== */
+#toast-notification-container {
+  z-index: 99999999 !important;
+  pointer-events: none;
+}
+
+@media (max-width: 639px) {
+  #toast-notification-container {
+    top: max(16px, calc(env(safe-area-inset-top, 0px) + 12px)) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 420px !important;
+  }
+}
+
+/* ==========================================================================
    🔔 ศูนย์การแจ้งเตือน (Notification Dropdown) Responsive Positioning
    ========================================================================== */
 @media (max-width: 639px) {

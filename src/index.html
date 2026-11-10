@@ -140,11 +140,11 @@
           <!-- Footer Actions -->
           <div class="border-t p-2.5 bg-slate-50 flex items-center justify-between gap-1.5 text-xs">
             <div class="flex items-center gap-1 flex-wrap">
-              <button onclick="NotificationHub.test()" title="ทดสอบยิงแจ้งเตือนในแอป"
+              <button onclick="NotificationHub.test()" title="ทดสอบยิงแจ้งเตือนในแอป (เด้งพร้อมกันทุกเครื่อง)"
                 class="px-2 py-1.5 rounded-xl font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200/60 transition-colors flex items-center gap-1">
                 <i class="fa-solid fa-bell text-[11px]"></i> เตือนในแอป
               </button>
-              <button onclick="NotificationHub.testLineNotification()" title="ยิงทดสอบเข้า LINE กลุ่ม (เด้งหน้าจอล็อก 100%)"
+              <button onclick="NotificationHub.testLineNotification()" title="ยิงทดสอบเข้า LINE กลุ่ม (เด้งหน้าจอล็อกโทรศัพท์ 100%)"
                 class="px-2 py-1.5 rounded-xl font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1">
                 <i class="fa-brands fa-line text-xs"></i> ยิงเข้า LINE
               </button>
@@ -153,10 +153,16 @@
                 <i class="fa-solid fa-trash-can text-[11px]"></i> ล้าง
               </button>
             </div>
-            <button onclick="toggleNotificationDropdown(); nav('page-home');"
-              class="px-2.5 py-1.5 rounded-xl font-bold text-[#265D5A] hover:bg-[#B0EDE6]/40 transition-colors shrink-0">
-              ภาพรวม
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="NotificationHub.forceUpdateApp()" title="แตะเพื่อรีเฟรชล้างแคชอัปเดตเวอร์ชันล่าสุด"
+                class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-400 hover:text-emerald-700 hover:bg-slate-200/50 transition-colors flex items-center gap-1">
+                <i class="fa-solid fa-rotate text-[9px]"></i> v6.31
+              </button>
+              <button onclick="toggleNotificationDropdown(); nav('page-home');"
+                class="px-2 py-1.5 rounded-xl font-bold text-[#265D5A] hover:bg-[#B0EDE6]/40 transition-colors">
+                ภาพรวม
+              </button>
+            </div>
           </div>
         </div>
       </div>

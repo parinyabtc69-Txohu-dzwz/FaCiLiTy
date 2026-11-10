@@ -248,7 +248,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ลงทะเบียน Service Worker
+// ลงทะเบียน Service Worker พร้อมระบบตรวจจับเวอร์ชันใหม่แบบเรียลไทม์
 if ('serviceWorker' in navigator) {
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -260,13 +260,39 @@ if ('serviceWorker' in navigator) {
   });
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
+    navigator.serviceWorker.register('./sw.js?v=6.31')
       .then(reg => {
         reg.update(); // เช็คอัปเดต Service Worker ทันที
-        console.log('[PWA] Service Worker ทำงานเรียบร้อย Scope:', reg.scope);
+        console.log('[PWA] Service Worker v6.31 ทำงานเรียบร้อย Scope:', reg.scope);
+
+        // หากมี worker ใหม่ที่รอ activation อยู่ ให้สั่ง skipWaiting
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[PWA] พบอัปเดตใหม่พร้อมใช้งาน');
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          }
+        });
       })
       .catch(err => {
         console.warn('[PWA] Service Worker เกิดข้อผิดพลาด:', err);
       });
+  });
+
+  // เมื่อสลับกลับเข้ามาที่หน้าจอแอป (Wake-up / Resume) ให้ตรวจเช็คอัปเดตทันที
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) reg.update().catch(() => {});
+      }).catch(() => {});
+    }
   });
 }

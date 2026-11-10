@@ -1,7 +1,7 @@
 // FaCiLiTy PWA Service Worker
 // Developed by Taohx_dz_parinya
 
-const CACHE_NAME = 'facility-v6.30';
+const CACHE_NAME = 'facility-v6.31';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -35,14 +35,25 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch: Network First strategy
+// Fetch: Network First strategy with disk cache busting for HTML navigations
 self.addEventListener('fetch', event => {
-  if (event.request.url.includes('script.google.com') || event.request.url.includes('script.googleusercontent.com')) {
+  if (
+    event.request.url.includes('script.google.com') ||
+    event.request.url.includes('script.googleusercontent.com') ||
+    event.request.url.includes('firestore.googleapis.com') ||
+    event.request.url.includes('firebaseinstallations.googleapis.com')
+  ) {
     return;
   }
 
+  // สำหรับหน้า HTML ให้ข้าม HTTP disk cache เพื่อให้เบราว์เซอร์ตรวจสอบไฟล์เวอร์ชันล่าสุดเสมอ
+  const isHtml = event.request.mode === 'navigate' || event.request.url.endsWith('index.html') || event.request.url.endsWith('/');
+  const fetchPromise = isHtml
+    ? fetch(event.request, { cache: 'no-cache' })
+    : fetch(event.request);
+
   event.respondWith(
-    fetch(event.request)
+    fetchPromise
       .then(response => {
         if (response && response.status === 200 && response.type === 'basic') {
           const responseClone = response.clone();

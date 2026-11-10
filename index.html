@@ -225,6 +225,26 @@
 }
 
 /* ==========================================================================
+   🔔 กล่องแจ้งเตือนลอยหน้าจอ (Floating Toast Notification Container)
+   ให้อยู่เหนือ Dropdown และ Modal ทุกชนิด (z-index 99999999) และเว้นขอบ Dynamic Island บน iPhone
+   ========================================================================== */
+#toast-notification-container {
+  z-index: 99999999 !important;
+  pointer-events: none;
+}
+
+@media (max-width: 639px) {
+  #toast-notification-container {
+    top: max(16px, calc(env(safe-area-inset-top, 0px) + 12px)) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 420px !important;
+  }
+}
+
+/* ==========================================================================
    🔔 ศูนย์การแจ้งเตือน (Notification Dropdown) Responsive Positioning
    ========================================================================== */
 @media (max-width: 639px) {
@@ -376,11 +396,11 @@
           <!-- Footer Actions -->
           <div class="border-t p-2.5 bg-slate-50 flex items-center justify-between gap-1.5 text-xs">
             <div class="flex items-center gap-1 flex-wrap">
-              <button onclick="NotificationHub.test()" title="ทดสอบยิงแจ้งเตือนในแอป"
+              <button onclick="NotificationHub.test()" title="ทดสอบยิงแจ้งเตือนในแอป (เด้งพร้อมกันทุกเครื่อง)"
                 class="px-2 py-1.5 rounded-xl font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200/60 transition-colors flex items-center gap-1">
                 <i class="fa-solid fa-bell text-[11px]"></i> เตือนในแอป
               </button>
-              <button onclick="NotificationHub.testLineNotification()" title="ยิงทดสอบเข้า LINE กลุ่ม (เด้งหน้าจอล็อก 100%)"
+              <button onclick="NotificationHub.testLineNotification()" title="ยิงทดสอบเข้า LINE กลุ่ม (เด้งหน้าจอล็อกโทรศัพท์ 100%)"
                 class="px-2 py-1.5 rounded-xl font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1">
                 <i class="fa-brands fa-line text-xs"></i> ยิงเข้า LINE
               </button>
@@ -389,10 +409,16 @@
                 <i class="fa-solid fa-trash-can text-[11px]"></i> ล้าง
               </button>
             </div>
-            <button onclick="toggleNotificationDropdown(); nav('page-home');"
-              class="px-2.5 py-1.5 rounded-xl font-bold text-[#265D5A] hover:bg-[#B0EDE6]/40 transition-colors shrink-0">
-              ภาพรวม
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="NotificationHub.forceUpdateApp()" title="แตะเพื่อรีเฟรชล้างแคชอัปเดตเวอร์ชันล่าสุด"
+                class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-400 hover:text-emerald-700 hover:bg-slate-200/50 transition-colors flex items-center gap-1">
+                <i class="fa-solid fa-rotate text-[9px]"></i> v6.31
+              </button>
+              <button onclick="toggleNotificationDropdown(); nav('page-home');"
+                class="px-2 py-1.5 rounded-xl font-bold text-[#265D5A] hover:bg-[#B0EDE6]/40 transition-colors">
+                ภาพรวม
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -11314,29 +11340,41 @@ const NotificationHub = (function() {
 
   // ── 2. ระบบเสียงแจ้งเตือนสังเคราะห์ 2 โทน (Web Audio API & HTML5 Audio Chime) ───
   // เล่นเสียง "ตึ้ง... ตึ้ง..." ใสกังวาน ไม่ต้องดาวน์โหลดไฟล์ภายนอก โหลดทันที 0ms
+  let isAudioUnlocked = false;
+
   function unlockAudioContext() {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!audioContextInstance && AudioCtx) {
         audioContextInstance = new AudioCtx();
       }
-      if (audioContextInstance && audioContextInstance.state === 'suspended') {
-        audioContextInstance.resume().catch(() => {});
+      if (audioContextInstance) {
+        if (audioContextInstance.state === 'suspended') {
+          audioContextInstance.resume().catch(() => {});
+        }
+        // ปลดล็อก audio pipeline บน iOS WebKit โดยรัน silent buffer ทันทีระหว่าง touch gesture
+        if (!isAudioUnlocked) {
+          try {
+            const buffer = audioContextInstance.createBuffer(1, 1, 22050);
+            const source = audioContextInstance.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContextInstance.destination);
+            source.start(0);
+            isAudioUnlocked = true;
+          } catch (_) {}
+        }
       }
-      // ปลดล็อก audio pipeline บน iOS WebKit
-      if (audioContextInstance && audioContextInstance.state === 'running') {
-        const buffer = audioContextInstance.createBuffer(1, 1, 22050);
-        const source = audioContextInstance.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioContextInstance.destination);
-        source.start(0);
-      }
-      // เตรียม HTML5 Audio Instance สำรองไว้ล่วงหน้า
+
+      // เตรียม HTML5 Audio Instance สำรองไว้ล่วงหน้า และ Prime ทันทีใน touch gesture เพื่อให้ iOS ยอมรับ async play
       if (!audioElementInstance) {
         const src = window.CHIME_WAV_BASE64 || (typeof CHIME_WAV_BASE64 !== 'undefined' ? CHIME_WAV_BASE64 : '');
         if (src) {
           audioElementInstance = new Audio(src);
           audioElementInstance.volume = 0.85;
+          audioElementInstance.play().then(() => {
+            audioElementInstance.pause();
+            audioElementInstance.currentTime = 0;
+          }).catch(() => {});
         }
       }
     } catch (_) {}
@@ -11359,7 +11397,7 @@ const NotificationHub = (function() {
   }
 
   // ฟังก์ชันกำเนิดโทนเสียงระฆัง/กระดิ่งแก้ว (Chime Tone Generator)
-  function playBellTone(ctx, freq, startTime, duration, volume = 0.18) {
+  function playBellTone(ctx, freq, startTime, duration, volume = 0.22) {
     try {
       // 1. คลื่นความถี่หลัก (Fundamental Sine) ให้เสียงทุ้มอุ่น ละมุน ("ตึ้ง")
       const osc1 = ctx.createOscillator();
@@ -11380,7 +11418,7 @@ const NotificationHub = (function() {
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(freq * 2.0, startTime);
       gain2.gain.setValueAtTime(0.001, startTime);
-      gain2.gain.linearRampToValueAtTime(volume * 0.28, startTime + 0.015);
+      gain2.gain.linearRampToValueAtTime(volume * 0.3, startTime + 0.015);
       gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration * 0.75));
       osc2.connect(gain2);
       gain2.connect(ctx.destination);
@@ -11389,7 +11427,7 @@ const NotificationHub = (function() {
     } catch (_) {}
   }
 
-  function playChime() {
+  async function playChime() {
     try {
       const soundEnabled = localStorage.getItem(STORAGE_SOUND_KEY) !== 'false';
       if (!soundEnabled) return;
@@ -11400,13 +11438,13 @@ const NotificationHub = (function() {
       if (audioContextInstance) {
         try {
           if (audioContextInstance.state === 'suspended') {
-            audioContextInstance.resume().catch(() => {});
+            await audioContextInstance.resume();
           }
           const now = audioContextInstance.currentTime;
           // 🔔 ตึ้ง ครั้งที่ 1: C5 (523.25 Hz) กังวานยาว 0.65 วิ
-          playBellTone(audioContextInstance, 523.25, now, 0.65, 0.22);
+          playBellTone(audioContextInstance, 523.25, now, 0.65, 0.24);
           // 🔔 ตึ้ง ครั้งที่ 2: G5 (783.99 Hz) กังวานยาว 0.95 วิ หลังเว้น 0.38 วิ
-          playBellTone(audioContextInstance, 783.99, now + 0.38, 0.95, 0.26);
+          playBellTone(audioContextInstance, 783.99, now + 0.38, 0.95, 0.28);
         } catch (_) {}
       }
 
@@ -12010,8 +12048,10 @@ const NotificationHub = (function() {
     playChime();
 
     const testId = 'FAC-TEST-' + Math.floor(1000 + Math.random() * 9000);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const deviceLabel = isMobile ? 'โทรศัพท์มือถือ' : 'คอมพิวเตอร์';
     const testTitle = '🔔 ทดสอบการแจ้งเตือนแบบเรียลไทม์';
-    const testBody = 'ทดสอบเสียงเตือนและแจ้งเตือนบนเครื่องผ่านแอพหน้าจอหลักสำเร็จ 100%';
+    const testBody = `ยิงทดสอบจาก ${deviceLabel} — เสียงเตือนและป้าย In-App เด้งพร้อมกันทุกเครื่อง 100%`;
 
     // 1. เด้งป้าย Toast บนหน้าจอเครื่องนี้ทันที
     showToast({
@@ -12043,13 +12083,30 @@ const NotificationHub = (function() {
         category: 'งานซ่อม',
         taskType: 'repair',
         location: 'ศูนย์ FaCiLiTy',
-        reporterName: window.currentTeacher || 'เต้าหู้ ปริญญา'
+        reporterName: window.currentTeacher || 'ครูเต้าหู้ (Admin)'
       }).catch(err => {
         console.warn('[NotificationHub] test broadcast error:', err);
       });
     } else {
       console.warn('[NotificationHub] firestoreDb not ready for test broadcast');
     }
+
+    // 4. ส่งคู่ขนานเข้า LINE กลุ่มด้วยในพื้นหลัง (รับประกันเสียงเตือนบนหน้าจอล็อกโทรศัพท์แม้พับจอ 100%)
+    try {
+      const url = (typeof scriptURL !== 'undefined') ? scriptURL : 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec';
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'notify_chat',
+          ticketId: testId,
+          senderName: window.currentTeacher || 'ครูเต้าหู้ (Admin)',
+          role: 'admin',
+          taskTitle: 'ทดสอบแจ้งเตือนข้ามเครื่อง (FaCiLiTy V6)',
+          message: `🔔 ยิงทดสอบจาก ${deviceLabel}: ส่งสัญญาณเตือน In-App และ LINE พร้อมกันทุกอุปกรณ์เรียบร้อย`
+        })
+      }).catch(() => {});
+    } catch (_) {}
   }
 
   // ── 12.1 ทดสอบส่งแจ้งเตือนเข้า LINE กลุ่ม (มีเสียงเตือนบนหน้าจอล็อกโทรศัพท์ 100%) ───
@@ -12142,7 +12199,7 @@ const NotificationHub = (function() {
               } else if (isFirstLoad && !isAlreadyKnown) {
                 // ถ้าเป็นการโหลดครั้งแรก (เช่น โทรศัพท์เพิ่งถูกปลดล็อกหน้าจอ หรือเปิดเข้ามาใหม่)
                 // ตรวจสอบว่ามีรายการสดใหม่ที่เพิ่งส่งเข้ามาไม่เกิน 5 นาที ที่ยังไม่ได้อ่านหรือไม่
-                let itemTime = data.createdAtMs || 0;
+                let itemTime = data.createdAtMs || data.clientTimestamp || 0;
                 if (!itemTime && data.createdAt && data.createdAt.toMillis) itemTime = data.createdAt.toMillis();
                 else if (!itemTime && data.createdAt && data.createdAt.seconds) itemTime = data.createdAt.seconds * 1000;
                 else if (!itemTime && data.createdAt instanceof Date) itemTime = data.createdAt.getTime();
@@ -12305,6 +12362,36 @@ const NotificationHub = (function() {
     });
   }
 
+  // ── 17. ล้างแคชและบังคับอัปเดตแอปสู่เวอร์ชันล่าสุดทันที ──────────────────────
+  function forceUpdateApp() {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'กำลังอัปเดตแอป...',
+        text: 'กำลังล้างแคชเก่าและดึงข้อมูลระบบเวอร์ชันล่าสุด v6.31',
+        allowOutsideClick: false,
+        timer: 1600,
+        showConfirmButton: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+    }
+
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        return Promise.all(names.map(n => caches.delete(n)));
+      }).catch(() => {});
+    }
+
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(r => r.unregister());
+      }).catch(() => {});
+    }
+
+    setTimeout(() => {
+      window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
+    }, 800);
+  }
+
   return {
     init,
     playChime,
@@ -12323,6 +12410,7 @@ const NotificationHub = (function() {
     showDeviceNotification,
     testDeviceNotification,
     testLineNotification,
+    forceUpdateApp,
     publish,
     test: testDeviceNotification,
     renderList,
@@ -12588,7 +12676,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ลงทะเบียน Service Worker
+// ลงทะเบียน Service Worker พร้อมระบบตรวจจับเวอร์ชันใหม่แบบเรียลไทม์
 if ('serviceWorker' in navigator) {
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -12600,14 +12688,40 @@ if ('serviceWorker' in navigator) {
   });
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
+    navigator.serviceWorker.register('./sw.js?v=6.31')
       .then(reg => {
         reg.update(); // เช็คอัปเดต Service Worker ทันที
-        console.log('[PWA] Service Worker ทำงานเรียบร้อย Scope:', reg.scope);
+        console.log('[PWA] Service Worker v6.31 ทำงานเรียบร้อย Scope:', reg.scope);
+
+        // หากมี worker ใหม่ที่รอ activation อยู่ ให้สั่ง skipWaiting
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[PWA] พบอัปเดตใหม่พร้อมใช้งาน');
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          }
+        });
       })
       .catch(err => {
         console.warn('[PWA] Service Worker เกิดข้อผิดพลาด:', err);
       });
+  });
+
+  // เมื่อสลับกลับเข้ามาที่หน้าจอแอป (Wake-up / Resume) ให้ตรวจเช็คอัปเดตทันที
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) reg.update().catch(() => {});
+      }).catch(() => {});
+    }
   });
 }
 

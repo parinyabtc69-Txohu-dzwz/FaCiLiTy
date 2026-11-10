@@ -67,29 +67,41 @@ const NotificationHub = (function() {
 
   // ── 2. ระบบเสียงแจ้งเตือนสังเคราะห์ 2 โทน (Web Audio API & HTML5 Audio Chime) ───
   // เล่นเสียง "ตึ้ง... ตึ้ง..." ใสกังวาน ไม่ต้องดาวน์โหลดไฟล์ภายนอก โหลดทันที 0ms
+  let isAudioUnlocked = false;
+
   function unlockAudioContext() {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!audioContextInstance && AudioCtx) {
         audioContextInstance = new AudioCtx();
       }
-      if (audioContextInstance && audioContextInstance.state === 'suspended') {
-        audioContextInstance.resume().catch(() => {});
+      if (audioContextInstance) {
+        if (audioContextInstance.state === 'suspended') {
+          audioContextInstance.resume().catch(() => {});
+        }
+        // ปลดล็อก audio pipeline บน iOS WebKit โดยรัน silent buffer ทันทีระหว่าง touch gesture
+        if (!isAudioUnlocked) {
+          try {
+            const buffer = audioContextInstance.createBuffer(1, 1, 22050);
+            const source = audioContextInstance.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContextInstance.destination);
+            source.start(0);
+            isAudioUnlocked = true;
+          } catch (_) {}
+        }
       }
-      // ปลดล็อก audio pipeline บน iOS WebKit
-      if (audioContextInstance && audioContextInstance.state === 'running') {
-        const buffer = audioContextInstance.createBuffer(1, 1, 22050);
-        const source = audioContextInstance.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioContextInstance.destination);
-        source.start(0);
-      }
-      // เตรียม HTML5 Audio Instance สำรองไว้ล่วงหน้า
+
+      // เตรียม HTML5 Audio Instance สำรองไว้ล่วงหน้า และ Prime ทันทีใน touch gesture เพื่อให้ iOS ยอมรับ async play
       if (!audioElementInstance) {
         const src = window.CHIME_WAV_BASE64 || (typeof CHIME_WAV_BASE64 !== 'undefined' ? CHIME_WAV_BASE64 : '');
         if (src) {
           audioElementInstance = new Audio(src);
           audioElementInstance.volume = 0.85;
+          audioElementInstance.play().then(() => {
+            audioElementInstance.pause();
+            audioElementInstance.currentTime = 0;
+          }).catch(() => {});
         }
       }
     } catch (_) {}
@@ -112,7 +124,7 @@ const NotificationHub = (function() {
   }
 
   // ฟังก์ชันกำเนิดโทนเสียงระฆัง/กระดิ่งแก้ว (Chime Tone Generator)
-  function playBellTone(ctx, freq, startTime, duration, volume = 0.18) {
+  function playBellTone(ctx, freq, startTime, duration, volume = 0.22) {
     try {
       // 1. คลื่นความถี่หลัก (Fundamental Sine) ให้เสียงทุ้มอุ่น ละมุน ("ตึ้ง")
       const osc1 = ctx.createOscillator();
@@ -133,7 +145,7 @@ const NotificationHub = (function() {
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(freq * 2.0, startTime);
       gain2.gain.setValueAtTime(0.001, startTime);
-      gain2.gain.linearRampToValueAtTime(volume * 0.28, startTime + 0.015);
+      gain2.gain.linearRampToValueAtTime(volume * 0.3, startTime + 0.015);
       gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration * 0.75));
       osc2.connect(gain2);
       gain2.connect(ctx.destination);
@@ -142,7 +154,7 @@ const NotificationHub = (function() {
     } catch (_) {}
   }
 
-  function playChime() {
+  async function playChime() {
     try {
       const soundEnabled = localStorage.getItem(STORAGE_SOUND_KEY) !== 'false';
       if (!soundEnabled) return;
@@ -153,13 +165,13 @@ const NotificationHub = (function() {
       if (audioContextInstance) {
         try {
           if (audioContextInstance.state === 'suspended') {
-            audioContextInstance.resume().catch(() => {});
+            await audioContextInstance.resume();
           }
           const now = audioContextInstance.currentTime;
           // 🔔 ตึ้ง ครั้งที่ 1: C5 (523.25 Hz) กังวานยาว 0.65 วิ
-          playBellTone(audioContextInstance, 523.25, now, 0.65, 0.22);
+          playBellTone(audioContextInstance, 523.25, now, 0.65, 0.24);
           // 🔔 ตึ้ง ครั้งที่ 2: G5 (783.99 Hz) กังวานยาว 0.95 วิ หลังเว้น 0.38 วิ
-          playBellTone(audioContextInstance, 783.99, now + 0.38, 0.95, 0.26);
+          playBellTone(audioContextInstance, 783.99, now + 0.38, 0.95, 0.28);
         } catch (_) {}
       }
 
@@ -763,8 +775,10 @@ const NotificationHub = (function() {
     playChime();
 
     const testId = 'FAC-TEST-' + Math.floor(1000 + Math.random() * 9000);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const deviceLabel = isMobile ? 'โทรศัพท์มือถือ' : 'คอมพิวเตอร์';
     const testTitle = '🔔 ทดสอบการแจ้งเตือนแบบเรียลไทม์';
-    const testBody = 'ทดสอบเสียงเตือนและแจ้งเตือนบนเครื่องผ่านแอพหน้าจอหลักสำเร็จ 100%';
+    const testBody = `ยิงทดสอบจาก ${deviceLabel} — เสียงเตือนและป้าย In-App เด้งพร้อมกันทุกเครื่อง 100%`;
 
     // 1. เด้งป้าย Toast บนหน้าจอเครื่องนี้ทันที
     showToast({
@@ -796,13 +810,30 @@ const NotificationHub = (function() {
         category: 'งานซ่อม',
         taskType: 'repair',
         location: 'ศูนย์ FaCiLiTy',
-        reporterName: window.currentTeacher || 'เต้าหู้ ปริญญา'
+        reporterName: window.currentTeacher || 'ครูเต้าหู้ (Admin)'
       }).catch(err => {
         console.warn('[NotificationHub] test broadcast error:', err);
       });
     } else {
       console.warn('[NotificationHub] firestoreDb not ready for test broadcast');
     }
+
+    // 4. ส่งคู่ขนานเข้า LINE กลุ่มด้วยในพื้นหลัง (รับประกันเสียงเตือนบนหน้าจอล็อกโทรศัพท์แม้พับจอ 100%)
+    try {
+      const url = (typeof scriptURL !== 'undefined') ? scriptURL : 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec';
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'notify_chat',
+          ticketId: testId,
+          senderName: window.currentTeacher || 'ครูเต้าหู้ (Admin)',
+          role: 'admin',
+          taskTitle: 'ทดสอบแจ้งเตือนข้ามเครื่อง (FaCiLiTy V6)',
+          message: `🔔 ยิงทดสอบจาก ${deviceLabel}: ส่งสัญญาณเตือน In-App และ LINE พร้อมกันทุกอุปกรณ์เรียบร้อย`
+        })
+      }).catch(() => {});
+    } catch (_) {}
   }
 
   // ── 12.1 ทดสอบส่งแจ้งเตือนเข้า LINE กลุ่ม (มีเสียงเตือนบนหน้าจอล็อกโทรศัพท์ 100%) ───
@@ -895,7 +926,7 @@ const NotificationHub = (function() {
               } else if (isFirstLoad && !isAlreadyKnown) {
                 // ถ้าเป็นการโหลดครั้งแรก (เช่น โทรศัพท์เพิ่งถูกปลดล็อกหน้าจอ หรือเปิดเข้ามาใหม่)
                 // ตรวจสอบว่ามีรายการสดใหม่ที่เพิ่งส่งเข้ามาไม่เกิน 5 นาที ที่ยังไม่ได้อ่านหรือไม่
-                let itemTime = data.createdAtMs || 0;
+                let itemTime = data.createdAtMs || data.clientTimestamp || 0;
                 if (!itemTime && data.createdAt && data.createdAt.toMillis) itemTime = data.createdAt.toMillis();
                 else if (!itemTime && data.createdAt && data.createdAt.seconds) itemTime = data.createdAt.seconds * 1000;
                 else if (!itemTime && data.createdAt instanceof Date) itemTime = data.createdAt.getTime();
@@ -1058,6 +1089,36 @@ const NotificationHub = (function() {
     });
   }
 
+  // ── 17. ล้างแคชและบังคับอัปเดตแอปสู่เวอร์ชันล่าสุดทันที ──────────────────────
+  function forceUpdateApp() {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'กำลังอัปเดตแอป...',
+        text: 'กำลังล้างแคชเก่าและดึงข้อมูลระบบเวอร์ชันล่าสุด v6.31',
+        allowOutsideClick: false,
+        timer: 1600,
+        showConfirmButton: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+    }
+
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        return Promise.all(names.map(n => caches.delete(n)));
+      }).catch(() => {});
+    }
+
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(r => r.unregister());
+      }).catch(() => {});
+    }
+
+    setTimeout(() => {
+      window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
+    }, 800);
+  }
+
   return {
     init,
     playChime,
@@ -1076,6 +1137,7 @@ const NotificationHub = (function() {
     showDeviceNotification,
     testDeviceNotification,
     testLineNotification,
+    forceUpdateApp,
     publish,
     test: testDeviceNotification,
     renderList,
