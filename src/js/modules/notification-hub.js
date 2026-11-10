@@ -565,7 +565,7 @@ const NotificationHub = (function() {
     return false;
   }
 
-  // ── 12. ระบบจัดการสิทธิ์การแจ้งเตือนบนอุปกรณ์ (Device Push & Native Permission) ───
+  // ── 12. ระบบจัดการสิทธิ์การแจ้งเตือนบนอุปกรณ์ (Silent & LINE First) ───
   function checkNotificationPermission() {
     if (!('Notification' in window)) {
       return 'unsupported';
@@ -574,85 +574,23 @@ const NotificationHub = (function() {
   }
 
   function updatePermissionUI() {
-    const perm = checkNotificationPermission();
-    const dropdownBanner = document.getElementById('notif-permission-status');
+    // ปิดซ่อนแฟลชการ์ด / แบนเนอร์ขอสิทธิ์ทั้งหมดอย่างเด็ดขาดตามคำสั่งผู้ใช้
     const homeBanners = document.querySelectorAll('.notif-permission-prompt-card');
+    homeBanners.forEach(el => el.classList.add('hidden'));
 
-    if (perm === 'granted') {
-      // ✅ ได้รับอนุญาตแล้ว: ปิดซ่อนการแจ้งเตือนขอสิทธิ์ซ้ำซ้อน 100%
-      homeBanners.forEach(el => el.classList.add('hidden'));
-
-      if (dropdownBanner) {
-        dropdownBanner.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="text-[11px] font-semibold text-emerald-800">เปิดการแจ้งเตือนบนอุปกรณ์แล้ว</span>
-          </div>
-          <button onclick="NotificationHub.testDeviceNotification()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-[10px] font-bold shadow-sm transition-all flex items-center gap-1 shrink-0">
-            <i class="fa-solid fa-bell"></i> ยิงทดสอบเตือน
-          </button>
-        `;
-        dropdownBanner.className = 'px-3 py-1.5 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between text-xs';
-        dropdownBanner.classList.remove('hidden');
-      }
-    } else if (perm === 'denied') {
-      // ⚠️ ผู้ใช้เคยกดปฏิเสธไว้
-      homeBanners.forEach(el => el.classList.add('hidden'));
-
-      if (dropdownBanner) {
-        dropdownBanner.innerHTML = `
-          <div class="flex items-center gap-2 text-rose-700 text-[11px]">
-            <i class="fa-solid fa-bell-slash text-rose-500 shrink-0"></i>
-            <span>การแจ้งเตือนถูกปิดกั้นในเบราว์เซอร์ (แตะรูปกุญแจหน้า URL เพื่ออนุญาต)</span>
-          </div>
-        `;
-        dropdownBanner.className = 'px-3 py-1.5 bg-rose-50 border-b border-rose-100 flex items-center justify-between text-xs';
-        dropdownBanner.classList.remove('hidden');
-      }
-    } else if (perm === 'default') {
-      // 🔔 ยังไม่เคยขออนุญาต: แสดงปุ่มขออนุญาตให้ผู้ใช้เปิดใช้งาน
-      homeBanners.forEach(el => el.classList.remove('hidden'));
-
-      if (dropdownBanner) {
-        dropdownBanner.innerHTML = `
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-bell text-amber-500 animate-bounce text-sm"></i>
-            <div>
-              <p class="text-xs font-bold text-amber-900">เปิดการแจ้งเตือนบนโทรศัพท์</p>
-              <p class="text-[10px] text-amber-700">รับเสียงเตือนงานซ่อมทันทีแม้พับจอ</p>
-            </div>
-          </div>
-          <button onclick="NotificationHub.requestNativePermission()" class="px-3 py-1.5 bg-[#265D5A] hover:bg-[#1a403d] active:scale-95 text-white rounded-xl text-xs font-bold shadow transition-all shrink-0">
-            เปิดใช้งาน
-          </button>
-        `;
-        dropdownBanner.className = 'px-3 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 flex items-center justify-between gap-2 text-xs';
-        dropdownBanner.classList.remove('hidden');
-      }
-    } else {
-      // 📱 unsupported (เช่น Safari บน iOS ที่ยังไม่ได้ Add to Home Screen)
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-
-      if (isIOS && !isStandalone) {
-        homeBanners.forEach(el => {
-          el.innerHTML = `
-            <div class="flex items-start sm:items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-[#265D5A] text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
-                <i class="fa-solid fa-arrow-up-from-bracket"></i>
-              </div>
-              <div>
-                <p class="text-xs sm:text-sm font-bold text-slate-800">เพิ่มแอปลงหน้าจอโฮมเพื่อเปิดการแจ้งเตือน (iOS)</p>
-                <p class="text-[11px] text-slate-500">แตะปุ่มแชร์ <i class="fa-solid fa-arrow-up-from-bracket"></i> ใน Safari แล้วเลือก <strong>"เพิ่มไปยังหน้าจอโฮม (Add to Home Screen)"</strong> เพื่อรับเสียงเตือนเต็มรูปแบบ</p>
-              </div>
-            </div>
-          `;
-          el.classList.remove('hidden');
-        });
-      } else {
-        homeBanners.forEach(el => el.classList.add('hidden'));
-      }
-      if (dropdownBanner) dropdownBanner.classList.add('hidden');
+    const dropdownBanner = document.getElementById('notif-permission-status');
+    if (dropdownBanner) {
+      dropdownBanner.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-[11px] font-semibold text-emerald-800">ระบบแจ้งเตือนหลัก: LINE กลุ่ม FaCiLiTy</span>
+        </div>
+        <button onclick="NotificationHub.testLineNotification()" class="px-2.5 py-1 bg-[#06C755] hover:bg-[#05b34c] active:scale-95 text-white rounded-lg text-[10px] font-bold shadow-sm transition-all flex items-center gap-1 shrink-0">
+          <i class="fa-brands fa-line text-xs"></i> ยิงทดสอบ LINE
+        </button>
+      `;
+      dropdownBanner.className = 'px-3 py-1.5 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between text-xs';
+      dropdownBanner.classList.remove('hidden');
     }
   }
 
@@ -823,8 +761,8 @@ const NotificationHub = (function() {
       const url = (typeof scriptURL !== 'undefined') ? scriptURL : 'https://script.google.com/macros/s/AKfycbyMZhZ6AftlGNqrcu15xKGXjIxq9zPCaJZbJooi9qBykjT4pjA71mQpn1kfz8-qyaiaLg/exec';
       fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
           action: 'notify_chat',
           ticketId: testId,
           senderName: window.currentTeacher || 'ครูเต้าหู้ (Admin)',
@@ -852,13 +790,13 @@ const NotificationHub = (function() {
       const testId = 'TEST-' + Math.floor(1000 + Math.random() * 9000);
       await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
           action: 'notify_chat',
           ticketId: testId,
           senderName: window.currentTeacher || 'เต้าหู้ ปริญญา',
           role: 'admin',
-          taskTitle: 'ทดสอบระบบแจ้งเตือนเข้าโทรศัพท์',
+          taskTitle: 'ทดสอบระบบแจ้งเตือนเข้าโทรศัพท์ผ่าน LINE',
           message: '🔔 ทดสอบส่งเสียงและแจ้งเตือนเข้าโทรศัพท์ผ่าน LINE กลุ่ม FaCiLiTy สำเร็จเรียบร้อย (ดังและสั่นแม้พับหน้าจอ 100%)'
         })
       });
@@ -1094,7 +1032,7 @@ const NotificationHub = (function() {
     if (typeof Swal !== 'undefined') {
       Swal.fire({
         title: 'กำลังอัปเดตแอป...',
-        text: 'กำลังล้างแคชเก่าและดึงข้อมูลระบบเวอร์ชันล่าสุด v6.31',
+        text: 'กำลังล้างแคชเก่าและดึงข้อมูลระบบเวอร์ชันล่าสุด v6.32',
         allowOutsideClick: false,
         timer: 1600,
         showConfirmButton: false,
