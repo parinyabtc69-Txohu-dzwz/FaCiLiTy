@@ -583,10 +583,10 @@ const NotificationHub = (function() {
       dropdownBanner.innerHTML = `
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="text-[11px] font-semibold text-emerald-800">ระบบแจ้งเตือนหลัก: LINE กลุ่ม FaCiLiTy</span>
+          <span class="text-[11px] font-semibold text-emerald-800">ระบบแจ้งเตือนเรียลไทม์ (In-App & LINE)</span>
         </div>
-        <button onclick="NotificationHub.testLineNotification()" class="px-2.5 py-1 bg-[#06C755] hover:bg-[#05b34c] active:scale-95 text-white rounded-lg text-[10px] font-bold shadow-sm transition-all flex items-center gap-1 shrink-0">
-          <i class="fa-brands fa-line text-xs"></i> ยิงทดสอบ LINE
+        <button onclick="NotificationHub.testDeviceNotification()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-[10px] font-bold shadow-sm transition-all flex items-center gap-1 shrink-0">
+          <i class="fa-solid fa-bell"></i> ยิงทดสอบเตือน
         </button>
       `;
       dropdownBanner.className = 'px-3 py-1.5 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between text-xs';
