@@ -18,11 +18,12 @@ const NotificationHub = (function() {
   let audioContextInstance = null;
   let audioElementInstance = null;
 
-  // คีย์สำหรับเก็บประวัติที่อ่านแล้วในเครื่อง
+  // คีย์สำหรับเก็บประวัติที่อ่านแล้วและที่ลบแล้วในเครื่อง
   const STORAGE_READ_KEY = 'facility_read_notif_ids_v1';
+  const STORAGE_DELETED_KEY = 'facility_deleted_notif_ids_v1';
   const STORAGE_SOUND_KEY = 'facility_notif_sound_enabled';
 
-  // ── 1. ระบบจำสถานะการอ่าน (Read / Unread) ─────────────────────────────────
+  // ── 1. ระบบจำสถานะการอ่านและรายการที่ถูกลบ (Read / Deleted) ────────────────
   function getReadIds() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_READ_KEY) || '[]');
@@ -40,6 +41,26 @@ const NotificationHub = (function() {
       if (ids.length > 500) ids.splice(0, ids.length - 500);
       try {
         localStorage.setItem(STORAGE_READ_KEY, JSON.stringify(ids));
+      } catch (e) {}
+    }
+  }
+
+  function getDeletedIds() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_DELETED_KEY) || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveDeletedId(id) {
+    if (!id) return;
+    const ids = getDeletedIds();
+    if (!ids.includes(id)) {
+      ids.push(id);
+      if (ids.length > 500) ids.splice(0, ids.length - 500);
+      try {
+        localStorage.setItem(STORAGE_DELETED_KEY, JSON.stringify(ids));
       } catch (e) {}
     }
   }
@@ -262,7 +283,8 @@ const NotificationHub = (function() {
   // ── 6. อัปเดตตัวเลขแจ้งเตือนที่ปุ่มกระดิ่ง (Badge Counter) ───────────────────
   function updateBadge() {
     const readIds = getReadIds();
-    const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
+    const deletedIds = getDeletedIds();
+    const unreadCount = notifications.filter(n => !deletedIds.includes(n.id) && !readIds.includes(n.id)).length;
 
     const globalBadge = document.getElementById('global-overdue-badge');
     if (globalBadge) {
@@ -291,14 +313,18 @@ const NotificationHub = (function() {
     if (!listEl) return;
 
     const readIds = getReadIds();
+    const deletedIds = getDeletedIds();
     const myName = (window.currentTeacher || '').toLowerCase();
     const myEmail = (window.currentEmail || '').toLowerCase();
 
-    let filtered = notifications;
+    // กรองเฉพาะรายการที่ไม่ถูกลบออก
+    const activeNotifications = notifications.filter(n => !deletedIds.includes(n.id));
+
+    let filtered = activeNotifications;
     if (currentTab === 'unread') {
-      filtered = notifications.filter(n => !readIds.includes(n.id));
+      filtered = activeNotifications.filter(n => !readIds.includes(n.id));
     } else if (currentTab === 'my') {
-      filtered = notifications.filter(n => {
+      filtered = activeNotifications.filter(n => {
         const rName = (n.reporterName || '').toLowerCase();
         const rEmail = (n.reporterEmail || n.targetUserEmail || '').toLowerCase();
         const tTech = (n.targetTechnician || '').toLowerCase();
@@ -325,11 +351,11 @@ const NotificationHub = (function() {
 
       html += `
         <div onclick="NotificationHub.openTicketAndDismiss('${item.ticketId || ''}', null, '${item.id || ''}')"
-          class="p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer flex items-start gap-3 relative ${isRead ? 'opacity-85' : 'bg-emerald-50/30'}">
+          class="group p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer flex items-start gap-2.5 relative ${isRead ? 'opacity-85' : 'bg-emerald-50/30'}">
           <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold" style="background-color: ${visuals.bg}; color: ${visuals.color};">
             <i class="fa-solid ${visuals.icon}"></i>
           </div>
-          <div class="flex-1 min-w-0">
+          <div class="flex-1 min-w-0 pr-1">
             <div class="flex items-center justify-between gap-1">
               <p class="text-xs font-bold text-slate-800 truncate">${item.title || 'แจ้งเตือน'}</p>
               <span class="text-[10px] text-slate-400 shrink-0">${timeStr}</span>
@@ -343,7 +369,13 @@ const NotificationHub = (function() {
               ${item.reporterName ? `<span class="text-[9px] text-slate-400">โดย: ${item.reporterName}</span>` : ''}
             </div>
           </div>
-          ${!isRead ? `<span class="w-2 h-2 rounded-full bg-emerald-500 absolute top-3 right-2" title="ยังไม่อ่าน"></span>` : ''}
+          <!-- ปุ่มลบรายการนี้ (Trash Icon) -->
+          <button onclick="event.stopPropagation(); NotificationHub.deleteItem('${item.id}');"
+            class="w-7 h-7 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 active:scale-95 flex items-center justify-center transition-all shrink-0 mt-0.5"
+            title="ลบการแจ้งเตือนนี้">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+          ${!isRead ? `<span class="w-2 h-2 rounded-full bg-emerald-500 absolute bottom-2 right-2.5" title="ยังไม่อ่าน"></span>` : ''}
         </div>
       `;
     });
@@ -374,7 +406,90 @@ const NotificationHub = (function() {
     renderList();
   }
 
-  // ── 10. เปิดดูงานและทำเครื่องหมายว่าอ่านแล้ว ──────────────────────────────
+  // ── 10. ลบการแจ้งเตือนรายข้อ (Delete Single Notification) ───────────────────
+  async function deleteItem(id) {
+    if (!id) return;
+    saveDeletedId(id);
+    notifications = notifications.filter(n => n.id !== id);
+    updateBadge();
+    renderList();
+
+    // ลบออกจาก Firestore
+    if (window.firestoreDb) {
+      try {
+        await window.firestoreDb.collection('notifications').doc(id).delete();
+      } catch (_) {}
+    }
+  }
+
+  // ── 11. ลบการแจ้งเตือนทั้งหมด (Clear All Notifications) ────────────────────
+  async function clearAll() {
+    const deletedIds = getDeletedIds();
+    const activeItems = notifications.filter(n => !deletedIds.includes(n.id));
+
+    if (activeItems.length === 0) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'info',
+          title: 'ไม่มีการแจ้งเตือน',
+          text: 'ไม่มีรายการแจ้งเตือนค้างอยู่ในระบบครับ',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+      return;
+    }
+
+    let confirm = true;
+    if (typeof Swal !== 'undefined') {
+      const res = await Swal.fire({
+        title: 'ลบการแจ้งเตือนทั้งหมด?',
+        text: 'ต้องการลบประวัติการแจ้งเตือนทั้งหมดออกจากระบบใช่หรือไม่',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e11d48',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> ลบทั้งหมด',
+        cancelButtonText: 'ยกเลิก'
+      });
+      confirm = res.isConfirmed;
+    }
+
+    if (!confirm) return;
+
+    const idsToDelete = activeItems.map(n => n.id);
+    idsToDelete.forEach(id => saveDeletedId(id));
+
+    // ลบออกจาก Firestore
+    if (window.firestoreDb) {
+      try {
+        const batch = window.firestoreDb.batch();
+        idsToDelete.forEach(id => {
+          const docRef = window.firestoreDb.collection('notifications').doc(id);
+          batch.delete(docRef);
+        });
+        await batch.commit();
+      } catch (err) {
+        console.warn('[NotificationHub] Batch delete error:', err);
+      }
+    }
+
+    notifications = [];
+    updateBadge();
+    renderList();
+
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'success',
+        title: 'ลบเรียบร้อยแล้ว',
+        text: 'ลบรายการแจ้งเตือนทั้งหมดออกจากระบบเรียบร้อยครับ',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  }
+
+  // ── 12. เปิดดูงานและทำเครื่องหมายว่าอ่านแล้ว ──────────────────────────────
   function openTicketAndDismiss(ticketId, toastId, notifId) {
     if (toastId) dismissToast(toastId);
     if (notifId) saveReadId(notifId);
@@ -736,11 +851,14 @@ const NotificationHub = (function() {
           });
 
           // เรียงลำดับรายการทั้งหมดจากใหม่ไปเก่าสำหรับแสดงใน Notification Center Dropdown
-          notifications = snapshot.docs.map(doc => {
-            const d = doc.data() || {};
-            d.id = doc.id;
-            return d;
-          });
+          const deletedIds = getDeletedIds();
+          notifications = snapshot.docs
+            .map(doc => {
+              const d = doc.data() || {};
+              d.id = doc.id;
+              return d;
+            })
+            .filter(n => !deletedIds.includes(n.id));
 
           updateBadge();
           renderList();
@@ -872,6 +990,8 @@ const NotificationHub = (function() {
     dismissToast,
     setTab,
     markAllAsRead,
+    deleteItem,
+    clearAll,
     openTicketAndDismiss,
     requestPushPermission: requestNativePermission,
     requestNativePermission,
