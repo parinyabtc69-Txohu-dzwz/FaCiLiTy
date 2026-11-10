@@ -2175,22 +2175,27 @@ function toggleNotificationDropdown() {
       if (window.innerWidth < 640) {
         dropdown.style.setProperty('position', 'fixed', 'important');
         dropdown.style.setProperty('top', '68px', 'important');
-        dropdown.style.setProperty('left', '12px', 'important');
-        dropdown.style.setProperty('right', '12px', 'important');
+        dropdown.style.setProperty('left', '50%', 'important');
+        dropdown.style.setProperty('right', 'auto', 'important');
+        dropdown.style.setProperty('transform', 'translateX(-50%)', 'important');
         dropdown.style.setProperty('width', 'calc(100vw - 24px)', 'important');
-        dropdown.style.setProperty('max-width', '480px', 'important');
-        dropdown.style.setProperty('margin', '0 auto', 'important');
+        dropdown.style.setProperty('max-width', '440px', 'important');
+        dropdown.style.setProperty('margin', '0', 'important');
       } else {
         dropdown.style.position = '';
         dropdown.style.top = '';
         dropdown.style.left = '';
         dropdown.style.right = '';
+        dropdown.style.transform = '';
         dropdown.style.width = '';
         dropdown.style.maxWidth = '';
         dropdown.style.margin = '';
       }
 
       if (window.NotificationHub) {
+        if (typeof window.NotificationHub.unlockAudioContext === 'function') {
+          window.NotificationHub.unlockAudioContext();
+        }
         if (typeof window.NotificationHub.updatePermissionUI === 'function') {
           window.NotificationHub.updatePermissionUI();
         }

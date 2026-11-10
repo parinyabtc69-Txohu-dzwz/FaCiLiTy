@@ -5,11 +5,18 @@
 // ============================================================================
 
 const NotificationHub = (function() {
+  // รหัสเซสชันเฉพาะของแท็บ/เบราว์เซอร์นี้ (สำหรับแยกแยะเครื่องที่สั่งยิง เพื่อไม่ให้ดังซ้ำ)
+  const CURRENT_SESSION_ID = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+
+  // Set สำหรับจดจำ Notification IDs ที่เคยเห็นหรือประมวลผลแล้ว ป้องกันการเด้งซ้ำ 100%
+  const knownDocIds = new Set();
+
   // สถานะภายในของระบบ
   let notifications = [];
   let currentTab = 'all'; // 'all' | 'unread' | 'my'
   let isListenerActive = false;
   let audioContextInstance = null;
+  let audioElementInstance = null;
 
   // คีย์สำหรับเก็บประวัติที่อ่านแล้วในเครื่อง
   const STORAGE_READ_KEY = 'facility_read_notif_ids_v1';
@@ -37,8 +44,8 @@ const NotificationHub = (function() {
     }
   }
 
-  // ── 2. ระบบเสียงแจ้งเตือนสังเคราะห์ (Web Audio API Chime) ─────────────────
-  // ไม่ต้องดาวน์โหลดไฟล์ภายนอก โหลดเร็วระดับ 0ms และไม่ติดปัญหาลิขสิทธิ์
+  // ── 2. ระบบเสียงแจ้งเตือนสังเคราะห์ 2 โทน (Web Audio API & HTML5 Audio Chime) ───
+  // เล่นเสียง "ตึ้ง... ตึ้ง..." ใสกังวาน ไม่ต้องดาวน์โหลดไฟล์ภายนอก โหลดทันที 0ms
   function unlockAudioContext() {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -46,9 +53,9 @@ const NotificationHub = (function() {
         audioContextInstance = new AudioCtx();
       }
       if (audioContextInstance && audioContextInstance.state === 'suspended') {
-        audioContextInstance.resume();
+        audioContextInstance.resume().catch(() => {});
       }
-      // ปลดล็อก audio pipeline บน iOS WebKit ให้พร้อมรับเสียงจาก WebSocket ตลอดเวลา
+      // ปลดล็อก audio pipeline บน iOS WebKit
       if (audioContextInstance && audioContextInstance.state === 'running') {
         const buffer = audioContextInstance.createBuffer(1, 1, 22050);
         const source = audioContextInstance.createBufferSource();
@@ -56,38 +63,62 @@ const NotificationHub = (function() {
         source.connect(audioContextInstance.destination);
         source.start(0);
       }
+      // เตรียม HTML5 Audio Instance สำรองไว้ล่วงหน้า
+      if (!audioElementInstance) {
+        const src = window.CHIME_WAV_BASE64 || (typeof CHIME_WAV_BASE64 !== 'undefined' ? CHIME_WAV_BASE64 : '');
+        if (src) {
+          audioElementInstance = new Audio(src);
+          audioElementInstance.volume = 0.85;
+        }
+      }
+    } catch (_) {}
+  }
+
+  function playAudioElementFallback() {
+    try {
+      const src = window.CHIME_WAV_BASE64 || (typeof CHIME_WAV_BASE64 !== 'undefined' ? CHIME_WAV_BASE64 : '');
+      if (!src) return;
+      if (!audioElementInstance) {
+        audioElementInstance = new Audio(src);
+        audioElementInstance.volume = 0.85;
+      }
+      audioElementInstance.currentTime = 0;
+      const p = audioElementInstance.play();
+      if (p !== undefined) {
+        p.catch(() => {});
+      }
     } catch (_) {}
   }
 
   // ฟังก์ชันกำเนิดโทนเสียงระฆัง/กระดิ่งแก้ว (Chime Tone Generator)
-  function playBellTone(ctx, freq, startTime, duration, volume = 0.16) {
-    // 1. คลื่นความถี่หลัก (Fundamental Sine) ให้เสียงทุ้มอุ่น ละมุน ("ตึ้ง")
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(freq, startTime);
-    // ป้องกันเสียงแปร่งหรือเสียงคลิก (Smooth Attack)
-    gain1.gain.setValueAtTime(0.001, startTime);
-    gain1.gain.linearRampToValueAtTime(volume, startTime + 0.018);
-    // หางเสียงทอดยาวอย่างนุ่มนวลแบบ Exponential Decay
-    gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.start(startTime);
-    osc1.stop(startTime + duration);
+  function playBellTone(ctx, freq, startTime, duration, volume = 0.18) {
+    try {
+      // 1. คลื่นความถี่หลัก (Fundamental Sine) ให้เสียงทุ้มอุ่น ละมุน ("ตึ้ง")
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(freq, startTime);
+      gain1.gain.setValueAtTime(0.001, startTime);
+      gain1.gain.linearRampToValueAtTime(volume, startTime + 0.018);
+      gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(startTime);
+      osc1.stop(startTime + duration);
 
-    // 2. คลื่นความถี่โอเวอร์โทน (Harmonic Overtone) ให้เสียงใสกังวานเหมือนระฆังจริง
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = 'triangle';
-    osc2.frequency.setValueAtTime(freq * 2.0, startTime);
-    gain2.gain.setValueAtTime(0.001, startTime);
-    gain2.gain.linearRampToValueAtTime(volume * 0.28, startTime + 0.015);
-    gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration * 0.75));
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.start(startTime);
-    osc2.stop(startTime + duration);
+      // 2. คลื่นความถี่โอเวอร์โทน (Harmonic Overtone) ให้เสียงใสกังวานเหมือนระฆังจริง
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(freq * 2.0, startTime);
+      gain2.gain.setValueAtTime(0.001, startTime);
+      gain2.gain.linearRampToValueAtTime(volume * 0.28, startTime + 0.015);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration * 0.75));
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(startTime);
+      osc2.stop(startTime + duration);
+    } catch (_) {}
   }
 
   function playChime() {
@@ -96,18 +127,25 @@ const NotificationHub = (function() {
       if (!soundEnabled) return;
 
       unlockAudioContext();
-      const ctx = audioContextInstance;
-      if (!ctx) return;
 
-      const now = ctx.currentTime;
+      // 1. ลองเล่นผ่าน Web Audio API (ความหน่วง 0ms เสียงก้องคมชัด)
+      if (audioContextInstance) {
+        try {
+          if (audioContextInstance.state === 'suspended') {
+            audioContextInstance.resume().catch(() => {});
+          }
+          const now = audioContextInstance.currentTime;
+          // 🔔 ตึ้ง ครั้งที่ 1: C5 (523.25 Hz) กังวานยาว 0.65 วิ
+          playBellTone(audioContextInstance, 523.25, now, 0.65, 0.22);
+          // 🔔 ตึ้ง ครั้งที่ 2: G5 (783.99 Hz) กังวานยาว 0.95 วิ หลังเว้น 0.38 วิ
+          playBellTone(audioContextInstance, 783.99, now + 0.38, 0.95, 0.26);
+        } catch (_) {}
+      }
 
-      // 🔔 ตึ้ง ครั้งที่ 1: โน้ต C5 (523.25 Hz) เสียงกังวานยาว 0.65 วินาที
-      playBellTone(ctx, 523.25, now, 0.65, 0.18);
+      // 2. เสริมด้วย HTML5 Audio Element Fallback เสมอเพื่อความชัวร์ 100% บนทุกเบราว์เซอร์
+      playAudioElementFallback();
 
-      // 🔔 ตึ้ง ครั้งที่ 2: เว้นจังหวะ 0.38 วินาที แล้วดังโน้ต G5 (783.99 Hz) หางเสียงทอดยาวก้องกังวาน 0.95 วินาที
-      playBellTone(ctx, 783.99, now + 0.38, 0.95, 0.22);
-
-      // ระบบสั่นมือถือ 2 จังหวะ "ตึ้ง... ตึ้ง..." สอดคล้องกับเสียง
+      // 3. ระบบสั่นมือถือ 2 จังหวะ "ตึ้ง... ตึ้ง..." สอดคล้องกับเสียง
       if (navigator.vibrate) {
         try { navigator.vibrate([180, 180, 280]); } catch (_) {}
       }
@@ -607,43 +645,48 @@ const NotificationHub = (function() {
 
   function testDeviceNotification() {
     unlockAudioContext();
-
-    // 1. เสียงกระดิ่งสังเคราะห์ Web Audio API
     playChime();
 
-    // 2. ป้าย Toast ลอยในตัวแอพ
     const testId = 'FAC-TEST-' + Math.floor(1000 + Math.random() * 9000);
+    const testTitle = '🔔 ทดสอบการแจ้งเตือนแบบเรียลไทม์';
+    const testBody = 'ทดสอบเสียงเตือนและแจ้งเตือนบนเครื่องผ่านแอพหน้าจอหลักสำเร็จ 100%';
+
+    // 1. เด้งป้าย Toast บนหน้าจอเครื่องนี้ทันที
     showToast({
-      id: 'test_toast_' + Date.now(),
+      id: 'local_test_' + Date.now(),
       ticketId: testId,
-      title: '🔔 ทดสอบเสียงเตือนบนอุปกรณ์',
-      body: 'ระบบเสียงกระดิ่ง Chime และการแจ้งเตือนของ FaCiLiTy ทำงานเรียบร้อยโดยไม่ต้องผ่าน LINE ครับ!',
-      category: 'แอร์',
-      taskType: 'building',
-      location: 'ห้องศูนย์ควบคุม FaCiLiTy',
+      title: testTitle,
+      body: testBody,
+      category: 'งานซ่อม',
+      taskType: 'repair',
+      location: 'ศูนย์ FaCiLiTy',
       createdAt: new Date()
     });
 
-    // 3. แจ้งเตือนระดับระบบปฏิบัติการ (OS / PWA Home Screen Notification)
+    // 2. แจ้งเตือนระดับระบบปฏิบัติการ (OS / PWA Home Screen Notification) บนเครื่องนี้
     if ('Notification' in window && Notification.permission === 'granted') {
-      showDeviceNotification('🔔 FaCiLiTy • มีการแจ้งเตือนงานซ่อมใหม่', {
-        body: `[ทดสอบ ${testId}] แจ้งซ่อมแอร์ไม่เย็น (ห้องศูนย์ควบคุม) - มีเสียงเตือนบนเครื่องเรียบร้อย`,
+      showDeviceNotification(testTitle, {
+        body: `[ทดสอบ ${testId}] ${testBody}`,
         tag: 'facility-test-' + Date.now(),
         ticketId: testId
       });
     }
 
-    // 4. บันทึกทดสอบลง Firestore (ถ้ามีเชื่อมต่อ) เพื่อให้ทุกเครื่องที่เปิดอยู่ได้รับแจ้งเตือนพร้อมกัน
+    // 3. บันทึกทดสอบลง Firestore ทันที เพื่อกระจาย (Broadcast) ไปดังที่ทุกเครื่องพร้อมกัน
     if (window.firestoreDb) {
       publish({
         ticketId: testId,
-        title: '🔔 ทดสอบการแจ้งเตือนแบบเรียลไทม์',
-        body: 'ทดสอบเสียงเตือนและแจ้งเตือนบนเครื่องผ่านแอพหน้าจอหลักสำเร็จ 100%',
+        title: testTitle,
+        body: testBody,
         category: 'งานซ่อม',
         taskType: 'repair',
         location: 'ศูนย์ FaCiLiTy',
-        reporterName: window.currentTeacher || 'ครูเต้าหู้ (Admin)'
-      }).catch(() => {});
+        reporterName: window.currentTeacher || 'เต้าหู้ ปริญญา'
+      }).catch(err => {
+        console.warn('[NotificationHub] test broadcast error:', err);
+      });
+    } else {
+      console.warn('[NotificationHub] firestoreDb not ready for test broadcast');
     }
   }
 
@@ -658,44 +701,32 @@ const NotificationHub = (function() {
     try {
       isListenerActive = true;
       let isFirstLoad = true;
-      const initialTimestamp = Date.now();
-      console.log('[NotificationHub] 🎧 Firestore Real-Time listener connected successfully!');
+      console.log('[NotificationHub] 🎧 Firestore Real-Time listener connected successfully (Session: ' + CURRENT_SESSION_ID + ')');
 
       window.firestoreDb.collection('notifications')
         .orderBy('createdAt', 'desc')
         .limit(30)
         .onSnapshot(snapshot => {
-          const newItems = [];
           snapshot.docChanges().forEach(change => {
-            const data = change.doc.data();
-            data.id = change.doc.id;
+            const docId = change.doc.id;
+            const data = change.doc.data() || {};
+            data.id = docId;
 
             if (change.type === 'added') {
-              newItems.push(data);
+              const isAlreadyKnown = knownDocIds.has(docId);
+              knownDocIds.add(docId);
 
-              // ถ้าไม่ใช่การโหลดหน้าครั้งแรก
-              if (!isFirstLoad) {
-                // ข้ามถ้าเป็นเครื่องตัวเองที่เพิ่งสั่งยิง เพื่อไม่ให้ดังซ้ำ 2 รอบ
+              // ถ้าไม่ใช่การโหลดหน้าเว็บครั้งแรก และยังไม่เคยประมวลผล ID นี้มาก่อน
+              if (!isFirstLoad && !isAlreadyKnown) {
+                // ข้ามถ้าเป็นเครื่องนี้เองที่เพิ่งสั่งยิง (เพราะดังในเครื่องตัวเองไปแล้ว)
                 if (data.senderSessionId && data.senderSessionId === CURRENT_SESSION_ID) {
+                  console.log('[NotificationHub] ⏭️ Skipping self-triggered notification:', docId);
                   return;
                 }
 
-                // ตรวจสอบความสดใหม่ของข้อมูล (ไม่เกิน 2 นาที หรือถ้าไม่มีเวลา ให้ถือเป็นงานใหม่ทันที)
-                let itemTime = Date.now();
-                if (data.clientTimestamp) {
-                  itemTime = data.clientTimestamp;
-                } else if (data.createdAt && data.createdAt.toMillis) {
-                  itemTime = data.createdAt.toMillis();
-                } else if (data.createdAt && data.createdAt.seconds) {
-                  itemTime = data.createdAt.seconds * 1000;
-                } else if (data.createdAt instanceof Date) {
-                  itemTime = data.createdAt.getTime();
-                }
-
-                const isFresh = Math.abs(Date.now() - itemTime) < 120000;
-
-                if (isFresh && isTargetRecipient(data)) {
-                  console.log('[NotificationHub] 🔔 Real-time alert triggered on this device:', data.title);
+                // แจ้งเตือนเมื่อเป็นผู้รับเป้าหมาย (การทดสอบระบบส่งถึงทุกเครื่องเสมอ 100%)
+                if (isTargetRecipient(data)) {
+                  console.log('[NotificationHub] 🔔 Real-time alert triggered on this device from remote:', data.title, data.ticketId);
                   showToast(data);
                   playChime();
                   showWebPush(data);
@@ -704,9 +735,9 @@ const NotificationHub = (function() {
             }
           });
 
-          // เรียงลำดับรายการทั้งหมดจากใหม่ไปเก่า
+          // เรียงลำดับรายการทั้งหมดจากใหม่ไปเก่าสำหรับแสดงใน Notification Center Dropdown
           notifications = snapshot.docs.map(doc => {
-            const d = doc.data();
+            const d = doc.data() || {};
             d.id = doc.id;
             return d;
           });
@@ -716,9 +747,11 @@ const NotificationHub = (function() {
           isFirstLoad = false;
         }, err => {
           console.warn('[NotificationHub] Firestore snapshot error:', err);
+          isListenerActive = false;
+          setTimeout(initListener, 2000);
         });
 
-      // ดักฟัง Ticket ใหม่ในตาราง tickets โดยตรงแบบ Real-time เผื่อกรณีสร้างงานซ่อม
+      // ดักฟัง Ticket ใหม่ในตาราง tickets โดยตรงแบบ Real-time เผื่อกรณีสร้างงานซ่อมผ่านหน้าฟอร์ม
       window.firestoreDb.collection('tickets')
         .orderBy('createdAt', 'desc')
         .limit(1)
@@ -726,13 +759,17 @@ const NotificationHub = (function() {
           if (isFirstLoad) return;
           snap.docChanges().forEach(change => {
             if (change.type === 'added') {
-              const ticket = change.doc.data();
+              const ticket = change.doc.data() || {};
+              const ticketId = ticket.ticketId || change.doc.id;
+              if (!ticketId || knownDocIds.has('ticket_' + ticketId)) return;
+              knownDocIds.add('ticket_' + ticketId);
+
               // ตรวจสอบว่ามี notification ในคอลเลกชัน notifications แล้วหรือยัง หากยังไม่มีให้เด้ง Toast
-              const exists = notifications.some(n => n.ticketId === ticket.ticketId);
-              if (!exists && ticket.ticketId) {
+              const exists = notifications.some(n => n.ticketId === ticketId);
+              if (!exists && ticketId) {
                 const notifObj = {
-                  id: 'local_' + ticket.ticketId,
-                  ticketId: ticket.ticketId,
+                  id: 'local_' + ticketId,
+                  ticketId: ticketId,
                   title: '🛠️ มีงานแจ้งซ่อมใหม่!',
                   body: `${ticket.subject || ticket.title || 'งานซ่อม'} (${ticket.location || 'ไม่ระบุสถานที่'})`,
                   category: ticket.category || 'งานซ่อม',
@@ -743,6 +780,7 @@ const NotificationHub = (function() {
                 if (isTargetRecipient(notifObj)) {
                   showToast(notifObj);
                   playChime();
+                  showWebPush(notifObj);
                 }
               }
             }
@@ -751,26 +789,34 @@ const NotificationHub = (function() {
 
     } catch (e) {
       console.warn('[NotificationHub] Listener init failed:', e);
+      isListenerActive = false;
+      setTimeout(initListener, 2000);
     }
   }
 
-  // ── 14. ฟังก์ชันสำหรับยิงแจ้งเตือนใหม่เข้า Firestore ───────────────────────
-  const CURRENT_SESSION_ID = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-
+  // ── 14. ฟังก์ชันสำหรับยิงแจ้งเตือนใหม่เข้า Firestore (Broadcast ทั่วระบบ) ─────
   async function publish(dataObj) {
-    if (!window.firestoreDb) return false;
+    if (!window.firestoreDb) {
+      console.warn('[NotificationHub] Cannot publish: firestoreDb not ready');
+      return false;
+    }
     try {
       const notifId = 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      // จดจำ ID นี้ไว้ล่วงหน้าทันที เพื่อไม่ให้ snapshot บนเครื่องตัวเองเด้งซ้ำ
+      knownDocIds.add(notifId);
+
       const payload = {
         id: notifId,
         senderSessionId: CURRENT_SESSION_ID,
         clientTimestamp: Date.now(),
+        createdAtMs: Date.now(),
         createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
           ? firebase.firestore.FieldValue.serverTimestamp()
           : new Date(),
         ...dataObj
       };
       await window.firestoreDb.collection('notifications').doc(notifId).set(payload);
+      console.log('[NotificationHub] 🚀 Real-time notification published to Firestore successfully:', notifId, payload.title);
       return true;
     } catch (e) {
       console.warn('[NotificationHub] publish error:', e);
@@ -780,17 +826,7 @@ const NotificationHub = (function() {
 
   // ── 15. ทดสอบยิงแจ้งเตือนจำลอง (Test Trigger) ─────────────────────────────
   function test() {
-    playChime();
-    showToast({
-      id: 'test_' + Date.now(),
-      ticketId: 'FAC-TEST-' + Math.floor(1000 + Math.random() * 9000),
-      title: '🔔 ทดสอบการแจ้งเตือน (Real-Time)',
-      body: 'ระบบ Pop-up Toast และเสียงเตือน Chime ทำงานได้ 100% แล้วครับ!',
-      category: 'แอร์',
-      taskType: 'building',
-      location: 'ห้องศูนย์ควบคุม FaCiLiTy',
-      createdAt: new Date()
-    });
+    testDeviceNotification();
   }
 
   // ── 16. เริ่มการทำงาน (Init) ──────────────────────────────────────────────
@@ -800,9 +836,13 @@ const NotificationHub = (function() {
     renderList();
     updatePermissionUI();
 
-    // ปลดล็อกระบบเสียงบนอุปกรณ์เคลื่อนที่เมื่อผู้ใช้แตะหน้าจอครั้งแรก
-    document.addEventListener('touchstart', unlockAudioContext, { once: true, passive: true });
-    document.addEventListener('click', unlockAudioContext, { once: true, passive: true });
+    // ปลดล็อกระบบเสียงบนอุปกรณ์เคลื่อนที่เมื่อผู้ใช้แตะหรือคลิกหน้าจอ
+    const unlockHandler = () => {
+      unlockAudioContext();
+    };
+    document.addEventListener('touchstart', unlockHandler, { passive: true });
+    document.addEventListener('click', unlockHandler, { passive: true });
+    document.addEventListener('pointerdown', unlockHandler, { passive: true });
   }
 
   return {
