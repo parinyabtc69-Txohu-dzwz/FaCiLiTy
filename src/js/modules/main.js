@@ -1810,10 +1810,15 @@ function nav(pageId) {
     if ($('projReporter')) $('projReporter').value = currentTeacher;
   }
 
-  // เรียกผูกตัวเลือก Master Data Dropdown เมื่อเปิดหน้าแบบฟอร์ม
+  // เรียกผูกตัวเลือก Master Data Dropdown และซิงก์ข้อมูลล่าสุดเมื่อเปิดหน้าแบบฟอร์ม
   const formPages = ['page-repair-form', 'page-it-repair', 'page-av-repair', 'page-av-form', 'page-project-form'];
-  if (formPages.includes(pageId) && window.MasterData && typeof window.MasterData.initFormDropdowns === 'function') {
-    window.MasterData.initFormDropdowns();
+  if (formPages.includes(pageId) && window.MasterData) {
+    if (typeof window.MasterData.initFormDropdowns === 'function') {
+      window.MasterData.initFormDropdowns();
+    }
+    if (typeof window.MasterData.load === 'function') {
+      window.MasterData.load(false);
+    }
   }
 }
 

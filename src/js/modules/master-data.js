@@ -140,25 +140,40 @@ const MasterData = (() => {
   };
 
   let state = {
-    locations: [],
-    departments: [],
-    projects: [],
-    mechanics: [],
-    settings: { overdueDays: 3 },
+    locations: [...DEFAULT_DATA.locations],
+    departments: [...DEFAULT_DATA.departments],
+    projects: [...DEFAULT_DATA.projects],
+    mechanics: [...DEFAULT_DATA.mechanics],
+    settings: { ...DEFAULT_DATA.settings },
     loaded: false
   };
 
-  // โหลดจาก Local Cache เพื่อให้หน้าจอแสดงผลได้ทันที
+  let retryCount = 0;
+
+  // โหลดจาก Local Cache เพื่อให้หน้าจอแสดงผลได้ทันที (พร้อมเติมค่าเริ่มต้นเสมอหากยังไม่มีในแคช)
   function loadCache() {
     try {
       const raw = localStorage.getItem(CACHE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        state = { ...state, ...parsed };
+        if (parsed && typeof parsed === 'object') {
+          if (Array.isArray(parsed.locations) && parsed.locations.length > 0) state.locations = parsed.locations;
+          if (Array.isArray(parsed.departments) && parsed.departments.length > 0) state.departments = parsed.departments;
+          if (Array.isArray(parsed.projects) && parsed.projects.length > 0) state.projects = parsed.projects;
+          if (Array.isArray(parsed.mechanics) && parsed.mechanics.length > 0) state.mechanics = parsed.mechanics;
+          if (parsed.settings && typeof parsed.settings === 'object') state.settings = { ...state.settings, ...parsed.settings };
+          if (parsed.loaded && state.locations.length > 0 && state.departments.length > 0) {
+            state.loaded = true;
+          }
+        }
       }
     } catch (e) {
       console.warn('Load MasterData cache error:', e);
     }
+    if (!Array.isArray(state.locations) || !state.locations.length) state.locations = [...DEFAULT_DATA.locations];
+    if (!Array.isArray(state.departments) || !state.departments.length) state.departments = [...DEFAULT_DATA.departments];
+    if (!Array.isArray(state.projects) || !state.projects.length) state.projects = [...DEFAULT_DATA.projects];
+    if (!Array.isArray(state.mechanics) || !state.mechanics.length) state.mechanics = [...DEFAULT_DATA.mechanics];
   }
 
   function saveCache() {
@@ -172,37 +187,45 @@ const MasterData = (() => {
   // ดึงข้อมูลจาก Firebase Collection 'master_data'
   async function load(force = false) {
     loadCache();
-    if (state.loaded && !force) {
-      renderMasterDataUI();
-      initFormDropdowns();
+    renderMasterDataUI();
+    initFormDropdowns();
+
+    if (state.loaded && !force && window._masterDataFirestoreSynced) {
       return state;
     }
 
+    if (!window.firestoreDb && typeof initFirebase === 'function') {
+      initFirebase();
+    }
+
     if (!window.firestoreDb) {
-      renderMasterDataUI();
-      initFormDropdowns();
+      if (retryCount < 10) {
+        retryCount++;
+        setTimeout(() => load(force), 600);
+      }
       return state;
     }
 
     try {
       const colRef = window.firestoreDb.collection('master_data');
-      const getPromise = typeof window.withTimeout === 'function' ? window.withTimeout(colRef.get(), 2500) : colRef.get();
+      const getPromise = typeof window.withTimeout === 'function' ? window.withTimeout(colRef.get(), 6000) : colRef.get();
       const snap = await getPromise;
 
       if (snap.empty) {
         // หากใน Firebase ยังไม่มีข้อมูล ให้สร้างชุดข้อมูลเริ่มต้นทันที (Auto-Seed)
         console.log('Firebase master_data is empty. Auto-seeding initial data...');
         await seedInitialData(true);
+        window._masterDataFirestoreSynced = true;
         return state;
       }
 
       snap.forEach(doc => {
         const id = doc.id;
         const d = doc.data() || {};
-        if (id === 'locations') state.locations = Array.isArray(d.items) ? d.items : [];
-        if (id === 'departments') state.departments = Array.isArray(d.items) ? d.items : [];
-        if (id === 'projects') state.projects = Array.isArray(d.items) ? d.items : [];
-        if (id === 'mechanics') state.mechanics = Array.isArray(d.items) ? d.items : [];
+        if (id === 'locations' && Array.isArray(d.items) && d.items.length) state.locations = d.items;
+        if (id === 'departments' && Array.isArray(d.items) && d.items.length) state.departments = d.items;
+        if (id === 'projects' && Array.isArray(d.items) && d.items.length) state.projects = d.items;
+        if (id === 'mechanics' && Array.isArray(d.items) && d.items.length) state.mechanics = d.items;
         if (id === 'settings') state.settings = d || { overdueDays: 3 };
       });
 
@@ -213,28 +236,52 @@ const MasterData = (() => {
       if (!state.mechanics.length) state.mechanics = [...DEFAULT_DATA.mechanics];
 
       state.loaded = true;
+      window._masterDataFirestoreSynced = true;
       saveCache();
       renderMasterDataUI();
       initFormDropdowns();
 
-      // Real-time listener สำหรับ Mechanics ใน Firestore
+      // Real-time listener สำหรับ Master Data ทุกหมวดใน Firestore
       if (window.firestoreDb && !window._masterMechanicsListenerAttached) {
         window._masterMechanicsListenerAttached = true;
-        window.firestoreDb.collection('master_data').doc('mechanics')
-          .onSnapshot(doc => {
-            if (doc.exists) {
+        window.firestoreDb.collection('master_data')
+          .onSnapshot(colSnap => {
+            let changed = false;
+            colSnap.forEach(doc => {
+              const id = doc.id;
               const d = doc.data() || {};
-              if (Array.isArray(d.items)) {
-                state.mechanics = d.items;
-                saveCache();
-                renderMasterDataUI();
+              if (id === 'locations' && Array.isArray(d.items) && d.items.length) {
+                state.locations = d.items;
+                changed = true;
+              } else if (id === 'departments' && Array.isArray(d.items) && d.items.length) {
+                state.departments = d.items;
+                changed = true;
+              } else if (id === 'projects' && Array.isArray(d.items) && d.items.length) {
+                state.projects = d.items;
+                changed = true;
+              } else if (id === 'mechanics' && Array.isArray(d.items)) {
+                state.mechanics = d.items.length ? d.items : [...DEFAULT_DATA.mechanics];
+                changed = true;
+              } else if (id === 'settings' && d) {
+                state.settings = d;
+                changed = true;
               }
+            });
+            if (changed) {
+              state.loaded = true;
+              saveCache();
+              renderMasterDataUI();
+              initFormDropdowns();
             }
-          }, err => console.warn('Mechanics real-time sync error:', err));
+          }, err => console.warn('MasterData real-time sync error:', err));
       }
     } catch (e) {
       console.error('MasterData load error:', e);
-      if (!state.locations.length) state = { ...DEFAULT_DATA, loaded: true };
+      if (!state.locations.length) state.locations = [...DEFAULT_DATA.locations];
+      if (!state.departments.length) state.departments = [...DEFAULT_DATA.departments];
+      if (!state.projects.length) state.projects = [...DEFAULT_DATA.projects];
+      if (!state.mechanics.length) state.mechanics = [...DEFAULT_DATA.mechanics];
+      state.loaded = true;
       renderMasterDataUI();
       initFormDropdowns();
     }
@@ -346,8 +393,9 @@ const MasterData = (() => {
     const sel = document.getElementById(selectElId);
     if (!sel) return;
 
+    const prevVal = sel.value;
     const inst = (instVal || '').trim();
-    const allLocs = state.locations || [];
+    const allLocs = (Array.isArray(state.locations) && state.locations.length) ? state.locations : DEFAULT_DATA.locations;
 
     // กรองสถานที่: ถ้าเลือก วพบ. ก็เอาของ วพบ. + ส่วนกลาง, ถ้าเลือก ศษ. ก็เอาของ ศษ. + ส่วนกลาง, ถ้าเลือก ส่วนกลาง ก็เอาส่วนกลาง
     let filtered = allLocs;
@@ -368,8 +416,12 @@ const MasterData = (() => {
 
     sel.innerHTML = html;
 
-    // ซ่อนช่องกรอกอื่นๆ ไว้ก่อน
-    if (otherInputId) {
+    if (prevVal && Array.from(sel.options).some(o => o.value === prevVal)) {
+      sel.value = prevVal;
+    }
+
+    // ซ่อนช่องกรอกอื่นๆ ไว้ก่อน (เว้นแต่เลือก __OTHER__ ค้างไว้)
+    if (otherInputId && sel.value !== '__OTHER__') {
       const otherInput = document.getElementById(otherInputId);
       if (otherInput) otherInput.classList.add('hidden');
     }
@@ -397,7 +449,8 @@ const MasterData = (() => {
     const sel = document.getElementById(selectElId);
     if (!sel) return;
 
-    const depts = state.departments || [];
+    const prevVal = sel.value;
+    const depts = (Array.isArray(state.departments) && state.departments.length) ? state.departments : DEFAULT_DATA.departments;
     let html = `<option value="" disabled selected>-- เลือกฝ่าย / แผนก --</option>`;
     depts.forEach(d => {
       html += `<option value="${sanitize(d.name)}">${sanitize(d.name)}</option>`;
@@ -405,7 +458,11 @@ const MasterData = (() => {
     html += `<option value="__OTHER__">➕ อื่นๆ (พิมพ์ระบุเอง)...</option>`;
     sel.innerHTML = html;
 
-    if (otherInputId) {
+    if (prevVal && Array.from(sel.options).some(o => o.value === prevVal)) {
+      sel.value = prevVal;
+    }
+
+    if (otherInputId && sel.value !== '__OTHER__') {
       const otherInput = document.getElementById(otherInputId);
       if (otherInput) otherInput.classList.add('hidden');
     }
@@ -416,7 +473,8 @@ const MasterData = (() => {
     const sel = document.getElementById(selectElId);
     if (!sel) return;
 
-    const prjs = state.projects || [];
+    const prevVal = sel.value;
+    const prjs = (Array.isArray(state.projects) && state.projects.length) ? state.projects : DEFAULT_DATA.projects;
     let html = `<option value="" disabled selected>-- เลือกโครงการ --</option>`;
     prjs.forEach(p => {
       html += `<option value="${sanitize(p.name)}">${sanitize(p.name)}</option>`;
@@ -424,7 +482,11 @@ const MasterData = (() => {
     html += `<option value="__OTHER__">➕ โครงการใหม่ (พิมพ์ระบุเอง)...</option>`;
     sel.innerHTML = html;
 
-    if (otherInputId) {
+    if (prevVal && Array.from(sel.options).some(o => o.value === prevVal)) {
+      sel.value = prevVal;
+    }
+
+    if (otherInputId && sel.value !== '__OTHER__') {
       const otherInput = document.getElementById(otherInputId);
       if (otherInput) otherInput.classList.add('hidden');
     }

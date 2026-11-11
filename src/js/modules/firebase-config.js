@@ -27,6 +27,9 @@ window.withTimeout = function(promise, ms = 3000) {
 };
 
 function initFirebase() {
+  if (window.firestoreDb && window.firebaseApp) {
+    return true;
+  }
   if (typeof firebase === 'undefined') {
     console.warn('Firebase SDK ยังไม่ถูกโหลดในหน้าเว็บ');
     return false;
@@ -60,9 +63,12 @@ function initFirebase() {
 
     console.log('🔥 Firebase Services initialized successfully');
 
-    // เรียก NotificationHub ทันทีที่ Firestore พร้อมใช้งาน
+    // เรียก NotificationHub และ MasterData ทันทีที่ Firestore พร้อมใช้งาน
     if (window.NotificationHub && typeof window.NotificationHub.init === 'function') {
       window.NotificationHub.init();
+    }
+    if (window.MasterData && typeof window.MasterData.load === 'function') {
+      window.MasterData.load();
     }
     return true;
   } catch (err) {
@@ -70,3 +76,6 @@ function initFirebase() {
     return false;
   }
 }
+
+// เริ่มต้น Firebase ทันทีหาก SDK โหลดพร้อมแล้ว เพื่อให้ทุกโมดูล (เช่น MasterData) ใช้งานได้ทันที
+initFirebase();

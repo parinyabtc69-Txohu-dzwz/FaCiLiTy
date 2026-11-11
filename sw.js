@@ -56,7 +56,7 @@ try {
   console.warn('[sw.js] Firebase Messaging in SW note:', e);
 }
 
-const CACHE_NAME = 'facility-v1.0.1';
+const CACHE_NAME = 'facility-v1.0.2';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -66,16 +66,29 @@ const STATIC_ASSETS = [
   './img/icon-512.png'
 ];
 
-// Install: cache static assets
+// Install: cache static assets (bypassing HTTP disk cache)
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(STATIC_ASSETS).catch(() => {
-        // ถ้า cache บางไฟล์ไม่ได้ ไม่เป็นไร
-      });
+    caches.open(CACHE_NAME).then(async cache => {
+      for (const asset of STATIC_ASSETS) {
+        try {
+          const res = await fetch(asset, { cache: 'no-store' });
+          if (res && res.ok) {
+            await cache.put(asset, res);
+          }
+        } catch (e) {
+          // ถ้า cache บางไฟล์ไม่ได้ ไม่เป็นไร
+        }
+      }
     })
   );
   self.skipWaiting();
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Activate: clean old caches
@@ -92,19 +105,22 @@ self.addEventListener('activate', event => {
 
 // Fetch: Network First strategy with disk cache busting for HTML navigations
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
   if (
     event.request.url.includes('script.google.com') ||
     event.request.url.includes('script.googleusercontent.com') ||
     event.request.url.includes('firestore.googleapis.com') ||
-    event.request.url.includes('firebaseinstallations.googleapis.com')
+    event.request.url.includes('firebaseinstallations.googleapis.com') ||
+    event.request.url.includes('fcm.googleapis.com') ||
+    event.request.url.includes('fcmregistrations.googleapis.com')
   ) {
     return;
   }
 
-  // สำหรับหน้า HTML ให้ข้าม HTTP disk cache เพื่อให้เบราว์เซอร์ตรวจสอบไฟล์เวอร์ชันล่าสุดเสมอ
+  // สำหรับหน้า HTML ให้ใช้ URL string พร้อม cache: 'no-store' (ห้ามส่ง Request object ที่มี mode: 'navigate' คู่กับ init เพราะจะเกิด TypeError)
   const isHtml = event.request.mode === 'navigate' || event.request.url.endsWith('index.html') || event.request.url.endsWith('/');
   const fetchPromise = isHtml
-    ? fetch(event.request, { cache: 'no-cache' })
+    ? fetch(event.request.url, { cache: 'no-store' })
     : fetch(event.request);
 
   event.respondWith(
@@ -114,6 +130,9 @@ self.addEventListener('fetch', event => {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, responseClone);
+            if (isHtml) {
+              cache.put('./index.html', responseClone.clone());
+            }
           });
         }
         return response;

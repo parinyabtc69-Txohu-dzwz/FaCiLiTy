@@ -1613,7 +1613,7 @@ const NotificationHub = (function () {
   }
 
   // ── 17. ล้างแคชและบังคับอัปเดตแอปสู่เวอร์ชันล่าสุดทันที ──────────────────────
-  function forceUpdateApp() {
+  async function forceUpdateApp() {
     if (typeof Swal !== 'undefined') {
       Swal.fire({
         title: 'กำลังอัปเดตแอป...',
@@ -1625,26 +1625,22 @@ const NotificationHub = (function () {
       });
     }
 
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        return Promise.all(names.map(n => caches.delete(n)));
-      }).catch(() => { });
-    }
-
-    if (navigator.serviceWorker) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        regs.forEach(r => {
-          r.update().catch(() => { });
-          if (r.waiting) {
-            r.waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
-        });
-      }).catch(() => { });
+    try {
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(n => caches.delete(n)));
+      }
+      if (navigator.serviceWorker) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
+    } catch (e) {
+      console.warn('forceUpdateApp cleanup error:', e);
     }
 
     setTimeout(() => {
-      window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
-    }, 800);
+      window.location.replace(window.location.origin + window.location.pathname + '?v=' + Date.now());
+    }, 500);
   }
 
   return {
