@@ -687,7 +687,7 @@ const TrackUI = (() => {
       }
       if (state.type !== 'all' && j.type !== state.type) return false;
       if (state.mineOnly && !isMine(j)) return false;
-      if (state.overdueFilter) {
+      if (!ignoreStatus && state.overdueFilter) {
         const isUnstarted = Boolean(j.tech) && !(/กำลัง|รอตรวจรับ|แก้ไข/.test(j.status) || j.step === 2) && j.group !== 'done' && j.group !== 'cancel';
         if (!isUnstarted) return false;
         const aDate = j.assignedAt || j.created;
@@ -3170,7 +3170,7 @@ const TrackUI = (() => {
       clearTimeout(state.searchTimer);
       state.searchTimer = setTimeout(() => { state.search = str(v); render(); }, 150);
     },
-    setStatus(s) { state.status = s; render(); },
+    setStatus(s) { state.status = s; state.overdueFilter = false; render(); },
     setType(t) { state.type = t; render(); },
     toggleMine() {
       const role = getUserRole();

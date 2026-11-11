@@ -299,23 +299,20 @@ const NotificationHub = (function () {
     }, 320);
   }
 
-  // ── 5.5 แปลงและรวมรายการงานค้าง (เฉพาะ รอมอบหมาย / รอดำเนินการ) เข้ากับศูนย์การแจ้งเตือน ───
-  function isPendingTicketStatus(status, archived) {
-    if (archived === true) return false;
-    const s = String(status || 'รอดำเนินการ').trim();
-    if (!s) return true;
-    // เอาไว้เฉพาะงานที่ยังไม่ได้เริ่มซ่อม (รอมอบหมาย / รอดำเนินการ / รอพิจารณาอนุมัติ / รอยืนยันการยืม)
-    if (
-      s === 'รอดำเนินการ' ||
-      s === 'รอมอบหมาย' ||
-      s.includes('รอดำเนินการ') ||
-      s.includes('รอมอบหมาย') ||
-      s.includes('รอพิจารณา') ||
-      s.includes('รอยืนยัน')
-    ) {
-      return true;
-    }
-    return false;
+  // ── 5.5 แปลงและรวมรายการงานค้าง (เฉพาะ รอรับเรื่อง / รอมอบหมาย ที่ยังไม่ได้ระบุช่าง ตรงกับหน้าติดตามงาน 100%) ───
+  function isPendingTicketStatus(t) {
+    if (!t || t.isArchived === true || t.archived === true) return false;
+    const s = String(t.status || 'รอดำเนินการ').trim();
+    const tech = String(t.techName || t.tech || t.technician || '').trim();
+    const hasTech = Boolean(tech && tech !== '-');
+
+    if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return false;
+    if (/เสร็จ|เรียบร้อยแล้ว|ปิดงาน|คืนเรียบร้อย/.test(s)) return false;
+    if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return false;
+    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่/.test(s) && !/^รอ/.test(s)) return false;
+    // หากมอบหมายช่างแล้ว (มี techName) ในระบบติดตามงานจะจัดอยู่ในหมวด "กำลังดำเนินการ" จึงไม่นับเป็นงานรอมอบหมาย
+    if (hasTech) return false;
+    return true;
   }
 
   function getItemTimestampMs(item) {
@@ -334,7 +331,7 @@ const NotificationHub = (function () {
   function ticketToPendingNotif(docId, t) {
     const ticketId = String(t.ticketId || docId || '').trim();
     const status = String(t.status || 'รอดำเนินการ').trim();
-    const techName = String(t.technician || t.tech || '').trim();
+    const techName = String(t.techName || t.tech || t.technician || '').trim();
     const hasTech = Boolean(techName && techName !== '-');
     const type = String(t.type || 'building').toLowerCase();
     const isWaitingAssign = !hasTech && (status === 'รอดำเนินการ' || status === 'รอมอบหมาย');
@@ -1392,7 +1389,7 @@ const NotificationHub = (function () {
             if (isTicketsFirstLoad && tid) {
               knownDocIds.add('ticket_' + tid);
             }
-            if (isPendingTicketStatus(t.status, t.archived)) {
+            if (isPendingTicketStatus(t)) {
               currentPending.push(ticketToPendingNotif(doc.id, t));
             } else if (tid) {
               currentStartedOrClosed.add(tid);
