@@ -1278,7 +1278,7 @@ const NotificationHub = (function () {
     if (typeof Swal !== 'undefined') {
       Swal.fire({
         title: 'กำลังอัปเดตแอป...',
-        text: 'กำลังล้างแคชเก่าและดึงข้อมูลระบบเวอร์ชันล่าสุด v6.33',
+        text: 'กำลังล้างแคชเก่าและดึงข้อมูลระบบเวอร์ชันล่าสุด v1.0',
         allowOutsideClick: false,
         timer: 1600,
         showConfirmButton: false,
