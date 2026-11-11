@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สไลด์คู่มือการใช้งานและนำเสนอระบบ FaCiLiTy v1.0 (อิงจากหน้าเว็บจริง)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Prompt', sans-serif; box-sizing: border-box; }
+    body {
+      background: #0f172a;
+      color: #1e293b;
+      margin: 0;
+      overflow-x: hidden;
+    }
+    /* Slide Deck Container */
+    .deck-viewport {
+      min-height: calc(100vh - 68px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 24px;
+    }
+    .slide-card {
+      display: none;
+      width: 100%;
+      max-width: 1360px;
+      min-height: 740px;
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.55);
+      overflow: hidden;
+      position: relative;
+      flex-direction: column;
+      border: 2px solid rgba(176, 237, 230, 0.35);
+      animation: fadeSlide 0.28s ease-out;
+    }
+    .slide-card.active {
+      display: flex;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(8px) scale(0.995); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    /* Callout Pin Badge */
+    .pin {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 9999px;
+      background: #e11d48;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 12px;
+      box-shadow: 0 0 0 3px #fff, 0 4px 10px rgba(225, 29, 72, 0.45);
+      flex-shrink: 0;
+    }
+    .pin-teal {
+      background: #265D5A;
+      box-shadow: 0 0 0 3px #fff, 0 4px 10px rgba(38, 93, 90, 0.4);
+    }
+    /* Browser Mockup Frame */
+    .browser-frame {
+      border: 1.5px solid #cbd5e1;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #edfaf8;
+      box-shadow: 0 12px 30px -8px rgba(15, 23, 42, 0.14);
+    }
+    .browser-bar {
+      background: #f1f5f9;
+      border-bottom: 1px solid #cbd5e1;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .browser-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .browser-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .browser-url {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      padding: 3px 12px;
+      font-size: 11px;
+      color: #475569;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    /* Print / Grid View Mode */
+    body.show-all-mode {
+      background: #f1f5f9;
+    }
+    body.show-all-mode .deck-viewport {
+      flex-direction: column;
+      gap: 32px;
+      padding: 32px 16px;
+    }
+    body.show-all-mode .slide-card {
+      display: flex !important;
+      page-break-after: always;
+      break-after: page;
+    }
+    @media print {
+      @page { size: A4 landscape; margin: 6mm; }
+      body { background: #ffffff !important; }
+      .no-print { display: none !important; }
+      .deck-viewport { display: block !important; padding: 0 !important; }
+      .slide-card {
+        display: flex !important;
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        min-height: 190mm !important;
+        max-width: 100% !important;
+        margin-bottom: 8mm !important;
+        page-break-after: always;
+        break-after: page;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= TOP PRESENTATION CONTROLLER BAR ================= -->
+  <nav class="no-print sticky top-0 z-50 h-[68px] bg-slate-900/95 backdrop-blur border-b border-slate-800 px-4 md:px-6 flex items-center justify-between text-white">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-[#265D5A] border border-[#B0EDE6]/40 flex items-center justify-center font-bold text-[#B0EDE6] shadow">
+        <i class="fa-solid fa-chalkboard-user"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-sm md:text-base tracking-tight">FaCiLiTy <span class="text-[#B0EDE6]">v1.0</span></span>
+          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">สไลด์คู่มืออิงหน้าเว็บจริง</span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden sm:block">ใช้ปุ่มลูกศร ◀ ▶ บนคีย์บอร์ดเพื่อเลื่อนสไลด์ หรือกดปุ่มพิมพ์เป็น PDF</p>
+      </div>
+    </div>
+
+    <!-- Slide Jumper & Prev/Next -->
+    <div class="flex items-center gap-2">
+      <button onclick="prevSlide()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition active:scale-95">
+        <i class="fa-solid fa-chevron-left"></i> <span class="hidden md:inline">ก่อนหน้า</span>
+      </button>
+
+      <select id="slideSelector" onchange="goToSlide(parseInt(this.value))" class="bg-slate-800 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 outline-none focus:border-[#B0EDE6] cursor-pointer max-w-[210px] sm:max-w-xs">
+        <option value="0">สไลด์ 1/12 : หน้าปกเปิดตัวระบบ FaCiLiTy v1.0</option>
+        <option value="1">สไลด์ 2/12 : บทสรุปสำหรับบอร์ดบริหาร & สถาปัตยกรรม</option>
+        <option value="2">สไลด์ 3/12 : ภาพรวมหน้าเว็บจริง (Header, Sidebar, เมนูมือถือ)</option>
+        <option value="3">สไลด์ 4/12 : ขั้นตอนที่ 1 การเข้าสู่ระบบ & ติดตั้งแอปลงมือถือ</option>
+        <option value="4">สไลด์ 5/12 : ขั้นตอนที่ 2 หน้าแรก & การกดเปิดแจ้งเตือน + ยิงทดสอบ</option>
+        <option value="5">สไลด์ 6/12 : ขั้นตอนที่ 3 หน้าฟอร์มแจ้งซ่อมอาคาร / ไอที / โสตฯ</option>
+        <option value="6">สไลด์ 7/12 : ขั้นตอนที่ 4 หน้าฟอร์มยืม-คืนอุปกรณ์โสตฯ</option>
+        <option value="7">สไลด์ 8/12 : ขั้นตอนที่ 5 หน้าเสนอโครงการระยะยาว / จัดซื้อ</option>
+        <option value="8">สไลด์ 9/12 : ขั้นตอนที่ 6 หน้าติดตามสถานะงานของฉัน</option>
+        <option value="9">สไลด์ 10/12 : ขั้นตอนที่ 7 ห้องแชทคุยกับช่าง & ประเมิน 5 ดาว</option>
+        <option value="10">สไลด์ 11/12 : มุมมองผู้บริหาร (Executive Command Center)</option>
+        <option value="11">สไลด์ 12/12 : มุมมองแอดมิน/ทีมช่าง & ระบบแจ้งเตือนแยกตามโรล</option>
+      </select>
+
+      <button onclick="nextSlide()" class="px-3.5 py-2 rounded-xl bg-[#265D5A] hover:bg-[#1f4b48] text-xs font-bold flex items-center gap-1.5 border border-[#B0EDE6]/30 transition active:scale-95">
+        <span class="hidden md:inline">ถัดไป</span> <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- Right Utilities -->
+    <div class="flex items-center gap-2">
+      <button onclick="toggleAllSlidesMode()" id="btnViewAll" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition" title="สลับโหมดดูเรียงทุกหน้า">
+        <i class="fa-solid fa-table-cells-large text-[#B0EDE6]"></i> <span class="hidden lg:inline">ดูทุกหน้า</span>
+      </button>
+      <button onclick="toggleFullScreen()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition" title="นำเสนอเต็มจอ">
+        <i class="fa-solid fa-expand text-amber-400"></i> <span class="hidden lg:inline">เต็มจอ</span>
+      </button>
+      <button onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow transition">
+        <i class="fa-solid fa-print"></i> <span class="hidden sm:inline">พิมพ์ / PDF</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= SLIDE DECK VIEWPORT ================= -->
+  <div class="deck-viewport">
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 1: หน้าปกเปิดตัวระบบ FaCiLiTy v1.0 -->
+    <!-- ===================================================================== -->
+    <section class="slide-card active bg-gradient-to-br from-[#13302e] via-[#265D5A] to-[#0f2422] text-white justify-between p-8 md:p-12">
+      <div class="flex items-center justify-between border-b border-white/15 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center text-xl font-black shadow">
+            <i class="fa-solid fa-building"></i>
+          </div>
+          <div>
+            <p class="text-xs text-[#B0EDE6] font-semibold uppercase tracking-widest">Official Release Presentation & User Manual</p>
+            <p class="text-sm font-bold text-white">โครงการระบบบริหารจัดการงานซ่อมบำรุงและทรัพยากรสถานศึกษาอัจฉริยะ</p>
+          </div>
+        </div>
+        <span class="px-4 py-1.5 rounded-full bg-emerald-400/20 border border-emerald-300/40 text-emerald-200 text-xs font-extrabold">
+          🚀 เปิดตัวทางการ Version 1.0
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center my-auto py-6">
+        <div class="lg:col-span-7 space-y-5">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-[#B0EDE6] text-xs font-semibold">
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+            <span>คู่มือการใช้งานจริง (อ้างอิงจากหน้าเว็บไซต์ FaCiLiTy v1.0 ทุกปุ่ม)</span>
+          </div>
+          <h1 class="text-4xl md:text-6xl font-black tracking-tight leading-tight">
+            ระบบ <span class="text-[#B0EDE6]">FaCiLiTy</span> <span class="text-amber-300">v1.0</span>
+          </h1>
+          <p class="text-base md:text-lg text-slate-200 font-light leading-relaxed max-w-2xl">
+            เปลี่ยนการแจ้งซ่อมกระดาษและข้อความตกหล่นในไลน์ ให้เป็นระบบติดตามงานซ่อมอาคาร ไอที ยืม-คืนอุปกรณ์โสตฯ และอนุมัติโครงการระยะยาวแบบ <strong class="text-white font-semibold">Real-time 100%</strong> พร้อมระบบแจ้งเตือนแยกตามบทบาท
+          </p>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+            <div class="bg-white/10 backdrop-blur border border-white/15 rounded-2xl p-3.5">
+              <i class="fa-solid fa-screwdriver-wrench text-[#B0EDE6] text-lg mb-1"></i>
+              <p class="text-xs font-bold">แจ้งซ่อม 3 ฝ่าย</p>
+              <p class="text-[11px] text-slate-300">อาคาร • ไอที • โสตฯ</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur border border-white/15 rounded-2xl p-3.5">
+              <i class="fa-solid fa-microphone-lines text-rose-300 text-lg mb-1"></i>
+              <p class="text-xs font-bold">ยืม-คืนอุปกรณ์โสตฯ</p>
+              <p class="text-[11px] text-slate-300">ตัด-คืนสต็อกอัตโนมัติ</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur border border-white/15 rounded-2xl p-3.5">
+              <i class="fa-solid fa-building-circle-check text-violet-300 text-lg mb-1"></i>
+              <p class="text-xs font-bold">เสนอโครงการจัดซื้อ</p>
+              <p class="text-[11px] text-slate-300">ผู้บริหารอนุมัติผ่านมือถือ</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur border border-white/15 rounded-2xl p-3.5">
+              <i class="fa-solid fa-bell text-amber-300 text-lg mb-1"></i>
+              <p class="text-xs font-bold">แจ้งเตือน 3 ช่องทาง</p>
+              <p class="text-[11px] text-slate-300">ในแอป • จอล็อก • LINE</p>
+            </div>
+          </div>
+
+          <div class="pt-2 flex flex-wrap items-center gap-3">
+            <div class="bg-slate-950/60 border border-[#B0EDE6]/40 px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2.5">
+              <i class="fa-solid fa-globe text-[#B0EDE6]"></i>
+              <span>ลิงก์เข้าใช้งานจริง: <strong class="text-[#B0EDE6] underline">https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Live Preview Card of Actual App Home -->
+        <div class="lg:col-span-5">
+          <div class="browser-frame text-slate-800">
+            <div class="browser-bar">
+              <div class="browser-dots">
+                <span class="bg-rose-400"></span><span class="bg-amber-400"></span><span class="bg-emerald-400"></span>
+              </div>
+              <div class="browser-url">
+                <i class="fa-solid fa-lock text-emerald-600"></i>
+                <span>parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/</span>
+              </div>
+            </div>
+            <div class="p-4 bg-[#edfaf8]">
+              <!-- Mini Header -->
+              <div class="bg-white rounded-xl p-2.5 mb-3 flex items-center justify-between border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-bars text-slate-500 text-xs"></i>
+                  <div class="w-6 h-6 rounded-lg bg-[#265D5A] text-white flex items-center justify-center text-xs font-bold">F</div>
+                  <span class="font-bold text-xs text-slate-700">FaCiLiTy</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="px-2 py-0.5 rounded-full bg-[#265D5A] text-white text-[9px] font-bold"><i class="fa-solid fa-download mr-1"></i>ติดตั้งแอป</span>
+                  <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-[10px] relative">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-rose-500 rounded-full"></span>
+                  </span>
+                  <span class="w-6 h-6 rounded-full bg-[#FF5F5F] text-white flex items-center justify-center text-[10px]"><i class="fa-solid fa-user"></i></span>
+                </div>
+              </div>
+              <!-- Mini Home Body -->
+              <div class="bg-white rounded-2xl p-4 border border-[#B0EDE6] text-center shadow-sm">
+                <div class="w-12 h-12 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-xl mx-auto mb-2">
+                  <i class="fa-solid fa-building"></i>
+                </div>
+                <p class="font-bold text-sm text-slate-800">ระบบบริการทรัพยากร</p>
+                <p class="text-[10px] text-slate-500 mb-3">เลือกบริการหรือหน่วยงานที่คุณต้องการติดต่อ</p>
+                <div class="bg-[#265D5A] text-white py-2 px-4 rounded-xl text-xs font-bold inline-flex items-center gap-2 mb-3 shadow">
+                  <i class="fa-solid fa-magnifying-glass"></i> ติดตามสถานะงาน
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-left">
+                  <div class="p-2.5 border border-[#B0EDE6] rounded-xl flex items-center gap-2 bg-[#E0F7F4]/40">
+                    <div class="w-7 h-7 rounded-lg bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-wrench"></i></div>
+                    <div class="text-[10px] font-semibold leading-tight">แจ้งซ่อมอาคาร</div>
+                  </div>
+                  <div class="p-2.5 border border-[#B0EDE6] rounded-xl flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-[#FF5F5F]/15 text-[#FF5F5F] flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-microphone-lines"></i></div>
+                    <div class="text-[10px] font-semibold leading-tight">ยืม-คืนไมค์โสตฯ</div>
+                  </div>
+                  <div class="p-2.5 border border-sky-100 rounded-xl flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-sky-100 text-sky-500 flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-desktop"></i></div>
+                    <div class="text-[10px] font-semibold leading-tight">แจ้งซ่อมไอที</div>
+                  </div>
+                  <div class="p-2.5 border border-violet-100 rounded-xl flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-building-circle-check"></i></div>
+                    <div class="text-[10px] font-semibold leading-tight">เสนอโครงการ</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-300 border-t border-white/15 pt-3">
+        <span>เอกสารนำเสนอคณะกรรมการบริหารสถานศึกษา (Board) และคู่มือปฏิบัติงานสำหรับคณะครู</span>
+        <span class="font-bold text-[#B0EDE6]">สไลด์ 1 / 12</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 2: บทสรุปสำหรับบอร์ดบริหาร & สถาปัตยกรรม Hybrid Dual-Sync -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-slate-50">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-[#265D5A] bg-[#B0EDE6]/60 px-3 py-1 rounded-full">Executive Summary</span>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mt-1">1. บทสรุปสำหรับบอร์ดบริหาร : ทำไมต้องระบบ FaCiLiTy v1.0?</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 2 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-4">
+        <!-- Left: Pain Points vs Solutions -->
+        <div class="lg:col-span-6 space-y-4">
+          <div class="bg-rose-50 border border-rose-200 rounded-2xl p-5">
+            <h3 class="font-bold text-rose-800 text-base flex items-center gap-2 mb-3">
+              <i class="fa-solid fa-circle-xmark text-rose-600"></i> ปัญหารูปแบบเดิม (ก่อนมีระบบ)
+            </h3>
+            <ul class="space-y-2 text-xs text-rose-900 leading-relaxed">
+              <li class="flex items-start gap-2"><span class="font-bold">•</span> <span><strong>ข้อความแจ้งซ่อมตกหล่นในกลุ่ม LINE:</strong> แจ้งปนกับข้อความสนทนาอื่น ทำให้ค้นหาย้อนหลังไม่ได้ว่างานไหนทำแล้วหรือยังค้าง</span></li>
+              <li class="flex items-start gap-2"><span class="font-bold">•</span> <span><strong>ผู้แจ้งไม่ทราบความคืบหน้า:</strong> คุณครูต้องเดินตามหรือโทรถามช่างเอง ไม่มีระบบแจ้งเตือนอัตโนมัติเมื่องานเสร็จ</span></li>
+              <li class="flex items-start gap-2"><span class="font-bold">•</span> <span><strong>ขาดสถิติและหลักฐานประกอบการตัดสินใจ:</strong> ไม่มีรายงานสรุป KPI รายเดือน รูปก่อน-หลังซ่อม หรือประวัติใบเสร็จค่าวัสดุ</span></li>
+            </ul>
+          </div>
+
+          <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
+            <h3 class="font-bold text-emerald-900 text-base flex items-center gap-2 mb-3">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> ทางออกด้วย FaCiLiTy v1.0 (Smart Resource Hub)
+            </h3>
+            <ul class="space-y-2 text-xs text-emerald-950 leading-relaxed">
+              <li class="flex items-start gap-2"><span class="font-bold">✓</span> <span><strong>รวมศูนย์ 5 บริการในแอปเดียว:</strong> ซ่อมอาคาร, ซ่อมไอที, ซ่อมโสตฯ, ยืม-คืนอุปกรณ์โสตฯ และเสนอโครงการจัดซื้อระยะยาว</span></li>
+              <li class="flex items-start gap-2"><span class="font-bold">✓</span> <span><strong>แจ้งเตือนแยกตามบทบาท (Role-Based Push):</strong> เตือนเฉพาะผู้เกี่ยวข้อง ไม่รบกวนครูท่านอื่น พร้อมห้องแชทคุยกับช่างในใบงาน</span></li>
+              <li class="flex items-start gap-2"><span class="font-bold">✓</span> <span><strong>งบประมาณดูแลระบบ 0 บาท/ปี (Zero Server Cost):</strong> พัฒนาบน Google Workspace & Firebase Cloud มาตรฐานองค์กร</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Right: 4-Layer Architecture & Storage -->
+        <div class="lg:col-span-6 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-sitemap text-[#265D5A]"></i> สถาปัตยกรรม Hybrid Dual-Sync & แหล่งเก็บข้อมูลทั้งหมด
+            </h3>
+            <div class="space-y-3 text-xs">
+              <div class="p-3.5 rounded-2xl bg-[#edfaf8] border border-[#B0EDE6] flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-[#265D5A] text-white flex items-center justify-center shrink-0 font-bold">1</div>
+                <div>
+                  <p class="font-bold text-slate-800">หน้าเว็บแอปพลิเคชัน (GitHub Pages CDN + PWA Service Worker)</p>
+                  <p class="text-slate-600 mt-0.5">ติดตั้งเป็นไอคอนแอปบนมือถือ iOS / Android ได้ทันที โหลดไวด้วยระบบแคชอัจฉริยะ `v1.0`</p>
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 font-bold">2</div>
+                <div>
+                  <p class="font-bold text-slate-800">ระบบเรียลไทม์ & แชท (Google Firebase Cloud — Project: <code class="bg-amber-100 px-1.5 rounded">facility-c7833</code>)</p>
+                  <p class="text-slate-600 mt-0.5">เก็บคิวงานสด (`requests`), ห้องแชท (`messages`), ศูนย์แจ้งเตือน (`notifications`) และทะเบียนอุปกรณ์รับแจ้งเตือน (`fcm_tokens`)</p>
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 font-bold">3</div>
+                <div>
+                  <p class="font-bold text-slate-800">ฐานข้อมูลหลัก 12 ชีต (Google Sheets — สามารถเปิดดู/Export Excel ได้ตลอดเวลา)</p>
+                  <p class="text-slate-600 mt-0.5">แยกตารางงานซ่อมอาคาร, ยืมโสตฯ, ซ่อมไอที, ซ่อมโสตฯ, โครงการ, ทะเบียนผู้ใช้ (`Users`), ตั้งค่า (`MasterData`), บั๊ก และ `FCM_Tokens`</p>
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-200 flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 font-bold">4</div>
+                <div>
+                  <p class="font-bold text-slate-800">คลังไฟล์ภาพและเอกสาร 8 โฟลเดอร์ (Google Drive อัตโนมัติ)</p>
+                  <p class="text-slate-600 mt-0.5">แยกรูปแจ้งซ่อม, รูปส่งงานช่าง, รูปใบเสร็จค่าวัสดุ และเอกสารโครงการ พร้อมบีบอัดภาพ WebP ก่อนอัปโหลด</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>ระบบสำรองข้อมูล 2 ทางอัตโนมัติ (Firebase + Google Sheets) ป้องกันข้อมูลสูญหาย 100%</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — Executive Overview</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 3: ภาพรวมหน้าเว็บจริง (Header, Sidebar, Mobile Bottom Bar) -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-[#265D5A] bg-[#B0EDE6]/60 px-3 py-1 rounded-full">Real Web UI Tour</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">2. รู้จักส่วนประกอบบนหน้าเว็บจริง (ส่วนหัว, แถบเมนูซ้าย และเมนูมือถือ)</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 3 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Realistic Replica of index.html Header + Sidebar + Mobile Bottom Nav -->
+        <div class="lg:col-span-8">
+          <div class="browser-frame">
+            <div class="browser-bar">
+              <div class="browser-dots"><span class="bg-rose-400"></span><span class="bg-amber-400"></span><span class="bg-emerald-400"></span></div>
+              <div class="browser-url"><i class="fa-solid fa-lock text-emerald-600"></i> <span>https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/</span></div>
+            </div>
+
+            <!-- Actual Top Header Replica -->
+            <div class="h-14 bg-white px-3 flex items-center justify-between border-b border-slate-200 text-slate-700">
+              <div class="flex items-center gap-2">
+                <span class="pin">1</span>
+                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600"><i class="fa-solid fa-bars text-sm"></i></div>
+                <div class="w-8 h-8 rounded-xl bg-[#265D5A] text-white flex items-center justify-center font-bold text-xs shadow">F</div>
+                <span class="font-bold text-sm text-slate-700">FaCiLiTy</span>
+              </div>
+
+              <div class="flex items-center bg-[#f1f3f4] rounded-full px-3 py-1.5 w-44 sm:w-56 text-xs text-slate-500">
+                <span class="pin mr-1.5">2</span>
+                <i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหา...
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <span class="pin">3</span>
+                <span class="px-2.5 py-1 rounded-full bg-[#265D5A] text-white text-[10px] font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-download"></i> ติดตั้งแอป
+                </span>
+                <span class="pin">4</span>
+                <span class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 relative">
+                  <i class="fa-solid fa-bell text-sm"></i>
+                  <span class="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">2</span>
+                </span>
+                <span class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600" title="แจ้งโปรแกรมเสีย">
+                  <i class="fa-solid fa-bug text-xs"></i>
+                </span>
+                <span class="pin">5</span>
+                <span class="w-8 h-8 rounded-full bg-[#FF5F5F] text-white flex items-center justify-center text-xs shadow">
+                  <i class="fa-solid fa-user"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Main Layout with Sidebar & Content -->
+            <div class="flex bg-[#edfaf8] min-h-[340px]">
+              <!-- Actual Gmail-style Sidebar Replica -->
+              <div class="w-52 bg-white p-2.5 border-r border-[#B0EDE6] flex flex-col justify-between text-xs shrink-0">
+                <div class="space-y-1">
+                  <div class="mb-2 flex items-center gap-1">
+                    <span class="pin">6</span>
+                    <div class="bg-[#c2e7ff] text-[#001d35] font-semibold px-3 py-2.5 rounded-2xl flex items-center gap-2 w-full text-xs shadow-sm">
+                      <i class="fa-solid fa-pen"></i> <span>สร้างรายการใหม่</span>
+                    </div>
+                  </div>
+                  <div class="bg-[#B0EDE6]/60 text-[#265D5A] font-bold px-3 py-1.5 rounded-r-full flex items-center gap-2.5">
+                    <i class="fa-solid fa-house w-4 text-center"></i> หน้าแรก
+                  </div>
+                  <div class="bg-purple-50 text-purple-700 font-bold px-3 py-1.5 rounded-r-full flex items-center gap-2.5">
+                    <i class="fa-solid fa-magnifying-glass w-4 text-center"></i> ติดตามสถานะงาน
+                  </div>
+                  <div class="text-slate-700 px-3 py-1.5 flex items-center gap-2.5"><i class="fa-solid fa-wrench w-4 text-center text-slate-500"></i> แจ้งซ่อมอาคาร</div>
+                  <div class="text-slate-700 px-3 py-1.5 flex items-center gap-2.5"><i class="fa-solid fa-microphone-lines w-4 text-center text-slate-500"></i> ยืมอุปกรณ์โสตฯ</div>
+                  <div class="text-slate-700 px-3 py-1.5 flex items-center gap-2.5"><i class="fa-solid fa-desktop w-4 text-center text-slate-500"></i> แจ้งซ่อมไอที</div>
+                  <div class="text-slate-700 px-3 py-1.5 flex items-center gap-2.5"><i class="fa-solid fa-camera w-4 text-center text-slate-500"></i> แจ้งซ่อมโสตฯ</div>
+                  <div class="text-slate-700 px-3 py-1.5 flex items-center gap-2.5"><i class="fa-solid fa-building-circle-check w-4 text-center text-slate-500"></i> เสนอโครงการ</div>
+                </div>
+                <div class="pt-2 border-t border-slate-100 space-y-1">
+                  <div class="py-1.5 px-2 rounded-lg bg-[#265D5A] text-white text-[10px] font-semibold text-center"><i class="fa-solid fa-mobile-screen-button mr-1"></i> ติดตั้งแอปลงเครื่อง</div>
+                  <div class="py-1.5 px-2 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-medium text-center"><i class="fa-solid fa-bug mr-1"></i> แจ้งโปรแกรมเสีย / บั๊ก</div>
+                </div>
+              </div>
+
+              <!-- Right Content Area + Mobile Bottom Bar Preview -->
+              <div class="flex-1 p-3 flex flex-col justify-between">
+                <div class="bg-white rounded-2xl p-4 border border-[#B0EDE6] shadow-sm text-center">
+                  <p class="text-xs font-bold text-[#265D5A] mb-1">พื้นที่แสดงผลหน้าจอหลัก (Main Workspace)</p>
+                  <p class="text-[11px] text-slate-500">เปลี่ยนหน้าอัตโนมัติตามเมนูที่คลิกโดยไม่ต้องโหลดหน้าเว็บใหม่ (Single Page Application)</p>
+                </div>
+
+                <!-- Mobile Bottom Navigation Replica -->
+                <div class="mt-3">
+                  <div class="flex items-center gap-2 mb-1.5">
+                    <span class="pin">7</span>
+                    <span class="text-xs font-bold text-slate-700">แถบเมนูลัดด้านล่าง (แสดงอัตโนมัติเมื่อเปิดบนมือถือ):</span>
+                  </div>
+                  <div class="bg-white border border-slate-200 rounded-2xl py-2 px-3 flex justify-around items-center shadow-md">
+                    <div class="flex flex-col items-center text-[#265D5A]">
+                      <i class="fa-solid fa-house text-sm"></i>
+                      <span class="text-[9px] font-bold">หน้าแรก</span>
+                    </div>
+                    <div class="flex flex-col items-center text-slate-600">
+                      <div class="bg-[#265D5A] text-white w-8 h-8 rounded-full flex items-center justify-center -mt-4 border-2 border-[#edfaf8] shadow">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                      </div>
+                      <span class="text-[9px] font-medium">แจ้งปัญหา</span>
+                    </div>
+                    <div class="flex flex-col items-center text-[#265D5A]">
+                      <i class="fa-solid fa-user text-sm"></i>
+                      <span class="text-[9px] font-bold">ฉัน (งานของฉัน)</span>
+                    </div>
+                    <div class="flex flex-col items-center text-slate-500">
+                      <i class="fa-solid fa-bars text-sm"></i>
+                      <span class="text-[9px]">เมนูอื่นๆ</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Numbered Callout Explanations -->
+        <div class="lg:col-span-4 space-y-2.5 text-xs">
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
+            <span class="pin">1</span>
+            <div><strong>ปุ่มซ่อน/แสดงแถบเมนูซ้าย (`☰`):</strong> กดเพื่อพับหรือกางเมนูด้านซ้ายบนหน้าจอคอมพิวเตอร์</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
+            <span class="pin">2</span>
+            <div><strong>ช่องค้นหาด่วน (`ค้นหา`):</strong> พิมพ์ค้นหาใบงาน ชื่อผู้แจ้ง หรือสถานที่ได้ทันทีจากทุกหน้า</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
+            <span class="pin">3</span>
+            <div><strong>ปุ่ม `ติดตั้งแอป`:</strong> กดเพื่อติดตั้งไอคอน FaCiLiTy ลงบนหน้าจอโฮมของมือถือหรือคอมพิวเตอร์</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
+            <span class="pin">4</span>
+            <div><strong>ปุ่มกระดิ่ง (`ศูนย์การแจ้งเตือน`):</strong> ดูรายการแจ้งเตือนสถานะงานซ่อมและข้อความแชทใหม่ (มีจุดตัวเลขสีแดงบอกจำนวนที่ยังไม่อ่าน)</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
+            <span class="pin">5</span>
+            <div><strong>ปุ่มโปรไฟล์สีแดงมุมขวาบน:</strong> กดเพื่อดูชื่อบัญชีและบทบาทปัจจุบัน (`สถานะ: ครู/บุคลากร`), ดูข้อมูลส่วนตัว หรือกด `ออกจากระบบ`</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
+            <span class="pin">6</span>
+            <div><strong>แถบเมนูด้านซ้าย (Sidebar):</strong> รวมปุ่ม `สร้างรายการใหม่` สีฟ้า และเมนูบริการครบทั้ง 5 ด้าน รวมถึงเมนู `ติดตามสถานะงาน` สีม่วง</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5">
+            <span class="pin">7</span>
+            <div><strong>แถบเมนูด้านล่างบนมือถือ:</strong> มีปุ่มกลม **`+ แจ้งปัญหา`** ตรงกลาง และปุ่ม **`ฉัน`** สำหรับดูใบงานของตนเองได้ทันทีด้วยนิ้วโป้งเดียว</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>หากพบปัญหาการใช้งานระบบ สามารถกดปุ่มรูปแมลง (🐞 แจ้งโปรแกรมเสีย) ที่แถบด้านบนหรือมุมซ้ายล่างได้ทันที</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — Interface Navigation</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 4: ขั้นตอนที่ 1 สำหรับคณะครู — หน้าเข้าสู่ระบบจริง & ติดตั้งแอป -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">คู่มือครู • ขั้นตอนที่ 1</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">3. การเข้าสู่ระบบ (`page-auth`) และการติดตั้งแอปลงหน้าจอโฮมมือถือ</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 4 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Exact Replica of page-auth.html -->
+        <div class="lg:col-span-5">
+          <div class="browser-frame">
+            <div class="browser-bar">
+              <div class="browser-dots"><span class="bg-rose-400"></span><span class="bg-amber-400"></span><span class="bg-emerald-400"></span></div>
+              <div class="browser-url"><i class="fa-solid fa-lock text-emerald-600"></i> <span>หน้าเข้าสู่ระบบ (page-auth)</span></div>
+            </div>
+            <div class="p-5 bg-[#edfaf8]">
+              <div class="bg-white rounded-3xl shadow-sm p-6 border border-slate-200 text-center">
+                <div class="w-14 h-14 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-sm">
+                  <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">ยินดีต้อนรับสู่ FaCiLiTy</h3>
+                <p class="text-xs text-slate-500 mb-4">ระบบจัดการงานซ่อมและทรัพยากรภายใน</p>
+
+                <!-- LINE In-App Alert Replica -->
+                <div class="mb-3.5 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-left">
+                  <div class="flex items-start gap-2">
+                    <span class="pin">1</span>
+                    <div class="text-[11px] text-amber-800">
+                      <p class="font-bold">เปิดใช้งานผ่านแอพ LINE</p>
+                      <p class="text-amber-700 mb-2">ความปลอดภัยของ Google กำหนดให้เข้าสู่ระบบผ่านเบราว์เซอร์หลัก (Safari / Chrome)</p>
+                      <div class="w-full py-2 px-2.5 bg-[#265D5A] text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-[11px]">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> กดเพื่อเปิดใน Safari / Chrome ทันที
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Google Sign-in Button Replica -->
+                <div class="flex items-center justify-center gap-2 mb-3">
+                  <span class="pin">2</span>
+                  <div class="w-full py-2.5 px-4 bg-white border border-slate-300 rounded-xl shadow-sm flex items-center justify-center gap-2.5 text-xs font-semibold text-slate-700">
+                    <i class="fa-brands fa-google text-blue-500 text-base"></i>
+                    <span>เข้าสู่ระบบด้วย Google (Sign in with Google)</span>
+                  </div>
+                </div>
+
+                <!-- LINE Group Button Replica -->
+                <div class="flex items-center justify-center gap-2">
+                  <span class="pin">3</span>
+                  <div class="w-full py-2.5 px-4 bg-[#06C755] text-white rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs font-semibold">
+                    <i class="fa-brands fa-line text-lg"></i>
+                    <span>เข้าร่วมกลุ่ม LINE แจ้งเตือน</span>
+                  </div>
+                </div>
+
+                <p class="text-[10px] text-slate-400 mt-4">
+                  <i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i> เข้าสู่ระบบอย่างปลอดภัยด้วย Google OAuth 2.0
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Step-by-Step Login + iOS Install Modal Replica -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-3 text-xs">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-right-to-bracket text-[#265D5A]"></i> วิธีเข้าสู่ระบบสำหรับคณะครู (ไม่ต้องจำรหัสผ่านใหม่)
+            </h3>
+            <div class="flex items-start gap-2.5">
+              <span class="pin">1</span>
+              <p class="leading-relaxed"><strong>กรณีคลิกลิงก์มาจากแอป LINE:</strong> ระบบจะเด้งออกจาก LINE หรือแสดงกล่องสีเหลือง ให้กดปุ่ม <strong>"กดเพื่อเปิดใน Safari / Chrome ทันที"</strong> ก่อน เพื่อให้ Google อนุญาตให้ล็อกอินได้</p>
+            </div>
+            <div class="flex items-start gap-2.5">
+              <span class="pin">2</span>
+              <p class="leading-relaxed"><strong>กดปุ่ม `เข้าสู่ระบบด้วย Google`:</strong> เลือกบัญชี Gmail ของคุณครู ระบบจะดึงชื่อ-นามสกุลและอีเมลมาผูกสิทธิ์ให้อัตโนมัติ (เข้าครั้งแรกได้สิทธิ์ `Teacher` ทันที)</p>
+            </div>
+            <div class="flex items-start gap-2.5">
+              <span class="pin">3</span>
+              <p class="leading-relaxed"><strong>ปุ่มสีเขียว `เข้าร่วมกลุ่ม LINE แจ้งเตือน`:</strong> สำหรับทีมช่างและเจ้าหน้าที่ที่ต้องการเข้ากลุ่ม LINE รวมของโรงเรียน</p>
+            </div>
+          </div>
+
+          <!-- iOS / Android PWA Install Guide Card (Exact match with #iosInstallModal) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-gradient-to-br from-[#265D5A] to-[#1a403d] text-white rounded-2xl p-4 shadow-sm">
+              <div class="flex items-center gap-2 mb-2">
+                <i class="fa-brands fa-apple text-xl text-[#B0EDE6]"></i>
+                <h4 class="font-bold text-xs">วิธีติดตั้งแอปบน iPhone / iPad (Safari)</h4>
+              </div>
+              <ol class="space-y-2 text-[11px] text-slate-100 leading-relaxed">
+                <li><strong>1.</strong> เปิดเว็บใน <strong>Safari</strong> แล้วแตะปุ่ม <strong>"แชร์" (Share)</strong> <i class="fa-solid fa-arrow-up-from-bracket text-sky-300 mx-1"></i> ด้านล่างจอ</li>
+                <li><strong>2.</strong> เลื่อนลงมาเลือก <strong>"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen)</strong> <i class="fa-regular fa-square-plus mx-1"></i></li>
+                <li><strong>3.</strong> แตะปุ่ม <strong>"เพิ่ม" (Add)</strong> มุมขวาบน จะได้ไอคอนแอป <strong>FaCiLiTy</strong> บนหน้าจอมือถือทันที!</li>
+              </ol>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 border-2 border-[#B0EDE6] shadow-sm">
+              <div class="flex items-center gap-2 mb-2 text-[#265D5A]">
+                <i class="fa-brands fa-android text-xl text-emerald-600"></i>
+                <h4 class="font-bold text-xs">วิธีติดตั้งแอปบน Android / คอมพิวเตอร์ (Chrome)</h4>
+              </div>
+              <ol class="space-y-2 text-[11px] text-slate-700 leading-relaxed">
+                <li><strong>1.</strong> กดปุ่มสีเขียว <strong>"ติดตั้งแอป"</strong> บนแถบด้านบนของหน้าเว็บ (หรือเมนูด้านซ้ายล่าง)</li>
+                <li><strong>2.</strong> จะมีหน้าต่างเด้งขึ้นมาถาม ให้กดยืนยัน <strong>"ติดตั้ง" (Install)</strong></li>
+                <li><strong>3.</strong> แอปจะถูกติดตั้งลงเครื่อง เปิดใช้งานเต็มจอและรับเสียงเตือนได้เหมือนแอปทั่วไป</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>หมายเหตุสำหรับ iPhone/iPad: ต้องเพิ่มแอปลงหน้าจอโฮมก่อน จึงจะกดเปิดรับการแจ้งเตือนแบบเด้งบนหน้าจอล็อกได้</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — Authentication & PWA Setup</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 5: ขั้นตอนที่ 2 — หน้าแรก & การเปิดแจ้งเตือน (และปุ่มทดสอบเฉพาะแอดมิน) -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">คู่มือครู • ขั้นตอนที่ 2</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">4. หน้าแรก (`page-home`) & ศูนย์การแจ้งเตือนอัจฉริยะ</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 5 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Home Banner + Service Cards Replica -->
+        <div class="lg:col-span-6 space-y-3">
+          <div class="browser-frame p-4 bg-[#edfaf8]">
+            <!-- Native Permission Banner Replica -->
+            <div class="mb-3 p-3 bg-gradient-to-r from-teal-50 via-emerald-50 to-teal-50 border border-teal-200 rounded-2xl flex items-center justify-between gap-2 shadow-sm">
+              <div class="flex items-center gap-2.5">
+                <span class="pin">1</span>
+                <div class="w-8 h-8 rounded-xl bg-[#265D5A] text-white flex items-center justify-center text-sm shrink-0"><i class="fa-solid fa-bell"></i></div>
+                <div>
+                  <p class="text-xs font-bold text-slate-800">เปิดการแจ้งเตือนบนโทรศัพท์ / หน้าจอหลัก</p>
+                  <p class="text-[10px] text-slate-500">รับเสียงเตือนงานซ่อมและแชทแบบเรียลไทม์ 100% แม้พับหน้าจอ</p>
+                </div>
+              </div>
+              <span class="px-3 py-1.5 bg-[#265D5A] text-white text-[10px] font-bold rounded-xl shrink-0 shadow">เปิดการแจ้งเตือน</span>
+            </div>
+
+            <!-- 7 Cards on Home Page Replica -->
+            <div class="bg-white rounded-2xl p-4 border border-[#B0EDE6]">
+              <div class="text-center mb-3">
+                <span class="pin mr-1">2</span>
+                <span class="bg-[#265D5A] text-white px-5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow">
+                  <i class="fa-solid fa-magnifying-glass"></i> ติดตามสถานะงาน
+                </span>
+              </div>
+              <div class="flex items-center gap-1.5 mb-2">
+                <span class="pin">3</span>
+                <span class="text-xs font-bold text-slate-700">การ์ดเมนูบริการทั้ง 7 ปุ่มบนหน้าแรก:</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[11px]">
+                <div class="p-2.5 border border-[#B0EDE6] rounded-xl flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-[#B0EDE6] text-[#265D5A] flex items-center justify-center shrink-0"><i class="fa-solid fa-wrench"></i></div>
+                  <div><b class="block text-slate-800">แจ้งซ่อม / ปัญหาอาคาร</b><span class="text-[9px] text-slate-500">ไฟฟ้า ประปา แอร์ โครงสร้าง</span></div>
+                </div>
+                <div class="p-2.5 border border-[#B0EDE6] rounded-xl flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-[#FF5F5F]/10 text-[#FF5F5F] flex items-center justify-center shrink-0"><i class="fa-solid fa-microphone-lines"></i></div>
+                  <div><b class="block text-slate-800">ยืม-คืน / จัดเตรียมไมค์-โสตฯ</b><span class="text-[9px] text-slate-500">เครื่องเสียง โปรเจกเตอร์</span></div>
+                </div>
+                <div class="p-2.5 border border-sky-100 rounded-xl flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-sky-100 text-sky-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-desktop"></i></div>
+                  <div><b class="block text-slate-800">แจ้งซ่อมไอที / เครือข่าย</b><span class="text-[9px] text-slate-500">คอมพิวเตอร์ เน็ต กล้อง</span></div>
+                </div>
+                <div class="p-2.5 border border-amber-100 rounded-xl flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-camera"></i></div>
+                  <div><b class="block text-slate-800">แจ้งซ่อมอุปกรณ์โสตฯ</b><span class="text-[9px] text-slate-500">ซ่อมไมค์ ลำโพง โปรเจกเตอร์</span></div>
+                </div>
+                <div class="p-2.5 border border-violet-100 rounded-xl flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-violet-100 text-violet-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-building-circle-check"></i></div>
+                  <div><b class="block text-slate-800">เสนอโครงการ / จัดซื้อ</b><span class="text-[9px] text-slate-500">ปรับปรุงระยะยาว รออนุมัติ</span></div>
+                </div>
+                <div class="p-2.5 border border-emerald-200 rounded-xl flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                  <div><b class="block text-slate-800">ประวัติแจ้งซ่อม / ยืมโสตฯ</b><span class="text-[9px] text-slate-500">ดูประวัติงานที่คุณครูเคยแจ้ง</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Notification Dropdown Replica (Showing Teacher vs Admin View) -->
+        <div class="lg:col-span-6 space-y-3">
+          <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+            <!-- Header -->
+            <div class="bg-slate-50 border-b p-3 flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="pin">4</span>
+                <div class="w-7 h-7 rounded-xl bg-[#265D5A]/10 text-[#265D5A] flex items-center justify-center text-xs"><i class="fa-solid fa-bell"></i></div>
+                <div>
+                  <p class="text-xs font-bold text-slate-800">ศูนย์การแจ้งเตือน (เมื่อกดกระดิ่งมุมขวาบน)</p>
+                  <p class="text-[10px] text-slate-500">อัปเดตงานแบบเรียลไทม์แยกตามบทบาท</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1 text-[10px] font-semibold">
+                <span class="text-[#265D5A] px-2 py-1 rounded bg-[#B0EDE6]/40"><i class="fa-solid fa-check-double mr-1"></i>อ่านแล้ว</span>
+                <span class="text-rose-600 px-2 py-1 rounded bg-rose-50"><i class="fa-solid fa-trash-can mr-1"></i>ลบทั้งหมด</span>
+              </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="bg-emerald-50/90 border-b border-emerald-100 px-3 py-2 flex items-center justify-between text-[11px]">
+              <span class="text-emerald-800 font-semibold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> เปิดการแจ้งเตือนบนอุปกรณ์แล้ว
+              </span>
+              <span class="text-[10px] text-slate-500">(ปุ่ม <b class="text-emerald-700">🔔 ยิงทดสอบเตือน</b> แสดงเฉพาะแอดมิน)</span>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b bg-white text-[11px] font-semibold">
+              <div class="flex-1 py-2 text-center text-[#265D5A] border-b-2 border-[#265D5A]">ทั้งหมด</div>
+              <div class="flex-1 py-2 text-center text-slate-500">ยังไม่อ่าน</div>
+              <div class="flex-1 py-2 text-center text-slate-500">งานของฉัน</div>
+            </div>
+
+            <!-- Sample Notification Item -->
+            <div class="p-3 bg-teal-50/40 border-b border-slate-100 flex items-start gap-2.5 text-xs">
+              <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+              <div class="flex-1">
+                <p class="font-bold text-slate-800 text-[11px]">อัปเดตสถานะงาน #05 (แอร์ไม่เย็น ห้องพักครู)</p>
+                <p class="text-[11px] text-slate-600">สถานะเปลี่ยนเป็น: <strong class="text-emerald-700">เสร็จสิ้น</strong> • คลิกเพื่อดูรูปส่งงานและประเมิน 5 ดาว</p>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-2.5 bg-slate-50 flex items-center justify-between text-[11px]">
+              <div class="flex items-center gap-1.5">
+                <span class="pin">5</span>
+                <span class="px-2 py-1 rounded-lg bg-[#265D5A] text-white text-[10px] font-bold"><i class="fa-solid fa-bell mr-1"></i>เตือนในแอป*</span>
+                <span class="px-2 py-1 rounded-lg bg-[#06C755] text-white text-[10px] font-bold"><i class="fa-brands fa-line mr-1"></i>ทดสอบ LINE*</span>
+                <span class="text-rose-600 font-medium ml-1"><i class="fa-solid fa-trash-can"></i> ล้าง</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="pin">6</span>
+                <span class="px-2 py-0.5 rounded bg-slate-200/70 text-slate-600 font-bold text-[10px]"><i class="fa-solid fa-rotate mr-1"></i>v1.0</span>
+                <span class="font-bold text-[#265D5A]">ภาพรวม</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs space-y-1.5">
+            <p class="font-bold text-amber-900"><i class="fa-solid fa-shield-halved mr-1"></i> ไฮไลต์สำคัญในเวอร์ชัน v1.0:</p>
+            <p class="text-amber-800 leading-relaxed">• <strong>จุดที่ ⑤ ปุ่มทดสอบ (`ยิงทดสอบเตือน`, `เตือนในแอป`, `ทดสอบ LINE`):</strong> ระบบซ่อนไว้ให้เห็นเฉพาะโรล <strong>Admin</strong> เท่านั้น คุณครูและช่างทั่วไปจะเห็นหน้าต่างที่สะอาดตา ไม่เผลอกดยิงเล่น</p>
+            <p class="text-amber-800 leading-relaxed">• <strong>จุดที่ ⑥ ปุ่ม `🔄 v1.0`:</strong> หากมีการอัปเดตระบบใหม่ สามารถแตะที่ปุ่ม `v1.0` เพื่อล้างแคชและดึงเวอร์ชันล่าสุดได้ทันที</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>แนะนำให้คุณครูทุกท่านกดปุ่ม "เปิดการแจ้งเตือน" (จุดที่ ①) ในครั้งแรกที่เข้าใช้งาน เพื่อไม่พลาดทุกการอัปเดตจากทีมช่าง</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — Home & Notification Hub</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 6: ขั้นตอนที่ 3 — หน้าฟอร์มแจ้งซ่อมจริง (อาคาร / ไอที / โสตฯ) -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">คู่มือครู • ขั้นตอนที่ 3</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">5. วิธีกรอกฟอร์มแจ้งซ่อม (`แจ้งซ่อมอาคาร` / `แจ้งซ่อมไอที` / `แจ้งซ่อมโสตฯ`)</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 6 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Exact Replica of page-repair-form.html -->
+        <div class="lg:col-span-7">
+          <div class="browser-frame p-4 bg-[#edfaf8]">
+            <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[#265D5A] font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</span>
+                <span class="text-[10px] bg-[#B0EDE6]/60 text-[#265D5A] px-2.5 py-0.5 rounded-full font-bold">หน้าจอจริง: page-repair-form</span>
+              </div>
+
+              <div class="text-center mb-4">
+                <div class="w-11 h-11 bg-[#B0EDE6] text-[#265D5A] rounded-2xl flex items-center justify-center text-lg mx-auto mb-1.5 shadow-inner">
+                  <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <h3 class="text-base font-bold text-slate-800">แจ้งปัญหาอาคารสถานที่</h3>
+                <p class="text-[10px] text-slate-500">กรอกข้อมูลสั้น ๆ เจ้าหน้าที่จะได้รับแจ้งและเข้าดำเนินการทันที</p>
+              </div>
+
+              <div class="space-y-2.5 text-xs">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">1</span> ชื่อผู้แจ้ง <span class="text-rose-500">*</span></label>
+                  <div class="w-full p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-medium">คุณครูสมชาย ใจดี (ดึงอัตโนมัติจากบัญชีที่ล็อกอิน)</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">2</span> หน่วยงาน / แผนก</label>
+                    <div class="w-full p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">ฝ่ายวิชาการ ▾</div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">3</span> สถานที่ / ห้อง <span class="text-rose-500">*</span></label>
+                    <div class="flex gap-1.5">
+                      <div class="w-1/3 p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold">วพบ. ▾</div>
+                      <div class="w-2/3 p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">อาคาร 2 ห้องพักครู ▾</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">4</span> ปัญหาเรื่องอะไร <span class="text-rose-500">*</span></label>
+                    <div class="w-full p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-medium">แอร์ / ระบบปรับอากาศ ▾</div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">วันที่/เวลาที่พบปัญหา</label>
+                    <div class="w-full p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-500">11/11/2026 09:30</div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">5</span> รายละเอียดปัญหา <span class="text-rose-500">*</span> & เบอร์ติดต่อ</label>
+                  <div class="w-full p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-600">แอร์ตัวริมหน้าต่างมีน้ำหยดและไม่เย็นครับ • โทร 081-234-5678</div>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 pt-1">
+                  <div class="flex-1 p-2 border border-slate-200 rounded-xl bg-slate-50 flex items-center gap-2">
+                    <span class="pin">6</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-[#B0EDE6] text-[#265D5A] font-semibold text-[10px]">เลือกไฟล์รูปภาพ</span>
+                    <span class="text-[10px] text-slate-500">air_leak.jpg</span>
+                  </div>
+                  <div class="px-5 py-2.5 bg-[#265D5A] text-white font-bold rounded-xl flex items-center gap-2 shadow">
+                    <span class="pin">7</span>
+                    <i class="fa-solid fa-paper-plane"></i> <span>ส่งแจ้งปัญหา</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Explanation of the 3 Repair Forms & Steps -->
+        <div class="lg:col-span-5 space-y-3 text-xs">
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+            <h4 class="font-bold text-slate-800 text-sm">ขั้นตอนการกรอกข้อมูล (ใช้เหมือนกันทั้ง 3 ฝ่ายซ่อม)</h4>
+            <p class="leading-relaxed"><strong>① ชื่อผู้แจ้ง:</strong> ระบบกรอกชื่อคุณครูให้อัตโนมัติ (สามารถแก้ไขได้หากแจ้งแทนท่านอื่น)</p>
+            <p class="leading-relaxed"><strong>②–③ เลือกสังกัด (`วพบ.` / `ศษ.` / `ส่วนกลาง`) และสถานที่:</strong> หากไม่มีชื่อห้องในรายการ ให้เลือกตัวเลือก <strong>"อื่นๆ (ระบุเอง)"</strong> จะมีช่องสีเหลืองเปิดให้พิมพ์ชื่อห้องเองได้ทันที</p>
+            <p class="leading-relaxed"><strong>④ เลือกหมวดหมู่ปัญหา:</strong> แยกหมวดชัดเจน เช่น ประตู/หน้าต่าง, หลอดไฟ/ปลั๊กไฟ, แอร์, ประปา/ห้องน้ำ</p>
+            <p class="leading-relaxed"><strong>⑤–⑥ ระบุอาการและแนบรูปถ่าย:</strong> ถ่ายรูปจุดที่ชำรุดจากมือถือแนบได้เลย ระบบจะย่อขนาดภาพอัตโนมัติ (WebP) ให้ส่งไวแม้เน็ตช้า</p>
+            <p class="leading-relaxed"><strong>⑦ กด `ส่งแจ้งปัญหา`:</strong> ระบบจะออกเลขคิวงาน (เช่น `#01`) บันทึกลงฐานข้อมูลและยิงแจ้งเตือนหาทีมช่างที่รับผิดชอบทันที!</p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center text-[11px]">
+            <div class="p-2.5 rounded-xl bg-[#edfaf8] border border-[#B0EDE6]">
+              <i class="fa-solid fa-wrench text-[#265D5A] text-base mb-1"></i>
+              <p class="font-bold text-slate-800">แจ้งซ่อมอาคาร</p>
+              <p class="text-[10px] text-slate-500">ส่งตรงถึง: <b>ช่างอาคาร</b></p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-sky-50 border border-sky-200">
+              <i class="fa-solid fa-desktop text-sky-600 text-base mb-1"></i>
+              <p class="font-bold text-slate-800">แจ้งซ่อมไอที</p>
+              <p class="text-[10px] text-slate-500">ส่งตรงถึง: <b>ช่างไอที</b></p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200">
+              <i class="fa-solid fa-camera text-amber-600 text-base mb-1"></i>
+              <p class="font-bold text-slate-800">แจ้งซ่อมโสตฯ</p>
+              <p class="text-[10px] text-slate-500">ส่งตรงถึง: <b>ทีมโสตฯ (AV)</b></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>ในหน้า "แจ้งซ่อมไอที" และ "แจ้งซ่อมโสตฯ" จะมีตัวเลือก "ระดับความเร่งด่วน" (ปกติ / ด่วน / ด่วนมาก - กระทบการเรียนการสอน) เพิ่มให้ด้วย</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — Repair Request Forms</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 7: ขั้นตอนที่ 4 — หน้าฟอร์มยืม-คืนอุปกรณ์โสตฯ (page-av-form) -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-rose-700 bg-rose-100 px-3 py-1 rounded-full">คู่มือครู • ขั้นตอนที่ 4</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">6. การขอยืม-คืนอุปกรณ์โสตทัศนูปกรณ์ (`page-av-form` & `ประวัติยืมโสตฯ`)</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 7 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Exact Replica of page-av-form.html -->
+        <div class="lg:col-span-6">
+          <div class="browser-frame p-4 bg-[#edfaf8]">
+            <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[#FF5F5F] font-bold text-xs"><i class="fa-solid fa-house mr-1"></i> กลับหน้าหลัก</span>
+                <span class="text-[10px] bg-rose-50 text-[#FF5F5F] px-2.5 py-0.5 rounded-full font-bold">หน้าจอจริง: page-av-form</span>
+              </div>
+
+              <div class="text-center mb-3">
+                <div class="w-11 h-11 bg-[#FF5F5F]/10 text-[#FF5F5F] rounded-2xl flex items-center justify-center text-lg mx-auto mb-1">
+                  <i class="fa-solid fa-microphone-lines"></i>
+                </div>
+                <h3 class="text-base font-bold text-slate-800">ขอยืมอุปกรณ์โสตทัศนูปกรณ์</h3>
+              </div>
+
+              <div class="space-y-2.5 text-xs">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">1</span> ชื่อผู้แจ้งยืม <span class="text-red-500">*</span></label>
+                  <div class="w-full p-2 border rounded-xl bg-slate-100 font-semibold text-slate-700">คุณครูสมหญิง รักเรียน (ล็อกอัตโนมัติ)</div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">2</span> อุปกรณ์ที่ต้องการ <span class="text-red-500">*</span> (พร้อมจำนวนคงเหลือในคลัง)</label>
+                  <div class="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="flex items-center justify-between">
+                      <span class="flex items-center gap-2 font-medium text-slate-800"><i class="fa-solid fa-square-check text-[#265D5A] text-sm"></i> ไมโครโฟนไร้สาย <span class="text-[10px] text-emerald-600">(คงเหลือ 8)</span></span>
+                      <span class="w-12 p-1 border rounded-lg bg-white text-center font-bold">2</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="flex items-center gap-2 font-medium text-slate-800"><i class="fa-solid fa-square-check text-[#265D5A] text-sm"></i> ลำโพงบลูทูธพกพา <span class="text-[10px] text-emerald-600">(คงเหลือ 4)</span></span>
+                      <span class="w-12 p-1 border rounded-lg bg-white text-center font-bold">1</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-400">
+                      <span class="flex items-center gap-2"><i class="fa-regular fa-square text-sm"></i> ปลั๊กพ่วงสนาม / โน้ตบุ๊ก</span>
+                      <span class="w-12 p-1 border rounded-lg bg-slate-100 text-center">1</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1"><span class="pin mr-1">3</span> วันที่ใช้งาน <span class="text-red-500">*</span></label>
+                    <div class="p-2 border rounded-xl bg-slate-50">12/11/2026</div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">สถานที่ใช้งาน <span class="text-red-500">*</span></label>
+                    <div class="p-2 border rounded-xl bg-slate-50">วพบ. - หอประชุมใหญ่</div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">4</span> ลงชื่อผู้ยืม (พิมพ์ชื่อ-นามสกุลเพื่อยืนยัน) <span class="text-red-500">*</span></label>
+                  <div class="p-2 border rounded-xl bg-slate-50 font-semibold text-slate-700">สมหญิง รักเรียน</div>
+                </div>
+
+                <div class="w-full bg-[#FF5F5F] text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm">
+                  <span class="pin">5</span>
+                  <i class="fa-solid fa-paper-plane"></i> <span>ยืนยันการขอยืมอุปกรณ์</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: How Borrowing & Returning Works -->
+        <div class="lg:col-span-6 space-y-4 text-xs">
+          <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-3">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-microphone-lines text-[#FF5F5F]"></i> ขั้นตอนการยืมอุปกรณ์โสตทัศนูปกรณ์
+            </h3>
+            <p class="leading-relaxed"><strong>① ชื่อผู้แจ้งยืม:</strong> ระบบดึงชื่อคุณครูจากบัญชีที่ล็อกอินให้อัตโนมัติ</p>
+            <p class="leading-relaxed"><strong>② ติ๊กเลือกอุปกรณ์และระบุจำนวน:</strong> รายการอุปกรณ์ดึงสดจากฐานข้อมูล <code>MasterData</code> พร้อมคำนวณ <strong>ยอดคงเหลือจริงในคลัง</strong> (หากชิ้นไหนถูกยืมครบแล้ว ระบบจะขึ้นว่า <code>(หมดชั่วคราว)</code> ไม่ให้กดยืมซ้ำ)</p>
+            <p class="leading-relaxed"><strong>③–④ เลือกวันที่/สถานที่ใช้งาน และพิมพ์ชื่อลงนามรับของ:</strong> หากต้องการอุปกรณ์นอกเหนือจากรายการ สามารถพิมพ์ในช่อง <code>อื่นๆ: ระบุเพิ่มเติม...</code> ได้</p>
+            <p class="leading-relaxed"><strong>⑤ กดปุ่มสีส้มแดง `ยืนยันการขอยืมอุปกรณ์`:</strong> ระบบจะตัดสต็อกทันทีและแจ้งเตือนไปยัง <strong>ทีมงานโสตฯ (`AV`)</strong> เพื่อจัดเตรียมอุปกรณ์ให้พร้อมก่อนถึงเวลาใช้งาน</p>
+          </div>
+
+          <!-- Return Process Card -->
+          <div class="bg-amber-50 rounded-2xl p-5 border border-amber-200 space-y-2.5">
+            <h4 class="font-bold text-amber-900 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-rotate-left text-amber-600"></i> วิธีแจ้งคืนอุปกรณ์เมื่อใช้งานเสร็จ (`ประวัติยืมอุปกรณ์โสตฯ`)
+            </h4>
+            <p class="text-amber-900 leading-relaxed">
+              เมื่อใช้งานเสร็จแล้ว คุณครูสามารถเข้าไปที่เมนู <strong>"ประวัติยืมอุปกรณ์โสตฯ"</strong> (หรือหน้า <strong>ติดตามสถานะงาน</strong>) จะเห็นปุ่มสีเขียว <strong>"แจ้งคืนอุปกรณ์"</strong> ในใบงานนั้น เมื่อกดยืนยันหรือเจ้าหน้าที่โสตฯ กดรับคืน ระบบจะ <strong>บวกจำนวนอุปกรณ์กลับเข้าคลังอัตโนมัติทันที</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>แอดมินและหัวหน้างานโสตฯ สามารถเพิ่ม/ลดรายการอุปกรณ์และจำนวนสต็อกตั้งต้นได้ที่เมนู Master Data</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — AV Equipment Borrow & Return</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 8: ขั้นตอนที่ 5 — หน้าเสนอโครงการระยะยาว / จัดซื้อ (page-project-form) -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-violet-800 bg-violet-100 px-3 py-1 rounded-full">คู่มือครู • ขั้นตอนที่ 5</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">7. การเสนอโครงการระยะยาว / จัดซื้อ (`page-project-form`)</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 8 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Exact Replica of page-project-form.html -->
+        <div class="lg:col-span-6">
+          <div class="browser-frame p-4 bg-[#edfaf8]">
+            <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[#8b5cf6] font-bold text-xs"><i class="fa-solid fa-arrow-left mr-1"></i> กลับหน้าหลัก</span>
+                <span class="text-[10px] bg-violet-100 text-[#8b5cf6] px-2.5 py-0.5 rounded-full font-bold">หน้าจอจริง: page-project-form</span>
+              </div>
+
+              <div class="text-center mb-3">
+                <div class="w-11 h-11 bg-[#ede9fe] text-[#8b5cf6] rounded-2xl flex items-center justify-center text-lg mx-auto mb-1 shadow-inner">
+                  <i class="fa-solid fa-building-circle-check"></i>
+                </div>
+                <h3 class="text-base font-bold text-slate-800">แจ้งโครงการระยะยาว / จัดซื้อ</h3>
+                <p class="text-[10px] text-slate-500">เสนอโครงการปรับปรุงสถานที่ จัดซื้อ หรือโครงการที่ต้องรอผู้อำนวยการอนุมัติ</p>
+              </div>
+
+              <div class="space-y-2.5 text-xs">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">1</span> ชื่อผู้เสนอโครงการ *</label>
+                    <div class="p-2 border rounded-xl bg-slate-50 font-medium">อ.วิชัย พัฒนา</div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">หน่วยงาน / สถานที่</label>
+                    <div class="p-2 border rounded-xl bg-slate-50">หมวดวิทยาศาสตร์ • อาคาร 3</div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">2</span> ประเภทโครงการ *</label>
+                    <div class="p-2 border rounded-xl bg-slate-50 font-medium text-violet-800">ปรับปรุงอาคาร / ทาสี / ต่อเติม ▾</div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">3</span> วันที่ต้องการให้แล้วเสร็จ</label>
+                    <div class="p-2 border rounded-xl bg-slate-50">30/12/2026</div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-700 mb-1"><span class="pin mr-1">4</span> รายละเอียดโครงการ / เหตุผลความจำเป็น *</label>
+                  <div class="p-2 border rounded-xl bg-slate-50 text-slate-600">ขออนุมัติติดฟิล์มกรองแสงและปรับปรุงพัดลมระบายอากาศห้องปฏิบัติการวิทย์ งบประมาณประมาณ 15,000 บาท</div>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 pt-1">
+                  <div class="flex-1 p-2 border rounded-xl bg-slate-50 flex items-center gap-2">
+                    <span class="pin">5</span>
+                    <span class="px-2 py-1 rounded bg-[#ede9fe] text-[#8b5cf6] font-semibold text-[10px]">แนบไฟล์ PDF / รูป</span>
+                    <span class="text-[10px] text-slate-500">ใบเสนอราคา.pdf</span>
+                  </div>
+                  <div class="px-4 py-2.5 bg-[#8b5cf6] text-white font-bold rounded-xl flex items-center gap-1.5 shadow">
+                    <span class="pin">6</span>
+                    <i class="fa-solid fa-paper-plane"></i> <span>ส่งเสนอโครงการ</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Workflow of Long-term Project Approval -->
+        <div class="lg:col-span-6 space-y-4 text-xs">
+          <div class="bg-violet-50/70 rounded-2xl p-5 border border-violet-200 space-y-3">
+            <h3 class="font-bold text-violet-950 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-route text-violet-600"></i> เส้นทางการอนุมัติโครงการระยะยาว (Executive Approval Workflow)
+            </h3>
+            <p class="text-slate-700 leading-relaxed">
+              ใช้สำหรับงานที่ไม่ใช่งานซ่อมแซมเฉพาะหน้า เช่น <strong>การต่อเติมห้อง, ทาสีอาคารใหม่, ปรับภูมิทัศน์ หรือจัดซื้อครุภัณฑ์ล็อตใหญ่</strong> ที่ต้องผ่านการพิจารณาจากฝ่ายบริหารก่อน
+            </p>
+            <div class="space-y-2.5 pt-1">
+              <div class="bg-white p-3 rounded-xl border border-violet-100 flex items-start gap-2.5 shadow-sm">
+                <span class="pin">A</span>
+                <div>
+                  <p class="font-bold text-slate-800">ส่งตรงถึงหน้าจอผู้บริหาร (`Executive`) และแอดมินทันที</p>
+                  <p class="text-slate-500 mt-0.5">เมื่อคุณครูกด <strong>"ส่งเสนอโครงการ"</strong> ระบบจะยิงแจ้งเตือนตรงไปยังโทรศัพท์ของผู้อำนวยการ/ผู้บริหาร และแสดงในการ์ด <strong>"โครงการรอการพิจารณาอนุมัติ"</strong></p>
+                </div>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-violet-100 flex items-start gap-2.5 shadow-sm">
+                <span class="pin">B</span>
+                <div>
+                  <p class="font-bold text-slate-800">ผู้บริหารเปิดดูไฟล์แนบ PDF / ใบเสนอราคา และกดอนุมัติในคลิกเดียว</p>
+                  <p class="text-slate-500 mt-0.5">ผู้บริหารสามารถเลือกกด <span class="text-emerald-600 font-bold">✅ อนุมัติโครงการ</span>, <span class="text-amber-600 font-bold">⏳ ชะลอโครงการ</span> หรือ <span class="text-rose-600 font-bold">❌ ไม่อนุมัติ</span> พร้อมพิมพ์หมายเหตุสั่งการ</p>
+                </div>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-violet-100 flex items-start gap-2.5 shadow-sm">
+                <span class="pin">C</span>
+                <div>
+                  <p class="font-bold text-slate-800">แจ้งผลกลับไปยังคุณครูผู้เสนอโครงการอัตโนมัติ</p>
+                  <p class="text-slate-500 mt-0.5">ทันทีที่ผู้บริหารกดพิจารณา ระบบจะส่งแจ้งเตือนผลการอนุมัติกลับไปยังมือถือของคุณครูผู้เสนอเรื่องทันที</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>รองรับการแนบไฟล์เอกสารโครงการทั้งนามสกุล .pdf, .doc, .docx และไฟล์รูปภาพทุกชนิด เก็บเข้าโฟลเดอร์ Google Drive อัตโนมัติ</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — Project Proposal & Executive Approval</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 9: ขั้นตอนที่ 6 — หน้าติดตามสถานะงาน (page-track) -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-purple-800 bg-purple-100 px-3 py-1 rounded-full">คู่มือครู • ขั้นตอนที่ 6</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">8. หน้าติดตามสถานะงานซ่อม (`page-track`) และการกรองดูเฉพาะงานของฉัน</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 9 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Exact Replica of page-track.html -->
+        <div class="lg:col-span-7">
+          <div class="browser-frame p-4 bg-[#edfaf8]">
+            <!-- Header Banner -->
+            <div class="rounded-2xl bg-gradient-to-br from-[#265D5A] via-[#2f6f6b] to-[#1a3f3d] text-white p-4 mb-3 shadow">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-left"></i></span>
+                  <div>
+                    <h3 class="text-base font-bold leading-tight">ติดตามงานซ่อม</h3>
+                    <p class="text-[10px] text-white/80">ดูคิวงานทั้งหมดในระบบ กดที่งานเพื่อดูรายละเอียดและข้อความจากช่าง</p>
+                  </div>
+                </div>
+                <span class="bg-white/15 px-3 py-1 rounded-xl text-[11px]"><i class="fa-solid fa-rotate mr-1"></i> รีเฟรช</span>
+              </div>
+              <div class="relative flex items-center bg-white rounded-xl px-3 py-2 text-xs text-slate-700">
+                <span class="pin mr-2">1</span>
+                <i class="fa-solid fa-magnifying-glass text-slate-400 mr-2"></i>
+                <span class="text-slate-400">ค้นหาคิวงาน: เลขคิว, ชื่อผู้แจ้ง, หัวข้อ, สถานที่ หรือชื่อช่าง...</span>
+              </div>
+            </div>
+
+            <!-- 4 Status Filter Cards -->
+            <div class="grid grid-cols-4 gap-2 mb-3 text-left">
+              <div class="p-2.5 rounded-xl border-2 border-[#265D5A] bg-white">
+                <div class="text-[10px] text-slate-500 flex items-center justify-between"><span>งานทั้งหมด</span><span class="pin">2</span></div>
+                <div class="text-lg font-bold text-slate-800">24</div>
+              </div>
+              <div class="p-2.5 rounded-xl border bg-white">
+                <div class="text-[10px] text-rose-500 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>รอรับเรื่อง</div>
+                <div class="text-lg font-bold text-slate-800">3</div>
+              </div>
+              <div class="p-2.5 rounded-xl border bg-white">
+                <div class="text-[10px] text-amber-600 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span>กำลังดำเนินการ</div>
+                <div class="text-lg font-bold text-slate-800">5</div>
+              </div>
+              <div class="p-2.5 rounded-xl border bg-white">
+                <div class="text-[10px] text-emerald-600 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>เสร็จสิ้น</div>
+                <div class="text-lg font-bold text-slate-800">16</div>
+              </div>
+            </div>
+
+            <!-- Filter Pills -->
+            <div class="flex flex-wrap items-center gap-1.5 mb-3 text-[11px]">
+              <span class="pin">3</span>
+              <span class="px-3 py-1 rounded-full bg-[#265D5A] text-white font-bold flex items-center gap-1"><i class="fa-solid fa-user"></i> เฉพาะงานของฉัน</span>
+              <span class="px-2.5 py-1 rounded-full bg-white border text-slate-700 font-medium">ทุกประเภท</span>
+              <span class="px-2.5 py-1 rounded-full bg-white border text-slate-600"><i class="fa-solid fa-wrench mr-1"></i>อาคาร</span>
+              <span class="px-2.5 py-1 rounded-full bg-white border text-slate-600"><i class="fa-solid fa-desktop mr-1"></i>ไอที</span>
+              <span class="px-2.5 py-1 rounded-full bg-white border text-slate-600"><i class="fa-solid fa-camera mr-1"></i>โสตฯ</span>
+            </div>
+
+            <!-- Ticket Card Sample -->
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm flex items-center justify-between gap-3">
+              <div class="flex items-start gap-3">
+                <span class="pin mt-1">4</span>
+                <div class="px-2.5 py-1.5 rounded-xl bg-[#B0EDE6]/60 text-[#265D5A] font-extrabold text-xs">#05</div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-xs text-slate-800">แอร์ / ระบบปรับอากาศ (อาคาร 2 ห้องพักครู)</span>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">กำลังดำเนินการ</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-0.5">ผู้แจ้ง: คุณครูสมชาย ใจดี • ช่างผู้รับผิดชอบ: <strong class="text-[#265D5A]">ช่างเอก</strong></p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="px-2.5 py-1 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-bold border border-blue-200"><i class="fa-solid fa-comments mr-1"></i>แชท (2)</span>
+                <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Explanation -->
+        <div class="lg:col-span-5 space-y-3 text-xs">
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+            <h4 class="font-bold text-slate-800 text-sm">วิธีใช้งานหน้าติดตามงานซ่อม (`page-track`)</h4>
+            <p class="leading-relaxed"><strong>① ช่องค้นหาอัจฉริยะ:</strong> พิมพ์ค้นหาได้ทั้งเลขคิว (เช่น <code>#05</code>), ชื่อคุณครู, ชื่อห้อง หรือชื่อช่าง ระบบจะกรองรายการขึ้นมาทันที</p>
+            <p class="leading-relaxed"><strong>② การ์ดตัวเลข 4 สถานะ:</strong> สามารถคลิกที่กล่อง <strong>รอรับเรื่อง</strong> (สีแดง), <strong>กำลังดำเนินการ</strong> (สีเหลือง) หรือ <strong>เสร็จสิ้น</strong> (สีเขียว) เพื่อกรองดูเฉพาะสถานะนั้นได้</p>
+            <p class="leading-relaxed"><strong>③ ปุ่ม `👤 เฉพาะงานของฉัน`:</strong> เมื่อคุณครูล็อกอินแล้ว ระบบจะเปิดปุ่มนี้ให้อัตโนมัติเพื่อแสดงเฉพาะใบงานที่คุณครูเป็นคนแจ้ง (หากอยากดูคิวงานรวมทั้งโรงเรียน สามารถกดซ้ำที่ปุ่มนี้เพื่อปลดตัวกรองได้)</p>
+            <p class="leading-relaxed"><strong>④ คลิกที่การ์ดใบงาน:</strong> เพื่อเปิดเข้าสู่หน้ารายละเอียดงาน (`page-track-detail`) ดูรูปภาพ คุยแชทกับช่าง หรือกดประเมินดาว</p>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900">
+            <p class="font-bold mb-1"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i> ทริคสำหรับการใช้งานบนมือถือ:</p>
+            <p class="leading-relaxed text-[11px]">คุณครูสามารถแตะปุ่ม <strong>"ฉัน" (รูปคน)</strong> ที่แถบเมนูด้านล่างสุดของหน้าจอมือถือ ระบบจะพาเข้าสู่หน้ารายการ <strong>"เฉพาะงานของฉัน"</strong> ทันทีในคลิกเดียว!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>ทุกใบงานจะแสดงชื่อช่างผู้รับผิดชอบและเวลาที่อัปเดตล่าสุดอย่างชัดเจน โปร่งใส ตรวจสอบได้ทุกขั้นตอน</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — Real-time Ticket Tracking</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 10: ขั้นตอนที่ 7 — ห้องแชทคุยกับช่าง & ประเมินความพึงพอใจ 5 ดาว -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-blue-800 bg-blue-100 px-3 py-1 rounded-full">คู่มือครู • ขั้นตอนที่ 7</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">9. ห้องแชทคุยกับช่างในใบงาน (`#track-chat-section`) & การประเมิน 5 ดาว</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 10 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Exact Replica of Chat Section in page-track-detail -->
+        <div class="lg:col-span-6">
+          <div class="bg-white border border-slate-200 rounded-3xl shadow-md overflow-hidden">
+            <!-- Chat Header -->
+            <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="pin">1</span>
+                <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><i class="fa-solid fa-comments"></i></div>
+                <div>
+                  <h3 class="font-bold text-xs text-slate-800">แชทสอบถามช่าง / ผู้แจ้ง (ใบงาน #05)</h3>
+                  <p class="text-[10px] text-slate-500">ข้อความแบบ Real-time เด้งแจ้งเตือนเข้ามือถือ</p>
+                </div>
+              </div>
+              <span class="text-[10px] text-slate-400 border px-2 py-1 rounded-lg"><i class="fa-regular fa-trash-can mr-1"></i>ล้างแชท</span>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="p-4 space-y-3 bg-slate-50/60 text-xs">
+              <!-- Teacher Bubble -->
+              <div class="flex flex-col items-end">
+                <span class="text-[10px] text-slate-400 mb-0.5">คุณครูสมชาย (ผู้แจ้ง) • 09:35 น.</span>
+                <div class="bg-blue-600 text-white px-3.5 py-2 rounded-2xl rounded-tr-none max-w-xs shadow-sm">
+                  ช่างครับ ห้องพักครูเปิดประตูไว้ให้แล้วนะครับ เข้ามาดูแอร์ได้เลยครับ
+                </div>
+              </div>
+              <!-- Tech Bubble -->
+              <div class="flex flex-col items-start">
+                <span class="text-[10px] text-slate-500 mb-0.5"><b class="text-[#265D5A]">ช่างเอก (ช่างอาคาร)</b> • 09:42 น.</span>
+                <div class="bg-white border border-slate-200 text-slate-800 px-3.5 py-2 rounded-2xl rounded-tl-none max-w-xs shadow-sm">
+                  รับทราบครับครู ตอนนี้ล้างท่อน้ำทิ้งและเติมน้ำยาแอร์เรียบร้อย เย็นปกติแล้วครับ 🙏
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
+              <span class="pin">2</span>
+              <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fa-solid fa-image"></i></div>
+              <div class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-400">พิมพ์ข้อความที่นี่...</div>
+              <span class="pin">3</span>
+              <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow"><i class="fa-solid fa-paper-plane"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Exact Replica of #surveyModal (5-Star Rating) -->
+        <div class="lg:col-span-6 space-y-3">
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden">
+            <div class="bg-gradient-to-r from-amber-400 to-orange-500 p-4 text-center text-white relative">
+              <div class="flex items-center justify-center gap-2">
+                <span class="pin">4</span>
+                <h3 class="font-bold text-base">⭐ ประเมินความพึงพอใจ</h3>
+              </div>
+              <p class="text-white/90 text-xs mt-0.5">เมื่อช่างซ่อมเสร็จและแนบรูปส่งงานแล้ว ปุ่มประเมินจะปรากฏขึ้น</p>
+            </div>
+            <div class="p-5 text-center">
+              <div class="flex justify-center gap-2.5 mb-3">
+                <i class="fa-solid fa-star text-3xl text-amber-400"></i>
+                <i class="fa-solid fa-star text-3xl text-amber-400"></i>
+                <i class="fa-solid fa-star text-3xl text-amber-400"></i>
+                <i class="fa-solid fa-star text-3xl text-amber-400"></i>
+                <i class="fa-solid fa-star text-3xl text-amber-400"></i>
+              </div>
+              <div class="text-left mb-3">
+                <label class="block text-xs font-semibold text-slate-700 mb-1"><span class="pin mr-1">5</span> ข้อเสนอแนะเพิ่มเติม (ถ้ามี)</label>
+                <div class="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-xs text-slate-600">ช่างเอกมาไวมากครับ ซ่อมเสร็จเรียบร้อย ขอบคุณมากครับ</div>
+              </div>
+              <div class="w-full py-2.5 bg-amber-500 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2 text-xs">
+                <i class="fa-solid fa-paper-plane"></i> ส่งแบบประเมิน
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950">
+            <strong>💡 ประโยชน์ของการประเมินดาว:</strong> คะแนนและคำชมของคุณครูจะถูกนำไปคำนวณใน <strong>แดชบอร์ดผู้บริหาร (KPI ความพึงพอใจเฉลี่ย)</strong> เพื่อเป็นขวัญและกำลังใจให้ทีมช่างและเจ้าหน้าที่ทุกฝ่าย
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>หมายเหตุ: เมื่องานถูกปิดสถานะเป็น "เสร็จสิ้น" แล้ว ระบบจะล็อกช่องพิมพ์แชทเพื่อเก็บประวัติการสนทนาไว้เป็นหลักฐานย้อนหลัง</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — Real-time Chat & Satisfaction Survey</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 11: มุมมองผู้บริหาร (Executive Command Center) -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-amber-900 bg-amber-200 px-3 py-1 rounded-full">สำหรับผู้บริหาร • Executive Role</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">10. ศูนย์ควบคุมและรายงานสำหรับผู้บริหาร (`#home-executive-view`)</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 11 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Replica of #home-executive-view -->
+        <div class="lg:col-span-8">
+          <div class="browser-frame p-4 bg-slate-100 space-y-3">
+            <!-- Hero Banner -->
+            <div class="rounded-2xl bg-gradient-to-br from-[#13302e] via-[#265D5A] to-[#0f2422] text-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#B0EDE6]/20 text-[#B0EDE6] text-[10px] font-bold mb-1">
+                  <i class="fa-solid fa-crown text-amber-300"></i> Executive Command Center
+                </div>
+                <h3 class="text-base font-extrabold">ศูนย์ควบคุมและรายงานสำหรับผู้บริหาร</h3>
+                <p class="text-[10px] text-slate-300">สรุปภาพรวมความพร้อมใช้ทรัพยากรทุกฝ่าย สถิติความพึงพอใจ และการอนุมัติโครงการ</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
+                <span class="pin">1</span>
+                <span class="bg-white/15 px-2.5 py-1.5 rounded-xl border border-white/20">📅 2026-11</span>
+                <span class="bg-[#B0EDE6] text-[#13302e] px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-rotate mr-1"></i>รีเฟรช</span>
+                <span class="pin">2</span>
+                <span class="bg-amber-500 text-white px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-file-pdf mr-1"></i>Export PDF</span>
+              </div>
+            </div>
+
+            <!-- 4 KPI Cards -->
+            <div class="grid grid-cols-4 gap-2.5 text-left">
+              <div class="bg-white p-3 rounded-2xl border border-slate-200">
+                <div class="flex justify-between items-center text-[10px] font-bold text-slate-500"><span>งานทั้งหมด</span><span class="pin">3</span></div>
+                <div class="text-2xl font-black text-slate-900 mt-1">128</div>
+                <div class="text-[9px] text-teal-600">รวมทั้ง 4 หน่วยบริการ</div>
+              </div>
+              <div class="bg-amber-50/80 p-3 rounded-2xl border border-amber-200">
+                <div class="text-[10px] font-bold text-amber-700">รอดำเนินการ / อนุมัติ</div>
+                <div class="text-2xl font-black text-amber-600 mt-1">4</div>
+                <div class="text-[9px] text-amber-700">รอรับเรื่อง & รออนุมัติ</div>
+              </div>
+              <div class="bg-teal-50/80 p-3 rounded-2xl border border-[#B0EDE6]">
+                <div class="text-[10px] font-bold text-[#265D5A]">กำลังดำเนินการ</div>
+                <div class="text-2xl font-black text-[#265D5A] mt-1">9</div>
+                <div class="text-[9px] text-[#265D5A]">ช่างกำลังปฏิบัติงาน</div>
+              </div>
+              <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200">
+                <div class="text-[10px] font-bold text-emerald-700">เสร็จสิ้นเรียบร้อย</div>
+                <div class="text-2xl font-black text-emerald-600 mt-1">115</div>
+                <div class="text-[9px] text-emerald-700">คิดเป็น 89.8% สำเร็จ</div>
+              </div>
+            </div>
+
+            <!-- Executive Approval Action Center -->
+            <div class="bg-gradient-to-br from-violet-950 via-purple-900 to-indigo-950 text-white rounded-2xl p-4">
+              <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-white/15">
+                <div class="flex items-center gap-2">
+                  <span class="pin">4</span>
+                  <div class="w-8 h-8 rounded-xl bg-purple-500 flex items-center justify-center"><i class="fa-solid fa-stamp"></i></div>
+                  <div>
+                    <h4 class="font-bold text-xs">โครงการรอการพิจารณาอนุมัติ <span class="ml-1 px-2 py-0.5 rounded-full bg-amber-400 text-slate-900 text-[10px] font-extrabold">1 รายการ</span></h4>
+                    <p class="text-[10px] text-purple-200">ผู้บริหารสามารถกดอนุมัติ ชะลอ หรือไม่อนุมัติได้โดยตรงจากหน้าจอนี้</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white/10 rounded-xl p-3 flex items-center justify-between gap-2 text-xs">
+                <div>
+                  <p class="font-bold text-white">#P02 : ขออนุมัติติดฟิล์มกรองแสงห้องปฏิบัติการวิทย์ (อ.วิชัย พัฒนา)</p>
+                  <p class="text-[10px] text-purple-200">อาคาร 3 • เอกสารแนบ: ใบเสนอราคา.pdf</p>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span class="px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px]">✓ อนุมัติ</span>
+                  <span class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-[10px]">⏳ ชะลอ</span>
+                  <span class="px-2.5 py-1 rounded-lg bg-rose-500 text-white font-bold text-[10px]">✕ ไม่อนุมัติ</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Executive Capabilities -->
+        <div class="lg:col-span-4 space-y-3 text-xs">
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+            <h4 class="font-bold text-slate-800 text-sm">ความสามารถพิเศษสำหรับโรล `Executive`</h4>
+            <p class="leading-relaxed"><strong>① เลือกดูสถิติรายเดือน (`input type="month"`):</strong> ดูย้อนหลังได้ทุกเดือน เปรียบเทียบปริมาณงานซ่อมแต่ละอาคารและแต่ละแผนก</p>
+            <p class="leading-relaxed"><strong>② ปุ่ม `Export PDF`:</strong> พิมพ์รายงานสรุปผู้บริหารออกมาเป็นไฟล์ PDF สำหรับแนบวาระการประชุมบอร์ดได้ทันที</p>
+            <p class="leading-relaxed"><strong>③ การ์ด KPI & กราฟวิเคราะห์ (Chart.js):</strong> แสดงอัตราความสำเร็จของงาน (Completion Rate), คะแนนความพึงพอใจเฉลี่ย (เต็ม 5.00 ดาว) และตารางภาระงานของช่างแต่ละคน</p>
+            <p class="leading-relaxed"><strong>④ ศูนย์อนุมัติโครงการด่วน:</strong> ไม่ต้องรอแฟ้มกระดาษเสนอเซ็น ผู้บริหารเปิดดูใบเสนอราคาและกดอนุมัติจากมือถือได้ทุกที่ทุกเวลา</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>เมื่อผู้บริหารล็อกอินเข้าสู่ระบบ หน้าแรกจะสลับเป็น Executive Command Center ให้อัตโนมัติ</span>
+        <span class="font-bold text-[#265D5A]">FaCiLiTy v1.0 — Executive Command Center</span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SLIDE 12: มุมมองแอดมิน/ทีมช่าง & ตารางการแจ้งเตือนแยกตามโรล -->
+    <!-- ===================================================================== -->
+    <section class="slide-card p-8 md:p-10 justify-between bg-white">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-[#265D5A] bg-[#B0EDE6]/60 px-3 py-1 rounded-full">Admin & Technician Guide</span>
+          <h2 class="text-2xl font-extrabold text-slate-800 mt-1">11. ระบบจัดการของแอดมิน/ทีมช่าง & ตารางการแจ้งเตือนแยกตามบทบาท</h2>
+        </div>
+        <span class="text-xs font-bold text-slate-400">สไลด์ 12 / 12</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-3 items-center">
+        <!-- Left: Admin & Technician Features -->
+        <div class="lg:col-span-6 space-y-3 text-xs">
+          <div class="bg-[#edfaf8] rounded-2xl p-4 border border-[#B0EDE6] space-y-2.5">
+            <h3 class="font-bold text-[#265D5A] text-sm flex items-center gap-2">
+              <i class="fa-solid fa-toolbox"></i> เครื่องมือปฏิบัติงานสำหรับทีมช่าง (`Tech` / `AV`) และแอดมิน (`Admin`)
+            </h3>
+            <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-start gap-2.5">
+              <span class="pin pin-teal">1</span>
+              <div>
+                <p class="font-bold text-slate-800">หน้าต่างมอบหมายงานช่างอัจฉริยะ (แสดงภาระงานเรียลไทม์)</p>
+                <p class="text-slate-600 mt-0.5">แอดมินเห็นทันทีว่าช่างคนไหนมีงานค้างกี่งาน (🟢 ว่าง / 🟡 ปานกลาง / 🔴 งานล้นมือ) เลือกมอบหมายช่างหลักและช่างร่วมได้</p>
+              </div>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-start gap-2.5">
+              <span class="pin pin-teal">2</span>
+              <div>
+                <p class="font-bold text-slate-800">ระบบติดตามงานค้างเกิน 2 วัน & ปุ่มสะกิดเตือนช่าง (`🔔 สะกิดเตือน`)</p>
+                <p class="text-slate-600 mt-0.5">หากใบงานไหนมอบหมายแล้วยังไม่เริ่มทำเกิน 2 วัน ระบบจะขึ้นแถบเตือนสีส้มให้แอดมินกดปุ่มสะกิดเตือนเข้ามือถือช่างและ LINE ได้ทันที</p>
+              </div>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-start gap-2.5">
+              <span class="pin pin-teal">3</span>
+              <div>
+                <p class="font-bold text-slate-800">การแนบรูปผลงานหลังซ่อมเสร็จ & รูปใบเสร็จค่าวัสดุ</p>
+                <p class="text-slate-600 mt-0.5">ช่างถ่ายรูปหลังซ่อมเสร็จและแนบใบเสร็จค่าอะไหล่ (ถ้ามี) ระบบบันทึกลิงก์รูปลง Google Sheets และ Google Drive แยกโฟลเดอร์อัตโนมัติ</p>
+              </div>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-start gap-2.5">
+              <span class="pin pin-teal">4</span>
+              <div>
+                <p class="font-bold text-slate-800">เมนูตั้งค่าระบบสำหรับแอดมิน (`จัดการผู้ใช้`, `Master Data`, `จัดการบั๊ก`)</p>
+                <p class="text-slate-600 mt-0.5">กำหนดโรลผู้ใช้ (`Teacher`, `Tech`, `AV`, `Executive`, `Admin`), เพิ่มรายชื่ออาคาร/ห้อง/อุปกรณ์โสตฯ และกดรันเลขคิวใหม่ (`#01`) ได้จากหน้าเว็บ</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Role-Based Notification Routing Table -->
+        <div class="lg:col-span-6 space-y-3">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-[#265D5A] text-white px-4 py-3 flex items-center justify-between">
+              <h3 class="font-bold text-xs flex items-center gap-2">
+                <i class="fa-solid fa-bell text-amber-300"></i> ตารางสรุปการแยกแจ้งเตือนตามบทบาท (Role-Based Push v1.0)
+              </h3>
+              <span class="text-[10px] bg-white/15 px-2 py-0.5 rounded-full">ไม่รบกวนข้ามแผนก</span>
+            </div>
+            <table class="w-full text-left border-collapse text-[11px]">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700 border-b">
+                  <th class="p-2.5 font-bold">บทบาท (Role)</th>
+                  <th class="p-2.5 font-bold">สิ่งที่ได้รับแจ้งเตือน (ในแอป + จอล็อกมือถือ)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr>
+                  <td class="p-2.5 font-bold text-emerald-700">👩‍🏫 ครู / บุคลากร<br><span class="text-[10px] font-normal text-slate-500">(Teacher)</span></td>
+                  <td class="p-2.5 text-slate-700">รับเฉพาะ <strong>ใบงานของตนเอง</strong> (เมื่อช่างรับงาน, อัปเดตสถานะ, ซ่อมเสร็จ หรือทักแชท) <em>ไม่เด้งเตือนงานของครูท่านอื่น</em></td>
+                </tr>
+                <tr>
+                  <td class="p-2.5 font-bold text-blue-700">🔧 ช่างอาคาร / ไอที<br><span class="text-[10px] font-normal text-slate-500">(Tech)</span></td>
+                  <td class="p-2.5 text-slate-700">รับแจ้งเตือนเมื่อมี <strong>ใบแจ้งซ่อมอาคาร / ไอทีเข้าใหม่</strong>, งานที่ได้รับมอบหมาย, แชทจากผู้แจ้ง และเมื่อถูกแอดมินกดสะกิดเตือน</td>
+                </tr>
+                <tr>
+                  <td class="p-2.5 font-bold text-rose-600">🎙️ โสตทัศนศึกษา<br><span class="text-[10px] font-normal text-slate-500">(AV)</span></td>
+                  <td class="p-2.5 text-slate-700">รับแจ้งเตือนเฉพาะ <strong>คำขอยืม-คืนอุปกรณ์โสตฯ</strong> และ <strong>ใบแจ้งซ่อมอุปกรณ์โสตฯ</strong></td>
+                </tr>
+                <tr>
+                  <td class="p-2.5 font-bold text-purple-700">👔 ผู้บริหาร<br><span class="text-[10px] font-normal text-slate-500">(Executive)</span></td>
+                  <td class="p-2.5 text-slate-700">รับแจ้งเตือนเมื่อมี <strong>การเสนอโครงการระยะยาว / จัดซื้อใหม่</strong> ที่รอการอนุมัติ และงานที่ผู้บริหารเป็นผู้แจ้งเอง</td>
+                </tr>
+                <tr>
+                  <td class="p-2.5 font-bold text-[#265D5A]">🛡️ ผู้ดูแลระบบ<br><span class="text-[10px] font-normal text-slate-500">(Admin)</span></td>
+                  <td class="p-2.5 text-slate-700">รับแจ้งเตือน <strong>ทุกความเคลื่อนไหวในระบบ</strong> + เห็นปุ่ม <strong>ยิงทดสอบเตือน / ทดสอบ LINE</strong> แต่เพียงผู้เดียว</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-[#265D5A] to-[#1a403d] text-white text-xs flex items-center justify-between">
+            <div>
+              <p class="font-bold text-[#B0EDE6]">พร้อมเปิดใช้งานจริง 100% (FaCiLiTy Official Release v1.0)</p>
+              <p class="text-[11px] text-slate-200">เข้าใช้งานได้ที่: https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/</p>
+            </div>
+            <i class="fa-solid fa-circle-check text-2xl text-emerald-400"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
+        <span>พัฒนาและออกแบบระบบโดย: ทีมพัฒนาโครงการ FaCiLiTy v1.0 • เอกสารชุดนี้สามารถกดปุ่ม "พิมพ์ / PDF" ด้านบนเพื่อแจกจ่ายได้ทันที</span>
+        <span class="font-bold text-[#265D5A]">จบการนำเสนอ (สไลด์ 12 / 12)</span>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ================= JAVASCRIPT SLIDE CONTROLLER ================= -->
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide-card');
+    const selector = document.getElementById('slideSelector');
+
+    function updateSlideView() {
+      if (document.body.classList.contains('show-all-mode')) return;
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === currentSlide);
+      });
+      if (selector) selector.value = String(currentSlide);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function nextSlide() {
+      if (document.body.classList.contains('show-all-mode')) toggleAllSlidesMode();
+      currentSlide = (currentSlide + 1) % slides.length;
+      updateSlideView();
+    }
+
+    function prevSlide() {
+      if (document.body.classList.contains('show-all-mode')) toggleAllSlidesMode();
+      currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+      updateSlideView();
+    }
+
+    function goToSlide(index) {
+      if (document.body.classList.contains('show-all-mode')) toggleAllSlidesMode();
+      currentSlide = Math.max(0, Math.min(slides.length - 1, index));
+      updateSlideView();
+    }
+
+    function toggleAllSlidesMode() {
+      const isAll = document.body.classList.toggle('show-all-mode');
+      const btn = document.getElementById('btnViewAll');
+      if (btn) {
+        btn.innerHTML = isAll
+          ? '<i class="fa-solid fa-tv text-amber-400"></i> <span class="hidden lg:inline">โหมดทีละสไลด์</span>'
+          : '<i class="fa-solid fa-table-cells-large text-[#B0EDE6]"></i> <span class="hidden lg:inline">ดูทุกหน้า</span>';
+      }
+      if (!isAll) updateSlideView();
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      }
+    });
+  </script>
+</body>
+</html>

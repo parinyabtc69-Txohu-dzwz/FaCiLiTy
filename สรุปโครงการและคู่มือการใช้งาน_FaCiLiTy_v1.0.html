@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เอกสารสรุปโครงการและคู่มือการใช้งานระบบ FaCiLiTy v1.0</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #265D5A;
+      --primary-light: #e6f4f3;
+      --accent: #0d9488;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Prompt', sans-serif;
+      color: var(--text);
+      background: #f1f5f9;
+      margin: 0;
+      padding: 24px 16px;
+      line-height: 1.65;
+    }
+    .toolbar {
+      max-width: 960px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      padding: 12px 20px;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-family: 'Prompt', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn:hover { background: #1b4341; }
+    .btn-green { background: #06C755; }
+    .btn-green:hover { background: #05a847; }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px 48px;
+      border-radius: 18px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .header-banner {
+      border-bottom: 3px solid var(--primary);
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 99px;
+      margin-bottom: 8px;
+    }
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 26px;
+      color: var(--primary);
+    }
+    h2 {
+      margin-top: 34px;
+      margin-bottom: 14px;
+      font-size: 20px;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 10px 16px;
+      border-left: 5px solid var(--primary);
+      border-radius: 6px;
+    }
+    h3 {
+      margin-top: 22px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #0f172a;
+    }
+    p, li { font-size: 14.5px; }
+    ul, ol { padding-left: 22px; }
+    li { margin-bottom: 6px; }
+    .highlight-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 5px solid #16a34a;
+      padding: 16px 20px;
+      border-radius: 10px;
+      margin: 18px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 22px 0;
+      font-size: 13.5px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 600;
+    }
+    tr:nth-child(even) { background: #f8fafc; }
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-family: Consolas, monospace;
+      color: #0f766e;
+      font-weight: 600;
+    }
+    .step-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 14px;
+      background: #fafafa;
+    }
+    .step-card h3 { margin-top: 0; color: var(--primary); }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      .container { box-shadow: none; padding: 0; max-width: 100%; }
+      h2 { break-after: avoid; }
+      .step-card, table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <div>
+      <strong>📄 เอกสารสรุปโครงการ FaCiLiTy v1.0</strong>
+      <span style="font-size:12px; color:#64748b; margin-left:8px;">(สำหรับนำเสนอบอร์ดบริหาร และแจกคู่มือคณะครู)</span>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-green" onclick="copyTeacherGuide()">📋 คัดลอกคู่มือส่งเข้า LINE คณะครู</button>
+      <button class="btn" onclick="window.print()">🖨️ พิมพ์รายงาน / บันทึกเป็น PDF</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header-banner">
+      <span class="badge">OFFICIAL RELEASE VERSION 1.0</span>
+      <h1>🏢 เอกสารสรุปโครงการและคู่มือการใช้งานระบบ FaCiLiTy (v1.0)</h1>
+      <p style="margin:0; color:var(--muted); font-size:15px;">
+        <strong>ระบบบริหารจัดการงานซ่อมบำรุง โสตทัศนูปกรณ์ และทรัพยากรสถานศึกษาอัจฉริยะ</strong><br>
+        สำหรับนำเสนอต่อคณะกรรมการบริหาร (บอร์ด) และแนะนำการใช้งานแก่คณะครูและบุคลากร
+      </p>
+    </div>
+
+    <div class="highlight-box">
+      <strong>🚀 ข้อมูลสำคัญสำหรับวันเปิดตัว (Official Launch v1.0)</strong>
+      <ul style="margin:8px 0 0 0;">
+        <li><strong>ลิงก์เข้าใช้งานระบบ (Web &amp; PWA):</strong> <a href="https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/" target="_blank">https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/</a></li>
+        <li><strong>อุปกรณ์ที่รองรับ:</strong> สมาร์ตโฟน iOS (iPhone/iPad), Android, แท็บเล็ต และคอมพิวเตอร์ทุกขนาดหน้าจอ</li>
+        <li><strong>งบประมาณค่าเช่าเซิร์ฟเวอร์และฐานข้อมูลรายปี:</strong> <strong>0 บาท (ฟรี 100%)</strong> ด้วยสถาปัตยกรรม Serverless คู่ขนานบนระบบคลาวด์ของ Google และ GitHub</li>
+      </ul>
+    </div>
+
+    <!-- ส่วนที่ 1 -->
+    <h2>📌 ส่วนที่ 1: บทสรุปสำหรับคณะกรรมการบริหาร (Executive Summary)</h2>
+
+    <h3>1.1 ที่มาและปัญหาเดิมที่ระบบเข้ามาแก้ไข (Pain Points Solved)</h3>
+    <ol>
+      <li><strong>การตกหล่นของข้อมูล:</strong> การแจ้งผ่านกระดาษคำร้องหรือแจ้งในกลุ่ม LINE รวม ทำให้ข้อความถูกดันตกหล่น หาย หรือไม่มีผู้รับผิดชอบชัดเจน</li>
+      <li><strong>ผู้แจ้งไม่ทราบความคืบหน้า:</strong> คณะครูที่แจ้งซ่อมไม่ทราบว่างานของตนถึงขั้นตอนไหน ช่างรับทราบหรือยัง หรือกำลังรออะไหล่</li>
+      <li><strong>ขาดการแยกสายงานอัตโนมัติ:</strong> งานอาคาร งานไอที และงานโสตฯ ปะปนกัน ทำให้การจ่ายงานล่าช้าและรบกวนบุคลากรที่ไม่เกี่ยวข้อง</li>
+      <li><strong>ขาดข้อมูลสถิติเพื่อการตัดสินใจของผู้บริหาร:</strong> ไม่มีสรุปภาพรวมแบบเรียลไทม์ว่าจุดใดชำรุดซ้ำซาก ใช้งบประมาณเท่าใด หรือประสิทธิภาพความเร็วในการซ่อมเป็นอย่างไร</li>
+      <li><strong>ข้อจำกัดด้านโควต้าการแจ้งเตือน:</strong> บอท LINE ทั่วไปมีโควต้าจำกัด เมื่อข้อความเต็มระบบจะหยุดแจ้งเตือนทันที</li>
+    </ol>
+
+    <h3>1.2 จุดเด่นและคุณค่าที่สถานศึกษาได้รับ (Key Strategic Values)</h3>
+    <ul>
+      <li><strong>⚡ รวดเร็วแบบเรียลไทม์ (Real-Time Dual-Sync):</strong> ผสานความเร็วของ <strong>Firebase Cloud Firestore</strong> เข้ากับ <strong>Google Sheets</strong> และ <strong>Google Drive</strong> ข้อมูลอัปเดตบนหน้าจอทันทีโดยไม่ต้องรีเฟรช พร้อมเก็บตารางข้อมูลและรูปภาพเข้าแฟ้มออนไลน์อัตโนมัติ</li>
+      <li><strong>🎯 แจ้งเตือนตรงกลุ่มเป้าหมาย ไม่รบกวนครู (Role-Based Zero-Spam Routing):</strong> คัดกรองผู้รับตามบทบาทหน้าที่อัตโนมัติ ครูจะได้รับการสั่นเตือนเฉพาะงานที่ตนเองแจ้ง ช่างรับเฉพาะงานในสายงานตนเอง และผู้บริหารรับเฉพาะงานโครงการที่ต้องอนุมัติ</li>
+      <li><strong>📳 ปลุกเตือนถึงหน้าจอล็อกมือถือ (Lock-Screen Web Push &amp; Multi-Bot LINE):</strong> รองรับทั้งการแจ้งเตือนผ่านแอปโดยตรง (FCM v1 Web Push) และการ์ดแจ้งเตือนผ่าน LINE พร้อมระบบ <strong>Multi-Bot Auto-Failover</strong> สลับบอทสำรอง 3 ตัวอัตโนมัติเมื่อโควต้าเต็ม</li>
+      <li><strong>📊 โปร่งใส ตรวจสอบได้ทุกขั้นตอน (Full Accountability &amp; KPI):</strong> ทุกใบงานมีรหัสอ้างอิง มีไทม์ไลน์เวลาแจ้ง-เวลามอบหมาย-เวลาซ่อมเสร็จ มีรูปถ่ายยืนยันก่อน-หลังซ่อม แนบใบเสร็จ และมีผลประเมินความพึงพอใจ 5 ดาวจากครูผู้แจ้ง</li>
+    </ul>
+
+    <!-- ส่วนที่ 2 -->
+    <h2>🛠️ ส่วนที่ 2: รายละเอียดฟังก์ชันทั้งหมดในระบบ (Complete Feature Breakdown)</h2>
+
+    <h3>2.1 ระบบรับเรื่องและบริการ 5 ประเภทงานหลัก (5 Core Service Modules)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px;">ลำดับ</th>
+          <th style="width:220px;">ประเภทบริการ</th>
+          <th style="width:120px;">รหัสใบงาน</th>
+          <th>รายละเอียดและการทำงาน</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1</strong></td>
+          <td><strong>แจ้งซ่อมอาคารสถานที่ทั่วไป</strong></td>
+          <td><code>REP-XXXXX</code></td>
+          <td>แจ้งซ่อมไฟฟ้า ประปา เครื่องปรับอากาศ โต๊ะ/เก้าอี้ ประตู/หน้าต่าง และโครงสร้างอาคาร พร้อมระบุสถานที่ ระดับความเร่งด่วน และแนบรูปถ่ายจุดชำรุด</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td><strong>แจ้งซ่อมคอมพิวเตอร์และไอที</strong></td>
+          <td><code>IT-XXXXX</code></td>
+          <td>แจ้งปัญหาคอมพิวเตอร์ เครื่องพิมพ์ โปรเจกเตอร์ ระบบเครือข่ายอินเทอร์เน็ต/Wi-Fi และซอฟต์แวร์การเรียนการสอน</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td><strong>ขอยืม-คืนอุปกรณ์โสตทัศนูปกรณ์</strong></td>
+          <td><code>AV-XXXXX</code></td>
+          <td>ขอยืมไมโครโฟน ลำโพงเคลื่อนที่ กล้องถ่ายภาพ สายสัญญาณ หรืออุปกรณ์จัดกิจกรรม โดยระบุรายการ จำนวน วันที่ยืม-วันที่คืน และสถานที่ใช้งาน</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td><strong>แจ้งซ่อมอุปกรณ์โสตทัศนูปกรณ์</strong></td>
+          <td><code>AVR-XXXXX</code></td>
+          <td>แจ้งซ่อมเครื่องเสียง ไมโครโฟน หรืออุปกรณ์โสตฯ ประจำห้องเรียนที่ชำรุดเสียหาย</td>
+        </tr>
+        <tr>
+          <td><strong>5</strong></td>
+          <td><strong>เสนอโครงการระยะยาว / จัดซื้อ</strong></td>
+          <td><code>PROJ-XXXXX</code></td>
+          <td>สำหรับเสนอโครงการปรับปรุงซ่อมแซมขนาดใหญ่ หรืองานจัดซื้อจัดจ้างที่ต้องแนบเอกสารโครงการ/ใบเสนอราคา เพื่อเสนอให้ <strong>ผู้บริหาร (Executive)</strong> พิจารณาอนุมัติ</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>2.2 ระบบติดตามสถานะใบงานและไทม์ไลน์ (Smart Ticket Tracking)</h3>
+    <ul>
+      <li><strong>⏳ รอดำเนินการ / รอมอบหมาย (สีเหลืองอำพัน):</strong> เพิ่งส่งเรื่องเข้าสู่ระบบ รอการตรวจสอบและจ่ายงาน</li>
+      <li><strong>🔧 กำลังดำเนินการ (สีฟ้า):</strong> มอบหมายช่างแล้ว และช่างกำลังเข้าดำเนินการแก้ไข</li>
+      <li><strong>📦 รออะไหล่ / ส่งซ่อมภายนอก (สีม่วง/ส้ม):</strong> อยู่ระหว่างเบิกอะไหล่หรือประสานช่างผู้รับเหมาภายนอก</li>
+      <li><strong>✅ เสร็จสิ้น / คืนอุปกรณ์แล้ว (สีเขียว):</strong> ซ่อมเสร็จสมบูรณ์พร้อมรูปถ่ายยืนยัน หรือคืนอุปกรณ์โสตฯ เรียบร้อย</li>
+      <li><strong>❌ ยกเลิก / ไม่อนุมัติ (สีแดง):</strong> รายการถูกยกเลิกหรือไม่อนุมัติพร้อมระบุเหตุผล</li>
+    </ul>
+
+    <h3>2.3 ห้องแชทสนทนาประจำใบงาน (Real-Time Ticket Chat Room)</h3>
+    <ul>
+      <li><strong>แชทแยกตามรายใบงาน:</strong> ทุกใบงานมีห้องแชทส่วนตัวเพื่อให้ <strong>ครูผู้แจ้ง + ช่างผู้รับผิดชอบ + แอดมิน</strong> สอบถามรายละเอียดเพิ่มเติมได้โดยตรง</li>
+      <li><strong>รองรับการส่งรูปภาพในแชท:</strong> ถ่ายรูปหรือส่งภาพเพิ่มเติมในห้องแชทได้ทันที รูปจะถูกจัดเก็บเข้า Google Drive อัตโนมัติ</li>
+    </ul>
+
+    <h3>2.4 ระบบแจ้งเตือนอัจฉริยะ 3 ช่องทาง แยกตามบทบาทหน้าที่ (3-Tier Notification)</h3>
+    <ol>
+      <li><strong>ช่องทางที่ 1: ศูนย์การแจ้งเตือนในแอป (In-App Notification Hub &amp; Chime)</strong> — ป้ายลอยหน้าจอพร้อมเสียงระฆังสังเคราะห์ 2 โทน</li>
+      <li><strong>ช่องทางที่ 2: แจ้งเตือนบนหน้าจอล็อกมือถือ (FCM v1 Lock-Screen Web Push)</strong> — ปลุกหน้าจอล็อกมือถือสว่างและสั่นเตือนแม้พับหน้าจอ</li>
+      <li><strong>ช่องทางที่ 3: การ์ดแจ้งเตือน LINE Flex Message (Multi-Bot Auto-Failover)</strong> — ส่งการ์ดเข้ากลุ่มหลักและแชทส่วนตัวช่าง พร้อมสลับบอท 3 ตัวอัตโนมัติ</li>
+    </ol>
+
+    <h3>2.5 ระบบบริหารจัดการสำหรับแอดมิน หัวหน้างาน และทีมช่าง</h3>
+    <ul>
+      <li><strong>ระบบจ่ายงานช่างอัจฉริยะ:</strong> แสดงสถิติภาระงานของช่างแต่ละคนแบบเรียลไทม์ (กำลังถืออยู่กี่งาน / ทำเสร็จแล้วกี่งาน) รองรับทั้งช่างภายในและผู้รับเหมาภายนอก</li>
+      <li><strong>ปุ่ม "สะกิดเตือนช่าง (Ping Technician)":</strong> กดกระดิ่งสะกิดเตือนช่างทาง LINE และอีเมลทันทีเมื่อมีงานค้าง</li>
+      <li><strong>ระบบตรวจจับงานค้างอัตโนมัติ (Overdue Monitor):</strong> แจ้งสรุปงานค้างเกินกำหนดให้อัตโนมัติ</li>
+      <li><strong>ระบบส่งมอบงานพร้อมหลักฐาน:</strong> บันทึกค่าใช้จ่าย แนบรูปถ่ายผลการซ่อม และแนบไฟล์ใบเสร็จเบิกจ่าย</li>
+      <li><strong>แดชบอร์ดผู้บริหาร (Executive View):</strong> สรุป KPI ภาพรวม กราฟสถิติ และปุ่มกดอนุมัติโครงการระยะยาวจากมือถือ</li>
+      <li><strong>ระบบประเมินความพึงพอใจ 5 ดาว:</strong> ให้ครูผู้แจ้งกดประเมินคะแนนดาวและข้อเสนอแนะหลังซ่อมเสร็จ</li>
+    </ul>
+
+    <!-- ส่วนที่ 3 -->
+    <h2>👥 ส่วนที่ 3: สรุปบทบาทหน้าที่ทั้ง 7 ระดับในระบบ (User Roles)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:160px;">บทบาท (Role)</th>
+          <th style="width:200px;">ชื่อแสดงในระบบ</th>
+          <th>สิทธิ์การใช้งานและการรับแจ้งเตือน</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Executive</code></td>
+          <td>ผู้บริหาร</td>
+          <td>ดูแดชบอร์ดสรุปภาพรวมทั้งโรงเรียน, พิจารณาอนุมัติ/ไม่อนุมัติโครงการระยะยาว (รับแจ้งเตือนเฉพาะโครงการและงานด่วน)</td>
+        </tr>
+        <tr>
+          <td><code>Admin</code></td>
+          <td>ผู้ดูแลระบบสูงสุด</td>
+          <td>เข้าถึงและจัดการได้ทุกเมนู 100%, มอบหมายช่าง, อัปเดตสถานะทุกงาน, จัดการผู้ใช้, ตั้งค่าข้อมูลหลัก, ทดสอบระบบแจ้งเตือน</td>
+        </tr>
+        <tr>
+          <td><code>Supervisor</code></td>
+          <td>หัวหน้างาน</td>
+          <td>กำกับดูแลงานซ่อมทั้งหมด, มอบหมายช่าง, ติดตามงานค้าง, ดูรายงานสรุป และจัดการใบงานเทียบเท่าแอดมิน</td>
+        </tr>
+        <tr>
+          <td><code>Staff</code></td>
+          <td>เจ้าหน้าที่ประสานงาน</td>
+          <td>รับเรื่องประสานงาน, ตรวจสอบใบงานทุกหมวดหมู่, อัปเดตสถานะงาน และดูแลคลังเอกสาร</td>
+        </tr>
+        <tr>
+          <td><code>Tech</code></td>
+          <td>ช่างซ่อมบำรุง / ไอที</td>
+          <td>รับใบงานซ่อมอาคารและไอที, อัปเดตความคืบหน้าการซ่อม, แชทคุยกับผู้แจ้ง, แนบรูปผลงานและใบเสร็จเพื่อปิดงาน</td>
+        </tr>
+        <tr>
+          <td><code>AV</code></td>
+          <td>เจ้าหน้าที่โสตทัศนูปกรณ์</td>
+          <td>ดูแลการอนุมัติยืม-คืนอุปกรณ์โสตฯ, รับงานซ่อมอุปกรณ์โสตฯ, และอัปเดตสถานะการคืนอุปกรณ์</td>
+        </tr>
+        <tr>
+          <td><code>Teacher</code></td>
+          <td>คุณครู / บุคลากรทั่วไป</td>
+          <td>แจ้งซ่อมทุกประเภท, ขอยืมอุปกรณ์โสตฯ, เสนอโครงการ, ติดตามสถานะงานของตนเอง, แชทกับช่าง (รับแจ้งเตือนเฉพาะงานตนเอง)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ส่วนที่ 4 -->
+    <h2>📱 ส่วนที่ 4: คู่มือวิธีการใช้งานสำหรับคณะครู (Step-by-Step Teacher Guide)</h2>
+
+    <div class="step-card">
+      <h3>ขั้นตอนที่ 1: การเข้าใช้งานและติดตั้งแอปลงบนหน้าจอมือถือ (ทำครั้งเดียว)</h3>
+      <ol>
+        <li>เปิดลิงก์ <strong><a href="https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/" target="_blank">https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/</a></strong></li>
+        <li><strong>สำหรับ iPhone / iPad (iOS):</strong> เปิดลิงก์ด้วยแอป <strong>Safari</strong> ➔ แตะปุ่ม <strong>แชร์ (Share)</strong> ด้านล่างหน้าจอ ➔ เลือก <strong>"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen)</strong> ➔ กด <strong>เพิ่ม (Add)</strong></li>
+        <li><strong>สำหรับ Android และคอมพิวเตอร์:</strong> เปิดด้วย <strong>Google Chrome</strong> ➔ กดปุ่ม <strong>"ติดตั้งแอป" (Install App)</strong> ที่แถบด้านบน หรือกดเมนูจุด 3 จุดมุมขวาบนแล้วเลือก <strong>"ติดตั้งแอป / เพิ่มลงในหน้าจอหลัก"</strong></li>
+      </ol>
+    </div>
+
+    <div class="step-card">
+      <h3>ขั้นตอนที่ 2: การเข้าสู่ระบบและเปิดรับการแจ้งเตือน</h3>
+      <ol>
+        <li>กดปุ่ม <strong>"เข้าสู่ระบบด้วย Google" (Sign in with Google)</strong> แล้วเลือกบัญชีอีเมลของท่าน</li>
+        <li>เมื่อเข้าสู่หน้าแรก แตะที่ป้าย <strong>"เปิดการแจ้งเตือนบนโทรศัพท์"</strong> หรือแตะที่ <strong>ไอคอนกระดิ่ง 🔔</strong> มุมขวาบน แล้วกดปุ่ม <strong>"เปิดใช้งาน"</strong> ➔ กด <strong>"อนุญาต" (Allow)</strong></li>
+        <li><em>หมายเหตุ: ระบบจะส่งเสียงเตือนเฉพาะงานที่คุณครูเป็นผู้แจ้งเองเท่านั้น ไม่ส่งงานของท่านอื่นมารบกวนครับ</em></li>
+      </ol>
+    </div>
+
+    <div class="step-card">
+      <h3>ขั้นตอนที่ 3: วิธีการแจ้งซ่อม และขอยืมอุปกรณ์โสตฯ</h3>
+      <ol>
+        <li>ที่หน้าแรก เลือกหมวดบริการที่ต้องการ:
+          <ul>
+            <li>🔨 <strong>แจ้งซ่อมอาคาร</strong> (แอร์ไม่เย็น, ไฟดับ, ประปา, อาคารสถานที่)</li>
+            <li>💻 <strong>แจ้งซ่อมไอที</strong> (คอมพิวเตอร์, อินเทอร์เน็ต, โปรเจกเตอร์, ปริ้นเตอร์)</li>
+            <li>🎤 <strong>ยืม-คืนโสตฯ</strong> (ขอยืมไมโครโฟน, ลำโพง, กล้อง, อุปกรณ์จัดกิจกรรม)</li>
+            <li>📽️ <strong>แจ้งซ่อมโสตฯ</strong> (แจ้งซ่อมเครื่องเสียงหรืออุปกรณ์โสตฯ ชำรุด)</li>
+            <li>📑 <strong>เสนอโครงการ</strong> (เสนอโครงการปรับปรุงหรือขอจัดซื้อ)</li>
+          </ul>
+        </li>
+        <li>กรอกสถานที่ รายละเอียดอาการเสีย เลือกระดับความเร่งด่วน และ <strong>ถ่ายรูปแนบ (ถ้ามี)</strong></li>
+        <li>กดปุ่ม <strong>"ส่งใบแจ้งซ่อม"</strong> ระบบจะออกรหัสใบงานและแจ้งเตือนทีมช่างทันที</li>
+      </ol>
+    </div>
+
+    <div class="step-card">
+      <h3>ขั้นตอนที่ 4: การติดตามสถานะ แชทคุยกับช่าง และประเมิน 5 ดาว</h3>
+      <ol>
+        <li>ดูความคืบหน้าของงานได้ที่หน้าแรก หรือกดแถบตัวกรอง <strong>"งานของฉัน"</strong></li>
+        <li>แตะที่ใบงานเพื่อดูชื่อช่างผู้รับผิดชอบ หรือกดปุ่ม <strong>💬 "แชทงานนี้"</strong> เพื่อพิมพ์พูดคุยหรือส่งรูปเพิ่มเติมให้ช่างโดยตรง</li>
+        <li>เมื่อช่างซ่อมเสร็จ จะมีการแจ้งเตือนเด้งขึ้นบนมือถือพร้อมรูปถ่ายผลงาน สามารถกด <strong>⭐ "ประเมินความพึงพอใจ"</strong> เพื่อให้คะแนนดาวทีมช่างได้ทันที</li>
+      </ol>
+    </div>
+
+    <!-- ส่วนที่ 5 -->
+    <h2>🗄️ ส่วนที่ 5: สรุปแหล่งจัดเก็บข้อมูลของระบบ (Data Governance)</h2>
+    <ul>
+      <li><strong>1. ข้อมูลตารางใบงานและทะเบียนผู้ใช้ (Google Sheets 12 แท็บ):</strong> <a href="https://docs.google.com/spreadsheets/d/1i-XQ0lO571tIX7RvQR51V2AjuXrEwLfJP7Z7b8xuYDM/edit" target="_blank">เปิดตารางฐานข้อมูล Google Sheets</a></li>
+      <li><strong>2. คลังเก็บรูปภาพ ใบเสร็จ และเอกสารแนบ (Google Drive 8 โฟลเดอร์ย่อย):</strong> <a href="https://drive.google.com/drive/folders/1tkOHFwH4MC-eA_eNLThTcLVF3CRHQUXT" target="_blank">เปิดโฟลเดอร์ Google Drive</a></li>
+      <li><strong>3. ฐานข้อมูลเรียลไทม์และห้องแชท (Firebase Firestore):</strong> โปรเจกต์ <code>facility-c7833</code></li>
+      <li><strong>4. เซิร์ฟเวอร์หน้าเว็บและซอร์สโค้ด (GitHub Pages):</strong> <a href="https://github.com/parinyabtc69-Txohu-dzwz/FaCiLiTy" target="_blank">GitHub Repository (Release Tag: v1.0)</a></li>
+    </ul>
+  </div>
+
+  <script>
+    function copyTeacherGuide() {
+      const text = `📢 ขอแนะนำระบบใหม่ "FaCiLiTy v1.0"
+ระบบแจ้งซ่อมอาคาร ไอที และยืม-คืนโสตทัศนูปกรณ์ออนไลน์
+
+🔗 ลิงก์เข้าใช้งาน:
+https://parinyabtc69-txohu-dzwz.github.io/FaCiLiTy/
+
+📲 วิธีติดตั้งเป็นแอปลงบนหน้าจอมือถือ (ทำครั้งเดียว):
+• สำหรับ iPhone / iPad: เปิดลิงก์ใน Safari ➔ กดปุ่มแชร์ (ตรงกลางด้านล่าง) ➔ เลือก "เพิ่มไปยังหน้าจอโฮม (Add to Home Screen)"
+• สำหรับ Android: เปิดลิงก์ใน Chrome ➔ กดปุ่ม "ติดตั้งแอป" ด้านบนของจอ
+
+🔔 วิธีเข้าใช้งานครั้งแรก:
+1. กด "เข้าสู่ระบบด้วย Google"
+2. กดรูปกระดิ่งมุมขวาบน ➔ กด "เปิดใช้งาน" การแจ้งเตือน (ระบบจะแจ้งเตือนเฉพาะงานที่คุณครูเป็นผู้แจ้งเองเท่านั้น ไม่รบกวนงานของท่านอื่นครับ)
+3. เลือกเมนู แจ้งซ่อมอาคาร / แจ้งซ่อมไอที / ยืม-คืนโสตฯ กรอกข้อมูลและถ่ายรูปแนบได้ทันที พร้อมแชทคุยกับช่างและดูสถานะงานได้แบบเรียลไทม์ครับ`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert('✅ คัดลอกข้อความคู่มือสำหรับส่งในกลุ่ม LINE คณะครูเรียบร้อยแล้วครับ! สามารถกดวาง (Paste) ในกลุ่ม LINE ได้เลย');
+      });
+    }
+  </script>
+</body>
+</html>
