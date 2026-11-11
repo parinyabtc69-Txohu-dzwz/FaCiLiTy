@@ -571,6 +571,18 @@ const NotificationHub = (function () {
   }
 
   // ── 12. ระบบจัดการสิทธิ์การแจ้งเตือนบนอุปกรณ์ (Device Push & Native Permission) ───
+  function checkIsAdminUser() {
+    const role = (
+      (typeof currentRole !== 'undefined' && currentRole) ||
+      window.currentRole ||
+      localStorage.getItem('logged_role') ||
+      localStorage.getItem('user_role') ||
+      ''
+    ).toLowerCase();
+    const isAdmin = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (localStorage.getItem('logged_admin') === 'true');
+    return isAdmin || role.includes('admin') || role.includes('supervisor') || role.includes('ผู้ดูแล');
+  }
+
   function checkNotificationPermission() {
     if (!('Notification' in window)) {
       return 'unsupported';
@@ -582,6 +594,7 @@ const NotificationHub = (function () {
     const perm = checkNotificationPermission();
     const dropdownBanner = document.getElementById('notif-permission-status');
     const homeBanners = document.querySelectorAll('.notif-permission-prompt-card');
+    const isAdmin = checkIsAdminUser();
 
     if (perm === 'granted') {
       // ✅ ได้รับอนุญาตแล้ว: ปิดซ่อนการ์ดขอสิทธิ์
@@ -593,9 +606,10 @@ const NotificationHub = (function () {
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span class="text-[11px] font-semibold text-emerald-800">เปิดการแจ้งเตือนบนอุปกรณ์แล้ว</span>
           </div>
+          ${isAdmin ? `
           <button onclick="NotificationHub.testDeviceNotification()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-[10px] font-bold shadow-sm transition-all flex items-center gap-1 shrink-0">
             <i class="fa-solid fa-bell"></i> ยิงทดสอบเตือน
-          </button>
+          </button>` : ''}
         `;
         dropdownBanner.className = 'px-3 py-1.5 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between text-xs';
         dropdownBanner.classList.remove('hidden');
@@ -658,6 +672,18 @@ const NotificationHub = (function () {
         homeBanners.forEach(el => el.classList.add('hidden'));
       }
       if (dropdownBanner) dropdownBanner.classList.add('hidden');
+    }
+
+    // ซ่อนหรือแสดงปุ่มควบคุมทดสอบระบบสำหรับผู้ดูแล (เฉพาะ Admin เท่านั้น)
+    const adminActions = document.getElementById('notif-admin-actions');
+    if (adminActions) {
+      if (isAdmin) {
+        adminActions.classList.remove('hidden');
+        adminActions.classList.add('flex');
+      } else {
+        adminActions.classList.add('hidden');
+        adminActions.classList.remove('flex');
+      }
     }
   }
 
@@ -915,6 +941,18 @@ const NotificationHub = (function () {
   }
 
   function testDeviceNotification() {
+    if (!checkIsAdminUser()) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'info',
+          title: 'เฉพาะแอดมินเท่านั้น',
+          text: 'ปุ่มทดสอบการแจ้งเตือนเปิดให้ใช้งานเฉพาะผู้ดูแลระบบ (Admin) เท่านั้นครับ',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+      return;
+    }
     unlockAudioContext();
     playChime();
 
@@ -965,6 +1003,18 @@ const NotificationHub = (function () {
 
   // ── 12.1 ทดสอบส่งแจ้งเตือนเข้า LINE กลุ่ม (มีเสียงเตือนบนหน้าจอล็อกโทรศัพท์ 100%) ───
   async function testLineNotification() {
+    if (!checkIsAdminUser()) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'info',
+          title: 'เฉพาะแอดมินเท่านั้น',
+          text: 'ปุ่มทดสอบส่ง LINE เปิดให้ใช้งานเฉพาะผู้ดูแลระบบ (Admin) เท่านั้นครับ',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+      return;
+    }
     if (typeof Swal !== 'undefined') {
       Swal.fire({
         title: 'กำลังส่งแจ้งเตือนเข้า LINE กลุ่ม...',

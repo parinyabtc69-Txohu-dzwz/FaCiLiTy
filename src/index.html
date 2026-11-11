@@ -140,14 +140,17 @@
           <!-- Footer Actions -->
           <div class="border-t p-2.5 bg-slate-50 flex items-center justify-between gap-1.5 text-xs">
             <div class="flex items-center gap-1.5 flex-wrap">
-              <button onclick="NotificationHub.testDeviceNotification()" title="ยิงทดสอบระบบเตือนในแอป (เด้งพร้อมกันทุกเครื่องเงียบๆ)"
-                class="px-2.5 py-1.5 rounded-xl font-bold text-white bg-[#265D5A] hover:bg-[#1a403d] transition-all flex items-center gap-1 shadow-sm active:scale-95">
-                <i class="fa-solid fa-bell text-xs"></i> เตือนในแอป
-              </button>
-              <button onclick="NotificationHub.testLineNotification()" title="ยิงทดสอบเข้า LINE กลุ่มโดยตรง (เด้งหน้าจอล็อก 100%)"
-                class="px-2.5 py-1.5 rounded-xl font-bold text-white bg-[#06C755] hover:bg-[#05b34c] transition-all flex items-center gap-1 shadow-sm active:scale-95">
-                <i class="fa-brands fa-line text-sm"></i> ทดสอบ LINE
-              </button>
+              <!-- Admin Test Controls (เฉพาะบทบาทผู้ดูแลระบบ/Admin เท่านั้น) -->
+              <div id="notif-admin-actions" class="hidden items-center gap-1.5 flex-wrap">
+                <button onclick="NotificationHub.testDeviceNotification()" title="ยิงทดสอบระบบเตือนในแอป (เฉพาะแอดมิน)"
+                  class="px-2.5 py-1.5 rounded-xl font-bold text-white bg-[#265D5A] hover:bg-[#1a403d] transition-all flex items-center gap-1 shadow-sm active:scale-95">
+                  <i class="fa-solid fa-bell text-xs"></i> เตือนในแอป
+                </button>
+                <button onclick="NotificationHub.testLineNotification()" title="ยิงทดสอบเข้า LINE กลุ่มโดยตรง (เฉพาะแอดมิน)"
+                  class="px-2.5 py-1.5 rounded-xl font-bold text-white bg-[#06C755] hover:bg-[#05b34c] transition-all flex items-center gap-1 shadow-sm active:scale-95">
+                  <i class="fa-brands fa-line text-sm"></i> ทดสอบ LINE
+                </button>
+              </div>
               <button onclick="NotificationHub.clearAll()" title="ล้างการแจ้งเตือนทั้งหมด"
                 class="px-2 py-1.5 rounded-xl font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-100/60 transition-colors flex items-center gap-1">
                 <i class="fa-solid fa-trash-can text-[11px]"></i> ล้าง
@@ -156,7 +159,7 @@
             <div class="flex items-center gap-1.5 shrink-0">
               <button onclick="NotificationHub.forceUpdateApp()" title="แตะเพื่อรีเฟรชล้างแคชอัปเดตเวอร์ชันล่าสุด"
                 class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-400 hover:text-emerald-700 hover:bg-slate-200/50 transition-colors flex items-center gap-1">
-                <i class="fa-solid fa-rotate text-[9px]"></i> v6.33
+                <i class="fa-solid fa-rotate text-[9px]"></i> v6.35
               </button>
               <button onclick="toggleNotificationDropdown(); nav('page-home');"
                 class="px-2 py-1.5 rounded-xl font-bold text-[#265D5A] hover:bg-[#B0EDE6]/40 transition-colors">

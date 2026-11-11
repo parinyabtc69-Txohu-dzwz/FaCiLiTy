@@ -2121,6 +2121,9 @@ function updateSessionUI() {
   }
 
   updateNotificationBadges();
+  if (window.NotificationHub && typeof window.NotificationHub.updatePermissionUI === 'function') {
+    window.NotificationHub.updatePermissionUI();
+  }
 }
 
 // ฟังก์ชันระบบค้นหาข้อมูล (ค้นหางานซ่อม/ยืมโสตฯ หรือนำทางไปยังหน้าอื่นๆ จากคำค้น)
