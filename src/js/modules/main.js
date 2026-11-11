@@ -1647,9 +1647,14 @@ function finalizeLogin(name, role, email) {
   // ดึงข้อมูลหลักใน background ทันที เพื่อให้ Dashboard โหลดเร็วขึ้น
   if (isAdminLoggedIn) prefetchAllData();
 
-  if (window.NotificationHub && typeof window.NotificationHub.renderList === 'function') {
-    window.NotificationHub.renderList();
-    window.NotificationHub.updateBadge();
+  if (window.NotificationHub) {
+    if (typeof window.NotificationHub.refreshTokenProfile === 'function') {
+      window.NotificationHub.refreshTokenProfile();
+    }
+    if (typeof window.NotificationHub.renderList === 'function') {
+      window.NotificationHub.renderList();
+      window.NotificationHub.updateBadge();
+    }
   }
   
   alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
@@ -1675,6 +1680,9 @@ function handleGlobalLogout() {
   currentEmail = '';
   currentRole = '';
   isAdminLoggedIn = false;
+  if (window.NotificationHub && typeof window.NotificationHub.unregisterFCMProfile === 'function') {
+    window.NotificationHub.unregisterFCMProfile();
+  }
   if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
   if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
   updateSessionUI();
@@ -4576,9 +4584,14 @@ function localDevLogin(name, role, email) {
   updateSessionUI();
   if (isAdminLoggedIn) prefetchAllData();
 
-  if (window.NotificationHub && typeof window.NotificationHub.renderList === 'function') {
-    window.NotificationHub.renderList();
-    window.NotificationHub.updateBadge();
+  if (window.NotificationHub) {
+    if (typeof window.NotificationHub.refreshTokenProfile === 'function') {
+      window.NotificationHub.refreshTokenProfile();
+    }
+    if (typeof window.NotificationHub.renderList === 'function') {
+      window.NotificationHub.renderList();
+      window.NotificationHub.updateBadge();
+    }
   }
 
   if (typeof Swal !== 'undefined') {

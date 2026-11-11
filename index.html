@@ -5020,9 +5020,14 @@ function finalizeLogin(name, role, email) {
   // ดึงข้อมูลหลักใน background ทันที เพื่อให้ Dashboard โหลดเร็วขึ้น
   if (isAdminLoggedIn) prefetchAllData();
 
-  if (window.NotificationHub && typeof window.NotificationHub.renderList === 'function') {
-    window.NotificationHub.renderList();
-    window.NotificationHub.updateBadge();
+  if (window.NotificationHub) {
+    if (typeof window.NotificationHub.refreshTokenProfile === 'function') {
+      window.NotificationHub.refreshTokenProfile();
+    }
+    if (typeof window.NotificationHub.renderList === 'function') {
+      window.NotificationHub.renderList();
+      window.NotificationHub.updateBadge();
+    }
   }
   
   alertBox('success', 'เข้าสู่ระบบสำเร็จ', `ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
@@ -5048,6 +5053,9 @@ function handleGlobalLogout() {
   currentEmail = '';
   currentRole = '';
   isAdminLoggedIn = false;
+  if (window.NotificationHub && typeof window.NotificationHub.unregisterFCMProfile === 'function') {
+    window.NotificationHub.unregisterFCMProfile();
+  }
   if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
   if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
   updateSessionUI();
@@ -7949,9 +7957,14 @@ function localDevLogin(name, role, email) {
   updateSessionUI();
   if (isAdminLoggedIn) prefetchAllData();
 
-  if (window.NotificationHub && typeof window.NotificationHub.renderList === 'function') {
-    window.NotificationHub.renderList();
-    window.NotificationHub.updateBadge();
+  if (window.NotificationHub) {
+    if (typeof window.NotificationHub.refreshTokenProfile === 'function') {
+      window.NotificationHub.refreshTokenProfile();
+    }
+    if (typeof window.NotificationHub.renderList === 'function') {
+      window.NotificationHub.renderList();
+      window.NotificationHub.updateBadge();
+    }
   }
 
   if (typeof Swal !== 'undefined') {
@@ -11824,40 +11837,77 @@ const NotificationHub = (function () {
     }
   }
 
-  // ── 11. ตรวจสอบสิทธิ์ผู้รับตามบทบาทหน้าที่ (Role Filtering) ───────────────
+  // ── 11. ตรวจสอบสิทธิ์ผู้รับตามบทบาทหน้าที่ (Role-Based Notification Filtering) ─
   function isTargetRecipient(item) {
-    // การแจ้งเตือนทดสอบระบบ (Test Notification) ให้ส่งถึงทุกเครื่องเสมอ 100%
-    if ((item.ticketId && item.ticketId.includes('TEST')) || (item.title && item.title.includes('ทดสอบ'))) {
+    if (!item) return false;
+
+    // 1. การแจ้งเตือนทดสอบระบบ (Test Ping) -> จำกัดให้เฉพาะ Admin / Supervisor เท่านั้น ไม่ส่งรบกวนครู
+    const isTestItem = item.isTest === true || (item.ticketId && item.ticketId.startsWith('FAC-TEST-'));
+    if (isTestItem) {
+      return checkIsAdminUser();
+    }
+
+    const userRole = (
+      (typeof currentRole !== 'undefined' && currentRole) ||
+      window.currentRole ||
+      localStorage.getItem('logged_role') ||
+      'Teacher'
+    ).toLowerCase();
+
+    const userEmail = (
+      (typeof currentEmail !== 'undefined' && currentEmail) ||
+      window.currentEmail ||
+      localStorage.getItem('logged_email') ||
+      ''
+    ).toLowerCase().trim();
+
+    const userName = (
+      (typeof currentTeacher !== 'undefined' && currentTeacher) ||
+      window.currentTeacher ||
+      localStorage.getItem('logged_teacher') ||
+      ''
+    ).toLowerCase().trim();
+
+    // 2. ผู้ดูแลระบบและเจ้าหน้าที่ส่วนกลาง (Admin / Supervisor / Staff) ได้รับทุกการแจ้งเตือนเสมอ 100%
+    if (userRole.includes('admin') || userRole.includes('supervisor') || userRole.includes('staff') || userRole.includes('ผู้ดูแล')) {
       return true;
     }
 
-    const userRole = (window.currentRole || 'Teacher').toLowerCase();
-    const userEmail = (window.currentEmail || '').toLowerCase();
-    const userName = (window.currentTeacher || '').toLowerCase();
+    const type = (item.taskType || item.category || '').toLowerCase();
 
-    // ผู้ดูแลระบบ (Admin/Supervisor) ได้รับทุกการแจ้งเตือนเสมอ
-    if (userRole.includes('admin') || userRole.includes('supervisor')) return true;
-
-    // ช่าง (Tech) รับงานตามสายงาน
-    if (userRole.includes('tech')) {
-      const type = (item.taskType || '').toLowerCase();
-      const techName = (item.targetTechnician || '').toLowerCase();
-      if (techName && techName.includes(userName)) return true;
-      if (type.includes('repair') || type.includes('building') || type.includes('it')) return true;
+    // 3. ผู้บริหาร (Executive) รับเฉพาะงานโครงการระยะยาว (Project) ที่ต้องอนุมัติ หรืองานประกาศด่วน
+    if (userRole.includes('executive') || userRole.includes('ผู้บริหาร')) {
+      if (type.includes('project') || type.includes('โครงการ') || item.priority === 'urgent') return true;
+      return false;
     }
 
-    // เจ้าหน้าที่โสตฯ (AV)
-    if (userRole.includes('av')) {
-      const type = (item.taskType || '').toLowerCase();
-      if (type.includes('av')) return true;
+    // 4. ช่างเทคนิค (Tech) รับงานอาคาร, งานไฟฟ้า/ประปา, และงานไอที หรือรายการที่ตนเองถูกมอบหมาย
+    if (userRole.includes('tech') || userRole.includes('ช่าง')) {
+      const techName = (item.targetTechnician || item.technician || '').toLowerCase().trim();
+      if (userName && techName && (techName === userName || techName.includes(userName))) return true;
+      if (type.includes('repair') || type.includes('building') || type.includes('it') || type.includes('อาคาร') || type.includes('ไอที')) {
+        return true;
+      }
     }
 
-    // ครูผู้แจ้ง (Teacher / General User) ได้รับการแจ้งเตือนงานของตัวเอง
-    if (item.targetUserEmail && item.targetUserEmail.toLowerCase() === userEmail) return true;
-    if (item.reporterName && item.reporterName.toLowerCase().includes(userName)) return true;
+    // 5. เจ้าหน้าที่โสตฯ (AV) รับเฉพาะงานขอยืม-คืนอุปกรณ์โสตฯ และงานแจ้งซ่อมอุปกรณ์โสตฯ
+    if (userRole.includes('av') || userRole.includes('โสต')) {
+      if (type.includes('av') || type.includes('โสต')) return true;
+    }
 
-    // หากไม่ระบุเป้าหมาย แสดงให้ทุกคนเห็น
-    if (!item.targetRoles && !item.targetUserEmail && !item.targetTechnician) return true;
+    // 6. ครูผู้แจ้ง (Teacher / General User) ได้รับเฉพาะงานของตนเองเท่านั้น (Zero Spam)
+    const targetEmail = (item.targetUserEmail || item.reporterEmail || '').toLowerCase().trim();
+    if (userEmail && targetEmail && targetEmail === userEmail) return true;
+
+    const repName = (item.reporterName || item.reporter || item.borrower || '').toLowerCase().trim();
+    if (userName && userName.length >= 2 && repName && (repName === userName || repName.includes(userName))) {
+      return true;
+    }
+
+    // 7. ประกาศส่วนกลางของโรงเรียน (General Announcements)
+    if (type.includes('announcement') || type.includes('ประกาศ') || item.category === 'ประกาศ') {
+      return true;
+    }
 
     return false;
   }
@@ -12130,6 +12180,7 @@ const NotificationHub = (function () {
       const token = await window.firebaseMessaging.getToken(tokenOptions);
       if (token) {
         currentFcmToken = token;
+        try { localStorage.setItem('facility_fcm_token', token); } catch (_) { }
         console.log('[NotificationHub] 🎯 FCM Token obtained successfully:', token.substring(0, 15) + '...');
         await saveFCMTokenToFirestore(token);
         setupFCMForegroundListener();
@@ -12144,7 +12195,7 @@ const NotificationHub = (function () {
     }
   }
 
-  // ── 11.2 บันทึก FCM Token ลง Firestore (fcm_tokens) ───────────────────────
+  // ── 11.2 บันทึก FCM Token ลง Firestore (fcm_tokens) พร้อมผูกบทบาทและอีเมล ──
   async function saveFCMTokenToFirestore(token) {
     if (!token) return;
     if (!window.firestoreDb) {
@@ -12157,14 +12208,17 @@ const NotificationHub = (function () {
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
       const platform = isIOS ? (isStandalone ? 'ios_pwa' : 'ios_safari') : (isMobile ? 'android' : 'desktop');
-      const currentUser = window.currentTeacher || localStorage.getItem('last_active_user') || 'ครูผู้ใช้งาน';
-      const userRole = (typeof currentUserRole !== 'undefined' ? currentUserRole : '') || localStorage.getItem('user_role') || 'user';
+      
+      const currentUser = (typeof currentTeacher !== 'undefined' && currentTeacher) || window.currentTeacher || localStorage.getItem('logged_teacher') || 'ผู้ใช้งาน';
+      const currentUserEmail = (typeof currentEmail !== 'undefined' && currentEmail) || window.currentEmail || localStorage.getItem('logged_email') || '';
+      const userRole = (typeof currentRole !== 'undefined' && currentRole) || window.currentRole || localStorage.getItem('logged_role') || 'Teacher';
 
       const safeTokenId = token.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 80);
 
       await window.firestoreDb.collection('fcm_tokens').doc(safeTokenId).set({
         token: token,
         userName: currentUser,
+        userEmail: currentUserEmail,
         role: userRole,
         platform: platform,
         isStandalone: isStandalone,
@@ -12175,7 +12229,7 @@ const NotificationHub = (function () {
         updatedAtMs: Date.now()
       }, { merge: true });
 
-      console.log('[NotificationHub] 💾 FCM Token saved to Firestore (fcm_tokens):', platform, currentUser);
+      console.log('[NotificationHub] 💾 FCM Token saved with role:', platform, currentUser, userRole, currentUserEmail);
 
       // บันทึกลง Google Sheets ผ่าน Apps Script ควบคู่ไปด้วยสำหรับการส่ง Web Push จากหลังบ้าน
       try {
@@ -12187,6 +12241,7 @@ const NotificationHub = (function () {
             action: 'register_fcm_token',
             token: token,
             userName: currentUser,
+            userEmail: currentUserEmail,
             role: userRole,
             platform: platform,
             isStandalone: isStandalone,
@@ -12199,19 +12254,43 @@ const NotificationHub = (function () {
     }
   }
 
+  // อัปเดตข้อมูลบทบาทและอีเมลของ Token เมื่อผู้ใช้ล็อกอินหรือสลับบัญชี
+  function refreshTokenProfile() {
+    const token = currentFcmToken || localStorage.getItem('facility_fcm_token');
+    if (token) {
+      saveFCMTokenToFirestore(token);
+    }
+  }
+
+  // ปลดบทบาทของ Token เมื่อผู้ใช้ล็อกเอาต์
+  function unregisterFCMProfile() {
+    const token = currentFcmToken || localStorage.getItem('facility_fcm_token');
+    if (token) {
+      saveFCMTokenToFirestore(token);
+    }
+  }
+
   // ── 11.3 ดักฟังข้อความ FCM เมื่อเปิดแอปอยู่หน้าจอ (Foreground Listener) ─────────
   function setupFCMForegroundListener() {
     if (isFcmListenerSet || !window.firebaseMessaging) return;
     try {
       window.firebaseMessaging.onMessage(payload => {
         console.log('[NotificationHub] 🔔 FCM Foreground message received:', payload);
+        const ticketId = (payload.data && payload.data.ticketId) || '';
+
+        // ป้องกันเสียงและ Toast เด้งซ้ำ 2 รอบหาก Firestore Real-Time ทำงานไปแล้ว
+        if (ticketId && knownDocIds.has(ticketId)) {
+          console.log('[NotificationHub] ⏭️ Skipping duplicate FCM toast, already displayed by Firestore:', ticketId);
+          return;
+        }
+        if (ticketId) knownDocIds.add(ticketId);
+
         const title = (payload.notification && payload.notification.title) ||
                       (payload.data && payload.data.title) ||
                       'FaCiLiTy แจ้งเตือน';
         const body = (payload.notification && payload.notification.body) ||
                      (payload.data && payload.data.body) ||
                      '';
-        const ticketId = (payload.data && payload.data.ticketId) || '';
 
         playChime();
         showToast({
@@ -12252,7 +12331,7 @@ const NotificationHub = (function () {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const deviceLabel = isMobile ? 'โทรศัพท์มือถือ' : 'คอมพิวเตอร์';
     const testTitle = '🔔 ทดสอบการแจ้งเตือนแบบเรียลไทม์';
-    const testBody = `ยิงทดสอบจาก ${deviceLabel} — เสียงเตือนและป้าย In-App เด้งพร้อมกันทุกเครื่อง 100%`;
+    const testBody = `ยิงทดสอบจาก ${deviceLabel} — เสียงเตือนและป้าย In-App เด้งเฉพาะผู้ดูแลระบบ (Admin) 100%`;
 
     // 1. เด้งป้าย Toast บนหน้าจอเครื่องนี้ทันที
     showToast({
@@ -12260,8 +12339,9 @@ const NotificationHub = (function () {
       ticketId: testId,
       title: testTitle,
       body: testBody,
-      category: 'งานซ่อม',
-      taskType: 'repair',
+      category: 'ทดสอบ',
+      taskType: 'test',
+      isTest: true,
       location: 'ศูนย์ FaCiLiTy',
       createdAt: new Date()
     });
@@ -12275,14 +12355,16 @@ const NotificationHub = (function () {
       });
     }
 
-    // 3. บันทึกทดสอบลง Firestore ทันที เพื่อกระจาย (Broadcast) ไปดังที่ทุกเครื่องพร้อมกัน
+    // 3. บันทึกทดสอบลง Firestore ทันที (จำกัดเฉพาะ Admin ด้วย isTest: true)
     if (window.firestoreDb) {
       publish({
         ticketId: testId,
         title: testTitle,
         body: testBody,
-        category: 'งานซ่อม',
-        taskType: 'repair',
+        category: 'ทดสอบ',
+        taskType: 'test',
+        isTest: true,
+        targetRoles: ['admin', 'supervisor'],
         location: 'ศูนย์ FaCiLiTy',
         reporterName: window.currentTeacher || 'ครูเต้าหู้ (Admin)'
       }).catch(err => {
@@ -12617,6 +12699,8 @@ const NotificationHub = (function () {
     testLineNotification,
     forceUpdateApp,
     publish,
+    refreshTokenProfile,
+    unregisterFCMProfile,
     test: testDeviceNotification,
     renderList,
     updateBadge
