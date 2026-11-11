@@ -56,7 +56,7 @@ try {
   console.warn('[sw.js] Firebase Messaging in SW note:', e);
 }
 
-const CACHE_NAME = 'facility-v1.0.3';
+const CACHE_NAME = 'facility-v1.0.4';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -103,22 +103,23 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch: Network First strategy with disk cache busting for HTML navigations
+// Fetch: Network First strategy for same-origin assets only
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  if (
-    event.request.url.includes('script.google.com') ||
-    event.request.url.includes('script.googleusercontent.com') ||
-    event.request.url.includes('firestore.googleapis.com') ||
-    event.request.url.includes('firebaseinstallations.googleapis.com') ||
-    event.request.url.includes('fcm.googleapis.com') ||
-    event.request.url.includes('fcmregistrations.googleapis.com')
-  ) {
+
+  let reqUrl;
+  try {
+    reqUrl = new URL(event.request.url);
+  } catch (e) {
     return;
   }
 
-  // สำหรับหน้า HTML ให้ใช้ URL string พร้อม cache: 'no-store' (ห้ามส่ง Request object ที่มี mode: 'navigate' คู่กับ init เพราะจะเกิด TypeError)
-  const isHtml = event.request.mode === 'navigate' || event.request.url.endsWith('index.html') || event.request.url.endsWith('/');
+  // จัดการเฉพาะไฟล์ภายในโดเมนของแอปเองเท่านั้น ไม่แทรกแซง CDN ภายนอก (เช่น Tailwind CSS, FontAwesome, Firebase, Google Fonts)
+  if (reqUrl.origin !== self.location.origin) {
+    return;
+  }
+
+  const isHtml = event.request.mode === 'navigate' || reqUrl.pathname.endsWith('index.html') || reqUrl.pathname.endsWith('/');
   const fetchPromise = isHtml
     ? fetch(event.request.url, { cache: 'no-store' })
     : fetch(event.request);
@@ -139,7 +140,8 @@ self.addEventListener('fetch', event => {
       })
       .catch(() => {
         return caches.match(event.request).then(cached => {
-          return cached || caches.match('./index.html');
+          if (cached) return cached;
+          return isHtml ? caches.match('./index.html') : Response.error();
         });
       })
   );
