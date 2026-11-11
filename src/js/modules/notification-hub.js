@@ -13,6 +13,7 @@ const NotificationHub = (function () {
 
   // สถานะภายในของระบบ
   let notifications = [];
+  let pendingTickets = [];
   let currentTab = 'all'; // 'all' | 'unread' | 'my'
   let isListenerActive = false;
   let audioContextInstance = null;
@@ -297,16 +298,132 @@ const NotificationHub = (function () {
     }, 320);
   }
 
+  // ── 5.5 แปลงและรวมรายการงานค้าง (Pending Tickets) เข้ากับศูนย์การแจ้งเตือน ───
+  function isPendingTicketStatus(status, archived) {
+    if (archived === true) return false;
+    const s = String(status || 'รอดำเนินการ').trim();
+    if (!s) return true;
+    if (
+      s.includes('เสร็จสิ้น') ||
+      s.includes('คืนเรียบร้อย') ||
+      s.includes('ยกเลิก') ||
+      s.includes('ไม่อนุมัติ') ||
+      s === 'ปิดงาน' ||
+      s.toLowerCase() === 'completed' ||
+      s.toLowerCase() === 'closed'
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  function getItemTimestampMs(item) {
+    if (!item) return 0;
+    if (item.createdAtMs) return Number(item.createdAtMs) || 0;
+    if (item.clientTimestamp) return Number(item.clientTimestamp) || 0;
+    const c = item.createdAt;
+    if (!c) return 0;
+    if (typeof c.toMillis === 'function') return c.toMillis();
+    if (c.seconds) return c.seconds * 1000;
+    if (c instanceof Date) return c.getTime();
+    const parsed = new Date(c).getTime();
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  function ticketToPendingNotif(docId, t) {
+    const ticketId = String(t.ticketId || docId || '').trim();
+    const status = String(t.status || 'รอดำเนินการ').trim();
+    const techName = String(t.technician || t.tech || '').trim();
+    const hasTech = Boolean(techName && techName !== '-');
+    const type = String(t.type || 'building').toLowerCase();
+    const isWaitingAssign = !hasTech && (status === 'รอดำเนินการ' || status === 'รอมอบหมาย');
+
+    let titlePrefix = '⏳ งานค้างรอดำเนินการ';
+    if (type === 'project' && status.includes('อนุมัติ')) {
+      titlePrefix = '📋 โครงการรออนุมัติ';
+    } else if (isWaitingAssign) {
+      titlePrefix = '⏳ รอดำเนินการ/มอบหมาย';
+    } else if (status.includes('กำลัง')) {
+      titlePrefix = '🔧 กำลังดำเนินการ';
+    }
+
+    const createdMs = getItemTimestampMs(t);
+    const catLabel = type === 'it' ? 'งานไอที'
+                   : type === 'av' ? 'งานโสตฯ'
+                   : type === 'project' ? 'โครงการ'
+                   : (t.category || 'งานซ่อม');
+    const repName = t.reporterName || t.reporter || t.borrower || 'ผู้แจ้ง';
+
+    return {
+      id: 'pending_' + ticketId,
+      ticketId: ticketId,
+      title: `${titlePrefix} #${ticketId}`,
+      body: `${t.subject || t.title || 'งานแจ้งซ่อม'}${t.location ? ' (' + t.location + ')' : ''} — โดย ${repName}`,
+      category: catLabel,
+      taskType: type,
+      status: status,
+      hasTech: hasTech,
+      isWaitingAssign: isWaitingAssign,
+      targetTechnician: techName,
+      technician: techName,
+      reporterName: repName,
+      reporterEmail: t.reporterEmail || '',
+      location: t.location || '',
+      createdAt: t.createdAt || (createdMs ? new Date(createdMs) : new Date()),
+      createdAtMs: createdMs,
+      isPendingTask: true
+    };
+  }
+
+  function getCombinedItems() {
+    const deletedIds = getDeletedIds();
+
+    // 1. งานค้างทั้งหมดที่ยังไม่ได้ดำเนินการ/ยังไม่เสร็จสิ้น (ค้างไว้เสมอตามสิทธิ์บทบาท)
+    const activePending = pendingTickets.filter(p => isTargetRecipient(p));
+    const pendingTicketIds = new Set(activePending.map(p => p.ticketId));
+
+    // 2. รายการแจ้งเตือนอื่นๆ จากคอลเลกชัน notifications (ที่ไม่ซ้ำกับงานค้างด้านบน)
+    const extraNotifs = notifications.filter(n => {
+      if (deletedIds.includes(n.id)) return false;
+      if (n.title === 'Test Auth Write') return false;
+      if (!isTargetRecipient(n)) return false;
+      const isChat = (n.taskType === 'chat' || n.category === 'แชทงาน');
+      if (n.ticketId && pendingTicketIds.has(n.ticketId) && !isChat) {
+        return false; // แสดงผ่านรายการงานค้างที่มีสถานะสดแล้ว ไม่ให้ซ้ำซ้อน
+      }
+      return true;
+    });
+
+    const combined = [...activePending, ...extraNotifs];
+
+    // เรียงลำดับ: งานค้างรอดำเนินการ/ยังไม่มอบหมายช่างขึ้นก่อน ตามด้วยงานกำลังซ่อมและรายการล่าสุด
+    combined.sort((a, b) => {
+      const aWait = a.isPendingTask && (a.status === 'รอดำเนินการ' || a.isWaitingAssign) ? 1 : 0;
+      const bWait = b.isPendingTask && (b.status === 'รอดำเนินการ' || b.isWaitingAssign) ? 1 : 0;
+      if (aWait !== bWait) return bWait - aWait;
+
+      const aPend = a.isPendingTask ? 1 : 0;
+      const bPend = b.isPendingTask ? 1 : 0;
+      if (aPend !== bPend) return bPend - aPend;
+
+      return getItemTimestampMs(b) - getItemTimestampMs(a);
+    });
+
+    return combined;
+  }
+
   // ── 6. อัปเดตตัวเลขแจ้งเตือนที่ปุ่มกระดิ่ง (Badge Counter) ───────────────────
   function updateBadge() {
     const readIds = getReadIds();
-    const deletedIds = getDeletedIds();
-    const unreadCount = notifications.filter(n => !deletedIds.includes(n.id) && !readIds.includes(n.id)).length;
+    const allItems = getCombinedItems();
+    const pendingCount = allItems.filter(n => n.isPendingTask).length;
+    const unreadExtraCount = allItems.filter(n => !n.isPendingTask && !readIds.includes(n.id)).length;
+    const totalAlertCount = pendingCount + unreadExtraCount;
 
     const globalBadge = document.getElementById('global-overdue-badge');
     if (globalBadge) {
-      if (unreadCount > 0) {
-        globalBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+      if (totalAlertCount > 0) {
+        globalBadge.textContent = totalAlertCount > 99 ? '99+' : totalAlertCount;
         globalBadge.classList.remove('hidden');
       } else {
         globalBadge.classList.add('hidden');
@@ -315,8 +432,8 @@ const NotificationHub = (function () {
 
     const dropdownCount = document.getElementById('dropdown-unread-count');
     if (dropdownCount) {
-      if (unreadCount > 0) {
-        dropdownCount.textContent = `${unreadCount} ใหม่`;
+      if (totalAlertCount > 0) {
+        dropdownCount.textContent = pendingCount > 0 ? `${pendingCount} งานค้าง` : `${totalAlertCount} ใหม่`;
         dropdownCount.classList.remove('hidden');
       } else {
         dropdownCount.classList.add('hidden');
@@ -330,21 +447,20 @@ const NotificationHub = (function () {
     if (!listEl) return;
 
     const readIds = getReadIds();
-    const deletedIds = getDeletedIds();
-    const myName = (window.currentTeacher || '').toLowerCase();
-    const myEmail = (window.currentEmail || '').toLowerCase();
+    const myName = (window.currentTeacher || localStorage.getItem('logged_teacher') || '').toLowerCase().trim();
+    const myEmail = (window.currentEmail || localStorage.getItem('logged_email') || '').toLowerCase().trim();
 
-    // กรองเฉพาะรายการที่ไม่ถูกลบออก
-    const activeNotifications = notifications.filter(n => !deletedIds.includes(n.id));
+    const activeNotifications = getCombinedItems();
 
     let filtered = activeNotifications;
     if (currentTab === 'unread') {
-      filtered = activeNotifications.filter(n => !readIds.includes(n.id));
+      // แท็บยังไม่อ่าน/งานค้าง: แสดงงานค้างทั้งหมดที่ยังทำไม่เสร็จ + แจ้งเตือนที่ยังไม่อ่าน
+      filtered = activeNotifications.filter(n => n.isPendingTask || !readIds.includes(n.id));
     } else if (currentTab === 'my') {
       filtered = activeNotifications.filter(n => {
         const rName = (n.reporterName || '').toLowerCase();
         const rEmail = (n.reporterEmail || n.targetUserEmail || '').toLowerCase();
-        const tTech = (n.targetTechnician || '').toLowerCase();
+        const tTech = (n.targetTechnician || n.technician || '').toLowerCase();
         return (myName && (rName.includes(myName) || tTech.includes(myName))) ||
           (myEmail && rEmail === myEmail);
       });
@@ -354,7 +470,7 @@ const NotificationHub = (function () {
       listEl.innerHTML = `
         <div class="p-8 text-center text-slate-400 text-xs">
           <i class="fa-regular fa-bell-slash text-2xl mb-2 text-slate-300 block"></i>
-          ไม่มีการแจ้งเตือนในหมวดนี้
+          ไม่มีงานค้างหรือการแจ้งเตือนในหมวดนี้
         </div>
       `;
       return;
@@ -362,13 +478,30 @@ const NotificationHub = (function () {
 
     let html = '';
     filtered.forEach(item => {
-      const isRead = readIds.includes(item.id);
+      const isRead = !item.isPendingTask && readIds.includes(item.id);
       const visuals = getCategoryVisuals(item.category, item.taskType);
       const timeStr = formatRelativeTime(item.createdAt);
 
+      let statusPillHtml = '';
+      if (item.isPendingTask) {
+        if (item.isWaitingAssign) {
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200">⚠️ รอมอบหมาย/ดำเนินการ</span>`;
+        } else if (item.status === 'รอดำเนินการ') {
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-200">⏳ รอดำเนินการ${item.technician ? ' (' + item.technician + ')' : ''}</span>`;
+        } else if (String(item.status || '').includes('กำลัง')) {
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">🔧 กำลังซ่อม${item.technician ? ' (' + item.technician + ')' : ''}</span>`;
+        } else {
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200">${item.status}</span>`;
+        }
+      }
+
+      const rowBgClass = item.isPendingTask
+        ? (item.isWaitingAssign ? 'bg-rose-50/40 hover:bg-rose-50/80' : 'bg-amber-50/30 hover:bg-amber-50/70')
+        : (isRead ? 'opacity-85 hover:bg-slate-50' : 'bg-emerald-50/30 hover:bg-slate-50');
+
       html += `
         <div onclick="NotificationHub.openTicketAndDismiss('${item.ticketId || ''}', null, '${item.id || ''}')"
-          class="group p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer flex items-start gap-2.5 relative ${isRead ? 'opacity-85' : 'bg-emerald-50/30'}">
+          class="group p-2.5 rounded-xl transition-colors cursor-pointer flex items-start gap-2.5 relative ${rowBgClass}">
           <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold" style="background-color: ${visuals.bg}; color: ${visuals.color};">
             <i class="fa-solid ${visuals.icon}"></i>
           </div>
@@ -378,21 +511,26 @@ const NotificationHub = (function () {
               <span class="text-[10px] text-slate-400 shrink-0">${timeStr}</span>
             </div>
             <p class="text-[11px] text-slate-600 line-clamp-1 mt-0.5">${item.body || item.subject || ''}</p>
-            <div class="flex items-center gap-2 mt-1">
+            <div class="flex items-center flex-wrap gap-1.5 mt-1">
               <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded" style="background-color: ${visuals.bg}; color: ${visuals.color};">
                 ${visuals.label}
               </span>
-              ${item.ticketId ? `<span class="text-[9px] text-slate-400">#${item.ticketId}</span>` : ''}
-              ${item.reporterName ? `<span class="text-[9px] text-slate-400">โดย: ${item.reporterName}</span>` : ''}
+              ${statusPillHtml}
+              ${item.ticketId ? `<span class="text-[9px] font-mono font-semibold text-slate-500">#${item.ticketId}</span>` : ''}
             </div>
           </div>
-          <!-- ปุ่มลบรายการนี้ (Trash Icon) -->
-          <button onclick="event.stopPropagation(); NotificationHub.deleteItem('${item.id}');"
-            class="w-7 h-7 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 active:scale-95 flex items-center justify-center transition-all shrink-0 mt-0.5"
-            title="ลบการแจ้งเตือนนี้">
-            <i class="fa-solid fa-trash-can text-xs"></i>
-          </button>
-          ${!isRead ? `<span class="w-2 h-2 rounded-full bg-emerald-500 absolute bottom-2 right-2.5" title="ยังไม่อ่าน"></span>` : ''}
+          ${item.isPendingTask ? `
+            <span class="px-2 py-1 rounded-lg bg-[#265D5A]/10 text-[#265D5A] group-hover:bg-[#265D5A] group-hover:text-white text-[10px] font-bold transition-colors shrink-0 mt-1 flex items-center gap-1" title="คลิกเพื่อเปิดดูและจัดการงานนี้">
+              จัดการ <i class="fa-solid fa-chevron-right text-[8px]"></i>
+            </span>
+          ` : `
+            <button onclick="event.stopPropagation(); NotificationHub.deleteItem('${item.id}');"
+              class="w-7 h-7 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 active:scale-95 flex items-center justify-center transition-all shrink-0 mt-0.5"
+              title="ลบการแจ้งเตือนนี้">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          `}
+          ${!isRead ? `<span class="w-2 h-2 rounded-full ${item.isWaitingAssign ? 'bg-rose-500' : 'bg-emerald-500'} absolute bottom-2 right-2.5" title="งานค้าง / ยังไม่อ่าน"></span>` : ''}
         </div>
       `;
     });
@@ -439,18 +577,21 @@ const NotificationHub = (function () {
     }
   }
 
-  // ── 11. ลบการแจ้งเตือนทั้งหมด (Clear All Notifications) ────────────────────
+  // ── 11. ลบการแจ้งเตือนทั้งหมด (Clear All Notifications - คงงานค้างที่ยังไม่เสร็จไว้เสมอ) ────
   async function clearAll() {
     const deletedIds = getDeletedIds();
     const activeItems = notifications.filter(n => !deletedIds.includes(n.id));
+    const activePendingCount = pendingTickets.filter(p => isTargetRecipient(p)).length;
 
     if (activeItems.length === 0) {
       if (typeof Swal !== 'undefined') {
         Swal.fire({
           icon: 'info',
-          title: 'ไม่มีการแจ้งเตือน',
-          text: 'ไม่มีรายการแจ้งเตือนค้างอยู่ในระบบครับ',
-          timer: 1500,
+          title: activePendingCount > 0 ? 'คงเหลือเฉพาะงานค้าง' : 'ไม่มีการแจ้งเตือน',
+          text: activePendingCount > 0
+            ? `รายการงานค้างทั้ง ${activePendingCount} งานจะแสดงค้างไว้ในกระดิ่งจนกว่างานจะดำเนินการเสร็จสิ้นครับ`
+            : 'ไม่มีรายการแจ้งเตือนค้างอยู่ในระบบครับ',
+          timer: 2200,
           showConfirmButton: false
         });
       }
@@ -460,13 +601,15 @@ const NotificationHub = (function () {
     let confirm = true;
     if (typeof Swal !== 'undefined') {
       const res = await Swal.fire({
-        title: 'ลบการแจ้งเตือนทั้งหมด?',
-        text: 'ต้องการลบประวัติการแจ้งเตือนทั้งหมดออกจากระบบใช่หรือไม่',
+        title: 'ล้างประวัติแจ้งเตือนทั่วไป?',
+        text: activePendingCount > 0
+          ? `จะลบเฉพาะแจ้งเตือนทั่วไป ส่วนงานค้างที่ยังไม่เสร็จสิ้น (${activePendingCount} งาน) จะยังคงแสดงอยู่ในกระดิ่งครับ`
+          : 'ต้องการลบประวัติการแจ้งเตือนทั้งหมดออกจากระบบใช่หรือไม่',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#e11d48',
         cancelButtonColor: '#64748b',
-        confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> ลบทั้งหมด',
+        confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> ล้างแจ้งเตือนทั่วไป',
         cancelButtonText: 'ยกเลิก'
       });
       confirm = res.isConfirmed;
@@ -498,18 +641,22 @@ const NotificationHub = (function () {
     if (typeof Swal !== 'undefined') {
       Swal.fire({
         icon: 'success',
-        title: 'ลบเรียบร้อยแล้ว',
-        text: 'ลบรายการแจ้งเตือนทั้งหมดออกจากระบบเรียบร้อยครับ',
-        timer: 1500,
+        title: 'ล้างแจ้งเตือนทั่วไปเรียบร้อย',
+        text: activePendingCount > 0
+          ? `คงเหลือรายการงานค้าง ${activePendingCount} งานที่รอดำเนินการครับ`
+          : 'ลบรายการแจ้งเตือนทั้งหมดออกจากระบบเรียบร้อยครับ',
+        timer: 1800,
         showConfirmButton: false
       });
     }
   }
 
-  // ── 12. เปิดดูงานและทำเครื่องหมายว่าอ่านแล้ว ──────────────────────────────
+  // ── 12. เปิดดูงานและทำเครื่องหมายว่าอ่านแล้ว (งานค้างจะยังคงอยู่ในกระดิ่งจนกว่าจะเสร็จสิ้น) ──
   function openTicketAndDismiss(ticketId, toastId, notifId) {
     if (toastId) dismissToast(toastId);
-    if (notifId) saveReadId(notifId);
+    if (notifId && !String(notifId).startsWith('pending_')) {
+      saveReadId(notifId);
+    }
 
     // ปิด dropdown หากเปิดอยู่
     const notifDropdown = document.getElementById('notification-dropdown');
@@ -520,15 +667,18 @@ const NotificationHub = (function () {
     updateBadge();
     renderList();
 
-    if (!ticketId) return;
+    const cleanId = String(ticketId || '').replace(/^#/, '').trim();
+    if (!cleanId || cleanId.startsWith('FAC-TEST-') || cleanId.startsWith('TEST-')) return;
 
-    // เปิดดูรายละเอียดงานในระบบ TrackUI
-    if (window.TrackUI && typeof window.TrackUI.showTicketDetailModal === 'function') {
-      window.TrackUI.showTicketDetailModal(ticketId);
+    // เปิดดูรายละเอียดงานในระบบ TrackUI ทันที
+    if (window.TrackUI && typeof window.TrackUI.open === 'function') {
+      window.TrackUI.open(cleanId);
+    } else if (window.TrackUI && typeof window.TrackUI.showTicketDetailModal === 'function') {
+      window.TrackUI.showTicketDetailModal(cleanId);
     } else if (typeof window.openTaskDetailModal === 'function') {
-      window.openTaskDetailModal(ticketId);
+      window.openTaskDetailModal(cleanId);
     } else if (typeof window.nav === 'function') {
-      window.nav('page-home');
+      window.nav('page-track');
     }
   }
 
@@ -1225,21 +1375,32 @@ const NotificationHub = (function () {
           setTimeout(initListener, 2000);
         });
 
-      // ดักฟัง Ticket ใหม่ในตาราง tickets โดยตรงแบบ Real-time เผื่อกรณีสร้างงานซ่อมผ่านหน้าฟอร์ม
+      // ดักฟังรายการงานทั้งหมดในตาราง tickets แบบ Real-time เพื่อดึงงานค้าง (ที่ยังไม่ได้ดำเนินการ/ยังไม่ได้มอบหมาย/กำลังซ่อม) มาแสดงที่กระดิ่งเสมอ
       let isTicketsFirstLoad = true;
       window.firestoreDb.collection('tickets')
-        .orderBy('createdAt', 'desc')
-        .limit(1)
         .onSnapshot(snap => {
+          const currentPending = [];
+
+          snap.docs.forEach(doc => {
+            const t = doc.data() || {};
+            const tid = t.ticketId || doc.id;
+            if (isTicketsFirstLoad && tid) {
+              knownDocIds.add('ticket_' + tid);
+            }
+            if (isPendingTicketStatus(t.status, t.archived)) {
+              currentPending.push(ticketToPendingNotif(doc.id, t));
+            }
+          });
+
+          pendingTickets = currentPending;
+          updateBadge();
+          renderList();
+
           if (isTicketsFirstLoad) {
-            snap.docs.forEach(doc => {
-              const t = doc.data() || {};
-              const tid = t.ticketId || doc.id;
-              if (tid) knownDocIds.add('ticket_' + tid);
-            });
             isTicketsFirstLoad = false;
             return;
           }
+
           snap.docChanges().forEach(change => {
             if (change.type === 'added') {
               const ticket = change.doc.data() || {};

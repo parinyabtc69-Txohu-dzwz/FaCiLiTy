@@ -1265,8 +1265,16 @@ const TrackUI = (() => {
 
   let currentDocUnsubscribe = null;
 
-  async function open(id) {
+  async function open(rawId) {
+    const id = String(rawId || '').replace(/^#/, '').trim();
+    if (!id) return;
     state.currentJobId = id;
+
+    // โหลดรายการหลักไว้ในเบื้องหลังหากยังไม่เคยโหลด เพื่อให้ปุ่มกลับหน้ารายการพร้อมใช้งานทันที
+    if (!state.loaded && !state.loading) {
+      load(false);
+    }
+
     // มาร์กว่าอ่านแล้วอัตโนมัติเมื่อเปิดดูรายละเอียด
     try {
       const readSet = getReadSet();
@@ -1276,14 +1284,22 @@ const TrackUI = (() => {
       }
     } catch (e) { }
 
-    let job = state.jobs.find(j => j.id === id);
+    let job = state.jobs.find(j => j.id === id || j.docId === id);
+    if (job) {
+      renderDetailBody(job);
+    }
+
     // ดึงข้อมูลล่าสุดจาก Firestore ทุกครั้ง เพื่อป้องกันข้อมูลแคชเก่าค้าง
     if (window.firestoreDb) {
       try {
-        const docSnap = await window.firestoreDb.collection('tickets').doc(id).get();
-        if (docSnap.exists) {
+        let docSnap = await window.firestoreDb.collection('tickets').doc(id).get();
+        if (!docSnap.exists) {
+          const qSnap = await window.firestoreDb.collection('tickets').where('ticketId', '==', id).limit(1).get();
+          if (!qSnap.empty) docSnap = qSnap.docs[0];
+        }
+        if (docSnap && docSnap.exists) {
           const freshJob = fromFirebase(docSnap.data(), docSnap.id);
-          const existingIdx = state.jobs.findIndex(j => j.id === id);
+          const existingIdx = state.jobs.findIndex(j => j.id === id || j.docId === docSnap.id);
           if (existingIdx !== -1) {
             state.jobs[existingIdx] = freshJob;
           } else {
@@ -3202,6 +3218,7 @@ window.TrackUI = TrackUI;
 
 // ปุ่ม/ลิงก์เดิมที่เคยเปิด Modal ติดตามงาน ให้มาที่หน้าติดตามงานใหม่แทน
 window.openTrackModal = function () { TrackUI.show(); };
+window.openTaskDetailModal = function (id) { TrackUI.open(id); };
 window.promptTrackTicket = function () { TrackUI.show({ mineOnly: true }); };
 window.loadFbAdminTickets = function () {
   const type = $('fb-admin-filter-type')?.value || 'all';
