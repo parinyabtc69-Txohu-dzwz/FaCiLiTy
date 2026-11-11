@@ -14,6 +14,7 @@ const NotificationHub = (function () {
   // สถานะภายในของระบบ
   let notifications = [];
   let pendingTickets = [];
+  let startedOrClosedTicketIds = new Set();
   let currentTab = 'all'; // 'all' | 'unread' | 'my'
   let isListenerActive = false;
   let audioContextInstance = null;
@@ -298,23 +299,23 @@ const NotificationHub = (function () {
     }, 320);
   }
 
-  // ── 5.5 แปลงและรวมรายการงานค้าง (Pending Tickets) เข้ากับศูนย์การแจ้งเตือน ───
+  // ── 5.5 แปลงและรวมรายการงานค้าง (เฉพาะ รอมอบหมาย / รอดำเนินการ) เข้ากับศูนย์การแจ้งเตือน ───
   function isPendingTicketStatus(status, archived) {
     if (archived === true) return false;
     const s = String(status || 'รอดำเนินการ').trim();
     if (!s) return true;
+    // เอาไว้เฉพาะงานที่ยังไม่ได้เริ่มซ่อม (รอมอบหมาย / รอดำเนินการ / รอพิจารณาอนุมัติ / รอยืนยันการยืม)
     if (
-      s.includes('เสร็จสิ้น') ||
-      s.includes('คืนเรียบร้อย') ||
-      s.includes('ยกเลิก') ||
-      s.includes('ไม่อนุมัติ') ||
-      s === 'ปิดงาน' ||
-      s.toLowerCase() === 'completed' ||
-      s.toLowerCase() === 'closed'
+      s === 'รอดำเนินการ' ||
+      s === 'รอมอบหมาย' ||
+      s.includes('รอดำเนินการ') ||
+      s.includes('รอมอบหมาย') ||
+      s.includes('รอพิจารณา') ||
+      s.includes('รอยืนยัน')
     ) {
-      return false;
+      return true;
     }
-    return true;
+    return false;
   }
 
   function getItemTimestampMs(item) {
@@ -382,7 +383,7 @@ const NotificationHub = (function () {
     const activePending = pendingTickets.filter(p => isTargetRecipient(p));
     const pendingTicketIds = new Set(activePending.map(p => p.ticketId));
 
-    // 2. รายการแจ้งเตือนอื่นๆ จากคอลเลกชัน notifications (ที่ไม่ซ้ำกับงานค้างด้านบน)
+    // 2. รายการแจ้งเตือนอื่นๆ จากคอลเลกชัน notifications (ที่ไม่ซ้ำกับงานค้าง และซ่อนแจ้งเตือนสร้างงานเดิมเมื่อเริ่มซ่อม/เสร็จแล้ว)
     const extraNotifs = notifications.filter(n => {
       if (deletedIds.includes(n.id)) return false;
       if (n.title === 'Test Auth Write') return false;
@@ -390,6 +391,9 @@ const NotificationHub = (function () {
       const isChat = (n.taskType === 'chat' || n.category === 'แชทงาน');
       if (n.ticketId && pendingTicketIds.has(n.ticketId) && !isChat) {
         return false; // แสดงผ่านรายการงานค้างที่มีสถานะสดแล้ว ไม่ให้ซ้ำซ้อน
+      }
+      if (n.ticketId && startedOrClosedTicketIds.has(n.ticketId) && !isChat && String(n.title || '').includes('งานแจ้งซ่อมใหม่')) {
+        return false; // หากงานนั้นเริ่มซ่อม (กำลังดำเนินการ) หรือเสร็จสิ้นแล้ว ไม่ต้องค้างแจ้งเตือนงานใหม่เดิม
       }
       return true;
     });
@@ -1375,11 +1379,12 @@ const NotificationHub = (function () {
           setTimeout(initListener, 2000);
         });
 
-      // ดักฟังรายการงานทั้งหมดในตาราง tickets แบบ Real-time เพื่อดึงงานค้าง (ที่ยังไม่ได้ดำเนินการ/ยังไม่ได้มอบหมาย/กำลังซ่อม) มาแสดงที่กระดิ่งเสมอ
+      // ดักฟังรายการงานทั้งหมดในตาราง tickets แบบ Real-time เพื่อดึงเฉพาะงานที่รอมอบหมาย/รอดำเนินการ มาแสดงที่กระดิ่งเสมอ
       let isTicketsFirstLoad = true;
       window.firestoreDb.collection('tickets')
         .onSnapshot(snap => {
           const currentPending = [];
+          const currentStartedOrClosed = new Set();
 
           snap.docs.forEach(doc => {
             const t = doc.data() || {};
@@ -1389,10 +1394,13 @@ const NotificationHub = (function () {
             }
             if (isPendingTicketStatus(t.status, t.archived)) {
               currentPending.push(ticketToPendingNotif(doc.id, t));
+            } else if (tid) {
+              currentStartedOrClosed.add(tid);
             }
           });
 
           pendingTickets = currentPending;
+          startedOrClosedTicketIds = currentStartedOrClosed;
           updateBadge();
           renderList();
 
