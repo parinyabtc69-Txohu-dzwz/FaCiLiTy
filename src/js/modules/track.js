@@ -1978,6 +1978,21 @@ const TrackUI = (() => {
         );
       }
 
+      // ยิงแจ้งเตือนเข้า NotificationHub + FCM Web Push ถึงช่างผู้รับผิดชอบและครูผู้แจ้งงานทันที
+      if (techName && typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+        NotificationHub.publish({
+          ticketId: jobId,
+          taskType: job.type || 'building',
+          category: job.category || 'งานซ่อม',
+          title: '👷 มอบหมายช่างรับผิดชอบงาน #' + jobId,
+          body: (job.subject || job.title || 'งานซ่อม') + ' — มอบหมายให้: ' + techName,
+          targetTechnician: techName,
+          reporterName: job.reporter || job.reporterName || '',
+          targetUserEmail: job.reporterEmail || '',
+          location: job.location || ''
+        }).catch(() => { });
+      }
+
       // 2. อัปเดตลง Google Sheets + ส่งอีเมลแจ้งเตือนถึงช่าง (เบื้องหลัง)
       syncTasks.push(
         ResourceHubCore.api.post({
@@ -2081,6 +2096,18 @@ const TrackUI = (() => {
       );
     }
 
+    if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+      NotificationHub.publish({
+        ticketId: jobId,
+        taskType: 'project',
+        category: 'โครงการ',
+        title: '✅ โครงการได้รับการอนุมัติแล้ว #' + jobId,
+        body: (job.subject || 'โครงการ') + ' — อนุมัติโดย ' + approverName,
+        reporterName: job.reporter || job.reporterName || '',
+        targetUserEmail: job.reporterEmail || ''
+      }).catch(() => { });
+    }
+
     approveTasks.push(
       ResourceHubCore.api.post({
         action: 'update_adv_task',
@@ -2169,6 +2196,18 @@ const TrackUI = (() => {
         window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true })
           .catch(err => console.warn('Firestore reject project error:', err))
       );
+    }
+
+    if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+      NotificationHub.publish({
+        ticketId: jobId,
+        taskType: 'project',
+        category: 'โครงการ',
+        title: '⚠️ แจ้งผลการพิจารณาโครงการ #' + jobId,
+        body: (job.subject || 'โครงการ') + ' — ' + formValues.note,
+        reporterName: job.reporter || job.reporterName || '',
+        targetUserEmail: job.reporterEmail || ''
+      }).catch(() => { });
     }
 
     rejectTasks.push(

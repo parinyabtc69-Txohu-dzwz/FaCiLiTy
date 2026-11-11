@@ -906,7 +906,10 @@ const NotificationHub = (function () {
       
       const currentUser = (typeof currentTeacher !== 'undefined' && currentTeacher) || window.currentTeacher || localStorage.getItem('logged_teacher') || 'ผู้ใช้งาน';
       const currentUserEmail = (typeof currentEmail !== 'undefined' && currentEmail) || window.currentEmail || localStorage.getItem('logged_email') || '';
-      const userRole = (typeof currentRole !== 'undefined' && currentRole) || window.currentRole || localStorage.getItem('logged_role') || 'Teacher';
+      let userRole = (typeof currentRole !== 'undefined' && currentRole) || window.currentRole || localStorage.getItem('logged_role') || 'Teacher';
+      if (checkIsAdminUser() && (!userRole || userRole === 'Teacher' || userRole === 'user')) {
+        userRole = 'Admin';
+      }
 
       const safeTokenId = token.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 80);
 
@@ -1050,21 +1053,30 @@ const NotificationHub = (function () {
       });
     }
 
-    // 3. บันทึกทดสอบลง Firestore ทันที (จำกัดเฉพาะ Admin ด้วย isTest: true)
+    // 3. บันทึกทดสอบลง Firestore ทันที และยิง FCM Web Push ปลุกหน้าจอล็อก (จำกัดเฉพาะ Admin ด้วย isTest: true)
+    const testPayload = {
+      ticketId: testId,
+      title: testTitle,
+      body: testBody,
+      category: 'ทดสอบ',
+      taskType: 'test',
+      isTest: true,
+      targetRoles: ['admin', 'supervisor'],
+      location: 'ศูนย์ FaCiLiTy',
+      reporterName: window.currentTeacher || localStorage.getItem('logged_teacher') || 'ครูเต้าหู้ (Admin)'
+    };
+
     if (window.firestoreDb) {
-      publish({
-        ticketId: testId,
-        title: testTitle,
-        body: testBody,
-        category: 'ทดสอบ',
-        taskType: 'test',
-        isTest: true,
-        targetRoles: ['admin', 'supervisor'],
-        location: 'ศูนย์ FaCiLiTy',
-        reporterName: window.currentTeacher || 'ครูเต้าหู้ (Admin)'
-      }).catch(err => {
+      publish(testPayload).catch(err => {
         console.warn('[NotificationHub] test broadcast error:', err);
       });
+
+      // กรณีทดสอบด้วยเครื่องเดียว (กดปุ่มยิงทดสอบแล้วกดล็อกหน้าจอ/สลับออกนอกแอปทันที) ให้ส่ง Push ซ้ำเมื่อพับจอ
+      setTimeout(() => {
+        if (document.visibilityState === 'hidden' && currentFcmToken) {
+          dispatchFCMWebPush(testPayload, true).catch(() => { });
+        }
+      }, 3000);
     } else {
       console.warn('[NotificationHub] firestoreDb not ready for test broadcast');
     }
@@ -1275,7 +1287,257 @@ const NotificationHub = (function () {
     }
   }
 
-  // ── 14. ฟังก์ชันสำหรับยิงแจ้งเตือนใหม่เข้า Firestore (Broadcast ทั่วระบบ) ─────
+  // ── 13.5 ระบบยิง FCM v1 Web Push ตรงไปยังอุปกรณ์ที่ปิดแอป/ล็อกหน้าจอ ─────────
+  let cachedFcmAccessToken = null;
+  let cachedFcmTokenExpiry = 0;
+  let cachedDispatcherConfig = null;
+
+  function arrayBufferToBase64Url(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function stringToBase64Url(str) {
+    const bytes = new TextEncoder().encode(str);
+    return arrayBufferToBase64Url(bytes.buffer);
+  }
+
+  async function getFcmAccessToken() {
+    if (cachedFcmAccessToken && Date.now() < cachedFcmTokenExpiry) {
+      return { accessToken: cachedFcmAccessToken, projectId: (cachedDispatcherConfig && cachedDispatcherConfig.projectId) || 'facility-c7833' };
+    }
+    if (!window.firestoreDb || !window.crypto || !window.crypto.subtle) return null;
+
+    try {
+      if (!cachedDispatcherConfig) {
+        const docSnap = await window.firestoreDb.collection('system_config').doc('fcm_dispatcher').get();
+        if (!docSnap.exists) return null;
+        cachedDispatcherConfig = docSnap.data();
+      }
+      const { clientEmail, keyData, projectId } = cachedDispatcherConfig || {};
+      if (!clientEmail || !keyData) return null;
+
+      const binaryDerStr = atob(keyData.replace(/\s+/g, ''));
+      const binaryDer = new Uint8Array(binaryDerStr.length);
+      for (let i = 0; i < binaryDerStr.length; i++) {
+        binaryDer[i] = binaryDerStr.charCodeAt(i);
+      }
+
+      const cryptoKey = await window.crypto.subtle.importKey(
+        'pkcs8',
+        binaryDer.buffer,
+        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+
+      const now = Math.floor(Date.now() / 1000);
+      const header = stringToBase64Url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+      const claim = stringToBase64Url(JSON.stringify({
+        iss: clientEmail,
+        scope: 'https://www.googleapis.com/auth/firebase.messaging',
+        aud: 'https://oauth2.googleapis.com/token',
+        exp: now + 3600,
+        iat: now
+      }));
+
+      const signingInput = new TextEncoder().encode(header + '.' + claim);
+      const sigBuffer = await window.crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, signingInput);
+      const jwt = header + '.' + claim + '.' + arrayBufferToBase64Url(sigBuffer);
+
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion: jwt
+        })
+      });
+      const tokenJson = await tokenRes.json();
+      if (tokenJson && tokenJson.access_token) {
+        cachedFcmAccessToken = tokenJson.access_token;
+        cachedFcmTokenExpiry = Date.now() + 3000 * 1000;
+        return { accessToken: cachedFcmAccessToken, projectId: projectId || 'facility-c7833' };
+      }
+    } catch (e) {
+      console.warn('[NotificationHub] getFcmAccessToken note:', e);
+    }
+    return null;
+  }
+
+  function isTokenTargetForPush(tokenData, item) {
+    if (!tokenData || !tokenData.token || !item) return false;
+
+    const tRole = String(tokenData.role || 'Teacher').toLowerCase().trim();
+    const tEmail = String(tokenData.userEmail || '').toLowerCase().trim();
+    const tName = String(tokenData.userName || '').toLowerCase().trim();
+
+    // รองรับ Token รุ่นเก่าที่ยังเป็น role='user' ก่อนเปิดแอปอัปเดตโปรไฟล์
+    if (tRole === 'user') return true;
+
+    const isTestItem = item.isTest === true || (item.ticketId && String(item.ticketId).startsWith('FAC-TEST-'));
+    if (isTestItem) {
+      return tRole.includes('admin') || tRole.includes('supervisor') || tRole.includes('ผู้ดูแล');
+    }
+
+    // 1. Admin / Supervisor / Staff รับทุกงานเสมอ 100%
+    if (tRole.includes('admin') || tRole.includes('supervisor') || tRole.includes('staff') || tRole.includes('ผู้ดูแล')) {
+      return true;
+    }
+
+    // 2. กรณีระบุ targetRoles มาโดยตรง
+    if (Array.isArray(item.targetRoles) && item.targetRoles.length > 0) {
+      const matched = item.targetRoles.some(r => {
+        const cleanR = String(r || '').toLowerCase().trim();
+        return cleanR && (tRole === cleanR || tRole.includes(cleanR));
+      });
+      if (matched) return true;
+    }
+
+    const type = String(item.taskType || item.category || '').toLowerCase();
+
+    // 3. ผู้บริหาร (Executive) รับงานโครงการระยะยาว (Project) หรืองานด่วน
+    if (tRole.includes('executive') || tRole.includes('ผู้บริหาร')) {
+      if (type.includes('project') || type.includes('โครงการ') || item.priority === 'urgent') return true;
+    }
+
+    // 4. ช่างเทคนิค (Tech)
+    if (tRole.includes('tech') || tRole.includes('ช่าง')) {
+      const techTarget = String(item.targetTechnician || item.technician || '').toLowerCase().trim();
+      if (tName && techTarget && (techTarget === tName || techTarget.includes(tName))) return true;
+      if (type.includes('repair') || type.includes('building') || type.includes('it') || type.includes('อาคาร') || type.includes('ไอที') || type.includes('ซ่อม')) {
+        return true;
+      }
+    }
+
+    // 5. เจ้าหน้าที่โสตฯ (AV)
+    if (tRole.includes('av') || tRole.includes('โสต')) {
+      if (type.includes('av') || type.includes('โสต')) return true;
+    }
+
+    // 6. ครูผู้แจ้งงาน (Teacher / Reporter) รับแจ้งเตือนเฉพาะงานของตนเอง
+    const targetEmail = String(item.targetUserEmail || item.reporterEmail || '').toLowerCase().trim();
+    if (tEmail && targetEmail && tEmail === targetEmail) return true;
+
+    const repName = String(item.reporterName || item.reporter || item.borrower || '').toLowerCase().trim();
+    if (tName && tName.length >= 2 && tName !== 'ผู้ใช้งาน' && tName !== 'ครูผู้ใช้งาน' && repName && (repName === tName || repName.includes(tName))) {
+      return true;
+    }
+
+    // 7. ประกาศส่วนกลาง
+    if (type.includes('announcement') || type.includes('ประกาศ') || item.category === 'ประกาศ') {
+      return true;
+    }
+
+    return false;
+  }
+
+  async function dispatchFCMWebPush(item, forceCurrentTokenOnly = false) {
+    if (!window.firestoreDb || !item) return;
+    try {
+      const auth = await getFcmAccessToken();
+      if (!auth || !auth.accessToken) return;
+
+      const snap = await window.firestoreDb.collection('fcm_tokens').get();
+      if (snap.empty) return;
+
+      const targetDocs = [];
+      const seenTokens = new Set();
+
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        const tk = String(d.token || '').trim();
+        if (!tk || seenTokens.has(tk)) return;
+
+        if (forceCurrentTokenOnly) {
+          if (tk === currentFcmToken) {
+            seenTokens.add(tk);
+            targetDocs.push({ docId: doc.id, token: tk });
+          }
+          return;
+        }
+
+        // ถ้าแอปเปิดอยู่บนหน้าจอเครื่องผู้ส่งเอง และไม่ได้พับจอ ข้ามการส่ง Push ซ้ำเข้าเครื่องตัวเอง
+        if (tk === currentFcmToken && document.visibilityState === 'visible') {
+          return;
+        }
+
+        if (isTokenTargetForPush(d, item)) {
+          seenTokens.add(tk);
+          targetDocs.push({ docId: doc.id, token: tk });
+        }
+      });
+
+      if (targetDocs.length === 0) return;
+
+      const pushTitle = item.title || 'FaCiLiTy • มีการแจ้งเตือนใหม่';
+      const pushBody = item.body || item.subject || 'มีรายการอัปเดตใหม่ในระบบ FaCiLiTy';
+      const ticketId = String(item.ticketId || '');
+      const targetLink = ticketId ? ('./?ticketId=' + encodeURIComponent(ticketId)) : './';
+      const pushTag = 'facility-push-' + (ticketId || Date.now());
+      const endpoint = `https://fcm.googleapis.com/v1/projects/${auth.projectId}/messages:send`;
+
+      await Promise.all(targetDocs.map(async ({ docId, token }) => {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + auth.accessToken,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              message: {
+                token: token,
+                notification: {
+                  title: pushTitle,
+                  body: pushBody
+                },
+                data: {
+                  ticketId: ticketId,
+                  title: pushTitle,
+                  body: pushBody,
+                  url: targetLink,
+                  tag: pushTag
+                },
+                webpush: {
+                  headers: {
+                    Urgency: 'high',
+                    TTL: '86400'
+                  },
+                  notification: {
+                    title: pushTitle,
+                    body: pushBody,
+                    icon: './img/icon-192.png',
+                    badge: './img/logo.png',
+                    tag: pushTag,
+                    renotify: true,
+                    vibrate: [200, 100, 200, 100, 250]
+                  },
+                  fcm_options: {
+                    link: targetLink
+                  }
+                }
+              }
+            })
+          });
+
+          if (res.status === 404) {
+            window.firestoreDb.collection('fcm_tokens').doc(docId).delete().catch(() => { });
+          }
+        } catch (_) { }
+      }));
+
+      console.log(`[NotificationHub] 📲 Dispatched FCM Web Push to ${targetDocs.length} background device(s):`, pushTitle);
+    } catch (err) {
+      console.warn('[NotificationHub] dispatchFCMWebPush error:', err);
+    }
+  }
+
+  // ── 14. ฟังก์ชันสำหรับยิงแจ้งเตือนใหม่เข้า Firestore และส่ง Web Push ปลุกจอล็อก ───
   async function publish(dataObj) {
     if (!window.firestoreDb) {
       console.warn('[NotificationHub] Cannot publish: firestoreDb not ready');
@@ -1285,6 +1547,10 @@ const NotificationHub = (function () {
       const notifId = 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
       // จดจำ ID นี้ไว้ล่วงหน้าทันที เพื่อไม่ให้ snapshot บนเครื่องตัวเองเด้งซ้ำ
       knownDocIds.add(notifId);
+      if (dataObj && dataObj.ticketId) {
+        knownDocIds.add(dataObj.ticketId);
+        knownDocIds.add('ticket_' + dataObj.ticketId);
+      }
 
       const payload = {
         id: notifId,
@@ -1298,6 +1564,10 @@ const NotificationHub = (function () {
       };
       await window.firestoreDb.collection('notifications').doc(notifId).set(payload);
       console.log('[NotificationHub] 🚀 Real-time notification published to Firestore successfully:', notifId, payload.title);
+
+      // ส่ง FCM v1 Web Push ปลุกหน้าจออุปกรณ์ที่ปิดแอปหรือล็อกหน้าจออยู่ทันที
+      dispatchFCMWebPush(payload).catch(() => { });
+
       return true;
     } catch (e) {
       console.warn('[NotificationHub] publish error:', e);
@@ -1363,7 +1633,12 @@ const NotificationHub = (function () {
 
     if (navigator.serviceWorker) {
       navigator.serviceWorker.getRegistrations().then(regs => {
-        regs.forEach(r => r.unregister());
+        regs.forEach(r => {
+          r.update().catch(() => { });
+          if (r.waiting) {
+            r.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
       }).catch(() => { });
     }
 

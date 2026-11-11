@@ -152,6 +152,9 @@ if (currentRole === 'Executive') {
   isAdminLoggedIn = false;
   localStorage.removeItem('logged_admin');
 }
+window.currentTeacher = currentTeacher;
+window.currentRole = currentRole;
+window.currentEmail = currentEmail;
 let isRegisterMode = false;
 
 // ฟังก์ชันย่อเพื่อเรียก DOM Elements แทนการใช้ document.getElementById หรือ querySelectorAll
@@ -1397,6 +1400,10 @@ function handleLiffLogin() {
         currentEmail = res.email || email || '';
         isAdminLoggedIn = (res.role === 'Admin' || res.role === 'Supervisor');
 
+        window.currentTeacher = currentTeacher;
+        window.currentRole = currentRole;
+        window.currentEmail = currentEmail;
+
         localStorage.setItem('logged_teacher', currentTeacher);
         localStorage.setItem('logged_role', currentRole);
         localStorage.setItem('logged_email', currentEmail);
@@ -1405,6 +1412,10 @@ function handleLiffLogin() {
         localStorage.setItem('session_login_time', Date.now().toString());
 
         updateSessionUI();
+        if (typeof NotificationHub !== 'undefined') {
+          if (typeof NotificationHub.refreshTokenProfile === 'function') NotificationHub.refreshTokenProfile();
+          if (typeof NotificationHub.updatePermissionUI === 'function') NotificationHub.updatePermissionUI();
+        }
         // ดึงข้อมูลหลักใน background ทันที เพื่อให้ Dashboard โหลดเร็วขึ้น
         if (isAdminLoggedIn) prefetchAllData();
         alertBox('success', 'เข้าสู่ระบบสำเร็จ', `เชื่อมโยง LINE ID เรียบร้อย ยินดีต้อนรับ คุณ ${currentTeacher}`, { timer: 1500, showConfirmButton: false })
@@ -2594,22 +2605,24 @@ async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail
     : (typeForFirebase === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
 
   // ตรวจสอบและเตรียม Document สำหรับ Firebase
+  const reporterEmailVal = currentEmail || localStorage.getItem('logged_email') || '';
   const docData = {
     ticketId,
     // รหัสห้องแชทที่ไม่ซ้ำ ต่อให้รหัสงานถูกนำกลับมาใช้ใหม่ แชทก็ไม่ซ้อนกับงานเก่า
     chatId: `${ticketId}_${Date.now()}`,
     type: typeForFirebase,
-    subject:      subject  || '',
-    detail:       detail   || '',
-    reporterName: reporter || '',
-    dept:         dept     || '',
-    location:     loc      || '',
-    contact:      contact  || '',
-    incidentDate: incidentDate ? new Date(incidentDate) : null,
-    urgency:      payload.urgency || '',
-    status:       initialStatus,
-    createdAt:    firebase.firestore.FieldValue.serverTimestamp(),
-    updatedAt:    firebase.firestore.FieldValue.serverTimestamp()
+    subject:       subject  || '',
+    detail:        detail   || '',
+    reporterName:  reporter || '',
+    reporterEmail: reporterEmailVal,
+    dept:          dept     || '',
+    location:      loc      || '',
+    contact:       contact  || '',
+    incidentDate:  incidentDate ? new Date(incidentDate) : null,
+    urgency:       payload.urgency || '',
+    status:        initialStatus,
+    createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
   };
 
   // 1. บันทึกเข้า Firebase ทันที (Instant Client-Write ~0.2 วินาที) เพื่อให้ขึ้นหน้าจอ Real-time ทันที
@@ -2623,6 +2636,26 @@ async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail
         console.log('🔥 Instant Firebase save success for ticket:', ticketId);
         if (window.TrackUI && typeof window.TrackUI.load === 'function') {
           window.TrackUI.load(true);
+        }
+
+        // ยิงแจ้งเตือนเข้า NotificationHub + FCM Web Push ทันทีตามบทบาท
+        if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+          const isProject = typeForFirebase === 'project';
+          const isAV = typeForFirebase === 'av';
+          const isIT = typeForFirebase === 'it';
+          const notifTitle = isProject
+            ? `📋 เสนอโครงการใหม่ #${ticketId}`
+            : (isAV ? `🎤 งานโสตทัศนูปกรณ์ใหม่ #${ticketId}` : (isIT ? `💻 แจ้งซ่อมไอทีใหม่ #${ticketId}` : `🛠️ มีงานแจ้งซ่อมใหม่ #${ticketId}`));
+          NotificationHub.publish({
+            ticketId: ticketId,
+            taskType: typeForFirebase,
+            category: isProject ? 'โครงการ' : (isAV ? 'งานโสตฯ' : (isIT ? 'งานไอที' : 'งานซ่อม')),
+            title: notifTitle,
+            body: `${subject || 'รายการใหม่'}${loc ? ` (${loc})` : ''} — โดย ${reporter || 'ผู้แจ้ง'}`,
+            reporterName: reporter || '',
+            reporterEmail: reporterEmailVal,
+            location: loc || ''
+          }).catch(() => { });
         }
       }
     } catch (e) {

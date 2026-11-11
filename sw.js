@@ -19,23 +19,26 @@ try {
   messaging.onBackgroundMessage(payload => {
     console.log('[sw.js] 🔔 Background FCM Push Message received:', payload);
 
-    const title = (payload.notification && payload.notification.title) ||
-                  (payload.data && payload.data.title) ||
+    // หากมี payload.notification อยู่แล้ว Firebase Messaging SDK จะแสดง Notification ให้อัตโนมัติทันที
+    if (payload && payload.notification && (payload.notification.title || payload.notification.body)) {
+      return;
+    }
+
+    const title = (payload.data && payload.data.title) ||
                   'FaCiLiTy • มีการแจ้งเตือนใหม่';
 
-    const body = (payload.notification && payload.notification.body) ||
-                 (payload.data && payload.data.body) ||
+    const body = (payload.data && payload.data.body) ||
                  'มีงานแจ้งซ่อมหรืออัปเดตใหม่ในระบบ';
 
     const ticketId = (payload.data && payload.data.ticketId) || '';
-    const url = (payload.data && payload.data.url) || './';
+    const url = ticketId ? ('./?ticketId=' + encodeURIComponent(ticketId)) : ((payload.data && payload.data.url) || './');
 
     const options = {
       body: body,
       icon: './img/icon-192.png',
       badge: './img/logo.png',
       vibrate: [200, 100, 200, 100, 250],
-      tag: (payload.data && payload.data.tag) || ('facility-fcm-' + Date.now()),
+      tag: (payload.data && payload.data.tag) || ('facility-fcm-' + (ticketId || Date.now())),
       renotify: true,
       data: {
         url: url,
@@ -53,7 +56,7 @@ try {
   console.warn('[sw.js] Firebase Messaging in SW note:', e);
 }
 
-const CACHE_NAME = 'facility-v1.0';
+const CACHE_NAME = 'facility-v1.0.1';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -126,47 +129,23 @@ self.addEventListener('fetch', event => {
 // ============================================================================
 // 🔔 Background Push Notifications & Interaction Handlers
 // ============================================================================
-self.addEventListener('push', event => {
-  let data = {};
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      data = { title: 'FaCiLiTy แจ้งเตือน', body: event.data.text() };
-    }
-  }
-
-  const title = data.title || 'FaCiLiTy • มีการแจ้งเตือนใหม่';
-  const options = {
-    body: data.body || 'มีงานแจ้งซ่อมหรืออัปเดตใหม่ในระบบ',
-    icon: data.icon || './img/icon-192.png',
-    badge: data.badge || './img/logo.png',
-    vibrate: [200, 100, 200],
-    data: {
-      url: data.url || './',
-      ticketId: data.ticketId || ''
-    },
-    actions: [
-      { action: 'open', title: 'เปิดดูงาน' },
-      { action: 'close', title: 'ปิด' }
-    ]
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
 self.addEventListener('notificationclick', event => {
   event.notification.close();
 
   if (event.action === 'close') return;
 
-  const targetUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : './';
+  const notifData = (event.notification && event.notification.data) || {};
+  const fcmData = (notifData.FCM_MSG && notifData.FCM_MSG.data) || notifData;
+  const ticketId = fcmData.ticketId || '';
+  const targetUrl = ticketId
+    ? ('./?ticketId=' + encodeURIComponent(ticketId))
+    : (fcmData.url || './');
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
       for (let client of windowClients) {
         if (client.url.includes('FaCiLiTy') && 'focus' in client) {
-          if ('navigate' in client) {
+          if (ticketId && 'navigate' in client) {
             client.navigate(targetUrl);
           }
           return client.focus();
