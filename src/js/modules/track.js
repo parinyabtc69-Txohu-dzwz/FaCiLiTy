@@ -92,7 +92,8 @@ const TrackUI = (() => {
   function driveThumb(url, size = 'w600') {
     const u = str(url);
     const m = u.match(/\/d\/([a-zA-Z0-9_-]+)/) || u.match(/id=([a-zA-Z0-9_-]+)/);
-    return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=${size}` : u;
+    if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=${size}`;
+    return /^https?:\/\//i.test(u) ? esc(u) : '';
   }
 
   // ---------- ตรวจจับชื่อและสิทธิ์ผู้ใช้งาน ----------
@@ -1043,11 +1044,12 @@ const TrackUI = (() => {
 
   function imageBlock(url, caption) {
     if (!url) return '';
+    const safeCaption = esc(caption);
     return `<button onclick="showImageModal('${esc(url)}')" class="group relative block rounded-xl overflow-hidden border border-slate-200 bg-slate-50 w-full sm:w-56">
-      <img src="${driveThumb(url)}" alt="${caption}" class="w-full h-40 object-cover group-hover:scale-105 transition-transform" loading="lazy"
+      <img src="${driveThumb(url)}" alt="${safeCaption}" class="w-full h-40 object-cover group-hover:scale-105 transition-transform" loading="lazy"
         onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'h-40 flex items-center justify-center text-slate-400 text-sm',innerHTML:'<i class=&quot;fa-solid fa-image mr-2&quot;></i>เปิดดูรูปภาพ'}))">
       <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent text-white text-xs p-2 text-left">
-        <i class="fa-solid fa-magnifying-glass-plus mr-1"></i>${caption}</span></button>`;
+        <i class="fa-solid fa-magnifying-glass-plus mr-1"></i>${safeCaption}</span></button>`;
   }
 
   function techMessage(job) {

@@ -85,7 +85,7 @@ const LOCKOUT_MS = 15 * 60 * 1000;             // ล็อก 15 นาที
 
 // 🔒 XSS Sanitizer: กรองโค้ดอันตราย (HTML/JS) ออกจากข้อมูลก่อนนำไปแสดงผลบนหน้าเว็บ เพื่อป้องกันการถูกแฮก
 function sanitizeHtml(str) {
-  if (typeof str !== 'string') return str;
+  if (typeof str !== 'string') return (str === null || str === undefined) ? '' : String(str);
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -95,6 +95,7 @@ function sanitizeHtml(str) {
     .replace(/javascript:/gi, '')
     .replace(/on\w+\s*=/gi, '');
 }
+const esc = sanitizeHtml;
 
 // 🔒 Login Attempt Tracker: ระบบจัดการการเข้าสู่ระบบผิดพลาด (ติดตามจำนวนครั้งที่กรอกรหัสผิด)
 const loginAttempts = {
@@ -280,6 +281,9 @@ const ResourceHubCore = {
   _cacheTTL: 120 * 1000, // อายุ Cache 120 วินาที (สอดคล้องกับ Backend CacheService)
 
   api: {
+    // 🔒 SEC-02: API Secret Key สำหรับยืนยันสิทธิ์กับ Google Apps Script
+    apiKey: 'FACILITY_SECURE_API_v1',
+
     // โหลดข้อมูลด้วยวิธี GET (อ่านข้อมูล) พร้อมระบบ Cache
     async get(action, params = {}) {
       const cacheKey = action + JSON.stringify(params);
@@ -289,8 +293,8 @@ const ResourceHubCore = {
         return cached.data; // คืนค่าจาก Cache ถ้ายังไม่หมดอายุ
       }
 
-      // เพิ่ม t: Date.now() เพื่อแก้ปัญหา Cache ของเบราว์เซอร์ระดับล่าง
-      const q = new URLSearchParams({ action, t: Date.now(), ...params });
+      // ส่ง apiKey และ t: Date.now() เพื่อแก้ปัญหา Cache ของเบราว์เซอร์ระดับล่าง
+      const q = new URLSearchParams({ action, apiKey: ResourceHubCore.api.apiKey, t: Date.now(), ...params });
       const r = await fetch(`${scriptURL}?${q}`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
@@ -299,15 +303,16 @@ const ResourceHubCore = {
       ResourceHubCore._cache.set(cacheKey, { data, timestamp: Date.now() });
       return data;
     },
-    // ส่งข้อมูลด้วยวิธี POST (บันทึกข้อมูล)
+    // ส่งข้อมูลด้วยวิธี POST (บันทึกข้อมูล) พร้อมแนบ apiKey เสมอ
     async post(payload) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
       
+      const fullPayload = { apiKey: ResourceHubCore.api.apiKey, ...payload };
       const r = await fetch(scriptURL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(fullPayload),
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -640,17 +645,19 @@ const ResourceHubCore = {
             const row = window.allRepairTasks ? window.allRepairTasks[index] : null;
       let detailsHtml = '';
       if (row) {
-        const tStamp = row[0] || '-';
-        const subj = row[1] || '-';
-        const det = row[2] || '-';
-        const rep = row[3] || '-';
+        // 🔒 SEC-05: กรอง XSS รายละเอียดงานก่อนแสดงผล
+        const tStamp = esc(row[0] || '-');
+        const subj = esc(row[1] || '-');
+        const det = esc(row[2] || '-');
+        const rep = esc(row[3] || '-');
+        const techVal = esc(row[7] || '-');
         detailsHtml = '<div class="text-left mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">'
           + '<div class="font-bold text-slate-800 mb-1 text-base">' + subj + '</div>'
           + '<div class="text-sm text-slate-600 mb-3" style="white-space:pre-wrap">' + det + '</div>'
           + '<div class="text-xs font-semibold text-slate-500 border-t border-slate-200 pt-2 mt-2">'
           + '<i class="fa-solid fa-user text-slate-400"></i> ' + rep
           + ' &nbsp;|&nbsp; <i class="fa-regular fa-clock text-slate-400"></i> ' + tStamp
-          + '</div>' + (row[7] && row[7] !== '-' ? '<div class="text-xs font-semibold text-[#265D5A] mt-2"><i class="fa-solid fa-wrench"></i> ช่างที่รับผิดชอบ: ' + row[7] + '</div>' : '') + '</div>';
+          + '</div>' + (row[7] && row[7] !== '-' ? '<div class="text-xs font-semibold text-[#265D5A] mt-2"><i class="fa-solid fa-wrench"></i> ช่างที่รับผิดชอบ: ' + techVal + '</div>' : '') + '</div>';
       }
 
       const userRole = localStorage.getItem('logged_role') || '';
@@ -831,11 +838,12 @@ const ResourceHubCore = {
       const taskData = window.allAVTasks ? window.allAVTasks[index] : null;
       let detailsHtml = '';
       if (taskData) {
-        const timestamp = taskData[0] || '-';
-        const borrower = taskData[1] || '-';
-        const equipment = taskData[2] || '-';
-        const useDate = taskData[3] || '-';
-        const loc = taskData[4] || '-';
+        // 🔒 SEC-05: กรอง XSS รายละเอียดโสตฯ ก่อนแสดงผล
+        const timestamp = esc(taskData[0] || '-');
+        const borrower = esc(taskData[1] || '-');
+        const equipment = esc(taskData[2] || '-');
+        const useDate = esc(taskData[3] || '-');
+        const loc = esc(taskData[4] || '-');
         detailsHtml = `<div class="text-left mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm"><div class="font-bold text-slate-800 mb-1 text-base"><i class="fa-solid fa-headphones text-amber-500"></i> ${borrower}</div><div class="text-sm text-slate-600 mb-2 whitespace-pre-wrap"><span class="font-semibold text-slate-700">อุปกรณ์:</span> ${equipment}</div><div class="text-xs text-slate-500 mb-1"><span class="font-semibold text-slate-600">วันที่ใช้:</span> ${useDate}</div><div class="text-xs text-slate-500 mb-3"><span class="font-semibold text-slate-600">สถานที่:</span> ${loc}</div><div class="text-xs font-semibold text-slate-500 flex items-center gap-1 border-t border-slate-200 pt-2"><i class="fa-regular fa-clock text-slate-400"></i> แจ้งเมื่อ: ${timestamp}</div></div>`;
       }
       const { value: v } = await Swal.fire({
@@ -1361,7 +1369,9 @@ function handleLiffLogin() {
       })
       .catch((e) => {
         alertBox('error', 'เข้าสู่ระบบไม่สำเร็จ', e.message || 'ไม่พบอีเมลในระบบ');
-        liff.logout();
+        if (typeof liff !== 'undefined' && typeof liff.isLoggedIn === 'function' && liff.isLoggedIn()) {
+          try { liff.logout(); } catch (_) {}
+        }
       });
   }).catch(err => {
     alertBox('error', 'ข้อผิดพลาด', err.message);
@@ -1391,7 +1401,23 @@ function parseGoogleJwt(token) {
         .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
         .join('')
     );
-    return JSON.parse(jsonPayload);
+    const parsed = JSON.parse(jsonPayload);
+
+    // 🔒 SEC-07: ตรวจสอบความถูกต้องของ JWT Payload
+    const expectedAudience = '309538362014-2mn08g13ht4rnjj9e8j52r5c7204lsqu.apps.googleusercontent.com';
+    if (parsed.aud && parsed.aud !== expectedAudience) {
+      console.warn('Google JWT Audience mismatch:', parsed.aud);
+      return null;
+    }
+    if (parsed.iss && !parsed.iss.includes('accounts.google.com')) {
+      console.warn('Google JWT Issuer mismatch:', parsed.iss);
+      return null;
+    }
+    if (parsed.exp && parsed.exp * 1000 < Date.now()) {
+      console.warn('Google JWT has expired');
+      return null;
+    }
+    return parsed;
   } catch (e) {
     console.error('Failed to parse Google JWT:', e);
     return null;
@@ -3541,6 +3567,8 @@ window.viewRepairDetails = function (index) {
   if (!row) return;
   function getDriveImgHtml(url, title, colorTheme) {
     if (!url || url === '-') return '';
+    const safeUrl = esc(url);
+    const safeTitle = esc(title);
     let fileId = '';
     const m1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (m1) fileId = m1[1];
@@ -3549,26 +3577,27 @@ window.viewRepairDetails = function (index) {
       if (m2) fileId = m2[1];
     }
     if (fileId) {
-      return `<div class="mt-3 text-center"><p class="text-sm text-slate-500 font-medium mb-2">${title}:</p><button onclick="showImageModal('${url}')" class="block focus:outline-none w-full"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-w-full h-auto rounded-lg border border-${colorTheme}-200 mx-auto max-h-64 object-contain shadow-sm hover:opacity-90 transition-opacity cursor-pointer" alt="${title}"></button></div>`;
+      return `<div class="mt-3 text-center"><p class="text-sm text-slate-500 font-medium mb-2">${safeTitle}:</p><button onclick="showImageModal('${safeUrl}')" class="block focus:outline-none w-full"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-w-full h-auto rounded-lg border border-${colorTheme}-200 mx-auto max-h-64 object-contain shadow-sm hover:opacity-90 transition-opacity cursor-pointer" alt="${safeTitle}"></button></div>`;
     }
-    return `<button onclick="showImageModal('${url}')" class="block w-full mt-3 bg-${colorTheme}-50 text-${colorTheme}-700 text-center py-2 rounded-lg border border-${colorTheme}-200 hover:bg-${colorTheme}-100 font-semibold"><i class="fa-solid fa-image"></i> ดู${title}</button>`;
+    return `<button onclick="showImageModal('${safeUrl}')" class="block w-full mt-3 bg-${colorTheme}-50 text-${colorTheme}-700 text-center py-2 rounded-lg border border-${colorTheme}-200 hover:bg-${colorTheme}-100 font-semibold"><i class="fa-solid fa-image"></i> ดู${safeTitle}</button>`;
   }
 
-  const topic = row[1] || '-';
-  const detail = row[2] || '-';
-  const fixDetail = row[6] || 'ยังไม่มีการบันทึกการแก้ปัญหา';
-  const tech = row[7] || '-';
+  // 🔒 SEC-05: กรอง XSS ข้อมูลก่อนแสดงผลบน SweetAlert2
+  const topic = esc(row[1] || '-');
+  const detail = esc(row[2] || '-');
+  const fixDetail = esc(row[6] || 'ยังไม่มีการบันทึกการแก้ปัญหา');
+  const tech = esc(row[7] || '-');
   const reportImg = getDriveImgHtml(row[5], 'รูปภาพประกอบปัญหา', 'slate');
   const proofImg = getDriveImgHtml(row[8], 'รูปภาพผลการซ่อม', 'emerald');
 
-  const cost = (row[9] && row[9] !== '-') ? row[9] : null;
-  const receiptUrl = (row[10] && row[10] !== '-') ? row[10] : null;
+  const cost = (row[9] && row[9] !== '-') ? esc(row[9]) : null;
+  const receiptUrl = (row[10] && row[10] !== '-' && /^https?:\/\//i.test(row[10])) ? esc(row[10]) : null;
 
   let costHtml = '';
   if (cost || receiptUrl) {
     costHtml = `<hr class="border-blue-100 my-3"><div class="flex flex-col gap-2">`;
     if (cost) costHtml += `<p class="text-sm text-slate-700 font-medium">ค่าใช้จ่าย: <span class="text-rose-500 font-bold">${cost} บาท</span></p>`;
-    if (receiptUrl) costHtml += `<a href="${receiptUrl}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-800 underline font-medium"><i class="fa-solid fa-file-invoice mr-1"></i> ดูเอกสารใบเสร็จ/เบิกจ่าย</a>`;
+    if (receiptUrl) costHtml += `<a href="${receiptUrl}" target="_blank" rel="noopener noreferrer" class="text-sm text-indigo-600 hover:text-indigo-800 underline font-medium"><i class="fa-solid fa-file-invoice mr-1"></i> ดูเอกสารใบเสร็จ/เบิกจ่าย</a>`;
     costHtml += `</div>`;
   }
 
@@ -3600,15 +3629,16 @@ window.viewRepairDetails = function (index) {
 window.viewAVDetails = function (index) {
   const row = window.allAVTasks[index];
   if (!row) return;
-  const borrower = row[1] || '-';
-  const equipment = row[2] || '-';
-  const date = row[3] || '-';
-  const location = row[4] || '-';
-  const tech = row[6] || 'ยังไม่มีผู้รับผิดชอบ';
+  // 🔒 SEC-05: กรอง XSS ข้อมูลก่อนแสดงผลบน SweetAlert2
+  const borrower = esc(row[1] || '-');
+  const equipment = esc(row[2] || '-');
+  const date = esc(row[3] || '-');
+  const location = esc(row[4] || '-');
+  const tech = esc(row[6] || 'ยังไม่มีผู้รับผิดชอบ');
 
   Swal.fire({
     title: 'รายละเอียดการขอยืม',
-    html: `< div class="text-left mt-4 text-slate-700 space-y-4" >
+    html: `<div class="text-left mt-4 text-slate-700 space-y-4">
                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                       <div class="flex items-center gap-2 mb-2">
                          <i class="fa-solid fa-microphone-lines text-blue-600"></i>
@@ -3623,7 +3653,7 @@ window.viewAVDetails = function (index) {
                       <hr class="border-blue-200 my-2">
                       <p class="text-sm text-slate-500 font-medium"><i class="fa-solid fa-user-gear mr-1"></i> ผู้จัดการงาน: <span class="text-slate-800 font-bold">${tech}</span></p>
                    </div>
-                 </div > `,
+                 </div>`,
     confirmButtonText: 'ปิด',
     confirmButtonColor: '#3b82f6',
     width: '500px'
@@ -3740,16 +3770,22 @@ window.renderAVTable = function () {
     
     const avatarColor = getAvatarColor(r[1] || '');
 
-    return `<div onclick="openAVModal(${originalIndex}, '${st}', '${tech}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
+    const safeBorrower = esc(r[1] || '');
+    const safeEquipment = esc(r[2] || '');
+    const safeDate = esc(r[3] || '');
+    const safeLoc = esc(r[4] || '');
+    const safeSt = esc(st);
+
+    return `<div onclick="openAVModal(${originalIndex})" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${isUnread ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-40">
         <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${starIcon.replace(/text-lg/g, 'text-sm').replace(/onclick="[^"]*"/g, (match) => 'onclick="event.stopPropagation(); ' + match.substring(9))}
-        <span class="truncate w-full pl-1">${r[1]}</span>
+        <span class="truncate w-full pl-1">${safeBorrower}</span>
       </div>
       <div class="flex flex-1 items-center gap-2 overflow-hidden px-2">
-        <span class="truncate max-w-[200px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}">${r[2]}</span>
-        <span class="text-slate-400 truncate">- ใช้วันที่: ${r[3]} | สถานที่: ${r[4]}</span>
-        <div class="shrink-0 scale-75 origin-left">${statusTagClass(st)}</div>
+        <span class="truncate max-w-[200px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}">${safeEquipment}</span>
+        <span class="text-slate-400 truncate">- ใช้วันที่: ${safeDate} | สถานที่: ${safeLoc}</span>
+        <div class="shrink-0 scale-75 origin-left">${statusTagClass(safeSt)}</div>
       </div>
       <div class="flex items-center gap-4 shrink-0">
         <div class="hidden group-hover:flex items-center gap-4 text-slate-400 pr-4">

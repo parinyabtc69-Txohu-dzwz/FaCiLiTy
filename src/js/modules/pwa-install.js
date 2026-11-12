@@ -263,7 +263,7 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js?v=1.0.7')
       .then(reg => {
         reg.update(); // เช็คอัปเดต Service Worker ทันที
-        console.log('[PWA] Service Worker v1.0.7 ทำงานเรียบร้อย Scope:', reg.scope);
+        console.log('[PWA] Service Worker v1.0.8 ทำงานเรียบร้อย Scope:', reg.scope);
 
         // หากมี worker ใหม่ที่รอ activation อยู่ ให้สั่ง skipWaiting
         if (reg.waiting) {
