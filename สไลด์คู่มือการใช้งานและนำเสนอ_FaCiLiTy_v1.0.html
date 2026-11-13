@@ -117,19 +117,31 @@
       break-after: page;
     }
     @media print {
-      @page { size: A4 landscape; margin: 6mm; }
+      @page { size: A4 landscape; margin: 5mm; }
       body { background: #ffffff !important; }
       .no-print { display: none !important; }
-      .deck-viewport { display: block !important; padding: 0 !important; }
+      .deck-viewport { display: block !important; padding: 0 !important; min-height: auto !important; }
       .slide-card {
         display: flex !important;
         box-shadow: none !important;
         border: 1px solid #cbd5e1 !important;
-        min-height: 190mm !important;
+        height: 198mm !important;
+        max-height: 198mm !important;
+        min-height: 198mm !important;
+        width: 100% !important;
         max-width: 100% !important;
-        margin-bottom: 8mm !important;
-        page-break-after: always;
-        break-after: page;
+        margin: 0 !important;
+        padding: 24px !important;
+        box-sizing: border-box !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        overflow: hidden !important;
+      }
+      .slide-card:last-of-type {
+        page-break-after: auto !important;
+        break-after: auto !important;
       }
     }
   </style>
