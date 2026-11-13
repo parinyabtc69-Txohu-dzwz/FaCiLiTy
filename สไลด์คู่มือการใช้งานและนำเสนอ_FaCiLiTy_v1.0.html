@@ -116,9 +116,11 @@
       page-break-after: always;
       break-after: page;
     }
+    
+    
     @media print {
       @page {
-        size: A4 landscape;
+        size: 297mm 210mm;
         margin: 0 !important;
       }
       *, *::before, *::after {
@@ -129,6 +131,7 @@
         background: #ffffff !important;
         margin: 0 !important;
         padding: 0 !important;
+        width: 100% !important;
       }
       .no-print {
         display: none !important;
@@ -151,7 +154,7 @@
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 24px 38px !important;
+        padding: 12px 32px 10px 32px !important;
         box-sizing: border-box !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
@@ -165,36 +168,84 @@
         break-after: auto !important;
       }
 
-      /* Slide 1 tuning */
-      .slide-card:nth-of-type(1) {
-        padding: 22px 38px !important;
+      /* Compact Typography & Spacing to prevent any bottom clipping */
+      .slide-card .border-b {
+        padding-bottom: 6px !important;
       }
-      .slide-card:nth-of-type(1) .my-auto {
-        margin-top: auto !important;
-        margin-bottom: auto !important;
-        padding-top: 2px !important;
-        padding-bottom: 2px !important;
+      .slide-card .border-t {
+        padding-top: 6px !important;
+        margin-top: 4px !important;
       }
-      .slide-card:nth-of-type(1) h1 {
-        font-size: 2.6rem !important;
+      .slide-card h1 {
+        font-size: 2.5rem !important;
         line-height: 1.15 !important;
       }
-      .slide-card:nth-of-type(1) .browser-frame {
-        transform: scale(0.90) !important;
-        transform-origin: top center !important;
+      .slide-card h2 {
+        font-size: 1.35rem !important;
+        line-height: 1.2 !important;
+        margin-top: 2px !important;
       }
-
-      /* Compact adjustments for other slides */
-      .slide-card .p-8, .slide-card .md\:p-10, .slide-card .md\:p-12 {
-        padding: 22px 36px !important;
+      .slide-card h3 {
+        font-size: 0.98rem !important;
+        line-height: 1.2 !important;
+      }
+      .slide-card h4 {
+        font-size: 0.90rem !important;
+        line-height: 1.2 !important;
       }
       .slide-card .my-auto {
-        margin-top: auto !important;
-        margin-bottom: auto !important;
-        padding-top: 4px !important;
-        padding-bottom: 4px !important;
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+      .slide-card .gap-6 {
+        gap: 12px !important;
+      }
+      .slide-card .space-y-4 > * + * {
+        margin-top: 6px !important;
+      }
+      .slide-card .space-y-3 > * + * {
+        margin-top: 4px !important;
+      }
+      .slide-card .space-y-2\.5 > * + * {
+        margin-top: 4px !important;
+      }
+      .slide-card .space-y-2 > * + * {
+        margin-top: 3px !important;
+      }
+      .slide-card .p-5 {
+        padding: 10px 14px !important;
+      }
+      .slide-card .p-4 {
+        padding: 8px 12px !important;
+      }
+      .slide-card .p-3 {
+        padding: 6px 10px !important;
+      }
+      .slide-card .p-8, .slide-card .md\:p-10, .slide-card .md\:p-12 {
+        padding: 12px 32px 10px 32px !important;
+      }
+      .slide-card .leading-relaxed {
+        line-height: 1.35 !important;
+      }
+      .slide-card p, .slide-card span, .slide-card div {
+        font-size: 11px;
+      }
+      .slide-card .text-xs { font-size: 10.5px !important; }
+      .slide-card .text-\[10px\] { font-size: 9px !important; }
+      .slide-card .text-\[11px\] { font-size: 9.5px !important; }
+      .slide-card .browser-frame {
+        transform: scale(0.88) !important;
+        transform-origin: top center !important;
+      }
+      .slide-card:nth-of-type(1) .browser-frame {
+        transform: scale(0.88) !important;
+        transform-origin: top center !important;
       }
     }
+
+
   </style>
 </head>
 <body>
