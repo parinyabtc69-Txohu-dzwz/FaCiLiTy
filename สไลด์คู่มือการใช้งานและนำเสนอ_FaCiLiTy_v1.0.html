@@ -248,7 +248,7 @@
       <button onclick="toggleFullScreen()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition" title="นำเสนอเต็มจอ">
         <i class="fa-solid fa-expand text-amber-400"></i> <span class="hidden lg:inline">เต็มจอ</span>
       </button>
-      <button onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow transition">
+      <button onclick="printPresentation()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow transition">
         <i class="fa-solid fa-print"></i> <span class="hidden sm:inline">พิมพ์ / PDF</span>
       </button>
     </div>
@@ -1669,6 +1669,27 @@
 
   <!-- ================= JAVASCRIPT SLIDE CONTROLLER ================= -->
   <script>
+    // Auto-detect print/export mode or headless environment
+    if (window.location.search.includes('print') || window.location.search.includes('pdf') || navigator.webdriver) {
+      document.body.classList.add('show-all-mode');
+    }
+    window.addEventListener('beforeprint', () => {
+      document.body.classList.add('show-all-mode');
+    });
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('show-all-mode');
+      updateSlideView();
+    });
+    function printPresentation() {
+      document.body.classList.add('show-all-mode');
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+          document.body.classList.remove('show-all-mode');
+          updateSlideView();
+        }, 500);
+      }, 100);
+    }
     let currentSlide = 0;
     const slides = document.querySelectorAll('.slide-card');
     const selector = document.getElementById('slideSelector');
