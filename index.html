@@ -13619,7 +13619,7 @@ const NotificationHub = (function () {
           body: pushBody,
           ticketId: ticketId,
           filterOptions: {
-            isTest: Boolean(forceCurrentTokenOnly),
+            isTest: Boolean(forceCurrentTokenOnly || item.isTest || isTestTicketId(ticketId)),
             targetRoles: item.targetRoles || [],
             targetTech: item.targetTechnician || '',
             targetEmail: item.targetUserEmail || ''
