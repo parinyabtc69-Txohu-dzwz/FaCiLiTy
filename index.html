@@ -659,7 +659,7 @@
                 <span>⚡ เข้าสู่ระบบทันที: ครูเต้าหู้ (Admin)</span>
               </button>
               <div class="grid grid-cols-2 gap-2">
-                <button type="button" onclick="localDevLogin('ช่างทดสอบ', 'Technician', 'tech.test@facility.local')"
+                <button type="button" onclick="localDevLogin('ช่างทดสอบ', 'Tech', 'tech.test@facility.local')"
                   class="py-2 px-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-medium rounded-xl text-[11px] flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95">
                   <i class="fa-solid fa-wrench text-blue-500"></i>
                   <span>ช่าง (Tech)</span>
@@ -3691,9 +3691,9 @@ const LOCKOUT_MS = 15 * 60 * 1000;             // ล็อก 15 นาที
 // 🔒 ตรวจสอบ Session Expiry: ฟังก์ชันทำงานอัตโนมัติเพื่อล้างข้อมูล Session หากผู้ใช้ออนไลน์นานเกินกำหนด
 (function checkSessionExpiry() {
   const loginTime = localStorage.getItem('session_login_time');
-  if (loginTime && (Date.now() - parseInt(loginTime)) > SESSION_EXPIRY_MS) {
-    localStorage.clear();
-    console.warn('🔒 Session หมดอายุ — ล้างข้อมูลเรียบร้อย');
+  if (loginTime && (Date.now() - parseInt(loginTime, 10)) > SESSION_EXPIRY_MS) {
+    ['logged_teacher', 'logged_role', 'logged_email', 'logged_admin', 'session_login_time'].forEach(k => localStorage.removeItem(k));
+    console.warn('🔒 Session หมดอายุ — ล้างข้อมูล Session เรียบร้อย');
   }
 })();
 
@@ -3999,28 +3999,75 @@ const ResourceHubCore = {
       const nameEl = $(isRepair ? 'profile-teacher-name' : 'profile-teacher-av-name');
       if (nameEl) nameEl.textContent = isRepair ? `ยินดีต้อนรับ, ${sanitizeHtml(currentTeacher)}` : `ประวัติการขอยืมอุปกรณ์โสตฯ ของคุณ ${sanitizeHtml(currentTeacher)}`;
 
+      const fmtHistoryDate = (val) => {
+        if (!val) return '-';
+        try {
+          if (typeof val.toDate === 'function') return val.toDate().toLocaleString('th-TH');
+          if (typeof val.seconds === 'number') return new Date(val.seconds * 1000).toLocaleString('th-TH');
+          const dObj = new Date(val);
+          return isNaN(dObj.getTime()) ? String(val) : dObj.toLocaleString('th-TH');
+        } catch (_) {
+          return String(val);
+        }
+      };
+
+      const myNameTrim = (currentTeacher || '').trim();
+      const myEmailLow = (currentEmail || localStorage.getItem('logged_email') || '').trim().toLowerCase();
+      const isMineTicket = (d) => {
+        const dEmail = (d.reporterEmail || '').trim().toLowerCase();
+        const dName = (d.reporterName || d.borrower || '').trim();
+        return (myEmailLow && dEmail && dEmail === myEmailLow) || (myNameTrim && dName === myNameTrim);
+      };
+
       const dataP = isRepair
         ? (window.firestoreDb ? window.firestoreDb.collection('tickets').orderBy('createdAt', 'desc').get().then(snap => {
             const arr = [];
             snap.forEach(doc => {
-              const d = doc.data();
-              if (d.reporterName && d.reporterName.trim() === currentTeacher.trim()) {
-                // Map Firebase object to the expected array format for rendering
+              const d = doc.data() || {};
+              const tid = String(d.ticketId || doc.id || '');
+              const tType = String(d.type || '').toLowerCase();
+              const isBuilding = tType === 'building' || (!tType && !/^(IT|AV|PRJ)/i.test(tid));
+              if (isBuilding && isMineTicket(d)) {
                 arr.push([
-                  d.createdAt ? d.createdAt.toDate().toLocaleString('th-TH') : '',
+                  fmtHistoryDate(d.createdAt),
                   d.subject || 'ไม่ระบุ',
                   d.detail || '',
-                  d.reporterName,
+                  d.reporterName || '',
                   d.status || 'รอดำเนินการ',
                   d.fileUrl || '-',
-                  d.techName || '',
+                  d.techName || d.tech || '',
                   d.fixDetail || ''
                 ]);
               }
             });
             return arr;
-          }) : ResourceHubCore.work.repairs().then(d => (d || []).filter(r => r[3]?.toString().trim() === currentTeacher.trim())))
-        : ResourceHubCore.av.list().then(d => (d || []).filter(r => r[1]?.toString().trim() === currentTeacher.trim() || r[7]?.toString().trim() === currentTeacher.trim()));
+          }) : ResourceHubCore.work.repairs().then(d => (d || []).filter(r => r[3]?.toString().trim() === myNameTrim)))
+        : (window.firestoreDb ? window.firestoreDb.collection('tickets').orderBy('createdAt', 'desc').get().then(async snap => {
+            const arr = [];
+            snap.forEach(doc => {
+              const d = doc.data() || {};
+              const tid = String(d.ticketId || doc.id || '');
+              const tType = String(d.type || '').toLowerCase();
+              if ((tType === 'av' || /^AV/i.test(tid)) && isMineTicket(d)) {
+                arr.push([
+                  fmtHistoryDate(d.createdAt),
+                  d.reporterName || '',
+                  d.subject || d.detail || 'รายการโสตฯ',
+                  d.incidentDate ? fmtHistoryDate(d.incidentDate) : '-',
+                  d.location || '-',
+                  d.status || 'จัดเตรียมแล้ว',
+                  d.techName || d.tech || ''
+                ]);
+              }
+            });
+            if (arr.length) return arr;
+            try {
+              const legacy = await ResourceHubCore.av.list();
+              return (legacy || []).filter(r => r[1]?.toString().trim() === myNameTrim || r[7]?.toString().trim() === myNameTrim);
+            } catch (_) {
+              return [];
+            }
+          }) : ResourceHubCore.av.list().then(d => (d || []).filter(r => r[1]?.toString().trim() === myNameTrim || r[7]?.toString().trim() === myNameTrim)));
 
       const containerId = isRepair ? 'teacherTaskBody' : 'teacherAVTaskBody';
       const emptyMsg = isRepair ? 'คุณยังไม่มีประวัติการแจ้งซ่อมอาคารในระบบครับ' : 'คุณยังไม่มีประวัติการขอยืมอุปกรณ์โสตฯ ในระบบครับ';
@@ -4038,34 +4085,41 @@ const ResourceHubCore = {
         }
 
         const renderTimeline = (status) => {
-          const steps = isRepair ? [
-            { label: 'ส่งเรื่อง', s: ['รอรับเรื่อง', 'กำลังดำเนินการ', 'เสร็จสิ้น'] },
-            { label: 'รับเรื่องแล้ว', s: ['กำลังดำเนินการ', 'เสร็จสิ้น'] },
-            { label: 'กำลังดำเนินการ', s: ['กำลังดำเนินการ', 'เสร็จสิ้น'] },
-            { label: 'เสร็จสิ้น', s: ['เสร็จสิ้น'] }
-          ] : [
-            { label: 'ส่งเรื่อง', s: ['รอยืนยันการยืม', 'อนุมัติการยืม', 'กำลังใช้งาน', 'คืนอุปกรณ์แล้ว'] },
-            { label: 'อนุมัติแล้ว', s: ['อนุมัติการยืม', 'กำลังใช้งาน', 'คืนอุปกรณ์แล้ว'] },
-            { label: 'กำลังใช้งาน', s: ['กำลังใช้งาน', 'คืนอุปกรณ์แล้ว'] },
-            { label: 'คืนแล้ว', s: ['คืนอุปกรณ์แล้ว'] }
-          ];
+          const s = String(status || '').trim();
+          const isCancelled = /ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s);
+          const steps = isRepair
+            ? [
+                { label: 'ส่งเรื่อง' },
+                { label: 'รับเรื่องแล้ว' },
+                { label: 'กำลังดำเนินการ' },
+                { label: 'เสร็จสิ้น' }
+              ]
+            : [
+                { label: 'ส่งเรื่อง' },
+                { label: 'จัดเตรียม / รับเรื่อง' },
+                { label: 'กำลังใช้งาน' },
+                { label: 'เสร็จสิ้น / คืนแล้ว' }
+              ];
+
+          let lastActiveIdx = 0;
+          if (isCancelled) {
+            lastActiveIdx = -1;
+          } else if (/เสร็จ|เรียบร้อย|ปิดงาน|คืนเรียบร้อย|คืนอุปกรณ์|คืนแล้ว/.test(s)) {
+            lastActiveIdx = 3;
+          } else if (/กำลัง|รอตรวจรับ|แก้ไข|ใช้งานอยู่/.test(s)) {
+            lastActiveIdx = 2;
+          } else if (/มอบหมาย|จัดเตรียมแล้ว|อนุมัติ|รับเรื่อง|รับงาน/.test(s) && !/^รอ/.test(s)) {
+            lastActiveIdx = 1;
+          }
 
           let html = `<div class="flex items-center justify-between mt-6 mb-2 relative">`;
           html += `<div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-100 rounded-full z-0"></div>`;
-          
-          let lastActiveIdx = -1;
-          steps.forEach((step, idx) => {
-            let isActive = false;
-            if (idx === 0) isActive = true;
-            if (step.s.includes(status)) isActive = true;
-            if (isActive) lastActiveIdx = idx;
-          });
 
           steps.forEach((step, idx) => {
             const isActive = idx <= lastActiveIdx;
             const bgClass = isActive ? (isRepair ? 'bg-[#265D5A] text-white' : 'bg-[#FF5F5F] text-white') : 'bg-white text-slate-300 border-2 border-slate-200';
             const textClass = isActive ? (isRepair ? 'text-[#265D5A] font-bold' : 'text-[#FF5F5F] font-bold') : 'text-slate-400';
-            
+
             if (idx > 0 && isActive) {
               const lineColor = isRepair ? 'bg-[#265D5A]' : 'bg-[#FF5F5F]';
               html += `<div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 ${lineColor} rounded-full z-0" style="width: ${(idx / (steps.length - 1)) * 100}%"></div>`;
@@ -4086,7 +4140,9 @@ const ResourceHubCore = {
 
         const html = data.map(r => {
           if (isRepair) {
-            const img = r[5] && r[5] !== '-' ? `<button onclick="showImageModal('${r[5]}')" class="mt-3 text-[#265D5A] bg-[#B0EDE6]/30 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#B0EDE6] transition-colors"><i class="fa-solid fa-image"></i> ดูรูปปัญหา</button>` : '';
+            const img = r[5] && r[5] !== '-' && /^https?:\/\//i.test(String(r[5]))
+              ? `<button type="button" data-url="${sanitizeHtml(r[5])}" onclick="showImageModal(this.dataset.url)" class="mt-3 text-[#265D5A] bg-[#B0EDE6]/30 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#B0EDE6] transition-colors"><i class="fa-solid fa-image"></i> ดูรูปปัญหา</button>`
+              : '';
             const tech = r[6] ? `<div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><i class="fa-solid fa-user-gear"></i></div><div><div class="text-xs font-bold text-slate-700">${sanitizeHtml(r[6])}</div><div class="text-[10px] text-slate-500 line-clamp-1">${sanitizeHtml(r[7] || '')}</div></div></div>` : '<div class="mt-3 pt-3 border-t border-slate-100"><span class="text-xs text-slate-400"><i class="fa-regular fa-clock"></i> รอเจ้าหน้าที่รับเรื่อง</span></div>';
             
             return `
@@ -4133,7 +4189,7 @@ const ResourceHubCore = {
         }).join('');
         container.innerHTML = html;
       } catch (e) {
-        container.innerHTML = `<div class="col-span-full p-8 text-center text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${e.message}</div>`;
+        container.innerHTML = `<div class="col-span-full p-8 text-center text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${sanitizeHtml(e && e.message ? e.message : 'ไม่ทราบสาเหตุ')}</div>`;
       }
     },
     // ฟังก์ชันเก่า (ยังเหลือไว้): ระบบส่งแจ้งซ่อมอาคารสถานที่
@@ -4165,7 +4221,7 @@ const ResourceHubCore = {
         const file = await readFile($('file').files[0]);
         if (file) file.folderId = REPAIR_DRIVE_FOLDER_ID;
         
-        backgroundSubmitAndSync(
+        await backgroundSubmitAndSync(
           { action: 'submit_repair', subject, detail, reporter, file, folderId: REPAIR_DRIVE_FOLDER_ID, urgency, dept, loc, incidentDate: formattedIncidentDate, contact },
           'building', subject, detail, reporter, dept, loc, contact, incidentDate
         );
@@ -4211,7 +4267,7 @@ const ResourceHubCore = {
       const btn = $('btnSubmitAV');
       setBusy(btn, true);
       try {
-        backgroundSubmitAndSync(
+        await backgroundSubmitAndSync(
           { action: 'submit_av', borrower: borrower, equipment: equipmentStr, useDate: useDate, location: loc, signature: signer },
           'av', 'ขอยืม-คืนโสตทัศนูปกรณ์', equipmentStr, borrower, '', loc, '', useDate
         );
@@ -4489,14 +4545,12 @@ const ResourceHubCore = {
           'b-total', 'b-pending', 'b-progress', 'b-completed',
           'av-total', 'av-pending', 'av-active', 'av-completed',
           'it-total', 'it-pending', 'it-progress', 'it-completed',
-          'avrep-total', 'avrep-pending', 'avrep-progress', 'avrep-completed',
           'proj-total', 'proj-pending', 'proj-progress', 'proj-completed',
-          'ratio-building-count', 'ratio-av-count', 'ratio-it-count', 'ratio-av-repair-count', 'ratio-project-count',
-          'ratio-building-pct', 'ratio-av-pct', 'ratio-it-pct', 'ratio-av-repair-pct', 'ratio-project-pct',
+          'ratio-building-count', 'ratio-av-count', 'ratio-it-count', 'ratio-project-count',
+          'ratio-building-pct', 'ratio-av-pct', 'ratio-it-pct', 'ratio-project-pct',
           'overall-progress-text',
           'b-rating', 'b-rating-count', 'av-rating', 'av-rating-count',
-          'it-rating', 'it-rating-count', 'avrep-rating', 'avrep-rating-count',
-          'proj-rating', 'proj-rating-count'
+          'it-rating', 'it-rating-count', 'proj-rating', 'proj-rating-count'
         ];
         idsToLoad.forEach(id => {
           if ($(id)) $(id).innerHTML = loadingHtml;
@@ -4514,11 +4568,13 @@ const ResourceHubCore = {
         let itRatingSum=0, itRatingCount=0;
         let projRatingSum=0, projRatingCount=0;
 
-        function classifyTicket(status, tech) {
+        function classifyTicket(status, tech, type = '') {
           const s = String(status || '').trim();
+          const t = String(type || '').toLowerCase();
           if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return 'cancel';
-          if (/เสร็จ|เรียบร้อยแล้ว|ปิดงาน|คืนเรียบร้อย/.test(s)) return 'done';
-          if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return 'progress';
+          if (/เสร็จ|เรียบร้อย|ปิดงาน|คืนเรียบร้อย|คืนอุปกรณ์/.test(s)) return 'done';
+          if (t === 'project' && /อนุมัติ/.test(s) && !/^รอ/.test(s)) return 'done';
+          if (/กำลัง|รอตรวจรับ|แก้ไข|จัดเตรียมแล้ว|กำลังใช้งาน/.test(s)) return 'progress';
           if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่/.test(s) && !/^รอ/.test(s)) return 'progress';
           if (tech) return 'progress';
           return 'pending';
@@ -4553,7 +4609,7 @@ const ResourceHubCore = {
 
                 const tech = data.techName || data.tech || '';
                 const status = data.status || '';
-                const group = classifyTicket(status, tech);
+                const group = classifyTicket(status, tech, type);
                 const rating = Number(data.rating) || 0;
 
                 if (type === 'building') {
@@ -4733,8 +4789,11 @@ window.loadExecutivePendingProjects = async function() {
         const d = doc.data();
         const tid = d.ticketId || doc.id;
         const status = d.status || '';
-        // รายการที่ยังไม่ได้รับการอนุมัติ / รอพิจารณา
-        if (!/อนุมัติ|เสร็จ|ปิดงาน|ยกเลิก|ปฏิเสธ/.test(status)) {
+        // รายการที่ยังไม่ได้รับการอนุมัติ / รอพิจารณา (แยก 'รอพิจารณาอนุมัติ' ออกจาก 'อนุมัติแล้ว')
+        const s = String(status || '').trim();
+        const isApproved = /อนุมัติ/.test(s) && !/^รอ/.test(s);
+        const isClosed = /เสร็จ|ปิดงาน|ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s);
+        if (!isApproved && !isClosed) {
           pendingList.push({ id: tid, ...d });
         }
       });
@@ -4757,11 +4816,12 @@ window.loadExecutivePendingProjects = async function() {
 
     container.innerHTML = pendingList.map(proj => {
       const subject = proj.subject || proj.title || 'โครงการปรับปรุงและจัดซื้อ';
-      const budget = proj.budget || proj.cost || proj.estimatedBudget || '-';
-      const budgetText = (budget && budget !== '-') ? `${Number(budget).toLocaleString()} บาท` : 'ตามเสนอ';
-      const reporter = proj.reporter || proj.proposer || 'ไม่ระบุ';
+      const budget = proj.budget || proj.allocatedBudget || proj.cost || proj.estimatedBudget || '-';
+      const budgetNum = Number(budget);
+      const budgetText = (budget && budget !== '-' && !isNaN(budgetNum)) ? `${budgetNum.toLocaleString()} บาท` : 'ตามเสนอ';
+      const reporter = proj.reporterName || proj.reporter || proj.proposer || 'ไม่ระบุ';
       const location = proj.location || 'สถานที่ตามเอกสารแนบ';
-      const tid = proj.id;
+      const safeTid = sanitizeHtml(proj.id || '');
 
       return `
         <div class="bg-white text-slate-800 rounded-2xl p-4 md:p-5 shadow-sm border border-purple-200/60 hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -4771,11 +4831,11 @@ window.loadExecutivePendingProjects = async function() {
             </div>
             <div>
               <div class="flex items-center gap-2 flex-wrap mb-1">
-                <span class="text-xs font-black text-violet-700 bg-violet-100 px-2 py-0.5 rounded-lg tracking-wide">${tid}</span>
+                <span class="text-xs font-black text-violet-700 bg-violet-100 px-2 py-0.5 rounded-lg tracking-wide">${safeTid}</span>
                 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                   <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block mr-1"></span>รอพิจารณาอนุมัติ
                 </span>
-                <span class="text-xs text-slate-500 font-normal">งบประมาณ: <strong class="text-slate-800 font-bold">${budgetText}</strong></span>
+                <span class="text-xs text-slate-500 font-normal">งบประมาณ: <strong class="text-slate-800 font-bold">${sanitizeHtml(budgetText)}</strong></span>
               </div>
               <h4 class="text-sm md:text-base font-bold text-slate-900">${sanitizeHtml(subject)}</h4>
               <p class="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
@@ -4787,7 +4847,7 @@ window.loadExecutivePendingProjects = async function() {
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
-            <button onclick="if(window.TrackUI) window.TrackUI.open('${tid}')" class="bg-violet-600 hover:bg-violet-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+            <button type="button" data-tid="${safeTid}" onclick="if(window.TrackUI) window.TrackUI.open(this.dataset.tid)" class="bg-violet-600 hover:bg-violet-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
               <i class="fa-solid fa-magnifying-glass text-xs"></i> <span>ตรวจสอบและลงนาม</span>
             </button>
           </div>
@@ -5226,6 +5286,9 @@ function finalizeLogin(name, role, email) {
   if (isAdminLoggedIn) prefetchAllData();
 
   if (window.NotificationHub) {
+    if (typeof window.NotificationHub.init === 'function') {
+      window.NotificationHub.init();
+    }
     if (typeof window.NotificationHub.refreshTokenProfile === 'function') {
       window.NotificationHub.refreshTokenProfile();
     }
@@ -5254,12 +5317,21 @@ function handleGlobalLogout() {
   localStorage.removeItem('logged_admin');
   localStorage.removeItem('logged_email');
   localStorage.removeItem('logged_role');
+  localStorage.removeItem('session_login_time');
   currentTeacher = null;
   currentEmail = '';
   currentRole = '';
   isAdminLoggedIn = false;
-  if (window.NotificationHub && typeof window.NotificationHub.unregisterFCMProfile === 'function') {
-    window.NotificationHub.unregisterFCMProfile();
+  if (window.NotificationHub) {
+    if (typeof window.NotificationHub.unregisterFCMProfile === 'function') {
+      window.NotificationHub.unregisterFCMProfile();
+    }
+    if (typeof window.NotificationHub.stopListeners === 'function') {
+      window.NotificationHub.stopListeners();
+    }
+  }
+  if (window.TrackUI && typeof window.TrackUI.stopListeners === 'function') {
+    window.TrackUI.stopListeners();
   }
   if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
   if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
@@ -5468,7 +5540,7 @@ function updateSessionUI() {
       $('dropdown-user-name').textContent = 'ผู้บริหาร (Executive)';
     }
     if ($('dropdown-user-role')) {
-      $('dropdown-user-role').innerHTML = `สถานะ: ผู้บริหาร${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
+      $('dropdown-user-role').innerHTML = `สถานะ: ผู้บริหาร${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${sanitizeHtml(currentEmail)}</span>` : ''}`;
     }
 
     if ($('page-auth').classList.contains('active')) {
@@ -5518,7 +5590,7 @@ function updateSessionUI() {
     if ($('dropdown-user-role')) {
       let textRole = 'เจ้าหน้าที่ / Admin';
       if (currentRole === 'Supervisor') textRole = 'หัวหน้างาน';
-      $('dropdown-user-role').innerHTML = `สถานะ: ${textRole}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
+      $('dropdown-user-role').innerHTML = `สถานะ: ${textRole}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${sanitizeHtml(currentEmail)}</span>` : ''}`;
     }
 
     if ($('page-auth').classList.contains('active')) {
@@ -5893,13 +5965,13 @@ async function loadBugAdmin() {
       if (status === 'แก้ไขเรียบร้อย') badge = '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700">แก้ไขเรียบร้อย</span>';
 
       return `
-          <td class="p-4 whitespace-nowrap">${time || '-'}</td>
-          <td class="p-4 whitespace-nowrap font-medium text-slate-800">${rep || '-'}</td>
-          <td class="p-4 whitespace-nowrap text-sky-600 font-semibold">${page || '-'}</td>
-          <td class="p-4 min-w-[200px] whitespace-normal text-slate-600">${issue || '-'}</td>
+          <td class="p-4 whitespace-nowrap">${sanitizeHtml(time) || '-'}</td>
+          <td class="p-4 whitespace-nowrap font-medium text-slate-800">${sanitizeHtml(rep) || '-'}</td>
+          <td class="p-4 whitespace-nowrap text-sky-600 font-semibold">${sanitizeHtml(page) || '-'}</td>
+          <td class="p-4 min-w-[200px] whitespace-normal text-slate-600">${sanitizeHtml(issue) || '-'}</td>
           <td class="p-4 text-center">${badge}</td>
           <td class="p-4 text-center">
-            <button onclick="updateBugStatus(${index}, '${status}')" class="text-sky-600 hover:text-sky-800 hover:bg-sky-50 p-2 rounded-lg transition-colors" title="อัปเดตสถานะ">
+            <button type="button" data-index="${index}" data-status="${sanitizeHtml(status || '')}" onclick="updateBugStatus(Number(this.dataset.index), this.dataset.status)" class="text-sky-600 hover:text-sky-800 hover:bg-sky-50 p-2 rounded-lg transition-colors" title="อัปเดตสถานะ">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
           </td>
@@ -6099,7 +6171,7 @@ function refreshAdvancedTasks() {
   return loadAdvancedTasks();
 }
 
-// ฟังก์ชันสร้างรหัสคิวงานแบบสั้น (BLD-01 ถึง BLD-300 แล้วรันใหม่)
+// ฟังก์ชันสร้างรหัสคิวงานแยกตามปี พ.ศ. (BLD69-001, IT69-001, AV69-001, PRJ69-001 ไม่วนทับของเดิม)
 async function getNextTicketSequence(typeForFirebase) {
   const typeKey = (typeForFirebase === 'building' || typeForFirebase === 'it' || typeForFirebase === 'av' || typeForFirebase === 'project')
     ? typeForFirebase : 'building';
@@ -6108,6 +6180,8 @@ async function getNextTicketSequence(typeForFirebase) {
                : typeForFirebase === 'it'       ? 'IT'
                : typeForFirebase === 'project'  ? 'PRJ'
                : 'TKT';
+  const thaiYear2 = String((new Date().getFullYear() + 543) % 100).padStart(2, '0');
+  const counterKey = `${typeKey}_${thaiYear2}`;
 
   if (!window.firestoreDb && typeof initFirebase === 'function') {
     initFirebase();
@@ -6118,47 +6192,62 @@ async function getNextTicketSequence(typeForFirebase) {
       const counterRef = window.firestoreDb.collection('system_counters').doc('tickets');
       const nextNum = await window.firestoreDb.runTransaction(async (transaction) => {
         const doc = await transaction.get(counterRef);
-        let current = 0;
-        let data = {};
-        if (doc.exists) {
-          data = doc.data() || {};
-          current = Number(data[typeKey]) || 0;
-        }
-        let next = current + 1;
-        if (next > 300) next = 1; // เพดานสูงสุดประเภทละ 300 แล้ววนรอบใหม่ที่ 01
-        data[typeKey] = next;
-        transaction.set(counterRef, data, { merge: true });
+        const data = doc.exists ? (doc.data() || {}) : {};
+        const current = Number(data[counterKey]) || 0;
+        const next = current + 1;
+        transaction.set(counterRef, { [counterKey]: next }, { merge: true });
         return next;
       });
 
-      const numStr = nextNum < 100 ? String(nextNum).padStart(2, '0') : String(nextNum);
-      return `${prefix}-${numStr}`;
+      const numStr = String(nextNum).padStart(3, '0');
+      return `${prefix}${thaiYear2}-${numStr}`;
     } catch (err) {
-      console.warn('Counter transaction failed, falling back:', err);
+      console.warn('Counter transaction failed, using collision-safe fallback:', err);
     }
   }
 
-  // Fallback กรณีออฟไลน์
-  const fallbackNum = (Math.floor(Date.now() / 1000) % 300) + 1;
-  const numStr = fallbackNum < 100 ? String(fallbackNum).padStart(2, '0') : String(fallbackNum);
-  return `${prefix}-${numStr}`;
+  // Fallback กรณี Counter ขัดข้อง ใช้ Timestamp ป้องกันการทับเอกสารเดิม
+  const fallbackSuffix = Date.now().toString(36).toUpperCase().slice(-5);
+  return `${prefix}${thaiYear2}-TMP${fallbackSuffix}`;
 }
 
 // ==========================================
 // 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
 // ==========================================
 async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate) {
-  const ticketId = await getNextTicketSequence(typeForFirebase);
+  if (!window.firestoreDb && typeof initFirebase === 'function') {
+    initFirebase();
+  }
+  if (!window.firestoreDb) {
+    throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลหลัก (Firestore) ได้ กรุณารีเฟรชหน้าเว็บแล้วลองใหม่');
+  }
+
+  let ticketId = await getNextTicketSequence(typeForFirebase);
+  const ticketsCol = window.firestoreDb.collection('tickets');
+
+  // 🛡️ Collision guard: ป้องกันการเขียนทับเอกสารเดิมหากรหัสชน
+  try {
+    const existingDoc = await ticketsCol.doc(ticketId).get();
+    if (existingDoc && existingDoc.exists) {
+      ticketId = `${ticketId}-${Date.now().toString(36).toUpperCase().slice(-4)}`;
+    }
+  } catch (checkErr) {
+    console.warn('Ticket collision check note:', checkErr);
+  }
 
   const initialStatus = (typeForFirebase === 'av' && payload.action === 'submit_av')
     ? 'จัดเตรียมแล้ว'
     : (typeForFirebase === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
 
-  // ตรวจสอบและเตรียม Document สำหรับ Firebase
+  let parsedIncidentDate = null;
+  if (incidentDate) {
+    const dObj = new Date(incidentDate);
+    if (!isNaN(dObj.getTime())) parsedIncidentDate = dObj;
+  }
+
   const reporterEmailVal = currentEmail || localStorage.getItem('logged_email') || '';
   const docData = {
     ticketId,
-    // รหัสห้องแชทที่ไม่ซ้ำ ต่อให้รหัสงานถูกนำกลับมาใช้ใหม่ แชทก็ไม่ซ้อนกับงานเก่า
     chatId: `${ticketId}_${Date.now()}`,
     type: typeForFirebase,
     subject:       subject  || '',
@@ -6168,57 +6257,48 @@ async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail
     dept:          dept     || '',
     location:      loc      || '',
     contact:       contact  || '',
-    incidentDate:  incidentDate ? new Date(incidentDate) : null,
+    incidentDate:  parsedIncidentDate,
     urgency:       payload.urgency || '',
     status:        initialStatus,
     createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  // 1. บันทึกเข้า Firebase ทันที (Instant Client-Write ~0.2 วินาที) เพื่อให้ขึ้นหน้าจอ Real-time ทันที
-  const saveToFirebase = async () => {
-    try {
-      if (!window.firestoreDb && typeof initFirebase === 'function') {
-        initFirebase();
-      }
-      if (window.firestoreDb) {
-        await window.firestoreDb.collection('tickets').doc(ticketId).set(docData);
-        console.log('🔥 Instant Firebase save success for ticket:', ticketId);
-        if (window.TrackUI && typeof window.TrackUI.load === 'function') {
-          window.TrackUI.load(true);
-        }
+  // 1. บันทึกเข้า Firebase และรอคำยืนยันก่อนแจ้งผู้ใช้งานสำเร็จ
+  const writePromise = ticketsCol.doc(ticketId).set(docData);
+  await (typeof window.withTimeout === 'function'
+    ? window.withTimeout(writePromise, 10000)
+    : writePromise);
+  console.log('🔥 Instant Firebase save success for ticket:', ticketId);
 
-        // ยิงแจ้งเตือนเข้า NotificationHub + FCM Web Push ทันทีตามบทบาท
-        if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
-          const isProject = typeForFirebase === 'project';
-          const isAV = typeForFirebase === 'av';
-          const isIT = typeForFirebase === 'it';
-          const notifTitle = isProject
-            ? `📋 เสนอโครงการใหม่ #${ticketId}`
-            : (isAV ? `🎤 งานโสตทัศนูปกรณ์ใหม่ #${ticketId}` : (isIT ? `💻 แจ้งซ่อมไอทีใหม่ #${ticketId}` : `🛠️ มีงานแจ้งซ่อมใหม่ #${ticketId}`));
-          NotificationHub.publish({
-            ticketId: ticketId,
-            taskType: typeForFirebase,
-            category: isProject ? 'โครงการ' : (isAV ? 'งานโสตฯ' : (isIT ? 'งานไอที' : 'งานซ่อม')),
-            title: notifTitle,
-            body: `${subject || 'รายการใหม่'}${loc ? ` (${loc})` : ''} — โดย ${reporter || 'ผู้แจ้ง'}`,
-            reporterName: reporter || '',
-            reporterEmail: reporterEmailVal,
-            location: loc || ''
-          }).catch(() => { });
-        }
-      }
-    } catch (e) {
-      console.error('Instant Firebase save error:', e);
-    }
-  };
-  saveToFirebase();
+  if (window.TrackUI && typeof window.TrackUI.load === 'function') {
+    window.TrackUI.load(true);
+  }
 
-  // 2. ส่งข้อมูลไป Google Sheets (GAS) ใน background
+  // ยิงแจ้งเตือนเข้า NotificationHub + FCM Web Push ทันทีตามบทบาท
+  if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+    const isProject = typeForFirebase === 'project';
+    const isAV = typeForFirebase === 'av';
+    const isIT = typeForFirebase === 'it';
+    const notifTitle = isProject
+      ? `📋 เสนอโครงการใหม่ #${ticketId}`
+      : (isAV ? `🎤 งานโสตทัศนูปกรณ์ใหม่ #${ticketId}` : (isIT ? `💻 แจ้งซ่อมไอทีใหม่ #${ticketId}` : `🛠️ มีงานแจ้งซ่อมใหม่ #${ticketId}`));
+    NotificationHub.publish({
+      ticketId: ticketId,
+      taskType: typeForFirebase,
+      category: isProject ? 'โครงการ' : (isAV ? 'งานโสตฯ' : (isIT ? 'งานไอที' : 'งานซ่อม')),
+      title: notifTitle,
+      body: `${subject || 'รายการใหม่'}${loc ? ` (${loc})` : ''} — โดย ${reporter || 'ผู้แจ้ง'}`,
+      reporterName: reporter || '',
+      reporterEmail: reporterEmailVal,
+      location: loc || ''
+    }).catch(() => { });
+  }
+
+  // 2. อัปโหลดไฟล์เข้า Drive และสำรองลง Google Sheets (GAS) ใน background
   payload.ticketId = ticketId;
   ResourceHubCore.api.post(payload)
     .then(async (res) => {
-      // เมื่อ GAS บันทึกสำเร็จ อัปเดต fileUrl (ถ้ามี) ลง Firebase doc
       if (res && res.fileUrl && window.firestoreDb) {
         try {
           await window.firestoreDb.collection('tickets').doc(ticketId).update({
@@ -6233,6 +6313,8 @@ async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail
     .catch((e) => {
       console.error('Background Submit error to GAS:', e);
     });
+
+  return ticketId;
 }
 
 
@@ -6270,7 +6352,7 @@ async function submitGenericForm(config) {
     if (config.action === 'submit_project') typeForFirebase = 'project';
     if (config.action === 'submit_av_repair') typeForFirebase = 'av';
     
-    backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate || targetDate);
+    await backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate || targetDate);
 
     setBusy(btn, false, config.btnOriginalHtml);
     await alertBox('success', 'ส่งเรื่องสำเร็จ!', config.successText, { timer: 2000, showConfirmButton: false });
@@ -6363,7 +6445,10 @@ function renderAdvTable(tbodyId, rows, type) {
       status = (r[4] || '').trim();
       urgency = (r[11] || '').trim();
       reporter = r[3] || '';
-      img = r[5] && r[5] !== '-' ? '<button onclick="showImageModal(\'' + r[5] + '\')" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</button>' : '-';
+      const rawUrl = String(r[5] || '').trim();
+      img = /^https?:\/\//i.test(rawUrl)
+        ? `<button type="button" data-url="${sanitizeHtml(rawUrl)}" onclick="event.stopPropagation(); showImageModal(this.dataset.url)" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</button>`
+        : '-';
     } else if (type === 'project') {
       // Facility_Projects: [0:Timestamp, 1:Subject, 2:Detail, 3:Reporter, 4:Status, 5:Document_Url, ..., 11:Urgency, 12:Dept, 13:Loc]
       timestamp = r[0] || '';
@@ -6372,10 +6457,13 @@ function renderAdvTable(tbodyId, rows, type) {
       status = (r[4] || '').trim();
       urgency = (r[11] || '').trim();
       reporter = r[3] || '';
-      img = r[5] && r[5] !== '-' ? '<a href="' + r[5] + '" target="_blank" class="text-blue-500 underline"><i class="fa-solid fa-file-pdf"></i> เอกสาร</a>' : '-';
+      const rawUrl = String(r[5] || '').trim();
+      img = /^https?:\/\//i.test(rawUrl)
+        ? `<a href="${sanitizeHtml(rawUrl)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-blue-500 underline"><i class="fa-solid fa-file-pdf"></i> เอกสาร</a>`
+        : '-';
     }
 
-    isDone = ['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes(status);
+    isDone = ['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ', 'อนุมัติแล้ว'].includes(status);
     let urgHtml = '<span class="text-xs text-slate-400">-</span>';
 
     if (isDone && type === 'it') {
@@ -6401,7 +6489,7 @@ function renderAdvTable(tbodyId, rows, type) {
     const safeSubject = sanitizeHtml(subject);
     const safeDetail = sanitizeHtml(detail);
 
-    return `<div onclick="updateAdvTask('${type}', ${i}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
+    return `<div data-type="${sanitizeHtml(type)}" data-index="${i}" data-status="${sanitizeHtml(status)}" onclick="updateAdvTask(this.dataset.type, Number(this.dataset.index), this.dataset.status)" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
         <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
@@ -6418,7 +6506,7 @@ function renderAdvTable(tbodyId, rows, type) {
             <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="triggerRowAction(event, 'delete')"></i>
             <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
         </div>
-        <span class="text-xs group-hover:hidden ${!isDone ? 'text-slate-900' : 'text-slate-500'}">${timestamp.split(' ')[0]}</span>
+        <span class="text-xs group-hover:hidden ${!isDone ? 'text-slate-900' : 'text-slate-500'}">${sanitizeHtml(String(timestamp || '').split(' ')[0])}</span>
       </div>
     </div>`;
   }).join('');
@@ -6818,22 +6906,25 @@ function renderDocTable(rows) {
   }
   tbody.innerHTML = rows.map((r, i) => {
     // r = [docId, category, uploadDate, docName, uploader, fileUrl, fileExt, description]
-    const docId = r[0] || '';
-    const cat = r[1] || 'ทั่วไป';
-    const date = r[2] || '-';
-    const name = r[3] || 'ไม่มีชื่อ';
-    const uploader = r[4] || '-';
-    const fileUrl = r[5] || '';
-    const ext = r[6] || '';
-    const catClass = DOC_CATEGORY_COLORS[cat] || DOC_CATEGORY_COLORS['ทั่วไป'];
-    const fileLink = fileUrl
-      ? `<a href="${fileUrl}" target="_blank" class="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"><i class="fa-solid fa-cloud-arrow-down"></i> ดาวน์โหลด</a>`
+    const docId = sanitizeHtml(r[0] || '');
+    const catRaw = r[1] || 'ทั่วไป';
+    const cat = sanitizeHtml(catRaw);
+    const date = sanitizeHtml(r[2] || '-');
+    const name = sanitizeHtml(r[3] || 'ไม่มีชื่อ');
+    const uploaderRaw = String(r[4] || '-');
+    const uploader = sanitizeHtml(uploaderRaw);
+    const rawFileUrl = String(r[5] || '').trim();
+    const safeFileUrl = /^https?:\/\//i.test(rawFileUrl) ? sanitizeHtml(rawFileUrl) : '';
+    const ext = sanitizeHtml(r[6] || '');
+    const catClass = DOC_CATEGORY_COLORS[catRaw] || DOC_CATEGORY_COLORS['ทั่วไป'];
+    const fileLink = safeFileUrl
+      ? `<a href="${safeFileUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"><i class="fa-solid fa-cloud-arrow-down"></i> ดาวน์โหลด</a>`
       : '<span class="text-slate-300 text-xs">ไม่มีไฟล์</span>';
     return `<tr class="hover:bg-indigo-50/30 transition-colors group">
           <td class="p-4 text-slate-400 text-xs">${i + 1}</td>
           <td class="p-4">
             <div class="flex items-center gap-2">
-              <span class="text-lg">${FILE_ICON(ext)}</span>
+              <span class="text-lg">${FILE_ICON(r[6] || '')}</span>
               <span class="font-semibold text-slate-800">${name}</span>
             </div>
           </td>
@@ -6843,7 +6934,7 @@ function renderDocTable(rows) {
           <td class="p-4 text-slate-500 text-xs">${date}</td>
           <td class="p-4">
             <div class="flex items-center gap-1.5 text-xs">
-              <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px]">${(uploader || '?')[0].toUpperCase()}</span>
+              <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px]">${sanitizeHtml((uploaderRaw || '?')[0].toUpperCase())}</span>
               <span class="text-slate-600 font-medium">${uploader}</span>
             </div>
           </td>
@@ -6853,7 +6944,7 @@ function renderDocTable(rows) {
           <td class="p-4 text-center">
             <div class="flex items-center justify-center gap-2">
               ${fileLink}
-              <button onclick="deleteDocument('${docId.replace(/'/g, "&#39;")}','${name.replace(/'/g, "&#39;")}')" class="text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100" title="ลบเอกสาร">
+              <button type="button" data-id="${docId}" data-name="${name}" onclick="deleteDocument(this.dataset.id, this.dataset.name)" class="text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100" title="ลบเอกสาร">
                 <i class="fa-solid fa-trash text-sm"></i>
               </button>
             </div>
@@ -7525,12 +7616,14 @@ function renderUserTable() {
 
     const safeEmailId = (user[0] || '').replace(/[^a-zA-Z0-9]/g, '');
 
+    const safePicUrl = /^https?:\/\//i.test(String(user[4] || '').trim()) ? sanitizeHtml(String(user[4]).trim()) : '';
+
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 transition-colors';
     tr.innerHTML = `
     <td class="px-4 py-3">
       <div class="flex items-center gap-3">
-        ${picture ? `<img src="${picture}" class="w-8 h-8 rounded-full shadow-sm object-cover" alt="profile" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=265D5A&color=fff'">` : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500"><i class="fa-solid fa-user"></i></div>`}
+        ${safePicUrl ? `<img src="${safePicUrl}" class="w-8 h-8 rounded-full shadow-sm object-cover" alt="profile" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(String(user[1] || 'U'))}&background=265D5A&color=fff'">` : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500"><i class="fa-solid fa-user"></i></div>`}
         <div>
           <span class="font-medium text-slate-800">${name}</span>
         </div>
@@ -7538,7 +7631,7 @@ function renderUserTable() {
     </td>
     <td class="px-4 py-3 text-slate-600 font-mono text-xs">${email}</td>
     <td class="px-4 py-3">
-      <select id="role-select-${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none" onchange="handleUserChange('${email}', '${safeEmailId}')">
+      <select id="role-select-${safeEmailId}" data-email="${email}" data-safe-id="${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none" onchange="handleUserChange(this.dataset.email, this.dataset.safeId)">
         <option value="Teacher" ${role === 'Teacher' ? 'selected' : ''}>Teacher (ครู)</option>
         <option value="Tech" ${role === 'Tech' ? 'selected' : ''}>Tech (ช่าง)</option>
         <option value="AV" ${role === 'AV' ? 'selected' : ''}>AV (โสตฯ)</option>
@@ -7548,7 +7641,7 @@ function renderUserTable() {
       </select>
     </td>
     <td class="px-4 py-3">
-      <select id="status-select-${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none font-medium" onchange="handleUserChange('${email}', '${safeEmailId}')">
+      <select id="status-select-${safeEmailId}" data-email="${email}" data-safe-id="${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none font-medium" onchange="handleUserChange(this.dataset.email, this.dataset.safeId)">
         <option value="approved" ${status === 'approved' ? 'selected' : ''}>🟢 ใช้งานปกติ (Approved)</option>
         <option value="pending" ${status === 'pending' ? 'selected' : ''}>🟡 รออนุมัติ (Pending)</option>
         <option value="banned" ${status === 'banned' ? 'selected' : ''}>🔴 ระงับการใช้งาน (Banned)</option>
@@ -7561,7 +7654,7 @@ function renderUserTable() {
           <i class="fa-solid fa-check text-emerald-500 hidden" id="check-${safeEmailId}"></i>
           <span class="text-slate-400 hidden sm:inline">ออโต้</span>
         </span>
-        <button type="button" onclick="deleteUser('${email}', '${name.replace(/'/g, "\\'")}')" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" title="ลบผู้ใช้คนนี้">
+        <button type="button" data-email="${email}" data-name="${name}" onclick="deleteUser(this.dataset.email, this.dataset.name)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" title="ลบผู้ใช้คนนี้">
           <i class="fa-regular fa-trash-can text-sm"></i>
         </button>
       </div>
@@ -8178,6 +8271,9 @@ function localDevLogin(name, role, email) {
   if (isAdminLoggedIn) prefetchAllData();
 
   if (window.NotificationHub) {
+    if (typeof window.NotificationHub.init === 'function') {
+      window.NotificationHub.init();
+    }
     if (typeof window.NotificationHub.refreshTokenProfile === 'function') {
       window.NotificationHub.refreshTokenProfile();
     }
@@ -8395,14 +8491,30 @@ const TrackUI = (() => {
   const pad = n => String(n).padStart(3, '0');
 
   // แปลงสถานะเป็นหมวด + ลำดับขั้นตอน
-  function classify(status, tech) {
+  function classify(status, tech, type = '') {
     const s = str(status);
+    const t = str(type).toLowerCase();
     if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return { group: 'cancel', step: -1 };
-    if (/เสร็จ|เรียบร้อยแล้ว|ปิดงาน/.test(s)) return { group: 'done', step: 3 };
-    if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return { group: 'progress', step: 2 };
-    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน/.test(s) && !/^รอ/.test(s)) return { group: 'progress', step: 1 };
+    if (/เสร็จ|เรียบร้อย|ปิดงาน|คืนเรียบร้อย|คืนอุปกรณ์/.test(s)) return { group: 'done', step: 3 };
+    if (t === 'project' && /อนุมัติ/.test(s) && !/^รอ/.test(s)) return { group: 'done', step: 3 };
+    if (/กำลัง|รอตรวจรับ|แก้ไข|จัดเตรียมแล้ว|กำลังใช้งาน/.test(s)) return { group: 'progress', step: 2 };
+    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่/.test(s) && !/^รอ/.test(s)) return { group: 'progress', step: 1 };
     if (tech) return { group: 'progress', step: 1 };
     return { group: 'pending', step: 0 };
+  }
+
+  function docIdOf(job, fallbackId) {
+    return (job && (job.docId || job.id)) || fallbackId || '';
+  }
+
+  async function writeTicketPatch(docId, payload, ms = 8000) {
+    if (!docId) throw new Error('ไม่พบรหัสเอกสาร (Ticket Doc ID)');
+    if (!window.firestoreDb) throw new Error('ยังไม่ได้เชื่อมต่อฐานข้อมูล Firebase');
+    const writePromise = window.firestoreDb.collection('tickets').doc(docId).set(payload, { merge: true });
+    return Promise.race([
+      writePromise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('หมดเวลาเชื่อมต่อฐานข้อมูล (Timeout)')), ms))
+    ]);
   }
 
   function isFinishedForNotif(job) {
@@ -8608,7 +8720,8 @@ const TrackUI = (() => {
 
     try {
       if (window.firestoreDb) {
-        await window.firestoreDb.collection('tickets').doc(job.id).update({
+        const targetDocId = docIdOf(job, jobId);
+        await window.firestoreDb.collection('tickets').doc(targetDocId).update({
           isArchived: newArchived
         });
       }
@@ -8824,7 +8937,7 @@ const TrackUI = (() => {
 
   function fromFirebase(docData, docId) {
     const status = docData.status || 'รอดำเนินการ';
-    const cls = classify(status, docData.techName);
+    const cls = classify(status, docData.techName || docData.tech, docData.type);
 
     let createdDate = null;
     if (docData.createdAt) {
@@ -8890,7 +9003,7 @@ const TrackUI = (() => {
   function makeJob(type, seq, r, x, originalIndex) {
     const status = str(r[4]) || (type === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
     const created = parseDate(r[0]);
-    const cls = classify(status, x.tech);
+    const cls = classify(status, x.tech, type);
     return {
       id: `${TYPES[type].prefix}-${pad(seq)}`,
       originalIndex, // Added to map back to the Google Sheet row
@@ -9023,11 +9136,7 @@ const TrackUI = (() => {
             open(state.currentJobId, true);
           }
 
-          // ตรวจจับและปรับรหัสคิวงานเก่าให้เป็นรหัสสั้นใหม่อัตโนมัติ (BLD-01)
-          if (hasLegacyId && !state.reindexing) {
-            state.reindexing = true;
-            setTimeout(() => { reindexTickets(false); }, 1500);
-          }
+          // ยกเลิก auto-reindex อัตโนมัติตอนโหลด เพื่อป้องกันหลายเครื่องแก้ไข doc ID ชนกัน (ให้ Admin กด reindexTickets เองได้เท่านั้น)
         }, (err) => {
           console.error("Firebase listen error:", err);
           state.loading = false;
@@ -9289,7 +9398,7 @@ const TrackUI = (() => {
           <i class="fa-regular fa-folder-open text-3xl mb-3 text-slate-300"></i>
           <div class="font-medium text-slate-700 mb-1">${state.search || state.status !== 'all' || state.type !== 'all' ? 'ไม่พบงานที่ตรงกับเงื่อนไข' : 'ยังไม่มีประวัติการแจ้งซ่อมของคุณในระบบ'}</div>
           <p class="text-xs text-slate-400 mb-4">${state.search || state.status !== 'all' || state.type !== 'all' ? 'ลองเปลี่ยนคำค้นหาหรือตัวกรองสถานะ' : 'เมื่อคุณแจ้งซ่อมผ่านระบบ รายการงานของคุณจะมาแสดงที่นี่เพื่อติดตามสถานะ'}</p>
-          <button onclick="nav('page-repair')" class="px-4 py-2 bg-[#265D5A] text-white text-xs font-medium rounded-xl shadow-sm hover:bg-[#1f4b48] transition-colors"><i class="fa-solid fa-plus mr-1"></i> แจ้งซ่อมใหม่</button>
+          <button onclick="nav('page-repair-form')" class="px-4 py-2 bg-[#265D5A] text-white text-xs font-medium rounded-xl shadow-sm hover:bg-[#1f4b48] transition-colors"><i class="fa-solid fa-plus mr-1"></i> แจ้งซ่อมใหม่</button>
         </div>`;
       } else {
         list.innerHTML = `<div class="col-span-full p-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
@@ -9701,10 +9810,11 @@ const TrackUI = (() => {
       currentDocUnsubscribe = null;
     }
     if (window.firestoreDb) {
-      currentDocUnsubscribe = window.firestoreDb.collection('tickets').doc(id).onSnapshot((docSnap) => {
-        if (docSnap.exists && state.currentJobId === id) {
+      const listenDocId = docIdOf(job, id);
+      currentDocUnsubscribe = window.firestoreDb.collection('tickets').doc(listenDocId).onSnapshot((docSnap) => {
+        if (docSnap.exists && (state.currentJobId === id || state.currentJobId === docSnap.id)) {
           const liveJob = fromFirebase(docSnap.data(), docSnap.id);
-          const existingIdx = state.jobs.findIndex(j => j.id === id);
+          const existingIdx = state.jobs.findIndex(j => j.id === id || j.docId === docSnap.id);
           if (existingIdx !== -1) {
             state.jobs[existingIdx] = liveJob;
           }
@@ -9952,7 +10062,7 @@ const TrackUI = (() => {
 
     if (!x.isConfirmed) return;
 
-    const targetDocId = job.docId || job.id || jobId;
+    const targetDocId = docIdOf(job, jobId);
     const newStatus = 'เสร็จสิ้น';
 
     Swal.fire({
@@ -9966,7 +10076,7 @@ const TrackUI = (() => {
       initFirebase();
     }
 
-    // ⚡ 1. บันทึกปิดงานลง Firebase ทันทีและ AWAIT ให้เสร็จสมบูรณ์ (~0.15 วิ)
+    // ⚡ 1. บันทึกปิดงานลง Firebase ทันทีและ AWAIT ให้สำเร็จจริง (ไม่แจ้งสำเร็จปลอมหากเขียนพลาด)
     const updatePayload = {
       status: newStatus,
       fixDetail: x.value.fixDetail,
@@ -9975,17 +10085,17 @@ const TrackUI = (() => {
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    if (window.firestoreDb) {
-      try {
-        const writePromise = window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
-        await Promise.race([
-          writePromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3500))
-        ]);
-        console.log('✅ closeJob saved to Firestore doc:', targetDocId);
-      } catch (err) {
-        console.warn('Firestore closeJob warn (proceeding):', err);
-      }
+    try {
+      await writeTicketPatch(targetDocId, updatePayload, 8000);
+      console.log('✅ closeJob saved to Firestore doc:', targetDocId);
+    } catch (err) {
+      console.error('Firestore closeJob error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'บันทึกปิดงานไม่สำเร็จ',
+        text: 'ไม่สามารถบันทึกลงฐานข้อมูลได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ครับ (' + (err.message || err) + ')'
+      });
     }
 
     // 2. อัปเดตสถานะในหน้าจอทันที ไม่บล็อกผู้ใช้
@@ -10322,17 +10432,52 @@ const TrackUI = (() => {
 
     if (formValues) {
       const { techName, techEmail, techPhone, techSkills, techRole, urgency } = formValues;
+      const targetDocId = docIdOf(job, jobId);
+      const prevState = {
+        tech: job.tech,
+        status: job.status,
+        assignedAt: job.assignedAt,
+        step: job.step,
+        group: job.group,
+        urgency: job.urgency
+      };
 
-      // ⚡ Optimistic UI: อัปเดตสถานะและหน้าจอทันทีใน 0.05 วินาที
+      let updateData = {
+        techName: techName,
+        techEmail: techEmail,
+        techPhone: techPhone,
+        techSkills: techSkills,
+        techRole: techRole,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      if (techName && (!job.status || job.status === 'รอดำเนินการ' || job.status === 'รอมอบหมาย')) {
+        updateData.status = 'มอบหมายช่างแล้ว';
+        updateData.assignedAt = firebase.firestore.FieldValue.serverTimestamp();
+      }
+      if (urgency) updateData.urgency = urgency;
+
+      try {
+        await writeTicketPatch(targetDocId, updateData, 8000);
+      } catch (err) {
+        console.error('Firestore assignTech error:', err);
+        Object.assign(job, prevState);
+        return Swal.fire({
+          icon: 'error',
+          title: 'มอบหมายช่างไม่สำเร็จ',
+          text: 'ไม่สามารถบันทึกลงฐานข้อมูลได้: ' + (err.message || err)
+        });
+      }
+
+      // อัปเดตหน้าจอหลังจากบันทึก Firebase สำเร็จจริง
       job.tech = techName;
-      if (techName && (!job.status || job.status === 'รอดำเนินการ')) {
-        job.status = 'มอบหมายช่างแล้ว';
+      if (updateData.status) {
+        job.status = updateData.status;
         job.assignedAt = new Date();
         job.step = 1;
         job.group = 'progress';
       }
       if (urgency) job.urgency = urgency;
-      open(jobId);
+      open(jobId, true);
 
       const successMsg = techEmail ? `มอบหมายงานและส่งอีเมลแจ้ง ${esc(techName)} (${esc(techEmail)}) เรียบร้อยแล้ว` : (techName ? `มอบหมาย ${esc(techName)} เรียบร้อยแล้ว` : 'ยกเลิกการมอบหมายช่างสำเร็จ');
       Swal.fire({
@@ -10345,33 +10490,10 @@ const TrackUI = (() => {
         timerProgressBar: true
       });
 
-      // 🚀 Background Parallel Sync: บันทึก Firestore + ซิงค์ Sheets + ส่งเมลช่าง ในเบื้องหลัง
+      // 🚀 Background Sync: แจ้งเตือน + ซิงค์ Sheets + ส่งอีเมลช่าง
       const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
       const sheetName = sheetMap[job.type] || 'Tasks';
-      const syncTasks = [];
 
-      // 1. อัปเดตลง Firebase ทันที
-      if (window.firestoreDb) {
-        let updateData = {
-          techName: techName,
-          techEmail: techEmail,
-          techPhone: techPhone,
-          techSkills: techSkills,
-          techRole: techRole,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        if (techName && (!job.status || job.status === 'รอดำเนินการ')) {
-          updateData.status = 'มอบหมายช่างแล้ว';
-          updateData.assignedAt = firebase.firestore.FieldValue.serverTimestamp();
-        }
-        if (urgency) updateData.urgency = urgency;
-        syncTasks.push(
-          window.firestoreDb.collection('tickets').doc(jobId).set(updateData, { merge: true })
-            .catch(err => console.warn('Firestore assignTech error:', err))
-        );
-      }
-
-      // ยิงแจ้งเตือนเข้า NotificationHub + FCM Web Push ถึงช่างผู้รับผิดชอบและครูผู้แจ้งงานทันที
       if (techName && typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
         NotificationHub.publish({
           ticketId: jobId,
@@ -10386,21 +10508,16 @@ const TrackUI = (() => {
         }).catch(() => { });
       }
 
-      // 2. อัปเดตลง Google Sheets + ส่งอีเมลแจ้งเตือนถึงช่าง (เบื้องหลัง)
-      syncTasks.push(
-        ResourceHubCore.api.post({
-          action: 'edit_assignment',
-          sheetName: sheetName,
-          ticketId: jobId,
-          rowIndex: job.originalIndex,
-          technician: techName,
-          technicianEmail: techEmail,
-          technicianPhone: techPhone,
-          urgency: urgency
-        }).catch(err => console.warn('Sync assignTech to Sheets error:', err))
-      );
-
-      Promise.all(syncTasks).catch(err => console.error('Background assignTech sync error:', err));
+      ResourceHubCore.api.post({
+        action: 'edit_assignment',
+        sheetName: sheetName,
+        ticketId: jobId,
+        rowIndex: job.originalIndex,
+        technician: techName,
+        technicianEmail: techEmail,
+        technicianPhone: techPhone,
+        urgency: urgency
+      }).catch(err => console.warn('Sync assignTech to Sheets error:', err));
     }
   }
 
@@ -10457,7 +10574,30 @@ const TrackUI = (() => {
     const approverName = ((typeof currentTeacher === 'string' && currentTeacher) || (localStorage.getItem('logged_teacher') || 'ผู้บริหาร')).trim();
     const approverEmail = ((typeof currentEmail === 'string' && currentEmail) || (localStorage.getItem('logged_email') || '')).trim();
 
-    // ⚡ Optimistic UI: อัปเดตสถานะโครงการทันทีใน 0.05 วินาที
+    const targetDocId = docIdOf(job, jobId);
+    const updatePayload = {
+      status: 'อนุมัติแล้ว',
+      approvedBy: approverName + (approverEmail ? ` (${approverEmail})` : ''),
+      approvalNote: formValues.note,
+      allocatedBudget: formValues.budget || '',
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+      await writeTicketPatch(targetDocId, updatePayload, 8000);
+    } catch (err) {
+      console.error('Firestore approve project error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'บันทึกผลอนุมัติไม่สำเร็จ',
+        text: err && err.message ? err.message : 'ไม่สามารถติดต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+        confirmButtonColor: '#265D5A'
+      });
+    }
+
+    job.docId = targetDocId;
     job.status = 'อนุมัติแล้ว';
     job.step = 3;
     job.group = 'done';
@@ -10471,24 +10611,6 @@ const TrackUI = (() => {
       showConfirmButton: false
     });
 
-    const updatePayload = {
-      status: 'อนุมัติแล้ว',
-      approvedBy: approverName + (approverEmail ? ` (${approverEmail})` : ''),
-      approvalNote: formValues.note,
-      allocatedBudget: formValues.budget || '',
-      approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    // 🚀 Background Parallel Sync: ทำงานในเบื้องหลังพร้อมกัน
-    const approveTasks = [];
-    if (window.firestoreDb) {
-      approveTasks.push(
-        window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true })
-          .catch(err => console.warn('Firestore approve project error:', err))
-      );
-    }
-
     publishCompletionNotifAndCleanOld(jobId, {
       ticketId: jobId,
       taskType: 'project',
@@ -10499,18 +10621,14 @@ const TrackUI = (() => {
       targetUserEmail: job.reporterEmail || ''
     });
 
-    approveTasks.push(
-      ResourceHubCore.api.post({
-        action: 'update_adv_task',
-        tabType: 'project',
-        rowIndex: job.originalIndex,
-        status: 'อนุมัติแล้ว',
-        technician: approverName,
-        detail: `[อนุมัติแล้ว] ${formValues.note}${formValues.budget ? ` (งบประมาณ: ${formValues.budget} บาท)` : ''}`
-      }).catch(sheetErr => console.warn('Sync approve to Sheet backup warning:', sheetErr))
-    );
-
-    Promise.all(approveTasks).catch(err => console.error('Background approveProject sync error:', err));
+    ResourceHubCore.api.post({
+      action: 'update_adv_task',
+      tabType: 'project',
+      rowIndex: job.originalIndex,
+      status: 'อนุมัติแล้ว',
+      technician: approverName,
+      detail: `[อนุมัติแล้ว] ${formValues.note}${formValues.budget ? ` (งบประมาณ: ${formValues.budget} บาท)` : ''}`
+    }).catch(sheetErr => console.warn('Sync approve to Sheet backup warning:', sheetErr));
   }
 
   // ---------- ฟังก์ชันไม่อนุมัติ / ส่งกลับแก้ไขโครงการ (สำหรับผู้บริหาร) ----------
@@ -10557,12 +10675,40 @@ const TrackUI = (() => {
 
     const rejectorName = ((typeof currentTeacher === 'string' && currentTeacher) || (localStorage.getItem('logged_teacher') || 'ผู้บริหาร')).trim();
 
-    // ⚡ Optimistic UI: อัปเดตสถานะทันที
+    const targetDocId = docIdOf(job, jobId);
+    const updatePayload = {
+      status: 'ไม่อนุมัติ',
+      approvalNote: formValues.note,
+      rejectedBy: rejectorName,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    Swal.fire({
+      title: 'กำลังบันทึกผลการพิจารณา...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    try {
+      await writeTicketPatch(targetDocId, updatePayload, 8000);
+    } catch (err) {
+      console.error('Firestore reject project error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'บันทึกผลพิจารณาไม่สำเร็จ',
+        text: err && err.message ? err.message : 'ไม่สามารถติดต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+        confirmButtonColor: '#265D5A'
+      });
+    }
+
+    job.docId = targetDocId;
     job.status = 'ไม่อนุมัติ';
     job.step = 3;
     job.group = 'done';
     open(jobId);
 
+    Swal.close();
     Swal.fire({
       toast: true,
       position: 'top-end',
@@ -10572,22 +10718,6 @@ const TrackUI = (() => {
       timer: 2000,
       timerProgressBar: true
     });
-
-    const updatePayload = {
-      status: 'ไม่อนุมัติ',
-      approvalNote: formValues.note,
-      rejectedBy: rejectorName,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    // 🚀 Background Parallel Sync: ทำงานในเบื้องหลังพร้อมกัน
-    const rejectTasks = [];
-    if (window.firestoreDb) {
-      rejectTasks.push(
-        window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true })
-          .catch(err => console.warn('Firestore reject project error:', err))
-      );
-    }
 
     publishCompletionNotifAndCleanOld(jobId, {
       ticketId: jobId,
@@ -10599,18 +10729,14 @@ const TrackUI = (() => {
       targetUserEmail: job.reporterEmail || ''
     });
 
-    rejectTasks.push(
-      ResourceHubCore.api.post({
-        action: 'update_adv_task',
-        tabType: 'project',
-        rowIndex: job.originalIndex,
-        status: 'ไม่อนุมัติ',
-        technician: rejectorName,
-        detail: `[ไม่อนุมัติ] ${formValues.note}`
-      }).catch(sheetErr => console.warn('Sync reject to Sheet backup warning:', sheetErr))
-    );
-
-    Promise.all(rejectTasks).catch(err => console.error('Background rejectProject sync error:', err));
+    ResourceHubCore.api.post({
+      action: 'update_adv_task',
+      tabType: 'project',
+      rowIndex: job.originalIndex,
+      status: 'ไม่อนุมัติ',
+      technician: rejectorName,
+      detail: `[ไม่อนุมัติ] ${formValues.note}`
+    }).catch(sheetErr => console.warn('Sync reject to Sheet backup warning:', sheetErr));
   }
 
   // ---------- สะกิดเตือนช่างรับผิดชอบงานทาง LINE (Manual Ping) ----------
@@ -10726,7 +10852,7 @@ const TrackUI = (() => {
 
     const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
     const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
-    const targetDocId = job.docId || job.id || jobId;
+    const targetDocId = docIdOf(job, jobId);
 
     Swal.fire({
       title: 'กำลังเริ่มดำเนินงาน...',
@@ -10735,11 +10861,7 @@ const TrackUI = (() => {
       didOpen: () => Swal.showLoading()
     });
 
-    if (!window.firestoreDb && typeof initFirebase === 'function') {
-      initFirebase();
-    }
-
-    // ⚡ 1. บันทึกสถานะลง Firestore ทันทีและ AWAIT ให้เสร็จสมบูรณ์ (~0.15 วิ)
+    // ⚡ 1. บันทึกสถานะลง Firestore ทันทีและ AWAIT ให้เสร็จสมบูรณ์
     // การันตีว่าข้อมูลถูกเซฟลงคลาวด์จริง รีเฟรชหน้าเว็บแล้วจะไม่เด้งกลับไปที่เดิม
     const updatePayload = {
       status: 'กำลังดำเนินการ',
@@ -10747,20 +10869,22 @@ const TrackUI = (() => {
     };
     if (note) updatePayload.fixDetail = note;
 
-    if (window.firestoreDb) {
-      try {
-        const writePromise = window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
-        await Promise.race([
-          writePromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3500))
-        ]);
-        console.log('✅ startJob saved to Firestore doc:', targetDocId);
-      } catch (err) {
-        console.warn('Firestore startJob warn (proceeding):', err);
-      }
+    try {
+      await writeTicketPatch(targetDocId, updatePayload, 8000);
+      console.log('✅ startJob saved to Firestore doc:', targetDocId);
+    } catch (err) {
+      console.error('Firestore startJob error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'เริ่มดำเนินงานไม่สำเร็จ',
+        text: err && err.message ? err.message : 'ไม่สามารถติดต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+        confirmButtonColor: '#265D5A'
+      });
     }
 
-    // 2. อัปเดต State ในหน่วยความจำและรีเฟรชหน้าจอ
+    // 2. อัปเดต State ในหน่วยความจำและรีเฟรชหน้าจอหลัง Firestore ยืนยันแล้ว
+    job.docId = targetDocId;
     job.status = 'กำลังดำเนินการ';
     job.step = 2;
     job.group = 'progress';
@@ -10851,13 +10975,37 @@ const TrackUI = (() => {
 
     if (!isConfirmed || !note) return;
 
-    // ⚡ Optimistic UI: อัปเดตหน้าจอทันที
     const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
     const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
+    const targetDocId = docIdOf(job, jobId);
 
+    Swal.fire({
+      title: 'กำลังบันทึกความคืบหน้า...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    try {
+      await writeTicketPatch(targetDocId, {
+        fixDetail: note,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, 8000);
+    } catch (err) {
+      console.error('Firestore updateProgress error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'บันทึกความคืบหน้าไม่สำเร็จ',
+        text: err && err.message ? err.message : 'ไม่สามารถติดต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+        confirmButtonColor: '#265D5A'
+      });
+    }
+
+    job.docId = targetDocId;
     job.fixDetail = note;
     open(jobId);
 
+    Swal.close();
     Swal.fire({
       toast: true,
       position: 'top-end',
@@ -10868,23 +11016,13 @@ const TrackUI = (() => {
       timerProgressBar: true
     });
 
-    // 🚀 Background Parallel Sync
+    // 🚀 Background Sync (Chat + Sheet Backup)
     const tasks = [];
-
-    if (window.firestoreDb) {
+    if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
       tasks.push(
-        window.firestoreDb.collection('tickets').doc(jobId).set({
-          fixDetail: note,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).catch(err => console.warn('Firestore updateProgress error:', err))
+        FirebaseChat.send(chatRoomOf(job, jobId), techName, 'tech', `📢 แจ้งความคืบหน้า: ${note}`, '', jobId)
+          .catch(e => console.warn('Chat notify error:', e))
       );
-
-      if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
-        tasks.push(
-          FirebaseChat.send(chatRoomOf(job, jobId), techName, 'tech', `📢 แจ้งความคืบหน้า: ${note}`, '', jobId)
-            .catch(e => console.warn('Chat notify error:', e))
-        );
-      }
     }
 
     const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
@@ -11386,7 +11524,7 @@ const TrackUI = (() => {
         list.sort((a, b) => a.ts - b.ts);
 
         list.forEach((item, idx) => {
-          const seq = (idx % 300) + 1;
+          const seq = idx + 1;
           const targetId = `${prefixes[cat]}-${fmtSeq(seq)}`;
           tasks.push({
             oldId: item.oldId,
@@ -11402,7 +11540,7 @@ const TrackUI = (() => {
         });
 
         // กำหนดค่า counter ล่าสุดของหมวดนี้ ให้เท่ากับจำนวนงานที่รันล่าสุด
-        finalCounters[cat] = list.length > 0 ? ((list.length - 1) % 300) + 1 : 0;
+        finalCounters[cat] = list.length;
       });
 
       // กรองเฉพาะรายการที่ต้องเปลี่ยน ID
@@ -11520,6 +11658,28 @@ const TrackUI = (() => {
     clearChatHistory,
     migrateFromSheets,
     reindexTickets,
+    stopListeners() {
+      if (unsubscribeTickets) {
+        unsubscribeTickets();
+        unsubscribeTickets = null;
+      }
+      if (currentDocUnsubscribe) {
+        currentDocUnsubscribe();
+        currentDocUnsubscribe = null;
+      }
+      if (currentChatUnsubscribe) {
+        currentChatUnsubscribe();
+        currentChatUnsubscribe = null;
+      }
+      clearTimeout(state.searchTimer);
+      clearTimeout(window._chatLoadingTimer);
+      currentChatTicketId = null;
+      currentChatRoomId = null;
+      state.jobs = [];
+      state.loaded = false;
+      state.loading = false;
+      state.currentJobId = null;
+    },
     backToList() {
       if (currentDocUnsubscribe) {
         currentDocUnsubscribe();
@@ -11631,6 +11791,9 @@ const NotificationHub = (function () {
   let pruneRunning = false;
   let currentTab = 'all'; // 'all' | 'unread' | 'my'
   let isListenerActive = false;
+  let unsubNotifications = null;
+  let unsubTickets = null;
+  let hasBoundDocumentEvents = false;
   let audioContextInstance = null;
   let audioElementInstance = null;
 
@@ -11645,6 +11808,17 @@ const NotificationHub = (function () {
   let currentFcmToken = null;
 
   // ── 1. ระบบจำสถานะการอ่านและรายการที่ถูกลบ (Read / Deleted) ────────────────
+  function escHtml(v) {
+    const s = (v === null || v === undefined) ? '' : String(v);
+    if (typeof window.sanitizeHtml === 'function') return window.sanitizeHtml(s);
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
   function getCurrentUserEmail() {
     return (
       (typeof currentEmail !== 'undefined' && currentEmail) ||
@@ -11907,6 +12081,13 @@ const NotificationHub = (function () {
     toast.id = toastId;
     toast.className = 'toast-item-enter bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-3.5 flex flex-col gap-2 pointer-events-auto transition-all relative overflow-hidden text-slate-800';
 
+    const safeTitle = escHtml(item.title || 'แจ้งเตือนงานซ่อม');
+    const safeBody = escHtml(item.body || item.subject || '');
+    const safeLocation = escHtml(item.location || '');
+    const safeTicketId = escHtml(item.ticketId || '');
+    const safeNotifId = escHtml(item.id || '');
+    const safeToastId = escHtml(toastId);
+
     toast.innerHTML = `
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style="background-color: ${visuals.bg}; color: ${visuals.color};">
@@ -11919,17 +12100,17 @@ const NotificationHub = (function () {
             </span>
             <span class="text-[10px] text-slate-400 font-medium">เมื่อสักครู่</span>
           </div>
-          <p class="text-xs font-bold text-slate-800 truncate">${item.title || 'แจ้งเตือนงานซ่อม'}</p>
-          <p class="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-snug">${item.body || item.subject || ''}</p>
-          ${item.location ? `<p class="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-location-dot"></i> ${item.location}</p>` : ''}
+          <p class="text-xs font-bold text-slate-800 truncate">${safeTitle}</p>
+          <p class="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-snug">${safeBody}</p>
+          ${safeLocation ? `<p class="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-location-dot"></i> ${safeLocation}</p>` : ''}
         </div>
-        <button onclick="NotificationHub.dismissToast('${toastId}')" class="text-slate-400 hover:text-slate-600 p-1 -mr-1 -mt-1 transition-colors" title="ปิด">
+        <button type="button" data-toast-id="${safeToastId}" onclick="NotificationHub.dismissToast(this.dataset.toastId)" class="text-slate-400 hover:text-slate-600 p-1 -mr-1 -mt-1 transition-colors" title="ปิด">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
       <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-        <span class="text-[10px] text-slate-400 font-medium">#${item.ticketId || ''}</span>
-        <button onclick="NotificationHub.openTicketAndDismiss('${item.ticketId || ''}', '${toastId}', '${item.id || ''}')"
+        <span class="text-[10px] text-slate-400 font-medium">#${safeTicketId}</span>
+        <button type="button" data-ticket-id="${safeTicketId}" data-toast-id="${safeToastId}" data-notif-id="${safeNotifId}" onclick="NotificationHub.openTicketAndDismiss(this.dataset.ticketId, this.dataset.toastId, this.dataset.notifId)"
           class="px-3 py-1 rounded-lg text-xs font-bold text-white transition-all shadow-sm active:scale-95" style="background-color: #265D5A;">
           ดูรายละเอียด <i class="fa-solid fa-arrow-right ml-1"></i>
         </button>
@@ -11971,7 +12152,7 @@ const NotificationHub = (function () {
     const s = String(t.status || '').trim();
     const type = String(t.type || '').toLowerCase().trim();
     const tid = normalizeTicketId(t.ticketId || t.id);
-    const isProject = type === 'project' || tid.startsWith('PRJ-') || tid.startsWith('PROJ-');
+    const isProject = type === 'project' || /^(PRJ\d*-|PROJ)/i.test(tid);
 
     if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return true;
     if (/เสร็จ|เรียบร้อย|ปิดงาน|คืนเรียบร้อย|คืนอุปกรณ์/.test(s)) return true;
@@ -12036,7 +12217,7 @@ const NotificationHub = (function () {
     const hasTech = Boolean(tech && tech !== '-');
 
     if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return false;
-    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่/.test(s) && !/^รอ/.test(s)) return false;
+    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่|จัดเตรียมแล้ว/.test(s) && !/^รอ/.test(s)) return false;
     // หากมอบหมายช่างแล้ว (มี techName) ในระบบติดตามงานจะจัดอยู่ในหมวด "กำลังดำเนินการ" จึงไม่นับเป็นงานรอมอบหมาย
     if (hasTech) return false;
     return true;
@@ -12233,18 +12414,24 @@ const NotificationHub = (function () {
     filtered.forEach(item => {
       const isRead = !item.isPendingTask && isNotificationRead(item, readIds);
       const visuals = getCategoryVisuals(item.category, item.taskType);
-      const timeStr = formatRelativeTime(item.createdAt);
+      const timeStr = escHtml(formatRelativeTime(item.createdAt));
+      const safeTech = escHtml(item.technician || '');
+      const safeStatus = escHtml(item.status || '');
+      const safeTitle = escHtml(item.title || 'แจ้งเตือน');
+      const safeBody = escHtml(item.body || item.subject || '');
+      const safeTicketId = escHtml(item.ticketId || '');
+      const safeItemId = escHtml(item.id || '');
 
       let statusPillHtml = '';
       if (item.isPendingTask) {
         if (item.isWaitingAssign) {
           statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200">⚠️ รอมอบหมาย/ดำเนินการ</span>`;
         } else if (item.status === 'รอดำเนินการ') {
-          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-200">⏳ รอดำเนินการ${item.technician ? ' (' + item.technician + ')' : ''}</span>`;
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-200">⏳ รอดำเนินการ${safeTech ? ' (' + safeTech + ')' : ''}</span>`;
         } else if (String(item.status || '').includes('กำลัง')) {
-          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">🔧 กำลังซ่อม${item.technician ? ' (' + item.technician + ')' : ''}</span>`;
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">🔧 กำลังซ่อม${safeTech ? ' (' + safeTech + ')' : ''}</span>`;
         } else {
-          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200">${item.status}</span>`;
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200">${safeStatus}</span>`;
         }
       }
 
@@ -12253,23 +12440,23 @@ const NotificationHub = (function () {
         : (isRead ? 'opacity-85 hover:bg-slate-50' : 'bg-emerald-50/30 hover:bg-slate-50');
 
       html += `
-        <div onclick="NotificationHub.openTicketAndDismiss('${item.ticketId || ''}', null, '${item.id || ''}')"
+        <div data-ticket-id="${safeTicketId}" data-notif-id="${safeItemId}" onclick="NotificationHub.openTicketAndDismiss(this.dataset.ticketId, null, this.dataset.notifId)"
           class="group p-2.5 rounded-xl transition-colors cursor-pointer flex items-start gap-2.5 relative ${rowBgClass}">
           <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold" style="background-color: ${visuals.bg}; color: ${visuals.color};">
             <i class="fa-solid ${visuals.icon}"></i>
           </div>
           <div class="flex-1 min-w-0 pr-1">
             <div class="flex items-center justify-between gap-1">
-              <p class="text-xs font-bold text-slate-800 truncate">${item.title || 'แจ้งเตือน'}</p>
+              <p class="text-xs font-bold text-slate-800 truncate">${safeTitle}</p>
               <span class="text-[10px] text-slate-400 shrink-0">${timeStr}</span>
             </div>
-            <p class="text-[11px] text-slate-600 line-clamp-1 mt-0.5">${item.body || item.subject || ''}</p>
+            <p class="text-[11px] text-slate-600 line-clamp-1 mt-0.5">${safeBody}</p>
             <div class="flex items-center flex-wrap gap-1.5 mt-1">
               <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded" style="background-color: ${visuals.bg}; color: ${visuals.color};">
                 ${visuals.label}
               </span>
               ${statusPillHtml}
-              ${item.ticketId ? `<span class="text-[9px] font-mono font-semibold text-slate-500">#${item.ticketId}</span>` : ''}
+              ${safeTicketId ? `<span class="text-[9px] font-mono font-semibold text-slate-500">#${safeTicketId}</span>` : ''}
             </div>
           </div>
           ${item.isPendingTask ? `
@@ -12277,7 +12464,7 @@ const NotificationHub = (function () {
               จัดการ <i class="fa-solid fa-chevron-right text-[8px]"></i>
             </span>
           ` : `
-            <button onclick="event.stopPropagation(); NotificationHub.deleteItem('${item.id}');"
+            <button type="button" data-notif-id="${safeItemId}" onclick="event.stopPropagation(); NotificationHub.deleteItem(this.dataset.notifId);"
               class="w-7 h-7 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 active:scale-95 flex items-center justify-center transition-all shrink-0 mt-0.5"
               title="ลบการแจ้งเตือนนี้">
               <i class="fa-solid fa-trash-can text-xs"></i>
@@ -13192,6 +13379,29 @@ const NotificationHub = (function () {
     });
   }
 
+  function stopListeners() {
+    if (typeof unsubNotifications === 'function') {
+      try { unsubNotifications(); } catch (_) { }
+      unsubNotifications = null;
+    }
+    if (typeof unsubTickets === 'function') {
+      try { unsubTickets(); } catch (_) { }
+      unsubTickets = null;
+    }
+    isListenerActive = false;
+    notifications = [];
+    pendingTickets = [];
+    startedOrClosedTicketIds = new Set();
+    closedTicketIds = new Set();
+    archivedTicketIds = new Set();
+    allTicketIds = new Set();
+    hasTicketsLoaded = false;
+    pendingCatchupDocs = [];
+    viewedTicketTimestamps.clear();
+    updateBadge();
+    renderList();
+  }
+
   function initListener() {
     if (isListenerActive) return;
     if (!window.firestoreDb) {
@@ -13204,7 +13414,7 @@ const NotificationHub = (function () {
       let isFirstLoad = true;
       console.log('[NotificationHub] 🎧 Firestore Real-Time listener connected successfully (Session: ' + CURRENT_SESSION_ID + ')');
 
-      window.firestoreDb.collection('notifications')
+      unsubNotifications = window.firestoreDb.collection('notifications')
         .orderBy('createdAt', 'desc')
         .limit(60)
         .onSnapshot(snapshot => {
@@ -13291,7 +13501,7 @@ const NotificationHub = (function () {
 
       // ดักฟังรายการงานทั้งหมดในตาราง tickets แบบ Real-time เพื่อแยกรายการงานค้างและงานที่เสร็จสิ้นแล้ว
       let isTicketsFirstLoad = true;
-      window.firestoreDb.collection('tickets')
+      unsubTickets = window.firestoreDb.collection('tickets')
         .onSnapshot(snap => {
           const currentPending = [];
           const currentStartedOrClosed = new Set();
@@ -13480,22 +13690,25 @@ const NotificationHub = (function () {
       }, 1200);
     }
 
-    // ปลดล็อกระบบเสียงบนอุปกรณ์เคลื่อนที่เมื่อผู้ใช้แตะหรือคลิกหน้าจอ
-    const unlockHandler = () => {
-      unlockAudioContext();
-    };
-    document.addEventListener('touchstart', unlockHandler, { passive: true });
-    document.addEventListener('click', unlockHandler, { passive: true });
-    document.addEventListener('pointerdown', unlockHandler, { passive: true });
-
-    // ปลดล็อกเสียงและอัปเดตสถานะทันทีเมื่อสลับกลับมาที่แอป
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
+    // ปลดล็อกระบบเสียงบนอุปกรณ์เคลื่อนที่เมื่อผู้ใช้แตะหรือคลิกหน้าจอ (ผูกครั้งเดียว)
+    if (!hasBoundDocumentEvents) {
+      hasBoundDocumentEvents = true;
+      const unlockHandler = () => {
         unlockAudioContext();
-        updateBadge();
-        renderList();
-      }
-    });
+      };
+      document.addEventListener('touchstart', unlockHandler, { passive: true });
+      document.addEventListener('click', unlockHandler, { passive: true });
+      document.addEventListener('pointerdown', unlockHandler, { passive: true });
+
+      // ปลดล็อกเสียงและอัปเดตสถานะทันทีเมื่อสลับกลับมาที่แอป
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          unlockAudioContext();
+          updateBadge();
+          renderList();
+        }
+      });
+    }
   }
 
   // ── 17. ล้างแคชและบังคับอัปเดตแอปสู่เวอร์ชันล่าสุดทันที ──────────────────────
@@ -13531,6 +13744,7 @@ const NotificationHub = (function () {
 
   return {
     init,
+    stopListeners,
     playChime,
     unlockAudioContext,
     showToast,

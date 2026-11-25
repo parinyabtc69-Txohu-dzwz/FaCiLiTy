@@ -47,14 +47,30 @@ const TrackUI = (() => {
   const pad = n => String(n).padStart(3, '0');
 
   // แปลงสถานะเป็นหมวด + ลำดับขั้นตอน
-  function classify(status, tech) {
+  function classify(status, tech, type = '') {
     const s = str(status);
+    const t = str(type).toLowerCase();
     if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return { group: 'cancel', step: -1 };
-    if (/เสร็จ|เรียบร้อยแล้ว|ปิดงาน/.test(s)) return { group: 'done', step: 3 };
-    if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return { group: 'progress', step: 2 };
-    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน/.test(s) && !/^รอ/.test(s)) return { group: 'progress', step: 1 };
+    if (/เสร็จ|เรียบร้อย|ปิดงาน|คืนเรียบร้อย|คืนอุปกรณ์/.test(s)) return { group: 'done', step: 3 };
+    if (t === 'project' && /อนุมัติ/.test(s) && !/^รอ/.test(s)) return { group: 'done', step: 3 };
+    if (/กำลัง|รอตรวจรับ|แก้ไข|จัดเตรียมแล้ว|กำลังใช้งาน/.test(s)) return { group: 'progress', step: 2 };
+    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่/.test(s) && !/^รอ/.test(s)) return { group: 'progress', step: 1 };
     if (tech) return { group: 'progress', step: 1 };
     return { group: 'pending', step: 0 };
+  }
+
+  function docIdOf(job, fallbackId) {
+    return (job && (job.docId || job.id)) || fallbackId || '';
+  }
+
+  async function writeTicketPatch(docId, payload, ms = 8000) {
+    if (!docId) throw new Error('ไม่พบรหัสเอกสาร (Ticket Doc ID)');
+    if (!window.firestoreDb) throw new Error('ยังไม่ได้เชื่อมต่อฐานข้อมูล Firebase');
+    const writePromise = window.firestoreDb.collection('tickets').doc(docId).set(payload, { merge: true });
+    return Promise.race([
+      writePromise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('หมดเวลาเชื่อมต่อฐานข้อมูล (Timeout)')), ms))
+    ]);
   }
 
   function isFinishedForNotif(job) {
@@ -260,7 +276,8 @@ const TrackUI = (() => {
 
     try {
       if (window.firestoreDb) {
-        await window.firestoreDb.collection('tickets').doc(job.id).update({
+        const targetDocId = docIdOf(job, jobId);
+        await window.firestoreDb.collection('tickets').doc(targetDocId).update({
           isArchived: newArchived
         });
       }
@@ -476,7 +493,7 @@ const TrackUI = (() => {
 
   function fromFirebase(docData, docId) {
     const status = docData.status || 'รอดำเนินการ';
-    const cls = classify(status, docData.techName);
+    const cls = classify(status, docData.techName || docData.tech, docData.type);
 
     let createdDate = null;
     if (docData.createdAt) {
@@ -542,7 +559,7 @@ const TrackUI = (() => {
   function makeJob(type, seq, r, x, originalIndex) {
     const status = str(r[4]) || (type === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
     const created = parseDate(r[0]);
-    const cls = classify(status, x.tech);
+    const cls = classify(status, x.tech, type);
     return {
       id: `${TYPES[type].prefix}-${pad(seq)}`,
       originalIndex, // Added to map back to the Google Sheet row
@@ -675,11 +692,7 @@ const TrackUI = (() => {
             open(state.currentJobId, true);
           }
 
-          // ตรวจจับและปรับรหัสคิวงานเก่าให้เป็นรหัสสั้นใหม่อัตโนมัติ (BLD-01)
-          if (hasLegacyId && !state.reindexing) {
-            state.reindexing = true;
-            setTimeout(() => { reindexTickets(false); }, 1500);
-          }
+          // ยกเลิก auto-reindex อัตโนมัติตอนโหลด เพื่อป้องกันหลายเครื่องแก้ไข doc ID ชนกัน (ให้ Admin กด reindexTickets เองได้เท่านั้น)
         }, (err) => {
           console.error("Firebase listen error:", err);
           state.loading = false;
@@ -941,7 +954,7 @@ const TrackUI = (() => {
           <i class="fa-regular fa-folder-open text-3xl mb-3 text-slate-300"></i>
           <div class="font-medium text-slate-700 mb-1">${state.search || state.status !== 'all' || state.type !== 'all' ? 'ไม่พบงานที่ตรงกับเงื่อนไข' : 'ยังไม่มีประวัติการแจ้งซ่อมของคุณในระบบ'}</div>
           <p class="text-xs text-slate-400 mb-4">${state.search || state.status !== 'all' || state.type !== 'all' ? 'ลองเปลี่ยนคำค้นหาหรือตัวกรองสถานะ' : 'เมื่อคุณแจ้งซ่อมผ่านระบบ รายการงานของคุณจะมาแสดงที่นี่เพื่อติดตามสถานะ'}</p>
-          <button onclick="nav('page-repair')" class="px-4 py-2 bg-[#265D5A] text-white text-xs font-medium rounded-xl shadow-sm hover:bg-[#1f4b48] transition-colors"><i class="fa-solid fa-plus mr-1"></i> แจ้งซ่อมใหม่</button>
+          <button onclick="nav('page-repair-form')" class="px-4 py-2 bg-[#265D5A] text-white text-xs font-medium rounded-xl shadow-sm hover:bg-[#1f4b48] transition-colors"><i class="fa-solid fa-plus mr-1"></i> แจ้งซ่อมใหม่</button>
         </div>`;
       } else {
         list.innerHTML = `<div class="col-span-full p-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
@@ -1353,10 +1366,11 @@ const TrackUI = (() => {
       currentDocUnsubscribe = null;
     }
     if (window.firestoreDb) {
-      currentDocUnsubscribe = window.firestoreDb.collection('tickets').doc(id).onSnapshot((docSnap) => {
-        if (docSnap.exists && state.currentJobId === id) {
+      const listenDocId = docIdOf(job, id);
+      currentDocUnsubscribe = window.firestoreDb.collection('tickets').doc(listenDocId).onSnapshot((docSnap) => {
+        if (docSnap.exists && (state.currentJobId === id || state.currentJobId === docSnap.id)) {
           const liveJob = fromFirebase(docSnap.data(), docSnap.id);
-          const existingIdx = state.jobs.findIndex(j => j.id === id);
+          const existingIdx = state.jobs.findIndex(j => j.id === id || j.docId === docSnap.id);
           if (existingIdx !== -1) {
             state.jobs[existingIdx] = liveJob;
           }
@@ -1604,7 +1618,7 @@ const TrackUI = (() => {
 
     if (!x.isConfirmed) return;
 
-    const targetDocId = job.docId || job.id || jobId;
+    const targetDocId = docIdOf(job, jobId);
     const newStatus = 'เสร็จสิ้น';
 
     Swal.fire({
@@ -1618,7 +1632,7 @@ const TrackUI = (() => {
       initFirebase();
     }
 
-    // ⚡ 1. บันทึกปิดงานลง Firebase ทันทีและ AWAIT ให้เสร็จสมบูรณ์ (~0.15 วิ)
+    // ⚡ 1. บันทึกปิดงานลง Firebase ทันทีและ AWAIT ให้สำเร็จจริง (ไม่แจ้งสำเร็จปลอมหากเขียนพลาด)
     const updatePayload = {
       status: newStatus,
       fixDetail: x.value.fixDetail,
@@ -1627,17 +1641,17 @@ const TrackUI = (() => {
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    if (window.firestoreDb) {
-      try {
-        const writePromise = window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
-        await Promise.race([
-          writePromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3500))
-        ]);
-        console.log('✅ closeJob saved to Firestore doc:', targetDocId);
-      } catch (err) {
-        console.warn('Firestore closeJob warn (proceeding):', err);
-      }
+    try {
+      await writeTicketPatch(targetDocId, updatePayload, 8000);
+      console.log('✅ closeJob saved to Firestore doc:', targetDocId);
+    } catch (err) {
+      console.error('Firestore closeJob error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'บันทึกปิดงานไม่สำเร็จ',
+        text: 'ไม่สามารถบันทึกลงฐานข้อมูลได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ครับ (' + (err.message || err) + ')'
+      });
     }
 
     // 2. อัปเดตสถานะในหน้าจอทันที ไม่บล็อกผู้ใช้
@@ -1974,17 +1988,52 @@ const TrackUI = (() => {
 
     if (formValues) {
       const { techName, techEmail, techPhone, techSkills, techRole, urgency } = formValues;
+      const targetDocId = docIdOf(job, jobId);
+      const prevState = {
+        tech: job.tech,
+        status: job.status,
+        assignedAt: job.assignedAt,
+        step: job.step,
+        group: job.group,
+        urgency: job.urgency
+      };
 
-      // ⚡ Optimistic UI: อัปเดตสถานะและหน้าจอทันทีใน 0.05 วินาที
+      let updateData = {
+        techName: techName,
+        techEmail: techEmail,
+        techPhone: techPhone,
+        techSkills: techSkills,
+        techRole: techRole,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      if (techName && (!job.status || job.status === 'รอดำเนินการ' || job.status === 'รอมอบหมาย')) {
+        updateData.status = 'มอบหมายช่างแล้ว';
+        updateData.assignedAt = firebase.firestore.FieldValue.serverTimestamp();
+      }
+      if (urgency) updateData.urgency = urgency;
+
+      try {
+        await writeTicketPatch(targetDocId, updateData, 8000);
+      } catch (err) {
+        console.error('Firestore assignTech error:', err);
+        Object.assign(job, prevState);
+        return Swal.fire({
+          icon: 'error',
+          title: 'มอบหมายช่างไม่สำเร็จ',
+          text: 'ไม่สามารถบันทึกลงฐานข้อมูลได้: ' + (err.message || err)
+        });
+      }
+
+      // อัปเดตหน้าจอหลังจากบันทึก Firebase สำเร็จจริง
       job.tech = techName;
-      if (techName && (!job.status || job.status === 'รอดำเนินการ')) {
-        job.status = 'มอบหมายช่างแล้ว';
+      if (updateData.status) {
+        job.status = updateData.status;
         job.assignedAt = new Date();
         job.step = 1;
         job.group = 'progress';
       }
       if (urgency) job.urgency = urgency;
-      open(jobId);
+      open(jobId, true);
 
       const successMsg = techEmail ? `มอบหมายงานและส่งอีเมลแจ้ง ${esc(techName)} (${esc(techEmail)}) เรียบร้อยแล้ว` : (techName ? `มอบหมาย ${esc(techName)} เรียบร้อยแล้ว` : 'ยกเลิกการมอบหมายช่างสำเร็จ');
       Swal.fire({
@@ -1997,33 +2046,10 @@ const TrackUI = (() => {
         timerProgressBar: true
       });
 
-      // 🚀 Background Parallel Sync: บันทึก Firestore + ซิงค์ Sheets + ส่งเมลช่าง ในเบื้องหลัง
+      // 🚀 Background Sync: แจ้งเตือน + ซิงค์ Sheets + ส่งอีเมลช่าง
       const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
       const sheetName = sheetMap[job.type] || 'Tasks';
-      const syncTasks = [];
 
-      // 1. อัปเดตลง Firebase ทันที
-      if (window.firestoreDb) {
-        let updateData = {
-          techName: techName,
-          techEmail: techEmail,
-          techPhone: techPhone,
-          techSkills: techSkills,
-          techRole: techRole,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        if (techName && (!job.status || job.status === 'รอดำเนินการ')) {
-          updateData.status = 'มอบหมายช่างแล้ว';
-          updateData.assignedAt = firebase.firestore.FieldValue.serverTimestamp();
-        }
-        if (urgency) updateData.urgency = urgency;
-        syncTasks.push(
-          window.firestoreDb.collection('tickets').doc(jobId).set(updateData, { merge: true })
-            .catch(err => console.warn('Firestore assignTech error:', err))
-        );
-      }
-
-      // ยิงแจ้งเตือนเข้า NotificationHub + FCM Web Push ถึงช่างผู้รับผิดชอบและครูผู้แจ้งงานทันที
       if (techName && typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
         NotificationHub.publish({
           ticketId: jobId,
@@ -2038,21 +2064,16 @@ const TrackUI = (() => {
         }).catch(() => { });
       }
 
-      // 2. อัปเดตลง Google Sheets + ส่งอีเมลแจ้งเตือนถึงช่าง (เบื้องหลัง)
-      syncTasks.push(
-        ResourceHubCore.api.post({
-          action: 'edit_assignment',
-          sheetName: sheetName,
-          ticketId: jobId,
-          rowIndex: job.originalIndex,
-          technician: techName,
-          technicianEmail: techEmail,
-          technicianPhone: techPhone,
-          urgency: urgency
-        }).catch(err => console.warn('Sync assignTech to Sheets error:', err))
-      );
-
-      Promise.all(syncTasks).catch(err => console.error('Background assignTech sync error:', err));
+      ResourceHubCore.api.post({
+        action: 'edit_assignment',
+        sheetName: sheetName,
+        ticketId: jobId,
+        rowIndex: job.originalIndex,
+        technician: techName,
+        technicianEmail: techEmail,
+        technicianPhone: techPhone,
+        urgency: urgency
+      }).catch(err => console.warn('Sync assignTech to Sheets error:', err));
     }
   }
 
@@ -2109,7 +2130,30 @@ const TrackUI = (() => {
     const approverName = ((typeof currentTeacher === 'string' && currentTeacher) || (localStorage.getItem('logged_teacher') || 'ผู้บริหาร')).trim();
     const approverEmail = ((typeof currentEmail === 'string' && currentEmail) || (localStorage.getItem('logged_email') || '')).trim();
 
-    // ⚡ Optimistic UI: อัปเดตสถานะโครงการทันทีใน 0.05 วินาที
+    const targetDocId = docIdOf(job, jobId);
+    const updatePayload = {
+      status: 'อนุมัติแล้ว',
+      approvedBy: approverName + (approverEmail ? ` (${approverEmail})` : ''),
+      approvalNote: formValues.note,
+      allocatedBudget: formValues.budget || '',
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+      await writeTicketPatch(targetDocId, updatePayload, 8000);
+    } catch (err) {
+      console.error('Firestore approve project error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'บันทึกผลอนุมัติไม่สำเร็จ',
+        text: err && err.message ? err.message : 'ไม่สามารถติดต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+        confirmButtonColor: '#265D5A'
+      });
+    }
+
+    job.docId = targetDocId;
     job.status = 'อนุมัติแล้ว';
     job.step = 3;
     job.group = 'done';
@@ -2123,24 +2167,6 @@ const TrackUI = (() => {
       showConfirmButton: false
     });
 
-    const updatePayload = {
-      status: 'อนุมัติแล้ว',
-      approvedBy: approverName + (approverEmail ? ` (${approverEmail})` : ''),
-      approvalNote: formValues.note,
-      allocatedBudget: formValues.budget || '',
-      approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    // 🚀 Background Parallel Sync: ทำงานในเบื้องหลังพร้อมกัน
-    const approveTasks = [];
-    if (window.firestoreDb) {
-      approveTasks.push(
-        window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true })
-          .catch(err => console.warn('Firestore approve project error:', err))
-      );
-    }
-
     publishCompletionNotifAndCleanOld(jobId, {
       ticketId: jobId,
       taskType: 'project',
@@ -2151,18 +2177,14 @@ const TrackUI = (() => {
       targetUserEmail: job.reporterEmail || ''
     });
 
-    approveTasks.push(
-      ResourceHubCore.api.post({
-        action: 'update_adv_task',
-        tabType: 'project',
-        rowIndex: job.originalIndex,
-        status: 'อนุมัติแล้ว',
-        technician: approverName,
-        detail: `[อนุมัติแล้ว] ${formValues.note}${formValues.budget ? ` (งบประมาณ: ${formValues.budget} บาท)` : ''}`
-      }).catch(sheetErr => console.warn('Sync approve to Sheet backup warning:', sheetErr))
-    );
-
-    Promise.all(approveTasks).catch(err => console.error('Background approveProject sync error:', err));
+    ResourceHubCore.api.post({
+      action: 'update_adv_task',
+      tabType: 'project',
+      rowIndex: job.originalIndex,
+      status: 'อนุมัติแล้ว',
+      technician: approverName,
+      detail: `[อนุมัติแล้ว] ${formValues.note}${formValues.budget ? ` (งบประมาณ: ${formValues.budget} บาท)` : ''}`
+    }).catch(sheetErr => console.warn('Sync approve to Sheet backup warning:', sheetErr));
   }
 
   // ---------- ฟังก์ชันไม่อนุมัติ / ส่งกลับแก้ไขโครงการ (สำหรับผู้บริหาร) ----------
@@ -2209,12 +2231,40 @@ const TrackUI = (() => {
 
     const rejectorName = ((typeof currentTeacher === 'string' && currentTeacher) || (localStorage.getItem('logged_teacher') || 'ผู้บริหาร')).trim();
 
-    // ⚡ Optimistic UI: อัปเดตสถานะทันที
+    const targetDocId = docIdOf(job, jobId);
+    const updatePayload = {
+      status: 'ไม่อนุมัติ',
+      approvalNote: formValues.note,
+      rejectedBy: rejectorName,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    Swal.fire({
+      title: 'กำลังบันทึกผลการพิจารณา...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    try {
+      await writeTicketPatch(targetDocId, updatePayload, 8000);
+    } catch (err) {
+      console.error('Firestore reject project error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'บันทึกผลพิจารณาไม่สำเร็จ',
+        text: err && err.message ? err.message : 'ไม่สามารถติดต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+        confirmButtonColor: '#265D5A'
+      });
+    }
+
+    job.docId = targetDocId;
     job.status = 'ไม่อนุมัติ';
     job.step = 3;
     job.group = 'done';
     open(jobId);
 
+    Swal.close();
     Swal.fire({
       toast: true,
       position: 'top-end',
@@ -2224,22 +2274,6 @@ const TrackUI = (() => {
       timer: 2000,
       timerProgressBar: true
     });
-
-    const updatePayload = {
-      status: 'ไม่อนุมัติ',
-      approvalNote: formValues.note,
-      rejectedBy: rejectorName,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    // 🚀 Background Parallel Sync: ทำงานในเบื้องหลังพร้อมกัน
-    const rejectTasks = [];
-    if (window.firestoreDb) {
-      rejectTasks.push(
-        window.firestoreDb.collection('tickets').doc(jobId).set(updatePayload, { merge: true })
-          .catch(err => console.warn('Firestore reject project error:', err))
-      );
-    }
 
     publishCompletionNotifAndCleanOld(jobId, {
       ticketId: jobId,
@@ -2251,18 +2285,14 @@ const TrackUI = (() => {
       targetUserEmail: job.reporterEmail || ''
     });
 
-    rejectTasks.push(
-      ResourceHubCore.api.post({
-        action: 'update_adv_task',
-        tabType: 'project',
-        rowIndex: job.originalIndex,
-        status: 'ไม่อนุมัติ',
-        technician: rejectorName,
-        detail: `[ไม่อนุมัติ] ${formValues.note}`
-      }).catch(sheetErr => console.warn('Sync reject to Sheet backup warning:', sheetErr))
-    );
-
-    Promise.all(rejectTasks).catch(err => console.error('Background rejectProject sync error:', err));
+    ResourceHubCore.api.post({
+      action: 'update_adv_task',
+      tabType: 'project',
+      rowIndex: job.originalIndex,
+      status: 'ไม่อนุมัติ',
+      technician: rejectorName,
+      detail: `[ไม่อนุมัติ] ${formValues.note}`
+    }).catch(sheetErr => console.warn('Sync reject to Sheet backup warning:', sheetErr));
   }
 
   // ---------- สะกิดเตือนช่างรับผิดชอบงานทาง LINE (Manual Ping) ----------
@@ -2378,7 +2408,7 @@ const TrackUI = (() => {
 
     const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
     const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
-    const targetDocId = job.docId || job.id || jobId;
+    const targetDocId = docIdOf(job, jobId);
 
     Swal.fire({
       title: 'กำลังเริ่มดำเนินงาน...',
@@ -2387,11 +2417,7 @@ const TrackUI = (() => {
       didOpen: () => Swal.showLoading()
     });
 
-    if (!window.firestoreDb && typeof initFirebase === 'function') {
-      initFirebase();
-    }
-
-    // ⚡ 1. บันทึกสถานะลง Firestore ทันทีและ AWAIT ให้เสร็จสมบูรณ์ (~0.15 วิ)
+    // ⚡ 1. บันทึกสถานะลง Firestore ทันทีและ AWAIT ให้เสร็จสมบูรณ์
     // การันตีว่าข้อมูลถูกเซฟลงคลาวด์จริง รีเฟรชหน้าเว็บแล้วจะไม่เด้งกลับไปที่เดิม
     const updatePayload = {
       status: 'กำลังดำเนินการ',
@@ -2399,20 +2425,22 @@ const TrackUI = (() => {
     };
     if (note) updatePayload.fixDetail = note;
 
-    if (window.firestoreDb) {
-      try {
-        const writePromise = window.firestoreDb.collection('tickets').doc(targetDocId).set(updatePayload, { merge: true });
-        await Promise.race([
-          writePromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3500))
-        ]);
-        console.log('✅ startJob saved to Firestore doc:', targetDocId);
-      } catch (err) {
-        console.warn('Firestore startJob warn (proceeding):', err);
-      }
+    try {
+      await writeTicketPatch(targetDocId, updatePayload, 8000);
+      console.log('✅ startJob saved to Firestore doc:', targetDocId);
+    } catch (err) {
+      console.error('Firestore startJob error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'เริ่มดำเนินงานไม่สำเร็จ',
+        text: err && err.message ? err.message : 'ไม่สามารถติดต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+        confirmButtonColor: '#265D5A'
+      });
     }
 
-    // 2. อัปเดต State ในหน่วยความจำและรีเฟรชหน้าจอ
+    // 2. อัปเดต State ในหน่วยความจำและรีเฟรชหน้าจอหลัง Firestore ยืนยันแล้ว
+    job.docId = targetDocId;
     job.status = 'กำลังดำเนินการ';
     job.step = 2;
     job.group = 'progress';
@@ -2503,13 +2531,37 @@ const TrackUI = (() => {
 
     if (!isConfirmed || !note) return;
 
-    // ⚡ Optimistic UI: อัปเดตหน้าจอทันที
     const myNameStr = typeof currentTeacher === 'string' ? currentTeacher.trim() : (localStorage.getItem('logged_teacher') || '').trim();
     const techName = job.tech || myNameStr || 'ช่างผู้รับผิดชอบ';
+    const targetDocId = docIdOf(job, jobId);
 
+    Swal.fire({
+      title: 'กำลังบันทึกความคืบหน้า...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    try {
+      await writeTicketPatch(targetDocId, {
+        fixDetail: note,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, 8000);
+    } catch (err) {
+      console.error('Firestore updateProgress error:', err);
+      Swal.close();
+      return Swal.fire({
+        icon: 'error',
+        title: 'บันทึกความคืบหน้าไม่สำเร็จ',
+        text: err && err.message ? err.message : 'ไม่สามารถติดต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+        confirmButtonColor: '#265D5A'
+      });
+    }
+
+    job.docId = targetDocId;
     job.fixDetail = note;
     open(jobId);
 
+    Swal.close();
     Swal.fire({
       toast: true,
       position: 'top-end',
@@ -2520,23 +2572,13 @@ const TrackUI = (() => {
       timerProgressBar: true
     });
 
-    // 🚀 Background Parallel Sync
+    // 🚀 Background Sync (Chat + Sheet Backup)
     const tasks = [];
-
-    if (window.firestoreDb) {
+    if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
       tasks.push(
-        window.firestoreDb.collection('tickets').doc(jobId).set({
-          fixDetail: note,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).catch(err => console.warn('Firestore updateProgress error:', err))
+        FirebaseChat.send(chatRoomOf(job, jobId), techName, 'tech', `📢 แจ้งความคืบหน้า: ${note}`, '', jobId)
+          .catch(e => console.warn('Chat notify error:', e))
       );
-
-      if (typeof FirebaseChat !== 'undefined' && FirebaseChat.send) {
-        tasks.push(
-          FirebaseChat.send(chatRoomOf(job, jobId), techName, 'tech', `📢 แจ้งความคืบหน้า: ${note}`, '', jobId)
-            .catch(e => console.warn('Chat notify error:', e))
-        );
-      }
     }
 
     const sheetMap = { 'building': 'Tasks', 'it': 'IT_Repairs', 'av': 'AV_Repairs', 'project': 'Facility_Projects' };
@@ -3038,7 +3080,7 @@ const TrackUI = (() => {
         list.sort((a, b) => a.ts - b.ts);
 
         list.forEach((item, idx) => {
-          const seq = (idx % 300) + 1;
+          const seq = idx + 1;
           const targetId = `${prefixes[cat]}-${fmtSeq(seq)}`;
           tasks.push({
             oldId: item.oldId,
@@ -3054,7 +3096,7 @@ const TrackUI = (() => {
         });
 
         // กำหนดค่า counter ล่าสุดของหมวดนี้ ให้เท่ากับจำนวนงานที่รันล่าสุด
-        finalCounters[cat] = list.length > 0 ? ((list.length - 1) % 300) + 1 : 0;
+        finalCounters[cat] = list.length;
       });
 
       // กรองเฉพาะรายการที่ต้องเปลี่ยน ID
@@ -3172,6 +3214,28 @@ const TrackUI = (() => {
     clearChatHistory,
     migrateFromSheets,
     reindexTickets,
+    stopListeners() {
+      if (unsubscribeTickets) {
+        unsubscribeTickets();
+        unsubscribeTickets = null;
+      }
+      if (currentDocUnsubscribe) {
+        currentDocUnsubscribe();
+        currentDocUnsubscribe = null;
+      }
+      if (currentChatUnsubscribe) {
+        currentChatUnsubscribe();
+        currentChatUnsubscribe = null;
+      }
+      clearTimeout(state.searchTimer);
+      clearTimeout(window._chatLoadingTimer);
+      currentChatTicketId = null;
+      currentChatRoomId = null;
+      state.jobs = [];
+      state.loaded = false;
+      state.loading = false;
+      state.currentJobId = null;
+    },
     backToList() {
       if (currentDocUnsubscribe) {
         currentDocUnsubscribe();

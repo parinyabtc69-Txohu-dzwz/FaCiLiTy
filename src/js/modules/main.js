@@ -77,9 +77,9 @@ const LOCKOUT_MS = 15 * 60 * 1000;             // ล็อก 15 นาที
 // 🔒 ตรวจสอบ Session Expiry: ฟังก์ชันทำงานอัตโนมัติเพื่อล้างข้อมูล Session หากผู้ใช้ออนไลน์นานเกินกำหนด
 (function checkSessionExpiry() {
   const loginTime = localStorage.getItem('session_login_time');
-  if (loginTime && (Date.now() - parseInt(loginTime)) > SESSION_EXPIRY_MS) {
-    localStorage.clear();
-    console.warn('🔒 Session หมดอายุ — ล้างข้อมูลเรียบร้อย');
+  if (loginTime && (Date.now() - parseInt(loginTime, 10)) > SESSION_EXPIRY_MS) {
+    ['logged_teacher', 'logged_role', 'logged_email', 'logged_admin', 'session_login_time'].forEach(k => localStorage.removeItem(k));
+    console.warn('🔒 Session หมดอายุ — ล้างข้อมูล Session เรียบร้อย');
   }
 })();
 
@@ -385,28 +385,75 @@ const ResourceHubCore = {
       const nameEl = $(isRepair ? 'profile-teacher-name' : 'profile-teacher-av-name');
       if (nameEl) nameEl.textContent = isRepair ? `ยินดีต้อนรับ, ${sanitizeHtml(currentTeacher)}` : `ประวัติการขอยืมอุปกรณ์โสตฯ ของคุณ ${sanitizeHtml(currentTeacher)}`;
 
+      const fmtHistoryDate = (val) => {
+        if (!val) return '-';
+        try {
+          if (typeof val.toDate === 'function') return val.toDate().toLocaleString('th-TH');
+          if (typeof val.seconds === 'number') return new Date(val.seconds * 1000).toLocaleString('th-TH');
+          const dObj = new Date(val);
+          return isNaN(dObj.getTime()) ? String(val) : dObj.toLocaleString('th-TH');
+        } catch (_) {
+          return String(val);
+        }
+      };
+
+      const myNameTrim = (currentTeacher || '').trim();
+      const myEmailLow = (currentEmail || localStorage.getItem('logged_email') || '').trim().toLowerCase();
+      const isMineTicket = (d) => {
+        const dEmail = (d.reporterEmail || '').trim().toLowerCase();
+        const dName = (d.reporterName || d.borrower || '').trim();
+        return (myEmailLow && dEmail && dEmail === myEmailLow) || (myNameTrim && dName === myNameTrim);
+      };
+
       const dataP = isRepair
         ? (window.firestoreDb ? window.firestoreDb.collection('tickets').orderBy('createdAt', 'desc').get().then(snap => {
             const arr = [];
             snap.forEach(doc => {
-              const d = doc.data();
-              if (d.reporterName && d.reporterName.trim() === currentTeacher.trim()) {
-                // Map Firebase object to the expected array format for rendering
+              const d = doc.data() || {};
+              const tid = String(d.ticketId || doc.id || '');
+              const tType = String(d.type || '').toLowerCase();
+              const isBuilding = tType === 'building' || (!tType && !/^(IT|AV|PRJ)/i.test(tid));
+              if (isBuilding && isMineTicket(d)) {
                 arr.push([
-                  d.createdAt ? d.createdAt.toDate().toLocaleString('th-TH') : '',
+                  fmtHistoryDate(d.createdAt),
                   d.subject || 'ไม่ระบุ',
                   d.detail || '',
-                  d.reporterName,
+                  d.reporterName || '',
                   d.status || 'รอดำเนินการ',
                   d.fileUrl || '-',
-                  d.techName || '',
+                  d.techName || d.tech || '',
                   d.fixDetail || ''
                 ]);
               }
             });
             return arr;
-          }) : ResourceHubCore.work.repairs().then(d => (d || []).filter(r => r[3]?.toString().trim() === currentTeacher.trim())))
-        : ResourceHubCore.av.list().then(d => (d || []).filter(r => r[1]?.toString().trim() === currentTeacher.trim() || r[7]?.toString().trim() === currentTeacher.trim()));
+          }) : ResourceHubCore.work.repairs().then(d => (d || []).filter(r => r[3]?.toString().trim() === myNameTrim)))
+        : (window.firestoreDb ? window.firestoreDb.collection('tickets').orderBy('createdAt', 'desc').get().then(async snap => {
+            const arr = [];
+            snap.forEach(doc => {
+              const d = doc.data() || {};
+              const tid = String(d.ticketId || doc.id || '');
+              const tType = String(d.type || '').toLowerCase();
+              if ((tType === 'av' || /^AV/i.test(tid)) && isMineTicket(d)) {
+                arr.push([
+                  fmtHistoryDate(d.createdAt),
+                  d.reporterName || '',
+                  d.subject || d.detail || 'รายการโสตฯ',
+                  d.incidentDate ? fmtHistoryDate(d.incidentDate) : '-',
+                  d.location || '-',
+                  d.status || 'จัดเตรียมแล้ว',
+                  d.techName || d.tech || ''
+                ]);
+              }
+            });
+            if (arr.length) return arr;
+            try {
+              const legacy = await ResourceHubCore.av.list();
+              return (legacy || []).filter(r => r[1]?.toString().trim() === myNameTrim || r[7]?.toString().trim() === myNameTrim);
+            } catch (_) {
+              return [];
+            }
+          }) : ResourceHubCore.av.list().then(d => (d || []).filter(r => r[1]?.toString().trim() === myNameTrim || r[7]?.toString().trim() === myNameTrim)));
 
       const containerId = isRepair ? 'teacherTaskBody' : 'teacherAVTaskBody';
       const emptyMsg = isRepair ? 'คุณยังไม่มีประวัติการแจ้งซ่อมอาคารในระบบครับ' : 'คุณยังไม่มีประวัติการขอยืมอุปกรณ์โสตฯ ในระบบครับ';
@@ -424,34 +471,41 @@ const ResourceHubCore = {
         }
 
         const renderTimeline = (status) => {
-          const steps = isRepair ? [
-            { label: 'ส่งเรื่อง', s: ['รอรับเรื่อง', 'กำลังดำเนินการ', 'เสร็จสิ้น'] },
-            { label: 'รับเรื่องแล้ว', s: ['กำลังดำเนินการ', 'เสร็จสิ้น'] },
-            { label: 'กำลังดำเนินการ', s: ['กำลังดำเนินการ', 'เสร็จสิ้น'] },
-            { label: 'เสร็จสิ้น', s: ['เสร็จสิ้น'] }
-          ] : [
-            { label: 'ส่งเรื่อง', s: ['รอยืนยันการยืม', 'อนุมัติการยืม', 'กำลังใช้งาน', 'คืนอุปกรณ์แล้ว'] },
-            { label: 'อนุมัติแล้ว', s: ['อนุมัติการยืม', 'กำลังใช้งาน', 'คืนอุปกรณ์แล้ว'] },
-            { label: 'กำลังใช้งาน', s: ['กำลังใช้งาน', 'คืนอุปกรณ์แล้ว'] },
-            { label: 'คืนแล้ว', s: ['คืนอุปกรณ์แล้ว'] }
-          ];
+          const s = String(status || '').trim();
+          const isCancelled = /ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s);
+          const steps = isRepair
+            ? [
+                { label: 'ส่งเรื่อง' },
+                { label: 'รับเรื่องแล้ว' },
+                { label: 'กำลังดำเนินการ' },
+                { label: 'เสร็จสิ้น' }
+              ]
+            : [
+                { label: 'ส่งเรื่อง' },
+                { label: 'จัดเตรียม / รับเรื่อง' },
+                { label: 'กำลังใช้งาน' },
+                { label: 'เสร็จสิ้น / คืนแล้ว' }
+              ];
+
+          let lastActiveIdx = 0;
+          if (isCancelled) {
+            lastActiveIdx = -1;
+          } else if (/เสร็จ|เรียบร้อย|ปิดงาน|คืนเรียบร้อย|คืนอุปกรณ์|คืนแล้ว/.test(s)) {
+            lastActiveIdx = 3;
+          } else if (/กำลัง|รอตรวจรับ|แก้ไข|ใช้งานอยู่/.test(s)) {
+            lastActiveIdx = 2;
+          } else if (/มอบหมาย|จัดเตรียมแล้ว|อนุมัติ|รับเรื่อง|รับงาน/.test(s) && !/^รอ/.test(s)) {
+            lastActiveIdx = 1;
+          }
 
           let html = `<div class="flex items-center justify-between mt-6 mb-2 relative">`;
           html += `<div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-100 rounded-full z-0"></div>`;
-          
-          let lastActiveIdx = -1;
-          steps.forEach((step, idx) => {
-            let isActive = false;
-            if (idx === 0) isActive = true;
-            if (step.s.includes(status)) isActive = true;
-            if (isActive) lastActiveIdx = idx;
-          });
 
           steps.forEach((step, idx) => {
             const isActive = idx <= lastActiveIdx;
             const bgClass = isActive ? (isRepair ? 'bg-[#265D5A] text-white' : 'bg-[#FF5F5F] text-white') : 'bg-white text-slate-300 border-2 border-slate-200';
             const textClass = isActive ? (isRepair ? 'text-[#265D5A] font-bold' : 'text-[#FF5F5F] font-bold') : 'text-slate-400';
-            
+
             if (idx > 0 && isActive) {
               const lineColor = isRepair ? 'bg-[#265D5A]' : 'bg-[#FF5F5F]';
               html += `<div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 ${lineColor} rounded-full z-0" style="width: ${(idx / (steps.length - 1)) * 100}%"></div>`;
@@ -472,7 +526,9 @@ const ResourceHubCore = {
 
         const html = data.map(r => {
           if (isRepair) {
-            const img = r[5] && r[5] !== '-' ? `<button onclick="showImageModal('${r[5]}')" class="mt-3 text-[#265D5A] bg-[#B0EDE6]/30 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#B0EDE6] transition-colors"><i class="fa-solid fa-image"></i> ดูรูปปัญหา</button>` : '';
+            const img = r[5] && r[5] !== '-' && /^https?:\/\//i.test(String(r[5]))
+              ? `<button type="button" data-url="${sanitizeHtml(r[5])}" onclick="showImageModal(this.dataset.url)" class="mt-3 text-[#265D5A] bg-[#B0EDE6]/30 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#B0EDE6] transition-colors"><i class="fa-solid fa-image"></i> ดูรูปปัญหา</button>`
+              : '';
             const tech = r[6] ? `<div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><i class="fa-solid fa-user-gear"></i></div><div><div class="text-xs font-bold text-slate-700">${sanitizeHtml(r[6])}</div><div class="text-[10px] text-slate-500 line-clamp-1">${sanitizeHtml(r[7] || '')}</div></div></div>` : '<div class="mt-3 pt-3 border-t border-slate-100"><span class="text-xs text-slate-400"><i class="fa-regular fa-clock"></i> รอเจ้าหน้าที่รับเรื่อง</span></div>';
             
             return `
@@ -519,7 +575,7 @@ const ResourceHubCore = {
         }).join('');
         container.innerHTML = html;
       } catch (e) {
-        container.innerHTML = `<div class="col-span-full p-8 text-center text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${e.message}</div>`;
+        container.innerHTML = `<div class="col-span-full p-8 text-center text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${sanitizeHtml(e && e.message ? e.message : 'ไม่ทราบสาเหตุ')}</div>`;
       }
     },
     // ฟังก์ชันเก่า (ยังเหลือไว้): ระบบส่งแจ้งซ่อมอาคารสถานที่
@@ -551,7 +607,7 @@ const ResourceHubCore = {
         const file = await readFile($('file').files[0]);
         if (file) file.folderId = REPAIR_DRIVE_FOLDER_ID;
         
-        backgroundSubmitAndSync(
+        await backgroundSubmitAndSync(
           { action: 'submit_repair', subject, detail, reporter, file, folderId: REPAIR_DRIVE_FOLDER_ID, urgency, dept, loc, incidentDate: formattedIncidentDate, contact },
           'building', subject, detail, reporter, dept, loc, contact, incidentDate
         );
@@ -597,7 +653,7 @@ const ResourceHubCore = {
       const btn = $('btnSubmitAV');
       setBusy(btn, true);
       try {
-        backgroundSubmitAndSync(
+        await backgroundSubmitAndSync(
           { action: 'submit_av', borrower: borrower, equipment: equipmentStr, useDate: useDate, location: loc, signature: signer },
           'av', 'ขอยืม-คืนโสตทัศนูปกรณ์', equipmentStr, borrower, '', loc, '', useDate
         );
@@ -875,14 +931,12 @@ const ResourceHubCore = {
           'b-total', 'b-pending', 'b-progress', 'b-completed',
           'av-total', 'av-pending', 'av-active', 'av-completed',
           'it-total', 'it-pending', 'it-progress', 'it-completed',
-          'avrep-total', 'avrep-pending', 'avrep-progress', 'avrep-completed',
           'proj-total', 'proj-pending', 'proj-progress', 'proj-completed',
-          'ratio-building-count', 'ratio-av-count', 'ratio-it-count', 'ratio-av-repair-count', 'ratio-project-count',
-          'ratio-building-pct', 'ratio-av-pct', 'ratio-it-pct', 'ratio-av-repair-pct', 'ratio-project-pct',
+          'ratio-building-count', 'ratio-av-count', 'ratio-it-count', 'ratio-project-count',
+          'ratio-building-pct', 'ratio-av-pct', 'ratio-it-pct', 'ratio-project-pct',
           'overall-progress-text',
           'b-rating', 'b-rating-count', 'av-rating', 'av-rating-count',
-          'it-rating', 'it-rating-count', 'avrep-rating', 'avrep-rating-count',
-          'proj-rating', 'proj-rating-count'
+          'it-rating', 'it-rating-count', 'proj-rating', 'proj-rating-count'
         ];
         idsToLoad.forEach(id => {
           if ($(id)) $(id).innerHTML = loadingHtml;
@@ -900,11 +954,13 @@ const ResourceHubCore = {
         let itRatingSum=0, itRatingCount=0;
         let projRatingSum=0, projRatingCount=0;
 
-        function classifyTicket(status, tech) {
+        function classifyTicket(status, tech, type = '') {
           const s = String(status || '').trim();
+          const t = String(type || '').toLowerCase();
           if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return 'cancel';
-          if (/เสร็จ|เรียบร้อยแล้ว|ปิดงาน|คืนเรียบร้อย/.test(s)) return 'done';
-          if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return 'progress';
+          if (/เสร็จ|เรียบร้อย|ปิดงาน|คืนเรียบร้อย|คืนอุปกรณ์/.test(s)) return 'done';
+          if (t === 'project' && /อนุมัติ/.test(s) && !/^รอ/.test(s)) return 'done';
+          if (/กำลัง|รอตรวจรับ|แก้ไข|จัดเตรียมแล้ว|กำลังใช้งาน/.test(s)) return 'progress';
           if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่/.test(s) && !/^รอ/.test(s)) return 'progress';
           if (tech) return 'progress';
           return 'pending';
@@ -939,7 +995,7 @@ const ResourceHubCore = {
 
                 const tech = data.techName || data.tech || '';
                 const status = data.status || '';
-                const group = classifyTicket(status, tech);
+                const group = classifyTicket(status, tech, type);
                 const rating = Number(data.rating) || 0;
 
                 if (type === 'building') {
@@ -1119,8 +1175,11 @@ window.loadExecutivePendingProjects = async function() {
         const d = doc.data();
         const tid = d.ticketId || doc.id;
         const status = d.status || '';
-        // รายการที่ยังไม่ได้รับการอนุมัติ / รอพิจารณา
-        if (!/อนุมัติ|เสร็จ|ปิดงาน|ยกเลิก|ปฏิเสธ/.test(status)) {
+        // รายการที่ยังไม่ได้รับการอนุมัติ / รอพิจารณา (แยก 'รอพิจารณาอนุมัติ' ออกจาก 'อนุมัติแล้ว')
+        const s = String(status || '').trim();
+        const isApproved = /อนุมัติ/.test(s) && !/^รอ/.test(s);
+        const isClosed = /เสร็จ|ปิดงาน|ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s);
+        if (!isApproved && !isClosed) {
           pendingList.push({ id: tid, ...d });
         }
       });
@@ -1143,11 +1202,12 @@ window.loadExecutivePendingProjects = async function() {
 
     container.innerHTML = pendingList.map(proj => {
       const subject = proj.subject || proj.title || 'โครงการปรับปรุงและจัดซื้อ';
-      const budget = proj.budget || proj.cost || proj.estimatedBudget || '-';
-      const budgetText = (budget && budget !== '-') ? `${Number(budget).toLocaleString()} บาท` : 'ตามเสนอ';
-      const reporter = proj.reporter || proj.proposer || 'ไม่ระบุ';
+      const budget = proj.budget || proj.allocatedBudget || proj.cost || proj.estimatedBudget || '-';
+      const budgetNum = Number(budget);
+      const budgetText = (budget && budget !== '-' && !isNaN(budgetNum)) ? `${budgetNum.toLocaleString()} บาท` : 'ตามเสนอ';
+      const reporter = proj.reporterName || proj.reporter || proj.proposer || 'ไม่ระบุ';
       const location = proj.location || 'สถานที่ตามเอกสารแนบ';
-      const tid = proj.id;
+      const safeTid = sanitizeHtml(proj.id || '');
 
       return `
         <div class="bg-white text-slate-800 rounded-2xl p-4 md:p-5 shadow-sm border border-purple-200/60 hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1157,11 +1217,11 @@ window.loadExecutivePendingProjects = async function() {
             </div>
             <div>
               <div class="flex items-center gap-2 flex-wrap mb-1">
-                <span class="text-xs font-black text-violet-700 bg-violet-100 px-2 py-0.5 rounded-lg tracking-wide">${tid}</span>
+                <span class="text-xs font-black text-violet-700 bg-violet-100 px-2 py-0.5 rounded-lg tracking-wide">${safeTid}</span>
                 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                   <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block mr-1"></span>รอพิจารณาอนุมัติ
                 </span>
-                <span class="text-xs text-slate-500 font-normal">งบประมาณ: <strong class="text-slate-800 font-bold">${budgetText}</strong></span>
+                <span class="text-xs text-slate-500 font-normal">งบประมาณ: <strong class="text-slate-800 font-bold">${sanitizeHtml(budgetText)}</strong></span>
               </div>
               <h4 class="text-sm md:text-base font-bold text-slate-900">${sanitizeHtml(subject)}</h4>
               <p class="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
@@ -1173,7 +1233,7 @@ window.loadExecutivePendingProjects = async function() {
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
-            <button onclick="if(window.TrackUI) window.TrackUI.open('${tid}')" class="bg-violet-600 hover:bg-violet-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+            <button type="button" data-tid="${safeTid}" onclick="if(window.TrackUI) window.TrackUI.open(this.dataset.tid)" class="bg-violet-600 hover:bg-violet-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
               <i class="fa-solid fa-magnifying-glass text-xs"></i> <span>ตรวจสอบและลงนาม</span>
             </button>
           </div>
@@ -1612,6 +1672,9 @@ function finalizeLogin(name, role, email) {
   if (isAdminLoggedIn) prefetchAllData();
 
   if (window.NotificationHub) {
+    if (typeof window.NotificationHub.init === 'function') {
+      window.NotificationHub.init();
+    }
     if (typeof window.NotificationHub.refreshTokenProfile === 'function') {
       window.NotificationHub.refreshTokenProfile();
     }
@@ -1640,12 +1703,21 @@ function handleGlobalLogout() {
   localStorage.removeItem('logged_admin');
   localStorage.removeItem('logged_email');
   localStorage.removeItem('logged_role');
+  localStorage.removeItem('session_login_time');
   currentTeacher = null;
   currentEmail = '';
   currentRole = '';
   isAdminLoggedIn = false;
-  if (window.NotificationHub && typeof window.NotificationHub.unregisterFCMProfile === 'function') {
-    window.NotificationHub.unregisterFCMProfile();
+  if (window.NotificationHub) {
+    if (typeof window.NotificationHub.unregisterFCMProfile === 'function') {
+      window.NotificationHub.unregisterFCMProfile();
+    }
+    if (typeof window.NotificationHub.stopListeners === 'function') {
+      window.NotificationHub.stopListeners();
+    }
+  }
+  if (window.TrackUI && typeof window.TrackUI.stopListeners === 'function') {
+    window.TrackUI.stopListeners();
   }
   if ($('home-regular-view')) $('home-regular-view').classList.remove('hidden');
   if ($('home-executive-view')) $('home-executive-view').classList.add('hidden');
@@ -1854,7 +1926,7 @@ function updateSessionUI() {
       $('dropdown-user-name').textContent = 'ผู้บริหาร (Executive)';
     }
     if ($('dropdown-user-role')) {
-      $('dropdown-user-role').innerHTML = `สถานะ: ผู้บริหาร${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
+      $('dropdown-user-role').innerHTML = `สถานะ: ผู้บริหาร${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${sanitizeHtml(currentEmail)}</span>` : ''}`;
     }
 
     if ($('page-auth').classList.contains('active')) {
@@ -1904,7 +1976,7 @@ function updateSessionUI() {
     if ($('dropdown-user-role')) {
       let textRole = 'เจ้าหน้าที่ / Admin';
       if (currentRole === 'Supervisor') textRole = 'หัวหน้างาน';
-      $('dropdown-user-role').innerHTML = `สถานะ: ${textRole}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${currentEmail}</span>` : ''}`;
+      $('dropdown-user-role').innerHTML = `สถานะ: ${textRole}${currentEmail ? `<br><span class="text-[10px] text-slate-400 font-normal mt-0.5 block break-all"><i class="fa-regular fa-envelope mr-1"></i>${sanitizeHtml(currentEmail)}</span>` : ''}`;
     }
 
     if ($('page-auth').classList.contains('active')) {
@@ -2279,13 +2351,13 @@ async function loadBugAdmin() {
       if (status === 'แก้ไขเรียบร้อย') badge = '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700">แก้ไขเรียบร้อย</span>';
 
       return `
-          <td class="p-4 whitespace-nowrap">${time || '-'}</td>
-          <td class="p-4 whitespace-nowrap font-medium text-slate-800">${rep || '-'}</td>
-          <td class="p-4 whitespace-nowrap text-sky-600 font-semibold">${page || '-'}</td>
-          <td class="p-4 min-w-[200px] whitespace-normal text-slate-600">${issue || '-'}</td>
+          <td class="p-4 whitespace-nowrap">${sanitizeHtml(time) || '-'}</td>
+          <td class="p-4 whitespace-nowrap font-medium text-slate-800">${sanitizeHtml(rep) || '-'}</td>
+          <td class="p-4 whitespace-nowrap text-sky-600 font-semibold">${sanitizeHtml(page) || '-'}</td>
+          <td class="p-4 min-w-[200px] whitespace-normal text-slate-600">${sanitizeHtml(issue) || '-'}</td>
           <td class="p-4 text-center">${badge}</td>
           <td class="p-4 text-center">
-            <button onclick="updateBugStatus(${index}, '${status}')" class="text-sky-600 hover:text-sky-800 hover:bg-sky-50 p-2 rounded-lg transition-colors" title="อัปเดตสถานะ">
+            <button type="button" data-index="${index}" data-status="${sanitizeHtml(status || '')}" onclick="updateBugStatus(Number(this.dataset.index), this.dataset.status)" class="text-sky-600 hover:text-sky-800 hover:bg-sky-50 p-2 rounded-lg transition-colors" title="อัปเดตสถานะ">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
           </td>
@@ -2485,7 +2557,7 @@ function refreshAdvancedTasks() {
   return loadAdvancedTasks();
 }
 
-// ฟังก์ชันสร้างรหัสคิวงานแบบสั้น (BLD-01 ถึง BLD-300 แล้วรันใหม่)
+// ฟังก์ชันสร้างรหัสคิวงานแยกตามปี พ.ศ. (BLD69-001, IT69-001, AV69-001, PRJ69-001 ไม่วนทับของเดิม)
 async function getNextTicketSequence(typeForFirebase) {
   const typeKey = (typeForFirebase === 'building' || typeForFirebase === 'it' || typeForFirebase === 'av' || typeForFirebase === 'project')
     ? typeForFirebase : 'building';
@@ -2494,6 +2566,8 @@ async function getNextTicketSequence(typeForFirebase) {
                : typeForFirebase === 'it'       ? 'IT'
                : typeForFirebase === 'project'  ? 'PRJ'
                : 'TKT';
+  const thaiYear2 = String((new Date().getFullYear() + 543) % 100).padStart(2, '0');
+  const counterKey = `${typeKey}_${thaiYear2}`;
 
   if (!window.firestoreDb && typeof initFirebase === 'function') {
     initFirebase();
@@ -2504,47 +2578,62 @@ async function getNextTicketSequence(typeForFirebase) {
       const counterRef = window.firestoreDb.collection('system_counters').doc('tickets');
       const nextNum = await window.firestoreDb.runTransaction(async (transaction) => {
         const doc = await transaction.get(counterRef);
-        let current = 0;
-        let data = {};
-        if (doc.exists) {
-          data = doc.data() || {};
-          current = Number(data[typeKey]) || 0;
-        }
-        let next = current + 1;
-        if (next > 300) next = 1; // เพดานสูงสุดประเภทละ 300 แล้ววนรอบใหม่ที่ 01
-        data[typeKey] = next;
-        transaction.set(counterRef, data, { merge: true });
+        const data = doc.exists ? (doc.data() || {}) : {};
+        const current = Number(data[counterKey]) || 0;
+        const next = current + 1;
+        transaction.set(counterRef, { [counterKey]: next }, { merge: true });
         return next;
       });
 
-      const numStr = nextNum < 100 ? String(nextNum).padStart(2, '0') : String(nextNum);
-      return `${prefix}-${numStr}`;
+      const numStr = String(nextNum).padStart(3, '0');
+      return `${prefix}${thaiYear2}-${numStr}`;
     } catch (err) {
-      console.warn('Counter transaction failed, falling back:', err);
+      console.warn('Counter transaction failed, using collision-safe fallback:', err);
     }
   }
 
-  // Fallback กรณีออฟไลน์
-  const fallbackNum = (Math.floor(Date.now() / 1000) % 300) + 1;
-  const numStr = fallbackNum < 100 ? String(fallbackNum).padStart(2, '0') : String(fallbackNum);
-  return `${prefix}-${numStr}`;
+  // Fallback กรณี Counter ขัดข้อง ใช้ Timestamp ป้องกันการทับเอกสารเดิม
+  const fallbackSuffix = Date.now().toString(36).toUpperCase().slice(-5);
+  return `${prefix}${thaiYear2}-TMP${fallbackSuffix}`;
 }
 
 // ==========================================
 // 12. ระบบส่งแบบฟอร์มกลาง (Generic Form Submission)
 // ==========================================
 async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate) {
-  const ticketId = await getNextTicketSequence(typeForFirebase);
+  if (!window.firestoreDb && typeof initFirebase === 'function') {
+    initFirebase();
+  }
+  if (!window.firestoreDb) {
+    throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลหลัก (Firestore) ได้ กรุณารีเฟรชหน้าเว็บแล้วลองใหม่');
+  }
+
+  let ticketId = await getNextTicketSequence(typeForFirebase);
+  const ticketsCol = window.firestoreDb.collection('tickets');
+
+  // 🛡️ Collision guard: ป้องกันการเขียนทับเอกสารเดิมหากรหัสชน
+  try {
+    const existingDoc = await ticketsCol.doc(ticketId).get();
+    if (existingDoc && existingDoc.exists) {
+      ticketId = `${ticketId}-${Date.now().toString(36).toUpperCase().slice(-4)}`;
+    }
+  } catch (checkErr) {
+    console.warn('Ticket collision check note:', checkErr);
+  }
 
   const initialStatus = (typeForFirebase === 'av' && payload.action === 'submit_av')
     ? 'จัดเตรียมแล้ว'
     : (typeForFirebase === 'project' ? 'รอพิจารณาอนุมัติ' : 'รอดำเนินการ');
 
-  // ตรวจสอบและเตรียม Document สำหรับ Firebase
+  let parsedIncidentDate = null;
+  if (incidentDate) {
+    const dObj = new Date(incidentDate);
+    if (!isNaN(dObj.getTime())) parsedIncidentDate = dObj;
+  }
+
   const reporterEmailVal = currentEmail || localStorage.getItem('logged_email') || '';
   const docData = {
     ticketId,
-    // รหัสห้องแชทที่ไม่ซ้ำ ต่อให้รหัสงานถูกนำกลับมาใช้ใหม่ แชทก็ไม่ซ้อนกับงานเก่า
     chatId: `${ticketId}_${Date.now()}`,
     type: typeForFirebase,
     subject:       subject  || '',
@@ -2554,57 +2643,48 @@ async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail
     dept:          dept     || '',
     location:      loc      || '',
     contact:       contact  || '',
-    incidentDate:  incidentDate ? new Date(incidentDate) : null,
+    incidentDate:  parsedIncidentDate,
     urgency:       payload.urgency || '',
     status:        initialStatus,
     createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  // 1. บันทึกเข้า Firebase ทันที (Instant Client-Write ~0.2 วินาที) เพื่อให้ขึ้นหน้าจอ Real-time ทันที
-  const saveToFirebase = async () => {
-    try {
-      if (!window.firestoreDb && typeof initFirebase === 'function') {
-        initFirebase();
-      }
-      if (window.firestoreDb) {
-        await window.firestoreDb.collection('tickets').doc(ticketId).set(docData);
-        console.log('🔥 Instant Firebase save success for ticket:', ticketId);
-        if (window.TrackUI && typeof window.TrackUI.load === 'function') {
-          window.TrackUI.load(true);
-        }
+  // 1. บันทึกเข้า Firebase และรอคำยืนยันก่อนแจ้งผู้ใช้งานสำเร็จ
+  const writePromise = ticketsCol.doc(ticketId).set(docData);
+  await (typeof window.withTimeout === 'function'
+    ? window.withTimeout(writePromise, 10000)
+    : writePromise);
+  console.log('🔥 Instant Firebase save success for ticket:', ticketId);
 
-        // ยิงแจ้งเตือนเข้า NotificationHub + FCM Web Push ทันทีตามบทบาท
-        if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
-          const isProject = typeForFirebase === 'project';
-          const isAV = typeForFirebase === 'av';
-          const isIT = typeForFirebase === 'it';
-          const notifTitle = isProject
-            ? `📋 เสนอโครงการใหม่ #${ticketId}`
-            : (isAV ? `🎤 งานโสตทัศนูปกรณ์ใหม่ #${ticketId}` : (isIT ? `💻 แจ้งซ่อมไอทีใหม่ #${ticketId}` : `🛠️ มีงานแจ้งซ่อมใหม่ #${ticketId}`));
-          NotificationHub.publish({
-            ticketId: ticketId,
-            taskType: typeForFirebase,
-            category: isProject ? 'โครงการ' : (isAV ? 'งานโสตฯ' : (isIT ? 'งานไอที' : 'งานซ่อม')),
-            title: notifTitle,
-            body: `${subject || 'รายการใหม่'}${loc ? ` (${loc})` : ''} — โดย ${reporter || 'ผู้แจ้ง'}`,
-            reporterName: reporter || '',
-            reporterEmail: reporterEmailVal,
-            location: loc || ''
-          }).catch(() => { });
-        }
-      }
-    } catch (e) {
-      console.error('Instant Firebase save error:', e);
-    }
-  };
-  saveToFirebase();
+  if (window.TrackUI && typeof window.TrackUI.load === 'function') {
+    window.TrackUI.load(true);
+  }
 
-  // 2. ส่งข้อมูลไป Google Sheets (GAS) ใน background
+  // ยิงแจ้งเตือนเข้า NotificationHub + FCM Web Push ทันทีตามบทบาท
+  if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
+    const isProject = typeForFirebase === 'project';
+    const isAV = typeForFirebase === 'av';
+    const isIT = typeForFirebase === 'it';
+    const notifTitle = isProject
+      ? `📋 เสนอโครงการใหม่ #${ticketId}`
+      : (isAV ? `🎤 งานโสตทัศนูปกรณ์ใหม่ #${ticketId}` : (isIT ? `💻 แจ้งซ่อมไอทีใหม่ #${ticketId}` : `🛠️ มีงานแจ้งซ่อมใหม่ #${ticketId}`));
+    NotificationHub.publish({
+      ticketId: ticketId,
+      taskType: typeForFirebase,
+      category: isProject ? 'โครงการ' : (isAV ? 'งานโสตฯ' : (isIT ? 'งานไอที' : 'งานซ่อม')),
+      title: notifTitle,
+      body: `${subject || 'รายการใหม่'}${loc ? ` (${loc})` : ''} — โดย ${reporter || 'ผู้แจ้ง'}`,
+      reporterName: reporter || '',
+      reporterEmail: reporterEmailVal,
+      location: loc || ''
+    }).catch(() => { });
+  }
+
+  // 2. อัปโหลดไฟล์เข้า Drive และสำรองลง Google Sheets (GAS) ใน background
   payload.ticketId = ticketId;
   ResourceHubCore.api.post(payload)
     .then(async (res) => {
-      // เมื่อ GAS บันทึกสำเร็จ อัปเดต fileUrl (ถ้ามี) ลง Firebase doc
       if (res && res.fileUrl && window.firestoreDb) {
         try {
           await window.firestoreDb.collection('tickets').doc(ticketId).update({
@@ -2619,6 +2699,8 @@ async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail
     .catch((e) => {
       console.error('Background Submit error to GAS:', e);
     });
+
+  return ticketId;
 }
 
 
@@ -2656,7 +2738,7 @@ async function submitGenericForm(config) {
     if (config.action === 'submit_project') typeForFirebase = 'project';
     if (config.action === 'submit_av_repair') typeForFirebase = 'av';
     
-    backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate || targetDate);
+    await backgroundSubmitAndSync(payload, typeForFirebase, subject, detail, reporter, dept, loc, contact, incidentDate || targetDate);
 
     setBusy(btn, false, config.btnOriginalHtml);
     await alertBox('success', 'ส่งเรื่องสำเร็จ!', config.successText, { timer: 2000, showConfirmButton: false });
@@ -2749,7 +2831,10 @@ function renderAdvTable(tbodyId, rows, type) {
       status = (r[4] || '').trim();
       urgency = (r[11] || '').trim();
       reporter = r[3] || '';
-      img = r[5] && r[5] !== '-' ? '<button onclick="showImageModal(\'' + r[5] + '\')" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</button>' : '-';
+      const rawUrl = String(r[5] || '').trim();
+      img = /^https?:\/\//i.test(rawUrl)
+        ? `<button type="button" data-url="${sanitizeHtml(rawUrl)}" onclick="event.stopPropagation(); showImageModal(this.dataset.url)" class="text-blue-500 underline"><i class="fa-solid fa-image"></i> ดูรูป</button>`
+        : '-';
     } else if (type === 'project') {
       // Facility_Projects: [0:Timestamp, 1:Subject, 2:Detail, 3:Reporter, 4:Status, 5:Document_Url, ..., 11:Urgency, 12:Dept, 13:Loc]
       timestamp = r[0] || '';
@@ -2758,10 +2843,13 @@ function renderAdvTable(tbodyId, rows, type) {
       status = (r[4] || '').trim();
       urgency = (r[11] || '').trim();
       reporter = r[3] || '';
-      img = r[5] && r[5] !== '-' ? '<a href="' + r[5] + '" target="_blank" class="text-blue-500 underline"><i class="fa-solid fa-file-pdf"></i> เอกสาร</a>' : '-';
+      const rawUrl = String(r[5] || '').trim();
+      img = /^https?:\/\//i.test(rawUrl)
+        ? `<a href="${sanitizeHtml(rawUrl)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-blue-500 underline"><i class="fa-solid fa-file-pdf"></i> เอกสาร</a>`
+        : '-';
     }
 
-    isDone = ['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ'].includes(status);
+    isDone = ['เสร็จสิ้น', 'เรียบร้อยแล้ว', 'อนุมัติ', 'อนุมัติแล้ว'].includes(status);
     let urgHtml = '<span class="text-xs text-slate-400">-</span>';
 
     if (isDone && type === 'it') {
@@ -2787,7 +2875,7 @@ function renderAdvTable(tbodyId, rows, type) {
     const safeSubject = sanitizeHtml(subject);
     const safeDetail = sanitizeHtml(detail);
 
-    return `<div onclick="updateAdvTask('${type}', ${i}, '${status}')" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
+    return `<div data-type="${sanitizeHtml(type)}" data-index="${i}" data-status="${sanitizeHtml(status)}" onclick="updateAdvTask(this.dataset.type, Number(this.dataset.index), this.dataset.status)" class="gmail-row bg-white cursor-pointer px-4 py-2 flex gap-4 items-center transition-all text-sm ${!isDone ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'} group">
       <div class="flex items-center gap-3 shrink-0 w-48">
         <div class="w-4 h-4 border-2 border-slate-300 rounded cursor-pointer hover:border-slate-500 bg-white" onclick="toggleFakeCheckbox(event, this)"></div>
         ${isDone ? '<i class="fa-regular fa-star text-slate-300"></i>' : '<i class="fa-solid fa-star text-amber-400"></i>'}
@@ -2804,7 +2892,7 @@ function renderAdvTable(tbodyId, rows, type) {
             <i class="fa-solid fa-trash hover:text-rose-600" title="ลบ" onclick="triggerRowAction(event, 'delete')"></i>
             <i class="fa-solid fa-envelope-open hover:text-slate-700" title="เปิดดู"></i>
         </div>
-        <span class="text-xs group-hover:hidden ${!isDone ? 'text-slate-900' : 'text-slate-500'}">${timestamp.split(' ')[0]}</span>
+        <span class="text-xs group-hover:hidden ${!isDone ? 'text-slate-900' : 'text-slate-500'}">${sanitizeHtml(String(timestamp || '').split(' ')[0])}</span>
       </div>
     </div>`;
   }).join('');
@@ -3204,22 +3292,25 @@ function renderDocTable(rows) {
   }
   tbody.innerHTML = rows.map((r, i) => {
     // r = [docId, category, uploadDate, docName, uploader, fileUrl, fileExt, description]
-    const docId = r[0] || '';
-    const cat = r[1] || 'ทั่วไป';
-    const date = r[2] || '-';
-    const name = r[3] || 'ไม่มีชื่อ';
-    const uploader = r[4] || '-';
-    const fileUrl = r[5] || '';
-    const ext = r[6] || '';
-    const catClass = DOC_CATEGORY_COLORS[cat] || DOC_CATEGORY_COLORS['ทั่วไป'];
-    const fileLink = fileUrl
-      ? `<a href="${fileUrl}" target="_blank" class="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"><i class="fa-solid fa-cloud-arrow-down"></i> ดาวน์โหลด</a>`
+    const docId = sanitizeHtml(r[0] || '');
+    const catRaw = r[1] || 'ทั่วไป';
+    const cat = sanitizeHtml(catRaw);
+    const date = sanitizeHtml(r[2] || '-');
+    const name = sanitizeHtml(r[3] || 'ไม่มีชื่อ');
+    const uploaderRaw = String(r[4] || '-');
+    const uploader = sanitizeHtml(uploaderRaw);
+    const rawFileUrl = String(r[5] || '').trim();
+    const safeFileUrl = /^https?:\/\//i.test(rawFileUrl) ? sanitizeHtml(rawFileUrl) : '';
+    const ext = sanitizeHtml(r[6] || '');
+    const catClass = DOC_CATEGORY_COLORS[catRaw] || DOC_CATEGORY_COLORS['ทั่วไป'];
+    const fileLink = safeFileUrl
+      ? `<a href="${safeFileUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"><i class="fa-solid fa-cloud-arrow-down"></i> ดาวน์โหลด</a>`
       : '<span class="text-slate-300 text-xs">ไม่มีไฟล์</span>';
     return `<tr class="hover:bg-indigo-50/30 transition-colors group">
           <td class="p-4 text-slate-400 text-xs">${i + 1}</td>
           <td class="p-4">
             <div class="flex items-center gap-2">
-              <span class="text-lg">${FILE_ICON(ext)}</span>
+              <span class="text-lg">${FILE_ICON(r[6] || '')}</span>
               <span class="font-semibold text-slate-800">${name}</span>
             </div>
           </td>
@@ -3229,7 +3320,7 @@ function renderDocTable(rows) {
           <td class="p-4 text-slate-500 text-xs">${date}</td>
           <td class="p-4">
             <div class="flex items-center gap-1.5 text-xs">
-              <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px]">${(uploader || '?')[0].toUpperCase()}</span>
+              <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px]">${sanitizeHtml((uploaderRaw || '?')[0].toUpperCase())}</span>
               <span class="text-slate-600 font-medium">${uploader}</span>
             </div>
           </td>
@@ -3239,7 +3330,7 @@ function renderDocTable(rows) {
           <td class="p-4 text-center">
             <div class="flex items-center justify-center gap-2">
               ${fileLink}
-              <button onclick="deleteDocument('${docId.replace(/'/g, "&#39;")}','${name.replace(/'/g, "&#39;")}')" class="text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100" title="ลบเอกสาร">
+              <button type="button" data-id="${docId}" data-name="${name}" onclick="deleteDocument(this.dataset.id, this.dataset.name)" class="text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100" title="ลบเอกสาร">
                 <i class="fa-solid fa-trash text-sm"></i>
               </button>
             </div>
@@ -3911,12 +4002,14 @@ function renderUserTable() {
 
     const safeEmailId = (user[0] || '').replace(/[^a-zA-Z0-9]/g, '');
 
+    const safePicUrl = /^https?:\/\//i.test(String(user[4] || '').trim()) ? sanitizeHtml(String(user[4]).trim()) : '';
+
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 transition-colors';
     tr.innerHTML = `
     <td class="px-4 py-3">
       <div class="flex items-center gap-3">
-        ${picture ? `<img src="${picture}" class="w-8 h-8 rounded-full shadow-sm object-cover" alt="profile" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=265D5A&color=fff'">` : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500"><i class="fa-solid fa-user"></i></div>`}
+        ${safePicUrl ? `<img src="${safePicUrl}" class="w-8 h-8 rounded-full shadow-sm object-cover" alt="profile" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(String(user[1] || 'U'))}&background=265D5A&color=fff'">` : `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500"><i class="fa-solid fa-user"></i></div>`}
         <div>
           <span class="font-medium text-slate-800">${name}</span>
         </div>
@@ -3924,7 +4017,7 @@ function renderUserTable() {
     </td>
     <td class="px-4 py-3 text-slate-600 font-mono text-xs">${email}</td>
     <td class="px-4 py-3">
-      <select id="role-select-${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none" onchange="handleUserChange('${email}', '${safeEmailId}')">
+      <select id="role-select-${safeEmailId}" data-email="${email}" data-safe-id="${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none" onchange="handleUserChange(this.dataset.email, this.dataset.safeId)">
         <option value="Teacher" ${role === 'Teacher' ? 'selected' : ''}>Teacher (ครู)</option>
         <option value="Tech" ${role === 'Tech' ? 'selected' : ''}>Tech (ช่าง)</option>
         <option value="AV" ${role === 'AV' ? 'selected' : ''}>AV (โสตฯ)</option>
@@ -3934,7 +4027,7 @@ function renderUserTable() {
       </select>
     </td>
     <td class="px-4 py-3">
-      <select id="status-select-${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none font-medium" onchange="handleUserChange('${email}', '${safeEmailId}')">
+      <select id="status-select-${safeEmailId}" data-email="${email}" data-safe-id="${safeEmailId}" class="border border-slate-300 rounded-lg text-sm px-2.5 py-1.5 bg-white text-slate-700 focus:ring-2 focus:ring-[#265D5A] outline-none font-medium" onchange="handleUserChange(this.dataset.email, this.dataset.safeId)">
         <option value="approved" ${status === 'approved' ? 'selected' : ''}>🟢 ใช้งานปกติ (Approved)</option>
         <option value="pending" ${status === 'pending' ? 'selected' : ''}>🟡 รออนุมัติ (Pending)</option>
         <option value="banned" ${status === 'banned' ? 'selected' : ''}>🔴 ระงับการใช้งาน (Banned)</option>
@@ -3947,7 +4040,7 @@ function renderUserTable() {
           <i class="fa-solid fa-check text-emerald-500 hidden" id="check-${safeEmailId}"></i>
           <span class="text-slate-400 hidden sm:inline">ออโต้</span>
         </span>
-        <button type="button" onclick="deleteUser('${email}', '${name.replace(/'/g, "\\'")}')" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" title="ลบผู้ใช้คนนี้">
+        <button type="button" data-email="${email}" data-name="${name}" onclick="deleteUser(this.dataset.email, this.dataset.name)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" title="ลบผู้ใช้คนนี้">
           <i class="fa-regular fa-trash-can text-sm"></i>
         </button>
       </div>
@@ -4564,6 +4657,9 @@ function localDevLogin(name, role, email) {
   if (isAdminLoggedIn) prefetchAllData();
 
   if (window.NotificationHub) {
+    if (typeof window.NotificationHub.init === 'function') {
+      window.NotificationHub.init();
+    }
     if (typeof window.NotificationHub.refreshTokenProfile === 'function') {
       window.NotificationHub.refreshTokenProfile();
     }

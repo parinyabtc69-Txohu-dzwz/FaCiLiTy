@@ -25,6 +25,9 @@ const NotificationHub = (function () {
   let pruneRunning = false;
   let currentTab = 'all'; // 'all' | 'unread' | 'my'
   let isListenerActive = false;
+  let unsubNotifications = null;
+  let unsubTickets = null;
+  let hasBoundDocumentEvents = false;
   let audioContextInstance = null;
   let audioElementInstance = null;
 
@@ -39,6 +42,17 @@ const NotificationHub = (function () {
   let currentFcmToken = null;
 
   // ── 1. ระบบจำสถานะการอ่านและรายการที่ถูกลบ (Read / Deleted) ────────────────
+  function escHtml(v) {
+    const s = (v === null || v === undefined) ? '' : String(v);
+    if (typeof window.sanitizeHtml === 'function') return window.sanitizeHtml(s);
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
   function getCurrentUserEmail() {
     return (
       (typeof currentEmail !== 'undefined' && currentEmail) ||
@@ -301,6 +315,13 @@ const NotificationHub = (function () {
     toast.id = toastId;
     toast.className = 'toast-item-enter bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-3.5 flex flex-col gap-2 pointer-events-auto transition-all relative overflow-hidden text-slate-800';
 
+    const safeTitle = escHtml(item.title || 'แจ้งเตือนงานซ่อม');
+    const safeBody = escHtml(item.body || item.subject || '');
+    const safeLocation = escHtml(item.location || '');
+    const safeTicketId = escHtml(item.ticketId || '');
+    const safeNotifId = escHtml(item.id || '');
+    const safeToastId = escHtml(toastId);
+
     toast.innerHTML = `
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style="background-color: ${visuals.bg}; color: ${visuals.color};">
@@ -313,17 +334,17 @@ const NotificationHub = (function () {
             </span>
             <span class="text-[10px] text-slate-400 font-medium">เมื่อสักครู่</span>
           </div>
-          <p class="text-xs font-bold text-slate-800 truncate">${item.title || 'แจ้งเตือนงานซ่อม'}</p>
-          <p class="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-snug">${item.body || item.subject || ''}</p>
-          ${item.location ? `<p class="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-location-dot"></i> ${item.location}</p>` : ''}
+          <p class="text-xs font-bold text-slate-800 truncate">${safeTitle}</p>
+          <p class="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-snug">${safeBody}</p>
+          ${safeLocation ? `<p class="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-location-dot"></i> ${safeLocation}</p>` : ''}
         </div>
-        <button onclick="NotificationHub.dismissToast('${toastId}')" class="text-slate-400 hover:text-slate-600 p-1 -mr-1 -mt-1 transition-colors" title="ปิด">
+        <button type="button" data-toast-id="${safeToastId}" onclick="NotificationHub.dismissToast(this.dataset.toastId)" class="text-slate-400 hover:text-slate-600 p-1 -mr-1 -mt-1 transition-colors" title="ปิด">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
       <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-        <span class="text-[10px] text-slate-400 font-medium">#${item.ticketId || ''}</span>
-        <button onclick="NotificationHub.openTicketAndDismiss('${item.ticketId || ''}', '${toastId}', '${item.id || ''}')"
+        <span class="text-[10px] text-slate-400 font-medium">#${safeTicketId}</span>
+        <button type="button" data-ticket-id="${safeTicketId}" data-toast-id="${safeToastId}" data-notif-id="${safeNotifId}" onclick="NotificationHub.openTicketAndDismiss(this.dataset.ticketId, this.dataset.toastId, this.dataset.notifId)"
           class="px-3 py-1 rounded-lg text-xs font-bold text-white transition-all shadow-sm active:scale-95" style="background-color: #265D5A;">
           ดูรายละเอียด <i class="fa-solid fa-arrow-right ml-1"></i>
         </button>
@@ -365,7 +386,7 @@ const NotificationHub = (function () {
     const s = String(t.status || '').trim();
     const type = String(t.type || '').toLowerCase().trim();
     const tid = normalizeTicketId(t.ticketId || t.id);
-    const isProject = type === 'project' || tid.startsWith('PRJ-') || tid.startsWith('PROJ-');
+    const isProject = type === 'project' || /^(PRJ\d*-|PROJ)/i.test(tid);
 
     if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return true;
     if (/เสร็จ|เรียบร้อย|ปิดงาน|คืนเรียบร้อย|คืนอุปกรณ์/.test(s)) return true;
@@ -430,7 +451,7 @@ const NotificationHub = (function () {
     const hasTech = Boolean(tech && tech !== '-');
 
     if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return false;
-    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่/.test(s) && !/^รอ/.test(s)) return false;
+    if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่|จัดเตรียมแล้ว/.test(s) && !/^รอ/.test(s)) return false;
     // หากมอบหมายช่างแล้ว (มี techName) ในระบบติดตามงานจะจัดอยู่ในหมวด "กำลังดำเนินการ" จึงไม่นับเป็นงานรอมอบหมาย
     if (hasTech) return false;
     return true;
@@ -627,18 +648,24 @@ const NotificationHub = (function () {
     filtered.forEach(item => {
       const isRead = !item.isPendingTask && isNotificationRead(item, readIds);
       const visuals = getCategoryVisuals(item.category, item.taskType);
-      const timeStr = formatRelativeTime(item.createdAt);
+      const timeStr = escHtml(formatRelativeTime(item.createdAt));
+      const safeTech = escHtml(item.technician || '');
+      const safeStatus = escHtml(item.status || '');
+      const safeTitle = escHtml(item.title || 'แจ้งเตือน');
+      const safeBody = escHtml(item.body || item.subject || '');
+      const safeTicketId = escHtml(item.ticketId || '');
+      const safeItemId = escHtml(item.id || '');
 
       let statusPillHtml = '';
       if (item.isPendingTask) {
         if (item.isWaitingAssign) {
           statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200">⚠️ รอมอบหมาย/ดำเนินการ</span>`;
         } else if (item.status === 'รอดำเนินการ') {
-          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-200">⏳ รอดำเนินการ${item.technician ? ' (' + item.technician + ')' : ''}</span>`;
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-200">⏳ รอดำเนินการ${safeTech ? ' (' + safeTech + ')' : ''}</span>`;
         } else if (String(item.status || '').includes('กำลัง')) {
-          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">🔧 กำลังซ่อม${item.technician ? ' (' + item.technician + ')' : ''}</span>`;
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">🔧 กำลังซ่อม${safeTech ? ' (' + safeTech + ')' : ''}</span>`;
         } else {
-          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200">${item.status}</span>`;
+          statusPillHtml = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200">${safeStatus}</span>`;
         }
       }
 
@@ -647,23 +674,23 @@ const NotificationHub = (function () {
         : (isRead ? 'opacity-85 hover:bg-slate-50' : 'bg-emerald-50/30 hover:bg-slate-50');
 
       html += `
-        <div onclick="NotificationHub.openTicketAndDismiss('${item.ticketId || ''}', null, '${item.id || ''}')"
+        <div data-ticket-id="${safeTicketId}" data-notif-id="${safeItemId}" onclick="NotificationHub.openTicketAndDismiss(this.dataset.ticketId, null, this.dataset.notifId)"
           class="group p-2.5 rounded-xl transition-colors cursor-pointer flex items-start gap-2.5 relative ${rowBgClass}">
           <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold" style="background-color: ${visuals.bg}; color: ${visuals.color};">
             <i class="fa-solid ${visuals.icon}"></i>
           </div>
           <div class="flex-1 min-w-0 pr-1">
             <div class="flex items-center justify-between gap-1">
-              <p class="text-xs font-bold text-slate-800 truncate">${item.title || 'แจ้งเตือน'}</p>
+              <p class="text-xs font-bold text-slate-800 truncate">${safeTitle}</p>
               <span class="text-[10px] text-slate-400 shrink-0">${timeStr}</span>
             </div>
-            <p class="text-[11px] text-slate-600 line-clamp-1 mt-0.5">${item.body || item.subject || ''}</p>
+            <p class="text-[11px] text-slate-600 line-clamp-1 mt-0.5">${safeBody}</p>
             <div class="flex items-center flex-wrap gap-1.5 mt-1">
               <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded" style="background-color: ${visuals.bg}; color: ${visuals.color};">
                 ${visuals.label}
               </span>
               ${statusPillHtml}
-              ${item.ticketId ? `<span class="text-[9px] font-mono font-semibold text-slate-500">#${item.ticketId}</span>` : ''}
+              ${safeTicketId ? `<span class="text-[9px] font-mono font-semibold text-slate-500">#${safeTicketId}</span>` : ''}
             </div>
           </div>
           ${item.isPendingTask ? `
@@ -671,7 +698,7 @@ const NotificationHub = (function () {
               จัดการ <i class="fa-solid fa-chevron-right text-[8px]"></i>
             </span>
           ` : `
-            <button onclick="event.stopPropagation(); NotificationHub.deleteItem('${item.id}');"
+            <button type="button" data-notif-id="${safeItemId}" onclick="event.stopPropagation(); NotificationHub.deleteItem(this.dataset.notifId);"
               class="w-7 h-7 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 active:scale-95 flex items-center justify-center transition-all shrink-0 mt-0.5"
               title="ลบการแจ้งเตือนนี้">
               <i class="fa-solid fa-trash-can text-xs"></i>
@@ -1586,6 +1613,29 @@ const NotificationHub = (function () {
     });
   }
 
+  function stopListeners() {
+    if (typeof unsubNotifications === 'function') {
+      try { unsubNotifications(); } catch (_) { }
+      unsubNotifications = null;
+    }
+    if (typeof unsubTickets === 'function') {
+      try { unsubTickets(); } catch (_) { }
+      unsubTickets = null;
+    }
+    isListenerActive = false;
+    notifications = [];
+    pendingTickets = [];
+    startedOrClosedTicketIds = new Set();
+    closedTicketIds = new Set();
+    archivedTicketIds = new Set();
+    allTicketIds = new Set();
+    hasTicketsLoaded = false;
+    pendingCatchupDocs = [];
+    viewedTicketTimestamps.clear();
+    updateBadge();
+    renderList();
+  }
+
   function initListener() {
     if (isListenerActive) return;
     if (!window.firestoreDb) {
@@ -1598,7 +1648,7 @@ const NotificationHub = (function () {
       let isFirstLoad = true;
       console.log('[NotificationHub] 🎧 Firestore Real-Time listener connected successfully (Session: ' + CURRENT_SESSION_ID + ')');
 
-      window.firestoreDb.collection('notifications')
+      unsubNotifications = window.firestoreDb.collection('notifications')
         .orderBy('createdAt', 'desc')
         .limit(60)
         .onSnapshot(snapshot => {
@@ -1685,7 +1735,7 @@ const NotificationHub = (function () {
 
       // ดักฟังรายการงานทั้งหมดในตาราง tickets แบบ Real-time เพื่อแยกรายการงานค้างและงานที่เสร็จสิ้นแล้ว
       let isTicketsFirstLoad = true;
-      window.firestoreDb.collection('tickets')
+      unsubTickets = window.firestoreDb.collection('tickets')
         .onSnapshot(snap => {
           const currentPending = [];
           const currentStartedOrClosed = new Set();
@@ -1874,22 +1924,25 @@ const NotificationHub = (function () {
       }, 1200);
     }
 
-    // ปลดล็อกระบบเสียงบนอุปกรณ์เคลื่อนที่เมื่อผู้ใช้แตะหรือคลิกหน้าจอ
-    const unlockHandler = () => {
-      unlockAudioContext();
-    };
-    document.addEventListener('touchstart', unlockHandler, { passive: true });
-    document.addEventListener('click', unlockHandler, { passive: true });
-    document.addEventListener('pointerdown', unlockHandler, { passive: true });
-
-    // ปลดล็อกเสียงและอัปเดตสถานะทันทีเมื่อสลับกลับมาที่แอป
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
+    // ปลดล็อกระบบเสียงบนอุปกรณ์เคลื่อนที่เมื่อผู้ใช้แตะหรือคลิกหน้าจอ (ผูกครั้งเดียว)
+    if (!hasBoundDocumentEvents) {
+      hasBoundDocumentEvents = true;
+      const unlockHandler = () => {
         unlockAudioContext();
-        updateBadge();
-        renderList();
-      }
-    });
+      };
+      document.addEventListener('touchstart', unlockHandler, { passive: true });
+      document.addEventListener('click', unlockHandler, { passive: true });
+      document.addEventListener('pointerdown', unlockHandler, { passive: true });
+
+      // ปลดล็อกเสียงและอัปเดตสถานะทันทีเมื่อสลับกลับมาที่แอป
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          unlockAudioContext();
+          updateBadge();
+          renderList();
+        }
+      });
+    }
   }
 
   // ── 17. ล้างแคชและบังคับอัปเดตแอปสู่เวอร์ชันล่าสุดทันที ──────────────────────
@@ -1925,6 +1978,7 @@ const NotificationHub = (function () {
 
   return {
     init,
+    stopListeners,
     playChime,
     unlockAudioContext,
     showToast,
