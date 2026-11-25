@@ -195,9 +195,9 @@
 
     <h3>1.2 จุดเด่นและคุณค่าที่สถานศึกษาได้รับ (Key Strategic Values)</h3>
     <ul>
-      <li><strong>⚡ รวดเร็วแบบเรียลไทม์ (Real-Time Dual-Sync):</strong> ผสานความเร็วของ <strong>Firebase Cloud Firestore</strong> เข้ากับ <strong>Google Sheets</strong> และ <strong>Google Drive</strong> ข้อมูลอัปเดตบนหน้าจอทันทีโดยไม่ต้องรีเฟรช พร้อมเก็บตารางข้อมูลและรูปภาพเข้าแฟ้มออนไลน์อัตโนมัติ</li>
+      <li><strong>⚡ รวดเร็วแบบเรียลไทม์ (Firestore-First + One-Way Backup Log):</strong> ใช้ <strong>Firebase Cloud Firestore</strong> (<code>facility-c7833</code>) เป็นฐานข้อมูลหลักเพียงแหล่งเดียวเพื่อความเร็วแบบเรียลไทม์ พร้อมบันทึก Log สำรองทางเดียวลง <strong>Google Sheets</strong> และเก็บรูปภาพ/เอกสาร 100% บน <strong>Google Drive</strong></li>
       <li><strong>🎯 แจ้งเตือนตรงกลุ่มเป้าหมาย ไม่รบกวนครู (Role-Based Zero-Spam Routing):</strong> คัดกรองผู้รับตามบทบาทหน้าที่อัตโนมัติ ครูจะได้รับการสั่นเตือนเฉพาะงานที่ตนเองแจ้ง ช่างรับเฉพาะงานในสายงานตนเอง และผู้บริหารรับเฉพาะงานโครงการที่ต้องอนุมัติ</li>
-      <li><strong>📳 ปลุกเตือนถึงหน้าจอล็อกมือถือ (Lock-Screen Web Push &amp; Multi-Bot LINE):</strong> รองรับทั้งการแจ้งเตือนผ่านแอปโดยตรง (FCM v1 Web Push) และการ์ดแจ้งเตือนผ่าน LINE พร้อมระบบ <strong>Multi-Bot Auto-Failover</strong> สลับบอทสำรอง 3 ตัวอัตโนมัติเมื่อโควต้าเต็ม</li>
+      <li><strong>📳 ปลุกเตือนถึงหน้าจอล็อกมือถือ (Lock-Screen Web Push &amp; Multi-Bot LINE):</strong> รองรับทั้งการแจ้งเตือนผ่านแอปโดยตรง (FCM v1 Web Push) และการ์ดแจ้งเตือนผ่าน LINE พร้อมระบบ <strong>Multi-Bot Auto-Failover</strong> สลับบอทสำรองอัตโนมัติผ่าน Script Properties เมื่อโควต้าเต็ม</li>
       <li><strong>📊 โปร่งใส ตรวจสอบได้ทุกขั้นตอน (Full Accountability &amp; KPI):</strong> ทุกใบงานมีรหัสอ้างอิง มีไทม์ไลน์เวลาแจ้ง-เวลามอบหมาย-เวลาซ่อมเสร็จ มีรูปถ่ายยืนยันก่อน-หลังซ่อม แนบใบเสร็จ และมีผลประเมินความพึงพอใจ 5 ดาวจากครูผู้แจ้ง</li>
     </ul>
 
@@ -218,31 +218,31 @@
         <tr>
           <td><strong>1</strong></td>
           <td><strong>แจ้งซ่อมอาคารสถานที่ทั่วไป</strong></td>
-          <td><code>REP-XXXXX</code></td>
+          <td><code>BLD69-XXX</code></td>
           <td>แจ้งซ่อมไฟฟ้า ประปา เครื่องปรับอากาศ โต๊ะ/เก้าอี้ ประตู/หน้าต่าง และโครงสร้างอาคาร พร้อมระบุสถานที่ ระดับความเร่งด่วน และแนบรูปถ่ายจุดชำรุด</td>
         </tr>
         <tr>
           <td><strong>2</strong></td>
           <td><strong>แจ้งซ่อมคอมพิวเตอร์และไอที</strong></td>
-          <td><code>IT-XXXXX</code></td>
+          <td><code>IT69-XXX</code></td>
           <td>แจ้งปัญหาคอมพิวเตอร์ เครื่องพิมพ์ โปรเจกเตอร์ ระบบเครือข่ายอินเทอร์เน็ต/Wi-Fi และซอฟต์แวร์การเรียนการสอน</td>
         </tr>
         <tr>
           <td><strong>3</strong></td>
           <td><strong>ขอยืม-คืนอุปกรณ์โสตทัศนูปกรณ์</strong></td>
-          <td><code>AV-XXXXX</code></td>
+          <td><code>AV69-XXX</code></td>
           <td>ขอยืมไมโครโฟน ลำโพงเคลื่อนที่ กล้องถ่ายภาพ สายสัญญาณ หรืออุปกรณ์จัดกิจกรรม โดยระบุรายการ จำนวน วันที่ยืม-วันที่คืน และสถานที่ใช้งาน</td>
         </tr>
         <tr>
           <td><strong>4</strong></td>
           <td><strong>แจ้งซ่อมอุปกรณ์โสตทัศนูปกรณ์</strong></td>
-          <td><code>AVR-XXXXX</code></td>
+          <td><code>AV69-XXX</code></td>
           <td>แจ้งซ่อมเครื่องเสียง ไมโครโฟน หรืออุปกรณ์โสตฯ ประจำห้องเรียนที่ชำรุดเสียหาย</td>
         </tr>
         <tr>
           <td><strong>5</strong></td>
           <td><strong>เสนอโครงการระยะยาว / จัดซื้อ</strong></td>
-          <td><code>PROJ-XXXXX</code></td>
+          <td><code>PRJ69-XXX</code></td>
           <td>สำหรับเสนอโครงการปรับปรุงซ่อมแซมขนาดใหญ่ หรืองานจัดซื้อจัดจ้างที่ต้องแนบเอกสารโครงการ/ใบเสนอราคา เพื่อเสนอให้ <strong>ผู้บริหาร (Executive)</strong> พิจารณาอนุมัติ</td>
         </tr>
       </tbody>
@@ -267,7 +267,7 @@
     <ol>
       <li><strong>ช่องทางที่ 1: ศูนย์การแจ้งเตือนในแอป (In-App Notification Hub &amp; Chime)</strong> — ป้ายลอยหน้าจอพร้อมเสียงระฆังสังเคราะห์ 2 โทน</li>
       <li><strong>ช่องทางที่ 2: แจ้งเตือนบนหน้าจอล็อกมือถือ (FCM v1 Lock-Screen Web Push)</strong> — ปลุกหน้าจอล็อกมือถือสว่างและสั่นเตือนแม้พับหน้าจอ</li>
-      <li><strong>ช่องทางที่ 3: การ์ดแจ้งเตือน LINE Flex Message (Multi-Bot Auto-Failover)</strong> — ส่งการ์ดเข้ากลุ่มหลักและแชทส่วนตัวช่าง พร้อมสลับบอท 3 ตัวอัตโนมัติ</li>
+      <li><strong>ช่องทางที่ 3: การ์ดแจ้งเตือน LINE Flex Message (Multi-Bot Auto-Failover)</strong> — ส่งการ์ดเข้ากลุ่มหลักและแชทส่วนตัวช่าง พร้อมสลับบอทสำรองผ่าน Script Properties</li>
     </ol>
 
     <h3>2.5 ระบบบริหารจัดการสำหรับแอดมิน หัวหน้างาน และทีมช่าง</h3>
@@ -379,9 +379,9 @@
     <!-- ส่วนที่ 5 -->
     <h2>🗄️ ส่วนที่ 5: สรุปแหล่งจัดเก็บข้อมูลของระบบ (Data Governance)</h2>
     <ul>
-      <li><strong>1. ข้อมูลตารางใบงานและทะเบียนผู้ใช้ (Google Sheets 12 แท็บ):</strong> <a href="https://docs.google.com/spreadsheets/d/1i-XQ0lO571tIX7RvQR51V2AjuXrEwLfJP7Z7b8xuYDM/edit" target="_blank">เปิดตารางฐานข้อมูล Google Sheets</a></li>
-      <li><strong>2. คลังเก็บรูปภาพ ใบเสร็จ และเอกสารแนบ (Google Drive 8 โฟลเดอร์ย่อย):</strong> <a href="https://drive.google.com/drive/folders/1tkOHFwH4MC-eA_eNLThTcLVF3CRHQUXT" target="_blank">เปิดโฟลเดอร์ Google Drive</a></li>
-      <li><strong>3. ฐานข้อมูลเรียลไทม์และห้องแชท (Firebase Firestore):</strong> โปรเจกต์ <code>facility-c7833</code></li>
+      <li><strong>1. ฐานข้อมูลหลักเรียลไทม์และห้องแชท (Firebase Firestore - Single Source of Truth):</strong> โปรเจกต์ <code>facility-c7833</code> พร้อมการยืนยันตัวตน Firebase Auth และ <code>firestore.rules</code></li>
+      <li><strong>2. คลังเก็บรูปภาพ ใบเสร็จ และเอกสารแนบ 100% (Google Drive):</strong> <a href="https://drive.google.com/drive/folders/1tkOHFwH4MC-eA_eNLThTcLVF3CRHQUXT" target="_blank">เปิดโฟลเดอร์ Google Drive</a></li>
+      <li><strong>3. Log สำรองทางเดียว (Google Sheets One-Way Backup Log):</strong> <a href="https://docs.google.com/spreadsheets/d/1i-XQ0lO571tIX7RvQR51V2AjuXrEwLfJP7Z7b8xuYDM/edit" target="_blank">เปิดตารางฐานข้อมูล Google Sheets</a></li>
       <li><strong>4. เซิร์ฟเวอร์หน้าเว็บและซอร์สโค้ด (GitHub Pages):</strong> <a href="https://github.com/parinyabtc69-Txohu-dzwz/FaCiLiTy" target="_blank">GitHub Repository (Release Tag: v1.0)</a></li>
     </ul>
   </div>

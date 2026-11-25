@@ -1,0 +1,208 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // FaCiLiTy V6 Firestore Security Rules
+    // Enforce authentication via Firebase Auth (Google Sign-In)
+    // and server-side RBAC backed by users/{email}.
+    // ============================================================
+
+    function isSignedIn() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true;
+    }
+
+    function authEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function userDocPath() {
+      return /databases/$(database)/documents/users/$(authEmail());
+    }
+
+    function userExists() {
+      return exists(userDocPath());
+    }
+
+    function userData() {
+      return get(userDocPath()).data;
+    }
+
+    function userRole() {
+      return (userExists() && ('role' in userData()) && userData().role is string)
+        ? userData().role
+        : 'Teacher';
+    }
+
+    function isApprovedUser() {
+      return isSignedIn()
+        && (!userExists()
+          || !('status' in userData())
+          || userData().status in ['approved', 'success']);
+    }
+
+    function isAdminOrSupervisor() {
+      return isApprovedUser() && userRole() in ['Admin', 'Supervisor'];
+    }
+
+    function isMasterDataManager() {
+      return isApprovedUser() && userRole() in ['Admin', 'Supervisor', 'Staff', 'AV'];
+    }
+
+    function isDocManager() {
+      return isApprovedUser() && userRole() in ['Admin', 'Supervisor', 'Executive', 'Staff'];
+    }
+
+    function isStaffOrAbove() {
+      return isApprovedUser()
+        && userRole() in ['Admin', 'Supervisor', 'Staff', 'Tech', 'AV', 'Executive'];
+    }
+
+    function isTicketReporter() {
+      return isApprovedUser()
+        && ('reporterEmail' in resource.data)
+        && resource.data.reporterEmail is string
+        && resource.data.reporterEmail.lower() == authEmail();
+    }
+
+    // ── 1. ทะเบียนผู้ใช้และสิทธิ์ (Users & RBAC) ──────────────────
+    match /users/{email} {
+      allow get: if isSignedIn() && (authEmail() == email.lower() || isStaffOrAbove());
+      allow list: if isStaffOrAbove();
+
+      // ผู้ใช้ใหม่สร้างบัญชีตนเองได้เฉพาะ Role = Teacher เท่านั้น (ป้องกัน self-promotion)
+      allow create: if (
+        isSignedIn()
+        && authEmail() == email.lower()
+        && request.resource.data.role == 'Teacher'
+        && request.resource.data.status == 'approved'
+        && (!('email' in request.resource.data)
+          || (request.resource.data.email is string && request.resource.data.email.lower() == authEmail()))
+      ) || isAdminOrSupervisor();
+
+      // ผู้ใช้ทั่วไปอัปเดตได้เฉพาะข้อมูลโปรไฟล์ของตนเอง (ห้ามแก้ role, status, email)
+      allow update: if (
+        isApprovedUser()
+        && authEmail() == email.lower()
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'email'])
+      ) || isAdminOrSupervisor();
+
+      allow delete: if isAdminOrSupervisor();
+    }
+
+    // ── 2. ใบงานแจ้งซ่อม / ยืมโสตฯ / โครงการ (Tickets) ────────────
+    match /tickets/{ticketId} {
+      allow read: if isApprovedUser();
+
+      allow create: if isApprovedUser() && (
+        isStaffOrAbove()
+        || (
+          ('reporterEmail' in request.resource.data)
+          && request.resource.data.reporterEmail is string
+          && request.resource.data.reporterEmail.lower() == authEmail()
+        )
+      );
+
+      // เจ้าหน้าที่/ช่าง/ผู้บริหารจัดการสถานะได้; ผู้แจ้งอัปเดตได้เฉพาะคะแนนประเมินและไฟล์แนบของงานตัวเอง
+      allow update: if isStaffOrAbove() || (
+        isTicketReporter()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['rating', 'ratingComment', 'ratedBy', 'ratedAt', 'updatedAt', 'chatId', 'image', 'driveFileId', 'document'])
+      );
+
+      allow delete: if isAdminOrSupervisor();
+    }
+
+    // ── 3. ห้องแชทประจำใบงาน (Chats) ─────────────────────────────
+    match /chats/{roomId}/messages/{msgId} {
+      allow read, create: if isApprovedUser();
+      allow update, delete: if isAdminOrSupervisor();
+    }
+
+    // ── 4. ตัวนับเลขรันใบงานรายปี (System Counters) ────────────────
+    match /system_counters/{counterId} {
+      allow read: if isApprovedUser();
+      allow write: if (isApprovedUser() && counterId == 'tickets') || isAdminOrSupervisor();
+    }
+
+    // ── 5. ข้อมูลหลักและการตั้งค่าระบบ (Master Data) ───────────────
+    match /master_data/{docId} {
+      allow read: if isApprovedUser();
+      allow write: if isMasterDataManager();
+    }
+
+    // ── 6. คลังเอกสารระบบ (Documents) ────────────────────────────
+    match /documents/{docId} {
+      allow read: if isApprovedUser();
+      allow create, update, delete: if isDocManager();
+    }
+
+    // ── 7. รายงานแจ้งปัญหาระบบ (Bug Reports) ─────────────────────
+    match /bug_reports/{bugId} {
+      allow create: if isApprovedUser() && (
+        isAdminOrSupervisor()
+        || !('reporterEmail' in request.resource.data)
+        || request.resource.data.reporterEmail == ''
+        || (request.resource.data.reporterEmail is string && request.resource.data.reporterEmail.lower() == authEmail())
+      );
+
+      allow read: if isAdminOrSupervisor() || (
+        isApprovedUser()
+        && ('reporterEmail' in resource.data)
+        && resource.data.reporterEmail is string
+        && resource.data.reporterEmail.lower() == authEmail()
+      );
+
+      allow update, delete: if isAdminOrSupervisor();
+    }
+
+    // ── 8. ระบบแจ้งเตือนเรียลไทม์ (Notifications) ─────────────────
+    match /notifications/{notifId} {
+      allow read, create: if isApprovedUser();
+
+      allow update: if isAdminOrSupervisor() || (
+        isApprovedUser()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
+      );
+
+      allow delete: if isStaffOrAbove() || (
+        isApprovedUser()
+        && (
+          (('reporterEmail' in resource.data) && resource.data.reporterEmail is string && resource.data.reporterEmail.lower() == authEmail())
+          || (('targetEmail' in resource.data) && resource.data.targetEmail is string && resource.data.targetEmail.lower() == authEmail())
+        )
+      );
+    }
+
+    // ── 9. โทเค็น Web Push (FCM Tokens) ──────────────────────────
+    match /fcm_tokens/{tokenId} {
+      allow read: if isAdminOrSupervisor() || (
+        isApprovedUser()
+        && ('userEmail' in resource.data)
+        && resource.data.userEmail is string
+        && resource.data.userEmail.lower() == authEmail()
+      );
+
+      allow create, update: if isApprovedUser()
+        && ('userEmail' in request.resource.data)
+        && request.resource.data.userEmail is string
+        && request.resource.data.userEmail.lower() == authEmail()
+        && request.resource.data.role == userRole();
+
+      allow delete: if isAdminOrSupervisor() || (
+        isApprovedUser()
+        && ('userEmail' in resource.data)
+        && resource.data.userEmail is string
+        && resource.data.userEmail.lower() == authEmail()
+      );
+    }
+
+    // ── ปฏิเสธสิทธิ์คอลเล็กชันอื่นทั้งหมด ────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

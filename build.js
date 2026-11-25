@@ -20,15 +20,9 @@ let jsApp = '';
 // Explicit load order to prevent reference errors for global variables
 const loadOrder = [
   'firebase-config.js',
-  'firestore-db.js',
   'firebase-chat.js',
   'master-data.js',
-  'api.js',
-  'auth.js',
-  'user.js',
-  'repair.js',
-  'av.js',
-  'dashboard.js',
+  'qrcode.js',
   'main.js',
   'track.js',
   'chime-sound.js',
