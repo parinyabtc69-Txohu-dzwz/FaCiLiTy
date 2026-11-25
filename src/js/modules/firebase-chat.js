@@ -21,9 +21,12 @@ const FirebaseChat = {
     }, 1500);
 
     try {
-      // ดึงแชทจาก collection 'chats' -> document (ticketId) -> collection 'messages'
-      return db.collection('chats').doc(roomId).collection('messages')
-        .orderBy('timestamp', 'asc')
+      // ดึงแชทจาก collection 'chats' -> document (ticketId) -> collection 'messages' (จำกัด 100 ข้อความล่าสุด)
+      let chatQuery = db.collection('chats').doc(roomId).collection('messages').orderBy('timestamp', 'asc');
+      if (typeof chatQuery.limitToLast === 'function') {
+        chatQuery = chatQuery.limitToLast(100);
+      }
+      return chatQuery
         .onSnapshot((snapshot) => {
           hasReceived = true;
           clearTimeout(timer);
@@ -54,11 +57,15 @@ const FirebaseChat = {
       ? firebase.firestore.FieldValue.serverTimestamp() 
       : new Date();
 
+    const attachmentDriveFileId = attachmentUrl && typeof window !== 'undefined' && typeof window.extractDriveFileId === 'function'
+      ? window.extractDriveFileId(attachmentUrl)
+      : '';
     const msgData = {
       senderName: senderName,
       role: role,
       message: message,
       attachmentUrl: attachmentUrl,
+      attachmentDriveFileId: attachmentDriveFileId,
       timestamp: now,
       localTimestamp: Date.now() // เผื่อไว้เรียงลำดับฝั่ง client
     };

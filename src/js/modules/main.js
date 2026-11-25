@@ -97,6 +97,39 @@ function sanitizeHtml(str) {
 }
 const esc = sanitizeHtml;
 
+// 🔗 ดึง Google Drive File ID ออกจาก URL เพื่อเก็บไว้อ้างอิง/จัดการไฟล์ใน Drive
+window.extractDriveFileId = function extractDriveFileId(url) {
+  const s = String(url || '').trim();
+  if (!s) return '';
+  const mPath = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+  if (mPath) return mPath[1];
+  const mParam = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  return mParam ? mParam[1] : '';
+};
+
+// ⚡ ดึงเอกสารใบงานจาก Real-Time Stream ของ NotificationHub ก่อน ลดการยิง .get() ซ้ำเพื่อประหยัด Read Quota
+async function getTicketsDocsCachedOrFetch(limitCount = 150) {
+  if (window.NotificationHub && typeof window.NotificationHub.getLatestTickets === 'function') {
+    const cache = window.NotificationHub.getLatestTickets();
+    if (cache && cache.loaded && Array.isArray(cache.docs) && cache.docs.length > 0 &&
+        (!cache.truncated || limitCount <= (cache.limit || 150))) {
+      return cache.docs;
+    }
+  }
+  if (!window.firestoreDb) return [];
+  const ticketsRef = window.firestoreDb.collection('tickets');
+  const q = (typeof ticketsRef.orderBy === 'function' && typeof ticketsRef.limit === 'function')
+    ? ticketsRef.orderBy('createdAt', 'desc').limit(limitCount)
+    : (typeof ticketsRef.orderBy === 'function' ? ticketsRef.orderBy('createdAt', 'desc') : ticketsRef);
+  const fetchPromise = q.get();
+  const snap = await (typeof window.withTimeout === 'function' ? window.withTimeout(fetchPromise, 3500) : fetchPromise);
+  const docs = [];
+  if (snap && typeof snap.forEach === 'function') {
+    snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() || {} }));
+  }
+  return docs;
+}
+
 // 🔒 Login Attempt Tracker: ระบบจัดการการเข้าสู่ระบบผิดพลาด (ติดตามจำนวนครั้งที่กรอกรหัสผิด)
 const loginAttempts = {
   get(key) {
@@ -406,10 +439,10 @@ const ResourceHubCore = {
       };
 
       const dataP = isRepair
-        ? (window.firestoreDb ? window.firestoreDb.collection('tickets').orderBy('createdAt', 'desc').get().then(snap => {
+        ? (window.firestoreDb ? getTicketsDocsCachedOrFetch(150).then(docs => {
             const arr = [];
-            snap.forEach(doc => {
-              const d = doc.data() || {};
+            docs.forEach(doc => {
+              const d = doc.data || {};
               const tid = String(d.ticketId || doc.id || '');
               const tType = String(d.type || '').toLowerCase();
               const isBuilding = tType === 'building' || (!tType && !/^(IT|AV|PRJ)/i.test(tid));
@@ -428,10 +461,10 @@ const ResourceHubCore = {
             });
             return arr;
           }) : ResourceHubCore.work.repairs().then(d => (d || []).filter(r => r[3]?.toString().trim() === myNameTrim)))
-        : (window.firestoreDb ? window.firestoreDb.collection('tickets').orderBy('createdAt', 'desc').get().then(async snap => {
+        : (window.firestoreDb ? getTicketsDocsCachedOrFetch(150).then(async docs => {
             const arr = [];
-            snap.forEach(doc => {
-              const d = doc.data() || {};
+            docs.forEach(doc => {
+              const d = doc.data || {};
               const tid = String(d.ticketId || doc.id || '');
               const tType = String(d.type || '').toLowerCase();
               if ((tType === 'av' || /^AV/i.test(tid)) && isMineTicket(d)) {
@@ -967,21 +1000,23 @@ const ResourceHubCore = {
         }
 
         let ticketsLoaded = false;
+        let firestoreBugCount = null;
         if (window.firestoreDb) {
           try {
-            const getTicketsPromise = typeof window.withTimeout === 'function' 
-              ? window.withTimeout(window.firestoreDb.collection('tickets').get(), 2500)
-              : window.firestoreDb.collection('tickets').get();
-            const snap = await getTicketsPromise;
-            if (snap && !snap.empty) {
-              snap.forEach(doc => {
-                const data = doc.data();
+            const docs = await getTicketsDocsCachedOrFetch(monthFilter ? 250 : 150);
+            if (docs && docs.length > 0) {
+              docs.forEach(doc => {
+                const data = doc.data;
                 if (!data) return;
                 
-                if (monthFilter && data.createdAt && data.createdAt.toDate) {
-                   const date = data.createdAt.toDate();
-                   const mStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
-                   if (mStr !== monthFilter) return;
+                if (monthFilter && data.createdAt) {
+                   const date = typeof data.createdAt.toDate === 'function'
+                     ? data.createdAt.toDate()
+                     : (data.createdAt.seconds ? new Date(data.createdAt.seconds * 1000) : new Date(data.createdAt));
+                   if (!isNaN(date.getTime())) {
+                     const mStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+                     if (mStr !== monthFilter) return;
+                   }
                 }
                 
                 let type = data.type || '';
@@ -1029,6 +1064,21 @@ const ResourceHubCore = {
           } catch (fsErr) {
             console.warn('Firestore tickets fetch fallback note:', fsErr.message);
           }
+
+          // นับจำนวนบั๊กค้างจาก Firestore bug_reports (ลดการพึ่ง legacy get_dashboard)
+          try {
+            const bugSnap = await (typeof window.withTimeout === 'function'
+              ? window.withTimeout(window.firestoreDb.collection('bug_reports').get(), 2000)
+              : window.firestoreDb.collection('bug_reports').get());
+            if (bugSnap && !bugSnap.empty) {
+              let openBugs = 0;
+              bugSnap.forEach(doc => {
+                const b = doc.data() || {};
+                if (!/แก้ไขเรียบร้อย/.test(String(b.status || ''))) openBugs++;
+              });
+              firestoreBugCount = openBugs;
+            }
+          } catch (_) { }
         }
         
         if (!ticketsLoaded) {
@@ -1097,7 +1147,7 @@ const ResourceHubCore = {
         if ($('proj-rating-count')) $('proj-rating-count').textContent = projRatingCount || d?.proj?.rating?.count || '0';
 
         // สถิติรายงานบั๊ก
-        if ($('bug-count')) $('bug-count').textContent = d?.bugs || 0;
+        if ($('bug-count')) $('bug-count').textContent = (firestoreBugCount !== null ? firestoreBugCount : (d?.bugs || 0));
 
         // สัดส่วนกราฟและอัตราความสำเร็จ
         if ($('ratio-building-count')) $('ratio-building-count').textContent = `${bTotal} รายการ`;
@@ -1316,10 +1366,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check for survey parameter
   const params = new URLSearchParams(window.location.search);
   if (params.get('action') === 'survey') {
-    const type = params.get('type');
-    const row = params.get('row');
-    if (type && row) {
-      setTimeout(() => openSurveyModal(type, row), 1500); // Wait for initialization
+    const type = params.get('type') || '';
+    const row = params.get('row') || '';
+    const surveyTicketId = params.get('ticketId') || '';
+    if (surveyTicketId || (type && row)) {
+      setTimeout(() => openSurveyModal(type, row, surveyTicketId), 1500); // Wait for initialization
     }
   }
 
@@ -1822,6 +1873,8 @@ function nav(pageId) {
     loadAdvancedTasks();
   } else if (pageId === 'page-master-data') {
     loadMasterData();
+  } else if (pageId === 'page-document') {
+    loadDocuments();
   } else if (pageId === 'page-bug-manage') {
     loadBugAdmin();
   }
@@ -2296,11 +2349,13 @@ function openProfileModal() {
 }
 
 async function openBugReportModal(page) {
+  const defaultRep = sanitizeHtml(currentTeacher || (isAdminLoggedIn ? 'Admin' : ''));
+  const defaultPage = sanitizeHtml(page || '');
   const { value: v } = await Swal.fire({
     title: '⚠️ แจ้งปัญหาโปรแกรม',
     html: `<div style="text-align:left;gap:12px;display:flex;flex-direction:column;margin-top:10px">
-          <input id="bug-reporter" class="w-full p-3 border rounded-xl text-slate-900" placeholder="ชื่อผู้แจ้ง" value="${currentTeacher || (isAdminLoggedIn ? 'Admin' : '')}">
-          <input id="bug-page" class="w-full p-3 border rounded-xl text-slate-900" placeholder="หน้าที่มีปัญหา เช่น หน้าแรก, ยืมของ" value="${page || ''}">
+          <input id="bug-reporter" class="w-full p-3 border rounded-xl text-slate-900" placeholder="ชื่อผู้แจ้ง" value="${defaultRep}">
+          <input id="bug-page" class="w-full p-3 border rounded-xl text-slate-900" placeholder="หน้าที่มีปัญหา เช่น หน้าแรก, ยืมของ" value="${defaultPage}">
           <textarea id="bug-issue" class="w-full p-3 border rounded-xl text-slate-900" rows="3" placeholder="อาการที่พบ เช่น หน้าจอค้าง บันทึกช้า"></textarea>
         </div>`,
     focusConfirm: false, showCancelButton: true,
@@ -2315,9 +2370,34 @@ async function openBugReportModal(page) {
   });
   if (!v) return;
   Swal.fire({ title: 'กำลังส่งข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  post({ action: 'report_bug', ...v })
-    .then(() => alertBox('success', 'ขอบคุณครับ', 'ระบบได้รับแจ้งปัญหาของท่านแล้ว', { timer: 1500, showConfirmButton: false }))
-    .catch(() => alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถส่งรายงานได้'));
+
+  try {
+    if (!window.firestoreDb && typeof initFirebase === 'function') initFirebase();
+    const bugId = 'bug_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    if (window.firestoreDb) {
+      const bugDoc = {
+        bugId,
+        reporter: v.reporter,
+        reporterEmail: currentEmail || localStorage.getItem('logged_email') || '',
+        page: v.page,
+        issue: v.issue,
+        status: 'รอดำเนินการ',
+        createdAtMs: Date.now(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      const writePromise = window.firestoreDb.collection('bug_reports').doc(bugId).set(bugDoc);
+      await (typeof window.withTimeout === 'function' ? window.withTimeout(writePromise, 8000) : writePromise);
+      try { localStorage.setItem('bugs_migrated_v2', '1'); } catch (_) { }
+      post({ action: 'report_bug', bugId, ...v }).catch(e => console.warn('Background GAS bug notify error:', e));
+    } else {
+      await post({ action: 'report_bug', bugId, ...v });
+    }
+    alertBox('success', 'ขอบคุณครับ', 'ระบบได้รับแจ้งปัญหาของท่านแล้ว', { timer: 1500, showConfirmButton: false });
+  } catch (e) {
+    console.error('Report bug error:', e);
+    alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถส่งรายงานได้: ' + (e.message || ''));
+  }
 }
 
 // ==========================================
@@ -2341,34 +2421,118 @@ function mergedCacheLoad() {
   } catch (e) { }
 }
 
-async function loadBugAdmin() {
+function fmtTimestampDisplay(val) {
+  if (!val) return '-';
   try {
-    const data = await get('get_bug_reports');
-    renderTableData(data, 'bug-tbody', (row, index) => {
-      const [time, rep, issue, page, status] = row;
-      let badge = '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-rose-100 text-rose-700">รอดำเนินการ</span>';
-      if (status === 'กำลังแก้ไข') badge = '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-amber-100 text-amber-700">กำลังแก้ไข</span>';
-      if (status === 'แก้ไขเรียบร้อย') badge = '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700">แก้ไขเรียบร้อย</span>';
-
-      return `
-          <td class="p-4 whitespace-nowrap">${sanitizeHtml(time) || '-'}</td>
-          <td class="p-4 whitespace-nowrap font-medium text-slate-800">${sanitizeHtml(rep) || '-'}</td>
-          <td class="p-4 whitespace-nowrap text-sky-600 font-semibold">${sanitizeHtml(page) || '-'}</td>
-          <td class="p-4 min-w-[200px] whitespace-normal text-slate-600">${sanitizeHtml(issue) || '-'}</td>
-          <td class="p-4 text-center">${badge}</td>
-          <td class="p-4 text-center">
-            <button type="button" data-index="${index}" data-status="${sanitizeHtml(status || '')}" onclick="updateBugStatus(Number(this.dataset.index), this.dataset.status)" class="text-sky-600 hover:text-sky-800 hover:bg-sky-50 p-2 rounded-lg transition-colors" title="อัปเดตสถานะ">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-          </td>
-        `;
-    }, 6, 'ไม่มีรายการแจ้งปัญหา');
-  } catch (e) {
-    $('bug-tbody').innerHTML = `<tr><td colspan="6" class="text-center py-10 text-rose-500">❌ โหลดข้อมูลล้มเหลว</td></tr>`;
+    if (typeof val.toDate === 'function') return val.toDate().toLocaleString('th-TH');
+    if (typeof val.seconds === 'number') return new Date(val.seconds * 1000).toLocaleString('th-TH');
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? String(val) : d.toLocaleString('th-TH');
+  } catch (_) {
+    return String(val);
   }
 }
 
-async function updateBugStatus(index, oldStatus) {
+function renderBugTable(data, tbodyId = ($('bug-manage-tbody') ? 'bug-manage-tbody' : 'bug-tbody')) {
+  renderTableData(data || [], tbodyId, (row, index) => {
+    const time = Array.isArray(row) ? row[0] : (row.timeStr || fmtTimestampDisplay(row.createdAt || row.createdAtMs));
+    const rep = Array.isArray(row) ? row[1] : (row.reporter || '-');
+    const issue = Array.isArray(row) ? row[2] : (row.issue || '-');
+    const page = Array.isArray(row) ? row[3] : (row.page || '-');
+    const status = Array.isArray(row) ? (row[4] || 'รอดำเนินการ') : (row.status || 'รอดำเนินการ');
+    const docId = Array.isArray(row) ? (row[5] || '') : (row.docId || row.bugId || '');
+    const rowIdx = Array.isArray(row) ? index : (row.rowIndex ?? index);
+
+    let badge = '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-rose-100 text-rose-700">รอดำเนินการ</span>';
+    if (status === 'กำลังแก้ไข') badge = '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-amber-100 text-amber-700">กำลังแก้ไข</span>';
+    if (status === 'แก้ไขเรียบร้อย') badge = '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700">แก้ไขเรียบร้อย</span>';
+
+    return `
+        <td class="p-4 whitespace-nowrap">${sanitizeHtml(time) || '-'}</td>
+        <td class="p-4 whitespace-nowrap font-medium text-slate-800">${sanitizeHtml(rep) || '-'}</td>
+        <td class="p-4 whitespace-nowrap text-sky-600 font-semibold">${sanitizeHtml(page) || '-'}</td>
+        <td class="p-4 min-w-[200px] whitespace-normal text-slate-600">${sanitizeHtml(issue) || '-'}</td>
+        <td class="p-4 text-center">${badge}</td>
+        <td class="p-4 text-center">
+          <button type="button" data-doc-id="${sanitizeHtml(docId)}" data-index="${rowIdx}" data-status="${sanitizeHtml(status)}" onclick="updateBugStatus(this.dataset.docId, Number(this.dataset.index), this.dataset.status)" class="text-sky-600 hover:text-sky-800 hover:bg-sky-50 p-2 rounded-lg transition-colors" title="อัปเดตสถานะ">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        </td>
+      `;
+  }, 6, 'ไม่มีรายการแจ้งปัญหา');
+}
+
+async function loadBugAdmin() {
+  const tbodyId = $('bug-manage-tbody') ? 'bug-manage-tbody' : 'bug-tbody';
+  const tbodyEl = $(tbodyId);
+  try {
+    if (!window.firestoreDb && typeof initFirebase === 'function') initFirebase();
+    let rows = [];
+    if (window.firestoreDb) {
+      const snap = await window.firestoreDb.collection('bug_reports').get();
+      if (snap && !snap.empty) {
+        try { localStorage.setItem('bugs_migrated_v2', '1'); } catch (_) { }
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          rows.push({
+            docId: doc.id,
+            bugId: d.bugId || doc.id,
+            timeStr: d.timeStr || fmtTimestampDisplay(d.createdAt || d.createdAtMs),
+            reporter: d.reporter || '-',
+            issue: d.issue || '-',
+            page: d.page || '-',
+            status: d.status || 'รอดำเนินการ',
+            createdAtMs: Number(d.createdAtMs) || (d.createdAt && typeof d.createdAt.toMillis === 'function' ? d.createdAt.toMillis() : 0),
+            rowIndex: d.rowIndex ?? 0
+          });
+        });
+        rows.sort((a, b) => b.createdAtMs - a.createdAtMs);
+      } else if (!localStorage.getItem('bugs_migrated_v2')) {
+        try {
+          const legacy = await get('get_bug_reports');
+          if (Array.isArray(legacy) && legacy.length > 0) {
+            rows = await Promise.all(legacy.map(async (r, i) => {
+              const docId = 'bug_legacy_' + i + '_' + Date.now();
+              const item = {
+                bugId: docId,
+                timeStr: String(r[0] || '-'),
+                reporter: String(r[1] || '-'),
+                issue: String(r[2] || '-'),
+                page: String(r[3] || '-'),
+                status: String(r[4] || 'รอดำเนินการ'),
+                rowIndex: i,
+                createdAtMs: Date.now() - i * 1000,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              };
+              await window.firestoreDb.collection('bug_reports').doc(docId).set(item).catch(() => {});
+              return { ...item, docId };
+            }));
+          }
+          localStorage.setItem('bugs_migrated_v2', '1');
+        } catch (_) { }
+      }
+    } else {
+      rows = await get('get_bug_reports');
+    }
+    renderBugTable(rows, tbodyId);
+  } catch (e) {
+    if (tbodyEl) tbodyEl.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-rose-500">❌ โหลดข้อมูลล้มเหลว</td></tr>`;
+  }
+}
+
+async function updateBugStatus(docIdOrIndex, indexOrOldStatus, maybeOldStatus) {
+  let docId = '';
+  let rowIndex = 0;
+  let oldStatus = '';
+  if (typeof maybeOldStatus === 'string' || typeof docIdOrIndex === 'string') {
+    docId = String(docIdOrIndex || '');
+    rowIndex = Number(indexOrOldStatus) || 0;
+    oldStatus = String(maybeOldStatus || '');
+  } else {
+    rowIndex = Number(docIdOrIndex) || 0;
+    oldStatus = String(indexOrOldStatus || '');
+  }
+
   const { value: status } = await Swal.fire({
     title: 'อัปเดตสถานะปัญหา',
     input: 'select',
@@ -2384,13 +2548,23 @@ async function updateBugStatus(index, oldStatus) {
   });
   if (!status) return;
 
-  Swal.fire({ title: 'กำลังอัปเดต...', didOpen: () => Swal.showLoading() });
-  post({ action: 'update_bug_status', rowIndex: index, status })
-    .then(() => {
-      alertBox('success', 'บันทึกสำเร็จ', '', { timer: 1000, showConfirmButton: false });
-      loadBugAdmin();
-    })
-    .catch(() => alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตข้อมูลได้'));
+  Swal.fire({ title: 'กำลังอัปเดต...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  try {
+    if (window.firestoreDb && docId) {
+      await window.firestoreDb.collection('bug_reports').doc(docId).set({
+        status,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      post({ action: 'update_bug_status', bugId: docId, rowIndex, status }).catch(() => {});
+    } else {
+      await post({ action: 'update_bug_status', rowIndex, status });
+    }
+    alertBox('success', 'บันทึกสำเร็จ', '', { timer: 1000, showConfirmButton: false });
+    loadBugAdmin();
+  } catch (e) {
+    console.error('Update bug status error:', e);
+    alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตข้อมูลได้');
+  }
 }
 
 // Master Data global handlers (loadMasterData, addMaster, deleteMaster, clearMaster) are provided by master-data.js
@@ -2687,8 +2861,10 @@ async function backgroundSubmitAndSync(payload, typeForFirebase, subject, detail
     .then(async (res) => {
       if (res && res.fileUrl && window.firestoreDb) {
         try {
+          const driveId = res.fileId || (typeof window.extractDriveFileId === 'function' ? window.extractDriveFileId(res.fileUrl) : '');
           await window.firestoreDb.collection('tickets').doc(ticketId).update({
             fileUrl: res.fileUrl,
+            driveFileId: driveId,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
         } catch (e) {
@@ -3253,8 +3429,65 @@ async function loadDocuments() {
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูลเอกสาร...</td></tr>';
   try {
-    const data = await ResourceHubCore.docs.list();
-    _docAllRows = Array.isArray(data) ? data : [];
+    if (!window.firestoreDb && typeof initFirebase === 'function') initFirebase();
+    let rows = [];
+    if (window.firestoreDb) {
+      const snap = await window.firestoreDb.collection('documents').get();
+      if (snap && !snap.empty) {
+        try { localStorage.setItem('docs_migrated_v2', '1'); } catch (_) { }
+        const docs = [];
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          const docId = d.docId || doc.id;
+          const dateVal = d.uploadDate || fmtTimestampDisplay(d.createdAt || d.createdAtMs);
+          docs.push({
+            createdAtMs: Number(d.createdAtMs) || (d.createdAt && typeof d.createdAt.toMillis === 'function' ? d.createdAt.toMillis() : (Date.parse(d.uploadDate || '') || 0)),
+            row: [
+              docId,
+              d.category || 'ทั่วไป',
+              dateVal,
+              d.docName || 'ไม่มีชื่อ',
+              d.uploader || '-',
+              d.fileUrl || '',
+              d.ext || '',
+              d.description || '',
+              d.driveFileId || ''
+            ]
+          });
+        });
+        docs.sort((a, b) => b.createdAtMs - a.createdAtMs);
+        rows = docs.map(x => x.row);
+      } else if (!localStorage.getItem('docs_migrated_v2')) {
+        try {
+          const legacy = await ResourceHubCore.docs.list();
+          if (Array.isArray(legacy) && legacy.length > 0) {
+            rows = legacy;
+            await Promise.all(legacy.map(async (r, i) => {
+              const docId = String(r[0] || ('doc_legacy_' + i + '_' + Date.now()));
+              const fileUrl = String(r[5] || '').trim();
+              await window.firestoreDb.collection('documents').doc(docId).set({
+                docId,
+                category: String(r[1] || 'ทั่วไป'),
+                uploadDate: String(r[2] || '-'),
+                docName: String(r[3] || 'ไม่มีชื่อ'),
+                uploader: String(r[4] || '-'),
+                fileUrl,
+                driveFileId: typeof window.extractDriveFileId === 'function' ? window.extractDriveFileId(fileUrl) : '',
+                ext: String(r[6] || ''),
+                description: String(r[7] || ''),
+                createdAtMs: Date.now() - i * 1000,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              }).catch(() => {});
+            }));
+          }
+          localStorage.setItem('docs_migrated_v2', '1');
+        } catch (_) { }
+      }
+    } else {
+      const data = await ResourceHubCore.docs.list();
+      rows = Array.isArray(data) ? data : [];
+    }
+    _docAllRows = rows;
     renderDocTable(_docAllRows);
     updateDocStats(_docAllRows);
   } catch (e) {
@@ -3403,13 +3636,19 @@ async function openDocUploadModal() {
   });
   if (!v) return;
 
-  Swal.fire({ title: 'กำลังอัปโหลดเอกสาร...', html: '<p style="font-size:0.85rem;color:#64748b">กรุณารอสักครู่ อาจใช้เวลาสักระยะ</p>', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  Swal.fire({ title: 'กำลังอัปโหลดเอกสาร...', html: '<p style="font-size:0.85rem;color:#64748b">กำลังอัปโหลดไฟล์ไปยัง Google Drive และบันทึกข้อมูล</p>', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   try {
-    const uploader = isAdminLoggedIn ? 'Admin' : (currentTeacher || 'Unknown');
+    if (!window.firestoreDb && typeof initFirebase === 'function') initFirebase();
+    const uploader = (typeof currentTeacher === 'string' && currentTeacher) ? currentTeacher : (isAdminLoggedIn ? 'Admin' : 'Unknown');
+    const uploaderEmail = currentEmail || localStorage.getItem('logged_email') || '';
     const fileData = await readFile(v.file);
     if (fileData) fileData.folderId = DOC_DRIVE_FOLDER_ID;
     const ext = v.file.name.split('.').pop();
-    await ResourceHubCore.docs.add({
+    let docId = 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+
+    // 1. อัปโหลดไฟล์จริงขึ้น Google Drive ผ่าน GAS
+    const uploadRes = await ResourceHubCore.docs.add({
+      docId,
       docName: v.docName,
       category: v.cat,
       description: v.desc,
@@ -3418,6 +3657,45 @@ async function openDocUploadModal() {
       file: fileData,
       folderId: DOC_DRIVE_FOLDER_ID
     });
+
+    let fileUrl = (uploadRes && uploadRes.fileUrl) ? String(uploadRes.fileUrl).trim() : '';
+    if (uploadRes && uploadRes.docId) docId = String(uploadRes.docId);
+
+    // Fallback กรณี GAS รุ่นเดิมไม่ได้คืน fileUrl กลับมาโดยตรง -> อ่านแถวที่เพิ่งบันทึกจาก get_documents 1 ครั้ง
+    if (!fileUrl) {
+      try {
+        const list = await ResourceHubCore.docs.list();
+        if (Array.isArray(list)) {
+          const matched = [...list].reverse().find(r => String(r[3] || '').trim() === v.docName.trim() && String(r[5] || '').startsWith('http'));
+          if (matched) {
+            fileUrl = String(matched[5] || '').trim();
+            if (matched[0]) docId = String(matched[0]);
+          }
+        }
+      } catch (_) { }
+    }
+
+    const driveFileId = (uploadRes && uploadRes.fileId) || (typeof window.extractDriveFileId === 'function' ? window.extractDriveFileId(fileUrl) : '');
+
+    // 2. บันทึก Metadata ลง Firestore documents เป็นแหล่งหลัก
+    if (window.firestoreDb) {
+      await window.firestoreDb.collection('documents').doc(docId).set({
+        docId,
+        category: v.cat || 'ทั่วไป',
+        uploadDate: new Date().toLocaleDateString('th-TH'),
+        createdAtMs: Date.now(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        docName: v.docName,
+        uploader,
+        uploaderEmail,
+        fileUrl,
+        driveFileId,
+        ext: ext || '',
+        description: v.desc || ''
+      });
+      try { localStorage.setItem('docs_migrated_v2', '1'); } catch (_) { }
+    }
+
     await Swal.fire({ icon: 'success', title: 'อัปโหลดสำเร็จ!', text: `"${v.docName}" ถูกเพิ่มเข้าระบบเรียบร้อยแล้ว`, timer: 2000, showConfirmButton: false });
     loadDocuments();
   } catch (e) {
@@ -3427,9 +3705,10 @@ async function openDocUploadModal() {
 }
 
 async function deleteDocument(docId, docName) {
+  const safeName = sanitizeHtml(docName || '');
   const confirm = await Swal.fire({
     title: 'ยืนยันการลบเอกสาร?',
-    html: `<p class="text-slate-600 text-sm">คุณต้องการลบเอกสาร <strong class="text-rose-600">"${docName}"</strong> ออกจากระบบ?<br><span class="text-xs text-slate-400">การดำเนินการนี้ไม่สามารถยกเลิกได้</span></p>`,
+    html: `<p class="text-slate-600 text-sm">คุณต้องการลบเอกสาร <strong class="text-rose-600">"${safeName}"</strong> ออกจากระบบ?<br><span class="text-xs text-slate-400">การดำเนินการนี้ไม่สามารถยกเลิกได้</span></p>`,
     icon: 'warning',
     showCancelButton: true,
     confirmButtonText: '<i class="fa-solid fa-trash"></i> ลบเอกสาร',
@@ -3437,8 +3716,16 @@ async function deleteDocument(docId, docName) {
     confirmButtonColor: '#e11d48'
   });
   if (!confirm.isConfirmed) return;
-  submitAction(
-    () => ResourceHubCore.docs.remove({ docId }),
+  try { localStorage.setItem('docs_migrated_v2', '1'); } catch (_) { }
+  return submitAction(
+    async () => {
+      if (window.firestoreDb && docId) {
+        await window.firestoreDb.collection('documents').doc(docId).delete();
+        ResourceHubCore.docs.remove({ docId }).catch(() => {});
+        return { status: 'success' };
+      }
+      return ResourceHubCore.docs.remove({ docId });
+    },
     `ลบเอกสาร "${docName}" เรียบร้อยแล้ว`,
     () => loadDocuments()
   );
@@ -4287,9 +4574,15 @@ window.saveOverdueSettings = function () {
 // ==========================================
 // ⭐️ ระบบประเมินความพึงพอใจ (Satisfaction Survey)
 // ==========================================
-window.openSurveyModal = function (type, row) {
-  $('survey-type').value = type;
-  $('survey-row').value = row;
+window.openSurveyModal = function (type, row, ticketId = '', docId = '') {
+  $('survey-type').value = type || '';
+  $('survey-row').value = row || '';
+  window.__surveyTarget = {
+    type: String(type || '').trim(),
+    row: row ? String(row) : '',
+    ticketId: String(ticketId || '').trim(),
+    docId: String(docId || '').trim()
+  };
   $('survey-rating').value = '0';
   $('survey-comment').value = '';
   setSurveyRating(0);
@@ -4316,21 +4609,82 @@ window.setSurveyRating = function (rating) {
 };
 
 window.submitSurvey = function () {
-  const rating = parseInt($('survey-rating').value);
+  const rating = parseInt($('survey-rating').value, 10);
   if (rating === 0 || isNaN(rating)) {
     alertBox('warning', 'กรุณาให้คะแนน', 'กรุณากดเลือกดาวเพื่อประเมินความพึงพอใจก่อนกดส่งครับ');
     return;
   }
 
-  const type = $('survey-type').value;
-  const row = $('survey-row').value;
-  const comment = $('survey-comment').value;
+  const target = window.__surveyTarget || {};
+  const type = target.type || $('survey-type').value;
+  const row = target.row || $('survey-row').value;
+  const ticketId = target.ticketId || '';
+  const docId = target.docId || '';
+  const comment = $('survey-comment').value.trim();
 
-  submitAction(
-    () => ResourceHubCore.api.post({ action: 'submit_survey', type, row, rating, comment }),
+  return submitAction(
+    async () => {
+      if (!window.firestoreDb && typeof initFirebase === 'function') initFirebase();
+      let savedFirestore = false;
+      let resolvedTicketId = ticketId;
+
+      if (window.firestoreDb) {
+        const ticketsCol = window.firestoreDb.collection('tickets');
+        let targetRef = null;
+
+        if (docId) {
+          targetRef = ticketsCol.doc(docId);
+        } else if (ticketId) {
+          const directSnap = await ticketsCol.doc(ticketId).get();
+          if (directSnap && directSnap.exists) {
+            targetRef = ticketsCol.doc(ticketId);
+          } else if (typeof ticketsCol.where === 'function') {
+            const qSnap = await ticketsCol.where('ticketId', '==', ticketId).limit(1).get();
+            if (qSnap && !qSnap.empty) targetRef = qSnap.docs[0].ref;
+          }
+        } else if (row && !isNaN(Number(row)) && typeof ticketsCol.where === 'function') {
+          const typeMap = { repair: 'building', building: 'building', it_repair: 'it', it: 'it', av: 'av', av_repair: 'av', project: 'project' };
+          const normType = typeMap[type] || type;
+          const origIdx = Number(row) - 2;
+          const qSnap = await ticketsCol.where('originalIndex', '==', origIdx).get();
+          if (qSnap && !qSnap.empty) {
+            qSnap.forEach(doc => {
+              const d = doc.data() || {};
+              if (!targetRef && (!normType || d.type === normType)) {
+                targetRef = doc.ref;
+                if (!resolvedTicketId && d.ticketId) resolvedTicketId = d.ticketId;
+              }
+            });
+          }
+        }
+
+        if (targetRef) {
+          await targetRef.set({
+            rating,
+            ratingComment: comment,
+            ratedBy: currentEmail || currentTeacher || 'ผู้ใช้งาน',
+            ratedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+          savedFirestore = true;
+        }
+      }
+
+      if (savedFirestore) {
+        ResourceHubCore.api.post({ action: 'submit_survey', type, row, ticketId: resolvedTicketId, rating, comment })
+          .catch(e => console.warn('Background GAS survey sync warning:', e));
+        return { status: 'success' };
+      }
+
+      return ResourceHubCore.api.post({ action: 'submit_survey', type, row, ticketId: resolvedTicketId, rating, comment });
+    },
     'ขอบคุณที่ร่วมประเมินความพึงพอใจครับ',
     () => {
       closeSurveyModal();
+      const refreshId = docId || ticketId;
+      if (refreshId && window.TrackUI && typeof window.TrackUI.open === 'function' && $('page-track-detail')?.classList.contains('active')) {
+        window.TrackUI.open(refreshId, true);
+      }
       // ปิด LIFF หากเปิดผ่าน LINE
       if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
         setTimeout(() => { liff.closeWindow(); }, 1500);

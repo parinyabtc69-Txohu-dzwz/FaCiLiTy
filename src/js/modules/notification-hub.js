@@ -19,6 +19,11 @@ const NotificationHub = (function () {
   let archivedTicketIds = new Set();
   let allTicketIds = new Set();
   let hasTicketsLoaded = false;
+  let latestTicketDocs = [];
+  let isTicketsWindowTruncated = false;
+  const ticketSubscribers = new Set();
+  const TICKET_LISTEN_LIMIT = 150;
+  const NOTIF_LISTEN_LIMIT = 50;
   let pendingCatchupDocs = [];
   const viewedTicketTimestamps = new Map();
   const prunedDocIds = new Set();
@@ -534,8 +539,8 @@ const NotificationHub = (function () {
     }
 
     if (tid && !isTest && hasTicketsLoaded) {
-      // งานถูกลบออกจากระบบหรือถูกจัดเก็บเข้าคลังแล้ว -> นำออกจากการแจ้งเตือนทันที
-      if (!allTicketIds.has(tid) || archivedTicketIds.has(tid)) {
+      // งานถูกลบออกจากระบบหรือถูกจัดเก็บเข้าคลังแล้ว -> นำออกจากการแจ้งเตือนทันที (กรณีโหลดครบทั้งคอลเลกชัน)
+      if ((!isTicketsWindowTruncated && !allTicketIds.has(tid)) || archivedTicketIds.has(tid)) {
         return true;
       }
       // งานเสร็จสิ้นแล้ว: ลบแจ้งเตือนระหว่างทางทันที ส่วนแจ้งเตือนผล "เสร็จสิ้น/อนุมัติ" ซ่อนเมื่อกดเข้าไปดูแล้ว/อ่านแล้ว
@@ -825,7 +830,7 @@ const NotificationHub = (function () {
       const tid = normalizeTicketId(n.ticketId);
       if (!tid || n.isTest === true || isTestTicketId(tid)) return;
 
-      const isDeletedTicket = !allTicketIds.has(tid);
+      const isDeletedTicket = !isTicketsWindowTruncated && !allTicketIds.has(tid);
       const isArchivedTicket = archivedTicketIds.has(tid);
       const isClosedTicket = closedTicketIds.has(tid);
 
@@ -1630,6 +1635,9 @@ const NotificationHub = (function () {
     archivedTicketIds = new Set();
     allTicketIds = new Set();
     hasTicketsLoaded = false;
+    latestTicketDocs = [];
+    isTicketsWindowTruncated = false;
+    ticketSubscribers.clear();
     pendingCatchupDocs = [];
     viewedTicketTimestamps.clear();
     updateBadge();
@@ -1650,7 +1658,7 @@ const NotificationHub = (function () {
 
       unsubNotifications = window.firestoreDb.collection('notifications')
         .orderBy('createdAt', 'desc')
-        .limit(60)
+        .limit(NOTIF_LISTEN_LIMIT)
         .onSnapshot(snapshot => {
           snapshot.docChanges().forEach(change => {
             const docId = change.doc.id;
@@ -1733,18 +1741,26 @@ const NotificationHub = (function () {
           setTimeout(initListener, 2000);
         });
 
-      // ดักฟังรายการงานทั้งหมดในตาราง tickets แบบ Real-time เพื่อแยกรายการงานค้างและงานที่เสร็จสิ้นแล้ว
+      // ดักฟังรายการงานล่าสุดในตาราง tickets แบบจำกัดจำนวนเพื่อประหยัด Read Quota และแชร์ข้อมูลร่วมกับหน้าอื่น
       let isTicketsFirstLoad = true;
-      unsubTickets = window.firestoreDb.collection('tickets')
+      const ticketsRef = window.firestoreDb.collection('tickets');
+      const useLimitedTickets = typeof ticketsRef.orderBy === 'function' && typeof ticketsRef.limit === 'function';
+      const ticketsQuery = useLimitedTickets
+        ? ticketsRef.orderBy('createdAt', 'desc').limit(TICKET_LISTEN_LIMIT)
+        : ticketsRef;
+
+      unsubTickets = ticketsQuery
         .onSnapshot(snap => {
           const currentPending = [];
           const currentStartedOrClosed = new Set();
           const currentClosed = new Set();
           const currentArchived = new Set();
           const currentAll = new Set();
+          const cachedDocs = [];
 
           snap.docs.forEach(doc => {
             const t = doc.data() || {};
+            cachedDocs.push({ id: doc.id, data: t });
             const docId = normalizeTicketId(doc.id);
             const tid = normalizeTicketId(t.ticketId || doc.id);
             if (docId) currentAll.add(docId);
@@ -1777,7 +1793,13 @@ const NotificationHub = (function () {
           closedTicketIds = currentClosed;
           archivedTicketIds = currentArchived;
           allTicketIds = currentAll;
+          latestTicketDocs = cachedDocs;
+          isTicketsWindowTruncated = Boolean(useLimitedTickets && snap.docs.length >= TICKET_LISTEN_LIMIT);
           hasTicketsLoaded = true;
+
+          ticketSubscribers.forEach(cb => {
+            try { cb(latestTicketDocs.slice(), { limit: TICKET_LISTEN_LIMIT, truncated: isTicketsWindowTruncated }); } catch (_) { }
+          });
 
           flushCatchupAlerts();
           pruneStaleFinishedNotifs();
@@ -1976,9 +1998,34 @@ const NotificationHub = (function () {
     }, 500);
   }
 
+  function getLatestTickets() {
+    return {
+      active: isListenerActive,
+      loaded: hasTicketsLoaded,
+      limit: TICKET_LISTEN_LIMIT,
+      truncated: isTicketsWindowTruncated,
+      docs: latestTicketDocs.slice()
+    };
+  }
+
+  function subscribeTickets(cb) {
+    if (typeof cb !== 'function') return () => {};
+    ticketSubscribers.add(cb);
+    if (hasTicketsLoaded) {
+      try {
+        cb(latestTicketDocs.slice(), { limit: TICKET_LISTEN_LIMIT, truncated: isTicketsWindowTruncated });
+      } catch (_) { }
+    }
+    return () => {
+      ticketSubscribers.delete(cb);
+    };
+  }
+
   return {
     init,
     stopListeners,
+    getLatestTickets,
+    subscribeTickets,
     playChime,
     unlockAudioContext,
     showToast,

@@ -13,7 +13,7 @@
                   placeholder="ค้นหาบั๊ก...">
               </div>
               <button
-                onclick="ResourceHubCore.api.get('get_bug_reports').then(data => renderBugTable(data)).catch(err => {console.error(err); Swal.fire('Error','โหลดข้อมูลไม่สำเร็จ','error')})"
+                onclick="loadBugAdmin()"
                 class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"><i
                   class="fa-solid fa-rotate mr-1"></i> รีเฟรช</button>
               <button onclick="exportTableToCSV('bug-manage-tbody', 'รายงานจัดการบั๊ก.csv')"

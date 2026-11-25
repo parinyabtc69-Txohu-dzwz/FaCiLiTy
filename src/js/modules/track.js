@@ -17,6 +17,8 @@ const TrackUI = (() => {
     mineOnly: false,
     showArchived: false,
     overdueFilter: false,
+    ticketLimit: 150,
+    rawDocCount: 0,
     searchTimer: null
   };
 
@@ -44,6 +46,7 @@ const TrackUI = (() => {
   const esc = v => (v === null || v === undefined) ? '' : sanitizeHtml(String(v));
   const str = v => (v === null || v === undefined) ? '' : String(v).trim();
   const isUrl = v => /^https?:\/\//i.test(str(v));
+  const driveIdOf = v => (typeof window.extractDriveFileId === 'function' ? window.extractDriveFileId(v) : '');
   const pad = n => String(n).padStart(3, '0');
 
   // แปลงสถานะเป็นหมวด + ลำดับขั้นตอน
@@ -534,10 +537,12 @@ const TrackUI = (() => {
       group: cls.group,
       step: cls.step,
       image: docData.fileUrl || docData.imageUrl || docData.image || docData.file || '',
+      driveFileId: docData.driveFileId || driveIdOf(docData.fileUrl || docData.imageUrl || docData.image || docData.file || ''),
       fixDetail: docData.fixDetail || '',
       tech: docData.techName || docData.tech || '',
       techEmail: docData.techEmail || '',
       proof: docData.proofUrl || docData.proof || '',
+      proofDriveFileId: docData.proofDriveFileId || driveIdOf(docData.proofUrl || docData.proof || ''),
       cost: docData.cost || '',
       urgency: docData.urgency || '',
       dept: docData.dept || '',
@@ -545,6 +550,9 @@ const TrackUI = (() => {
       incident: incidentDate,
       contact: docData.contact || '',
       isArchived: Boolean(docData.isArchived),
+      rating: Number(docData.rating) || 0,
+      ratingComment: docData.ratingComment || '',
+      ratedBy: docData.ratedBy || '',
       snoozeNote: docData.snoozeNote || '',
       assignedAt: docData.assignedAt ? (docData.assignedAt.toDate ? docData.assignedAt.toDate() : (docData.assignedAt.seconds ? new Date(docData.assignedAt.seconds * 1000) : new Date(docData.assignedAt))) : null,
       lastPingedAt: docData.lastPingedAt ? (docData.lastPingedAt.toDate ? docData.lastPingedAt.toDate() : (docData.lastPingedAt.seconds ? new Date(docData.lastPingedAt.seconds * 1000) : new Date(docData.lastPingedAt))) : null,
@@ -661,43 +669,59 @@ const TrackUI = (() => {
     try {
       if (unsubscribeTickets) unsubscribeTickets();
 
-      // ดึงข้อมูล Real-time จาก Firebase Collection 'tickets'
-      unsubscribeTickets = window.firestoreDb.collection('tickets')
-        .orderBy('createdAt', 'desc')
-        .onSnapshot((snapshot) => {
-          const jobs = [];
-          let hasLegacyId = false;
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            const tid = data.ticketId || doc.id || '';
-            if (/\d{10,}/.test(tid) || tid.includes('-LEG-') || tid.includes('-REQ-') || tid.includes('-REP-')) {
-              hasLegacyId = true;
-            }
-            jobs.push(fromFirebase(data, doc.id));
-          });
+      const applyTicketEntries = (entries) => {
+        const jobs = [];
+        entries.forEach(({ id, data }) => {
+          jobs.push(fromFirebase(data, id));
+        });
+        state.rawDocCount = entries.length;
+        state.jobs = jobs;
+        state.loaded = true;
 
-          state.jobs = jobs;
-          state.loaded = true;
-
-          if (state.loading) {
-            state.loading = false;
-            if (btn) btn.querySelector('i')?.classList.remove('fa-spin');
-          }
-
-          render();
-
-          // ถ้าเปิดหน้ารายละเอียดค้างไว้ ให้ดึงข้อมูลมาอัปเดตแบบเนียนๆ
-          const detailPage = $('page-track-detail');
-          if (detailPage && detailPage.classList.contains('active') && state.currentJobId) {
-            open(state.currentJobId, true);
-          }
-
-          // ยกเลิก auto-reindex อัตโนมัติตอนโหลด เพื่อป้องกันหลายเครื่องแก้ไข doc ID ชนกัน (ให้ Admin กด reindexTickets เองได้เท่านั้น)
-        }, (err) => {
-          console.error("Firebase listen error:", err);
+        if (state.loading) {
           state.loading = false;
           if (btn) btn.querySelector('i')?.classList.remove('fa-spin');
+        }
+
+        render();
+
+        // ถ้าเปิดหน้ารายละเอียดค้างไว้ ให้ดึงข้อมูลมาอัปเดตแบบเนียนๆ
+        const detailPage = $('page-track-detail');
+        if (detailPage && detailPage.classList.contains('active') && state.currentJobId) {
+          open(state.currentJobId, true);
+        }
+      };
+
+      const hubInfo = (window.NotificationHub && typeof window.NotificationHub.getLatestTickets === 'function')
+        ? window.NotificationHub.getLatestTickets()
+        : null;
+
+      if (hubInfo && hubInfo.active && state.ticketLimit <= (hubInfo.limit || 150) && typeof window.NotificationHub.subscribeTickets === 'function') {
+        unsubscribeTickets = window.NotificationHub.subscribeTickets((docs) => {
+          applyTicketEntries(docs || []);
         });
+      } else {
+        // ดึงข้อมูล Real-time จาก Firebase Collection 'tickets' แบบจำกัดจำนวนเพื่อประหยัด Read Quota
+        const ticketsRef = window.firestoreDb.collection('tickets');
+        const ticketsQuery = (typeof ticketsRef.orderBy === 'function' && typeof ticketsRef.limit === 'function')
+          ? ticketsRef.orderBy('createdAt', 'desc').limit(state.ticketLimit)
+          : (typeof ticketsRef.orderBy === 'function' ? ticketsRef.orderBy('createdAt', 'desc') : ticketsRef);
+
+        unsubscribeTickets = ticketsQuery
+          .onSnapshot((snapshot) => {
+            const entries = [];
+            snapshot.forEach(doc => {
+              entries.push({ id: doc.id, data: doc.data() || {} });
+            });
+            applyTicketEntries(entries);
+
+            // ยกเลิก auto-reindex อัตโนมัติตอนโหลด เพื่อป้องกันหลายเครื่องแก้ไข doc ID ชนกัน (ให้ Admin กด reindexTickets เองได้เท่านั้น)
+          }, (err) => {
+            console.error("Firebase listen error:", err);
+            state.loading = false;
+            if (btn) btn.querySelector('i')?.classList.remove('fa-spin');
+          });
+      }
 
     } catch (e) {
       console.error('Track load error:', e);
@@ -1044,6 +1068,16 @@ const TrackUI = (() => {
         </div>
       </div>`;
     }).join('');
+
+    if (state.rawDocCount >= state.ticketLimit) {
+      list.innerHTML += `
+        <div class="mt-2 p-4 rounded-2xl border border-slate-200 bg-slate-50/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+          <span>กำลังแสดงคิวงานล่าสุด ${state.rawDocCount} รายการ เพื่อประหยัดโหลดระบบ</span>
+          <button type="button" onclick="TrackUI.loadMore()" class="px-4 py-2 rounded-xl bg-white hover:bg-[#E0F7F4] text-[#265D5A] border border-[#265D5A]/30 font-semibold shadow-xs transition flex items-center gap-1.5">
+            <i class="fa-solid fa-clock-rotate-left"></i> โหลดงานเก่าเพิ่มเติม (+150)
+          </button>
+        </div>`;
+    }
   }
 
   // ---------- หน้ารายละเอียด ----------
@@ -1432,6 +1466,39 @@ const TrackUI = (() => {
         </div>
       </section>
 
+      ${(job.group === 'done' && !job.isArchived) ? (() => {
+        const detailRole = getUserRole();
+        const canRate = isReporter(job) || detailRole === 'Admin' || detailRole === 'Supervisor';
+        if (job.rating > 0) {
+          const stars = Array.from({ length: 5 }, (_, idx) =>
+            `<i class="${idx < job.rating ? 'fa-solid text-amber-400' : 'fa-regular text-slate-300'} fa-star"></i>`).join('');
+          return `
+            <section class="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 md:p-5 mt-4 shadow-sm">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                <h3 class="font-semibold text-amber-900 text-sm flex items-center gap-2"><i class="fa-solid fa-star text-amber-500"></i> คะแนนความพึงพอใจการให้บริการ</h3>
+                <div class="flex items-center gap-1.5 text-sm">${stars} <span class="font-bold text-amber-800 ml-1">${job.rating}/5</span></div>
+              </div>
+              ${job.ratingComment ? `<p class="text-xs text-slate-700 bg-white/80 p-3 rounded-xl border border-amber-100 mt-2">${esc(job.ratingComment)}</p>` : ''}
+            </section>`;
+        }
+        if (canRate) {
+          const sType = job.type === 'building' ? 'repair' : (job.type === 'it' ? 'it_repair' : job.type);
+          return `
+            <section class="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50/70 p-4 md:p-5 mt-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 class="font-semibold text-amber-900 text-sm flex items-center gap-2"><i class="fa-regular fa-star text-amber-500"></i> ประเมินความพึงพอใจงานนี้</h3>
+                <p class="text-xs text-amber-800/80 mt-0.5">ช่วยให้คะแนนเพื่อนำไปปรับปรุงคุณภาพงานบริการของเรา (1–5 ดาว)</p>
+              </div>
+              <button type="button" data-type="${esc(sType)}" data-row="${Number(job.originalIndex || 0) + 2}" data-tid="${esc(job.id)}" data-docid="${esc(docIdOf(job, job.id))}"
+                onclick="if(typeof openSurveyModal==='function') openSurveyModal(this.dataset.type, this.dataset.row, this.dataset.tid, this.dataset.docid)"
+                class="shrink-0 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 transition active:scale-95">
+                <i class="fa-solid fa-star"></i> ให้คะแนน 5 ดาว
+              </button>
+            </section>`;
+        }
+        return '';
+      })() : ''}
+
       <!-- แถบปุ่มจัดการงานด้านล่าง (สำหรับทั้งคอมและมือถือ) -->
       <div class="mt-4 pt-1 flex items-center justify-between gap-3 flex-wrap">
         <button type="button" onclick="TrackUI.backToList()"
@@ -1552,7 +1619,8 @@ const TrackUI = (() => {
             }
             if (window.firestoreDb) {
               window.firestoreDb.collection('tickets').doc(job.docId || job.id).update({
-                fileUrl: foundImg
+                fileUrl: foundImg,
+                driveFileId: driveIdOf(foundImg)
               }).catch(e => console.warn('Auto image heal update error:', e));
             }
           }
@@ -1713,9 +1781,12 @@ const TrackUI = (() => {
 
           if (res && res.proofUrl && res.proofUrl !== '-' && window.firestoreDb) {
             job.proof = res.proofUrl;
+            const recUrl = (res.receiptUrl && res.receiptUrl !== '-') ? res.receiptUrl : '';
             window.firestoreDb.collection('tickets').doc(targetDocId).update({
               proofUrl: res.proofUrl,
-              receiptUrl: (res.receiptUrl && res.receiptUrl !== '-') ? res.receiptUrl : ''
+              proofDriveFileId: res.proofFileId || driveIdOf(res.proofUrl),
+              receiptUrl: recUrl,
+              receiptDriveFileId: recUrl ? (res.receiptFileId || driveIdOf(recUrl)) : ''
             }).catch(e => console.warn('Update proofUrl to Firestore error:', e));
           }
         }
@@ -3234,7 +3305,13 @@ const TrackUI = (() => {
       state.jobs = [];
       state.loaded = false;
       state.loading = false;
+      state.ticketLimit = 150;
+      state.rawDocCount = 0;
       state.currentJobId = null;
+    },
+    loadMore() {
+      state.ticketLimit += 150;
+      load(true);
     },
     backToList() {
       if (currentDocUnsubscribe) {

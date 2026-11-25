@@ -1,0 +1,87 @@
+      <div id="page-document" class="page-section hidden">
+        <div class="p-4 md:p-8 max-w-6xl mx-auto pb-32 md:pb-8">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div class="flex items-center gap-3">
+              <button type="button" onclick="nav('page-home')"
+                class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 flex items-center justify-center shadow-sm transition-colors">
+                <i class="fa-solid fa-arrow-left"></i>
+              </button>
+              <div>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">📂 คลังเอกสาร</h2>
+                <p class="text-slate-500 mt-1 text-xs md:text-sm">ดาวน์โหลดแบบฟอร์ม คู่มือ และเอกสารราชการ (ไฟล์จัดเก็บบน Google Drive)</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <button type="button" onclick="openDocUploadModal()"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 transition-colors">
+                <i class="fa-solid fa-cloud-arrow-up"></i> อัปโหลดเอกสาร
+              </button>
+              <button type="button" onclick="loadDocuments()"
+                class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors">
+                <i class="fa-solid fa-rotate mr-1"></i> รีเฟรช
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
+              <div class="text-xs text-slate-400">เอกสารทั้งหมด</div>
+              <div id="doc-stat-total" class="text-2xl font-bold text-slate-800 mt-1">0</div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
+              <div class="text-xs text-slate-400">เพิ่มใน 7 วันล่าสุด</div>
+              <div id="doc-stat-recent" class="text-2xl font-bold text-indigo-600 mt-1">0</div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
+              <div class="text-xs text-slate-400">จำนวนหมวดหมู่</div>
+              <div id="doc-stat-cats" class="text-2xl font-bold text-violet-600 mt-1">0</div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
+              <div class="text-xs text-slate-400">ผู้อัปโหลด</div>
+              <div id="doc-stat-uploader" class="text-2xl font-bold text-emerald-600 mt-1">0</div>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3 mb-4">
+            <div class="relative flex-1">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+              <input type="text" id="doc-search-input" onkeyup="filterDocTable(this.value)"
+                class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="ค้นหาชื่อเอกสารหรือหมวดหมู่...">
+            </div>
+            <select id="doc-cat-filter" onchange="filterDocTable(document.getElementById('doc-search-input')?.value || '')"
+              class="px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="">ทุกหมวดหมู่</option>
+              <option value="ราชการ">ราชการ</option>
+              <option value="วิชาการ">วิชาการ</option>
+              <option value="การเงิน">การเงิน</option>
+              <option value="บุคลากร">บุคลากร</option>
+              <option value="ทั่วไป">ทั่วไป</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse min-w-[780px]">
+                <thead>
+                  <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider font-semibold">
+                    <th class="p-4">#</th>
+                    <th class="p-4">ชื่อเอกสาร</th>
+                    <th class="p-4">หมวดหมู่</th>
+                    <th class="p-4">วันที่อัปโหลด</th>
+                    <th class="p-4">ผู้อัปโหลด</th>
+                    <th class="p-4">ชนิดไฟล์</th>
+                    <th class="p-4 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="doc-tbody" class="text-sm divide-y divide-slate-100">
+                  <tr>
+                    <td colspan="7" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
