@@ -40,12 +40,17 @@
                 <i class="fa-solid fa-plus mr-1"></i> เพิ่มสถานที่
               </button>
 
-              <!-- แท็บปุ่มกดกรองรวดเร็ว -->
-              <div class="flex gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
-                <button type="button" onclick="filterMasterLocations('ทั้งหมด')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-[#265D5A] text-white" data-dept="ทั้งหมด">ทั้งหมด</button>
-                <button type="button" onclick="filterMasterLocations('วพบ.')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="วพบ.">วพบ.</button>
-                <button type="button" onclick="filterMasterLocations('ศษ.')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ศษ.">ศษ.</button>
-                <button type="button" onclick="filterMasterLocations('ส่วนกลาง')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ส่วนกลาง">ส่วนกลาง</button>
+              <!-- แท็บปุ่มกดกรองรวดเร็ว + ปุ่มล้างหมวด -->
+              <div class="flex flex-wrap items-center justify-between gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
+                <div class="flex flex-wrap gap-1">
+                  <button type="button" onclick="filterMasterLocations('ทั้งหมด')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-[#265D5A] text-white" data-dept="ทั้งหมด">ทั้งหมด</button>
+                  <button type="button" onclick="filterMasterLocations('วพบ.')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="วพบ.">วพบ.</button>
+                  <button type="button" onclick="filterMasterLocations('ศษ.')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ศษ.">ศษ.</button>
+                  <button type="button" onclick="filterMasterLocations('ส่วนกลาง')" class="md-loc-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ส่วนกลาง">ส่วนกลาง</button>
+                </div>
+                <button type="button" onclick="clearMaster('location')" class="px-2 py-1 rounded-lg font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition flex items-center gap-1" title="ล้างข้อมูลสถานที่ในหมวดที่แสดง">
+                  <i class="fa-solid fa-trash"></i> ล้างข้อมูล
+                </button>
               </div>
 
               <div id="md-locations" class="mt-2 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
@@ -65,7 +70,12 @@
               <button onclick="addMaster('department')" class="w-full bg-amber-600 hover:bg-amber-700 transition-colors text-white rounded-xl py-2.5 text-sm font-bold shadow-sm">
                 <i class="fa-solid fa-plus mr-1"></i> เพิ่มแผนก/ฝ่าย
               </button>
-              <div id="md-departments" class="mt-4 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
+              <div class="flex justify-end mt-3 pt-3 border-t border-slate-100 text-xs">
+                <button type="button" onclick="clearMaster('department')" class="px-2.5 py-1 rounded-lg font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition flex items-center gap-1" title="ล้างข้อมูลแผนกทั้งหมด">
+                  <i class="fa-solid fa-trash"></i> ล้างข้อมูล
+                </button>
+              </div>
+              <div id="md-departments" class="mt-2 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
             </div>
 
             <!-- 3. โครงการ -->
@@ -92,12 +102,17 @@
                 <i class="fa-solid fa-plus mr-1"></i> เพิ่มโครงการ
               </button>
 
-              <!-- แท็บปุ่มกดกรองรวดเร็ว -->
-              <div class="flex gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
-                <button type="button" onclick="filterMasterProjects('ทั้งหมด')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-violet-600 text-white" data-dept="ทั้งหมด">ทั้งหมด</button>
-                <button type="button" onclick="filterMasterProjects('วพบ.')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="วพบ.">วพบ.</button>
-                <button type="button" onclick="filterMasterProjects('ศษ.')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ศษ.">ศษ.</button>
-                <button type="button" onclick="filterMasterProjects('ส่วนกลาง')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ส่วนกลาง">ส่วนกลาง</button>
+              <!-- แท็บปุ่มกดกรองรวดเร็ว + ปุ่มล้างหมวด -->
+              <div class="flex flex-wrap items-center justify-between gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
+                <div class="flex flex-wrap gap-1">
+                  <button type="button" onclick="filterMasterProjects('ทั้งหมด')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-violet-600 text-white" data-dept="ทั้งหมด">ทั้งหมด</button>
+                  <button type="button" onclick="filterMasterProjects('วพบ.')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="วพบ.">วพบ.</button>
+                  <button type="button" onclick="filterMasterProjects('ศษ.')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ศษ.">ศษ.</button>
+                  <button type="button" onclick="filterMasterProjects('ส่วนกลาง')" class="md-proj-tab px-2.5 py-1 rounded-lg font-medium bg-slate-100 text-slate-600 hover:bg-slate-200" data-dept="ส่วนกลาง">ส่วนกลาง</button>
+                </div>
+                <button type="button" onclick="clearMaster('project')" class="px-2 py-1 rounded-lg font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition flex items-center gap-1" title="ล้างข้อมูลโครงการในหมวดที่แสดง">
+                  <i class="fa-solid fa-trash"></i> ล้างข้อมูล
+                </button>
               </div>
 
               <div id="md-projects" class="mt-2 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
@@ -105,8 +120,11 @@
 
             <!-- 4. ช่าง / ผู้รับผิดชอบ -->
             <div class="bg-white rounded-2xl border p-5 shadow-sm flex flex-col">
-              <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <i class="fa-solid fa-wrench text-sky-600"></i> ช่าง / ผู้รับผิดชอบ
+              <h3 class="font-bold text-slate-800 mb-3 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                  <i class="fa-solid fa-wrench text-sky-600"></i> ช่าง / ผู้รับผิดชอบ
+                </span>
+                <span id="md-mech-count" class="text-xs font-normal text-slate-400"></span>
               </h3>
               <div class="space-y-2 mb-3">
                 <input id="md-mechanic-name" class="w-full border rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-sky-500" placeholder="ชื่อช่าง">
@@ -116,7 +134,12 @@
               <button onclick="addMaster('mechanic')" class="w-full bg-sky-600 hover:bg-sky-700 transition-colors text-white rounded-xl py-2.5 text-sm font-bold shadow-sm">
                 <i class="fa-solid fa-plus mr-1"></i> เพิ่มช่าง
               </button>
-              <div id="md-mechanics" class="mt-4 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
+              <div class="flex justify-end mt-3 pt-3 border-t border-slate-100 text-xs">
+                <button type="button" onclick="clearMaster('mechanic')" class="px-2.5 py-1 rounded-lg font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition flex items-center gap-1" title="ล้างข้อมูลช่างทั้งหมด">
+                  <i class="fa-solid fa-trash"></i> ล้างข้อมูล
+                </button>
+              </div>
+              <div id="md-mechanics" class="mt-2 space-y-2 max-h-80 overflow-y-auto flex-1"></div>
             </div>
           </div>
 

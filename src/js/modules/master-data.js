@@ -5,7 +5,8 @@
 // ============================================================
 
 const MasterData = (() => {
-  const CACHE_KEY = 'master_data_cache_v2';
+  const CACHE_KEY = 'master_data_cache_v3';
+  const LEGACY_CACHE_KEYS = ['master_data_cache_v2'];
 
   // ข้อมูลเริ่มต้นมาตรฐาน (Default Seed Data)
   const DEFAULT_DATA = {
@@ -140,29 +141,56 @@ const MasterData = (() => {
   };
 
   let state = {
-    locations: [...DEFAULT_DATA.locations],
-    departments: [...DEFAULT_DATA.departments],
-    projects: [...DEFAULT_DATA.projects],
-    mechanics: [...DEFAULT_DATA.mechanics],
+    locations: [],
+    departments: [],
+    projects: [],
+    mechanics: [],
     settings: { ...DEFAULT_DATA.settings },
     loaded: false
   };
 
   let retryCount = 0;
+  const writeQueues = {};
+  const activeWriteCount = {};
+  const CATEGORY_MAP = {
+    location: 'locations',
+    department: 'departments',
+    project: 'projects',
+    mechanic: 'mechanics'
+  };
 
-  // โหลดจาก Local Cache เพื่อให้หน้าจอแสดงผลได้ทันที (พร้อมเติมค่าเริ่มต้นเสมอหากยังไม่มีในแคช)
+  function getCategoryKey(type) {
+    return CATEGORY_MAP[type] || null;
+  }
+
+  function cloneItems(arr) {
+    return Array.isArray(arr) ? arr.map(item => ({ ...item })) : [];
+  }
+
+  function matchesDeptFilter(itemDept, filterDept, includeCentral = false) {
+    if (!filterDept || filterDept === 'ทั้งหมด') return true;
+    const dept = String(itemDept || '').trim();
+    if (includeCentral && dept === 'ส่วนกลาง') return true;
+    if (filterDept.startsWith('วพบ')) return dept.startsWith('วพบ') || dept === 'วิทยาลัย';
+    if (filterDept.startsWith('ศษ')) return dept.startsWith('ศษ') || dept === 'โรงเรียน';
+    if (filterDept.includes('ส่วนกลาง')) return dept === 'ส่วนกลาง';
+    return dept === filterDept;
+  }
+
+  // โหลดจาก Local Cache (ยอมรับค่าว่าง [] หากเคยซิงก์และถูกลบไว้จริง)
   function loadCache() {
     try {
+      LEGACY_CACHE_KEYS.forEach(k => localStorage.removeItem(k));
       const raw = localStorage.getItem(CACHE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
-          if (Array.isArray(parsed.locations) && parsed.locations.length > 0) state.locations = parsed.locations;
-          if (Array.isArray(parsed.departments) && parsed.departments.length > 0) state.departments = parsed.departments;
-          if (Array.isArray(parsed.projects) && parsed.projects.length > 0) state.projects = parsed.projects;
-          if (Array.isArray(parsed.mechanics) && parsed.mechanics.length > 0) state.mechanics = parsed.mechanics;
+          if (Array.isArray(parsed.locations)) state.locations = parsed.locations;
+          if (Array.isArray(parsed.departments)) state.departments = parsed.departments;
+          if (Array.isArray(parsed.projects)) state.projects = parsed.projects;
+          if (Array.isArray(parsed.mechanics)) state.mechanics = parsed.mechanics;
           if (parsed.settings && typeof parsed.settings === 'object') state.settings = { ...state.settings, ...parsed.settings };
-          if (parsed.loaded && state.locations.length > 0 && state.departments.length > 0) {
+          if (parsed.loaded) {
             state.loaded = true;
           }
         }
@@ -170,10 +198,6 @@ const MasterData = (() => {
     } catch (e) {
       console.warn('Load MasterData cache error:', e);
     }
-    if (!Array.isArray(state.locations) || !state.locations.length) state.locations = [...DEFAULT_DATA.locations];
-    if (!Array.isArray(state.departments) || !state.departments.length) state.departments = [...DEFAULT_DATA.departments];
-    if (!Array.isArray(state.projects) || !state.projects.length) state.projects = [...DEFAULT_DATA.projects];
-    if (!Array.isArray(state.mechanics) || !state.mechanics.length) state.mechanics = [...DEFAULT_DATA.mechanics];
   }
 
   function saveCache() {
@@ -212,28 +236,36 @@ const MasterData = (() => {
       const snap = await getPromise;
 
       if (snap.empty) {
-        // หากใน Firebase ยังไม่มีข้อมูล ให้สร้างชุดข้อมูลเริ่มต้นทันที (Auto-Seed)
+        // หากใน Firebase ยังไม่มี collection master_data เลย ให้สร้างชุดข้อมูลเริ่มต้นครั้งแรก
         console.log('Firebase master_data is empty. Auto-seeding initial data...');
         await seedInitialData(true);
         window._masterDataFirestoreSynced = true;
         return state;
       }
 
+      const foundDocs = new Set();
       snap.forEach(doc => {
         const id = doc.id;
         const d = doc.data() || {};
-        if (id === 'locations' && Array.isArray(d.items) && d.items.length) state.locations = d.items;
-        if (id === 'departments' && Array.isArray(d.items) && d.items.length) state.departments = d.items;
-        if (id === 'projects' && Array.isArray(d.items) && d.items.length) state.projects = d.items;
-        if (id === 'mechanics' && Array.isArray(d.items) && d.items.length) state.mechanics = d.items;
+        foundDocs.add(id);
+        if (id === 'locations' && Array.isArray(d.items)) state.locations = d.items;
+        if (id === 'departments' && Array.isArray(d.items)) state.departments = d.items;
+        if (id === 'projects' && Array.isArray(d.items)) state.projects = d.items;
+        if (id === 'mechanics' && Array.isArray(d.items)) state.mechanics = d.items;
         if (id === 'settings') state.settings = d || { overdueDays: 3 };
       });
 
-      // ถ้าหมวดไหนยังว่างเปล่า ให้เติมค่าเริ่มต้นเฉพาะหมวดนั้น
-      if (!state.locations.length) state.locations = [...DEFAULT_DATA.locations];
-      if (!state.departments.length) state.departments = [...DEFAULT_DATA.departments];
-      if (!state.projects.length) state.projects = [...DEFAULT_DATA.projects];
-      if (!state.mechanics.length) state.mechanics = [...DEFAULT_DATA.mechanics];
+      // สร้าง doc เฉพาะหมวดที่ยังไม่เคยมี document ใน Firestore เลยเท่านั้น (ไม่เขียนทับหมวดที่มี items: [])
+      const missingKeys = ['locations', 'departments', 'projects', 'mechanics'].filter(k => !foundDocs.has(k));
+      if (missingKeys.length > 0) {
+        const batch = window.firestoreDb.batch();
+        missingKeys.forEach(k => {
+          const seed = cloneItems(DEFAULT_DATA[k]);
+          state[k] = seed;
+          batch.set(colRef.doc(k), { items: seed });
+        });
+        await batch.commit();
+      }
 
       state.loaded = true;
       window._masterDataFirestoreSynced = true;
@@ -246,21 +278,14 @@ const MasterData = (() => {
         window._masterMechanicsListenerAttached = true;
         window.firestoreDb.collection('master_data')
           .onSnapshot(colSnap => {
+            if (colSnap.metadata && colSnap.metadata.hasPendingWrites) return;
             let changed = false;
             colSnap.forEach(doc => {
               const id = doc.id;
+              if (activeWriteCount[id] > 0) return;
               const d = doc.data() || {};
-              if (id === 'locations' && Array.isArray(d.items) && d.items.length) {
-                state.locations = d.items;
-                changed = true;
-              } else if (id === 'departments' && Array.isArray(d.items) && d.items.length) {
-                state.departments = d.items;
-                changed = true;
-              } else if (id === 'projects' && Array.isArray(d.items) && d.items.length) {
-                state.projects = d.items;
-                changed = true;
-              } else if (id === 'mechanics' && Array.isArray(d.items)) {
-                state.mechanics = d.items.length ? d.items : [...DEFAULT_DATA.mechanics];
+              if ((id === 'locations' || id === 'departments' || id === 'projects' || id === 'mechanics') && Array.isArray(d.items)) {
+                state[id] = d.items;
                 changed = true;
               } else if (id === 'settings' && d) {
                 state.settings = d;
@@ -277,11 +302,6 @@ const MasterData = (() => {
       }
     } catch (e) {
       console.error('MasterData load error:', e);
-      if (!state.locations.length) state.locations = [...DEFAULT_DATA.locations];
-      if (!state.departments.length) state.departments = [...DEFAULT_DATA.departments];
-      if (!state.projects.length) state.projects = [...DEFAULT_DATA.projects];
-      if (!state.mechanics.length) state.mechanics = [...DEFAULT_DATA.mechanics];
-      state.loaded = true;
       renderMasterDataUI();
       initFormDropdowns();
     }
@@ -290,20 +310,43 @@ const MasterData = (() => {
 
   // บันทึกชุดข้อมูลเริ่มต้นลง Firestore (Seed Data)
   async function seedInitialData(silent = false) {
-    if (!window.firestoreDb) return;
+    if (!window.firestoreDb && typeof initFirebase === 'function') initFirebase();
+    if (!window.firestoreDb) {
+      if (!silent && typeof Swal !== 'undefined') {
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูล Firebase ได้', 'error');
+      }
+      return;
+    }
     try {
+      ['locations', 'departments', 'projects', 'mechanics', 'settings'].forEach(k => {
+        activeWriteCount[k] = (activeWriteCount[k] || 0) + 1;
+      });
       const colRef = window.firestoreDb.collection('master_data');
       const batch = window.firestoreDb.batch();
+      const seedLocs = cloneItems(DEFAULT_DATA.locations);
+      const seedDepts = cloneItems(DEFAULT_DATA.departments);
+      const seedProjs = cloneItems(DEFAULT_DATA.projects);
+      const seedMechs = cloneItems(DEFAULT_DATA.mechanics);
+      const seedSettings = { ...DEFAULT_DATA.settings };
 
-      batch.set(colRef.doc('locations'), { items: DEFAULT_DATA.locations });
-      batch.set(colRef.doc('departments'), { items: DEFAULT_DATA.departments });
-      batch.set(colRef.doc('projects'), { items: DEFAULT_DATA.projects });
-      batch.set(colRef.doc('mechanics'), { items: DEFAULT_DATA.mechanics });
-      batch.set(colRef.doc('settings'), DEFAULT_DATA.settings);
+      batch.set(colRef.doc('locations'), { items: seedLocs });
+      batch.set(colRef.doc('departments'), { items: seedDepts });
+      batch.set(colRef.doc('projects'), { items: seedProjs });
+      batch.set(colRef.doc('mechanics'), { items: seedMechs });
+      batch.set(colRef.doc('settings'), seedSettings);
 
-      await batch.commit();
+      const commitP = batch.commit();
+      if (typeof window.withTimeout === 'function') await window.withTimeout(commitP, 8000);
+      else await commitP;
 
-      state = { ...DEFAULT_DATA, loaded: true };
+      state = {
+        locations: seedLocs,
+        departments: seedDepts,
+        projects: seedProjs,
+        mechanics: seedMechs,
+        settings: seedSettings,
+        loaded: true
+      };
       saveCache();
       renderMasterDataUI();
       initFormDropdowns();
@@ -321,68 +364,120 @@ const MasterData = (() => {
       if (!silent && typeof Swal !== 'undefined') {
         Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลเริ่มต้นได้: ' + e.message, 'error');
       }
+    } finally {
+      ['locations', 'departments', 'projects', 'mechanics', 'settings'].forEach(k => {
+        activeWriteCount[k] = Math.max(0, (activeWriteCount[k] || 0) - 1);
+      });
+    }
+  }
+
+  // เขียนข้อมูลหมวดลง Firestore แบบเรียงคิว (ป้องกัน Race Condition และ Rollback เมื่อพัง)
+  async function persistCategory(key, computeNext) {
+    if (!window.firestoreDb && typeof initFirebase === 'function') initFirebase();
+    if (!window.firestoreDb) {
+      if (typeof alertBox === 'function') {
+        alertBox('error', 'ไม่สามารถเชื่อมต่อฐานข้อมูล', 'กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง');
+      }
+      return false;
+    }
+
+    const previousItems = cloneItems(state[key]);
+    const nextItems = computeNext(state[key]);
+    state[key] = nextItems;
+    state.loaded = true;
+    saveCache();
+    renderMasterDataUI();
+    initFormDropdowns();
+
+    activeWriteCount[key] = (activeWriteCount[key] || 0) + 1;
+    const prevChain = writeQueues[key] || Promise.resolve();
+
+    const runWrite = prevChain.then(async () => {
+      const writeP = window.firestoreDb.collection('master_data').doc(key).set({
+        items: nextItems
+      });
+      if (typeof window.withTimeout === 'function') {
+        await window.withTimeout(writeP, 8000);
+      } else {
+        await writeP;
+      }
+    });
+
+    writeQueues[key] = runWrite.catch(() => {});
+
+    try {
+      await runWrite;
+      return true;
+    } catch (e) {
+      console.error(`Persist ${key} to Firestore error:`, e);
+      if (activeWriteCount[key] <= 1) {
+        state[key] = previousItems;
+        saveCache();
+        renderMasterDataUI();
+        initFormDropdowns();
+      }
+      if (typeof alertBox === 'function') {
+        alertBox('error', 'บันทึกข้อมูลไม่สำเร็จ', 'ไม่สามารถบันทึกลงฐานข้อมูลได้: ' + (e.message || 'กรุณาลองใหม่'));
+      }
+      return false;
+    } finally {
+      activeWriteCount[key] = Math.max(0, (activeWriteCount[key] || 0) - 1);
     }
   }
 
   // เพิ่มข้อมูลลงในหมวด (type: 'location' | 'department' | 'project' | 'mechanic')
   async function addItem(type, item) {
     if (!item.id) item.id = `${type}_${Date.now()}`;
-    const key = (type === 'location') ? 'locations'
-              : (type === 'department') ? 'departments'
-              : (type === 'project') ? 'projects'
-              : (type === 'mechanic') ? 'mechanics' : null;
-    if (!key) return;
-
-    state[key].push(item);
-    saveCache();
-    renderMasterDataUI();
-    initFormDropdowns();
-
-    if (window.firestoreDb) {
-      try {
-        await window.firestoreDb.collection('master_data').doc(key).set({
-          items: state[key]
-        });
-      } catch (e) {
-        console.error(`Save ${key} to Firestore error:`, e);
-      }
-    }
+    const key = getCategoryKey(type);
+    if (!key) return false;
+    return persistCategory(key, items => [...(items || []), item]);
   }
 
   // ลบข้อมูลออกจากหมวด
   async function deleteItem(type, id) {
-    const key = (type === 'location') ? 'locations'
-              : (type === 'department') ? 'departments'
-              : (type === 'project') ? 'projects'
-              : (type === 'mechanic') ? 'mechanics' : null;
-    if (!key) return;
+    const key = getCategoryKey(type);
+    if (!key) return false;
+    const targetId = String(id ?? '');
+    return persistCategory(key, items => (items || []).filter(x => String(x.id ?? '') !== targetId));
+  }
 
-    state[key] = state[key].filter(x => x.id !== id);
-    saveCache();
-    renderMasterDataUI();
-    initFormDropdowns();
-
-    if (window.firestoreDb) {
-      try {
-        await window.firestoreDb.collection('master_data').doc(key).set({
-          items: state[key]
-        });
-      } catch (e) {
-        console.error(`Delete ${key} from Firestore error:`, e);
-      }
-    }
+  // ล้างข้อมูลในหมวด (รองรับการกรองตามสังกัดสำหรับ locations และ projects)
+  async function clearCategory(type, filterDept = 'ทั้งหมด') {
+    const key = getCategoryKey(type);
+    if (!key) return false;
+    const useDeptFilter = (key === 'locations' || key === 'projects') && filterDept && filterDept !== 'ทั้งหมด';
+    return persistCategory(key, items => {
+      const list = items || [];
+      return useDeptFilter ? list.filter(x => !matchesDeptFilter(x.department, filterDept)) : [];
+    });
   }
 
   // บันทึกการตั้งค่า Overdue Days
   async function saveSettings(settings) {
+    const previous = { ...state.settings };
     state.settings = { ...state.settings, ...settings };
     saveCache();
-    if (window.firestoreDb) {
-      try {
-        await window.firestoreDb.collection('master_data').doc('settings').set(state.settings);
-      } catch (e) {
-        console.error('Save settings error:', e);
-      }
+    if (!window.firestoreDb && typeof initFirebase === 'function') initFirebase();
+    if (!window.firestoreDb) {
+      state.settings = previous;
+      saveCache();
+      if (typeof alertBox === 'function') alertBox('error', 'บันทึกไม่สำเร็จ', 'ไม่สามารถเชื่อมต่อฐานข้อมูล Firebase ได้');
+      return false;
+    }
+    activeWriteCount.settings = (activeWriteCount.settings || 0) + 1;
+    try {
+      const p = window.firestoreDb.collection('master_data').doc('settings').set(state.settings);
+      if (typeof window.withTimeout === 'function') await window.withTimeout(p, 8000);
+      else await p;
+      return true;
+    } catch (e) {
+      console.error('Save settings error:', e);
+      state.settings = previous;
+      saveCache();
+      if (typeof alertBox === 'function') alertBox('error', 'บันทึกไม่สำเร็จ', e.message || 'เกิดข้อผิดพลาด');
+      return false;
+    } finally {
+      activeWriteCount.settings = Math.max(0, (activeWriteCount.settings || 0) - 1);
     }
   }
 
@@ -395,17 +490,10 @@ const MasterData = (() => {
 
     const prevVal = sel.value;
     const inst = (instVal || '').trim();
-    const allLocs = (Array.isArray(state.locations) && state.locations.length) ? state.locations : DEFAULT_DATA.locations;
+    const allLocs = Array.isArray(state.locations) ? state.locations : [];
 
     // กรองสถานที่: ถ้าเลือก วพบ. ก็เอาของ วพบ. + ส่วนกลาง, ถ้าเลือก ศษ. ก็เอาของ ศษ. + ส่วนกลาง, ถ้าเลือก ส่วนกลาง ก็เอาส่วนกลาง
-    let filtered = allLocs;
-    if (inst.startsWith('วพบ')) {
-      filtered = allLocs.filter(l => (l.department || '').startsWith('วพบ') || l.department === 'ส่วนกลาง' || l.department === 'วิทยาลัย');
-    } else if (inst.startsWith('ศษ')) {
-      filtered = allLocs.filter(l => (l.department || '').startsWith('ศษ') || l.department === 'ส่วนกลาง' || l.department === 'โรงเรียน');
-    } else if (inst.includes('ส่วนกลาง')) {
-      filtered = allLocs.filter(l => l.department === 'ส่วนกลาง');
-    }
+    const filtered = allLocs.filter(l => matchesDeptFilter(l.department, inst, true));
 
     let html = `<option value="" disabled selected>-- เลือกสถานที่ / ห้อง --</option>`;
     filtered.forEach(loc => {
@@ -450,7 +538,7 @@ const MasterData = (() => {
     if (!sel) return;
 
     const prevVal = sel.value;
-    const depts = (Array.isArray(state.departments) && state.departments.length) ? state.departments : DEFAULT_DATA.departments;
+    const depts = Array.isArray(state.departments) ? state.departments : [];
     let html = `<option value="" disabled selected>-- เลือกฝ่าย / แผนก --</option>`;
     depts.forEach(d => {
       html += `<option value="${sanitize(d.name)}">${sanitize(d.name)}</option>`;
@@ -474,7 +562,7 @@ const MasterData = (() => {
     if (!sel) return;
 
     const prevVal = sel.value;
-    const prjs = (Array.isArray(state.projects) && state.projects.length) ? state.projects : DEFAULT_DATA.projects;
+    const prjs = Array.isArray(state.projects) ? state.projects : [];
     let html = `<option value="" disabled selected>-- เลือกโครงการ --</option>`;
     prjs.forEach(p => {
       html += `<option value="${sanitize(p.name)}">${sanitize(p.name)}</option>`;
@@ -623,21 +711,16 @@ const MasterData = (() => {
     const proEl = document.getElementById('md-projects');
     const proCountEl = document.getElementById('md-proj-count');
     const mecEl = document.getElementById('md-mechanics');
+    const mecCountEl = document.getElementById('md-mech-count');
 
     if (locEl) {
-      let filteredLocs = state.locations || [];
-      if (activeLocFilter && activeLocFilter !== 'ทั้งหมด') {
-        filteredLocs = filteredLocs.filter(x => {
-          if (activeLocFilter.startsWith('วพบ')) return (x.department || '').startsWith('วพบ') || x.department === 'วิทยาลัย';
-          if (activeLocFilter.startsWith('ศษ')) return (x.department || '').startsWith('ศษ') || x.department === 'โรงเรียน';
-          if (activeLocFilter.includes('ส่วนกลาง')) return x.department === 'ส่วนกลาง';
-          return x.department === activeLocFilter;
-        });
-      }
+      const allLocs = state.locations || [];
+      const filteredLocs = allLocs.filter(x => matchesDeptFilter(x.department, activeLocFilter));
       if (locCountEl) {
-        locCountEl.textContent = `(${filteredLocs.length} จาก ${state.locations.length} ห้อง)`;
+        locCountEl.textContent = `(${filteredLocs.length} จาก ${allLocs.length} ห้อง)`;
       }
 
+      const emptyMsg = !state.loaded ? 'กำลังโหลดข้อมูล...' : 'ยังไม่มีข้อมูลสถานที่ / ห้อง';
       locEl.innerHTML = filteredLocs.map(x =>
         `<div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 text-slate-800 border border-slate-100 hover:bg-slate-100/60 transition">
           <div class="flex items-center gap-2">
@@ -645,63 +728,64 @@ const MasterData = (() => {
             <span class="font-medium text-sm">${sanitize(x.name)}</span>
           </div>
           <div class="flex items-center gap-3">
-            <button onclick="if(typeof openQrGenModal === 'function') openQrGenModal('${sanitize(x.name)}')" class="text-[#265D5A] hover:text-[#1a3f3d] p-1" title="สร้าง QR Code"><i class="fa-solid fa-qrcode"></i></button>
-            <button onclick="MasterData.deleteItem('location','${sanitize(x.id)}')" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+            <button type="button" data-name="${sanitize(x.name)}" onclick="if(typeof openQrGenModal === 'function') openQrGenModal(this.dataset.name)" class="text-[#265D5A] hover:text-[#1a3f3d] p-1" title="สร้าง QR Code"><i class="fa-solid fa-qrcode"></i></button>
+            <button type="button" data-id="${sanitize(x.id)}" data-name="${sanitize(x.name)}" onclick="deleteMaster('location', this.dataset.id, this.dataset.name)" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
           </div>
         </div>`
-      ).join('') || '<p class="text-slate-400 text-sm p-4 text-center">ไม่พบรายการห้องในสังกัดนี้</p>';
+      ).join('') || `<p class="text-slate-400 text-sm p-4 text-center">${emptyMsg}</p>`;
     }
 
     if (depEl) {
+      const allDepts = state.departments || [];
       if (depCountEl) {
-        depCountEl.textContent = `(${state.departments.length} แผนก)`;
+        depCountEl.textContent = `(${allDepts.length} แผนก)`;
       }
-      depEl.innerHTML = (state.departments || []).map(x =>
+      const emptyMsg = !state.loaded ? 'กำลังโหลดข้อมูล...' : 'ยังไม่มีข้อมูล';
+      depEl.innerHTML = allDepts.map(x =>
         `<div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 text-slate-800 border border-slate-100 hover:bg-slate-100/60 transition">
           <span class="font-medium text-sm"><i class="fa-solid fa-building-user text-slate-400 mr-2"></i>${sanitize(x.name)}</span>
-          <button onclick="MasterData.deleteItem('department','${sanitize(x.id)}')" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+          <button type="button" data-id="${sanitize(x.id)}" data-name="${sanitize(x.name)}" onclick="deleteMaster('department', this.dataset.id, this.dataset.name)" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
         </div>`
-      ).join('') || '<p class="text-slate-400 text-sm p-4 text-center">ยังไม่มีข้อมูล</p>';
+      ).join('') || `<p class="text-slate-400 text-sm p-4 text-center">${emptyMsg}</p>`;
     }
 
     if (proEl) {
-      let filteredProjs = state.projects || [];
-      if (activeProjFilter && activeProjFilter !== 'ทั้งหมด') {
-        filteredProjs = filteredProjs.filter(x => {
-          if (activeProjFilter.startsWith('วพบ')) return (x.department || '').startsWith('วพบ') || x.department === 'วิทยาลัย';
-          if (activeProjFilter.startsWith('ศษ')) return (x.department || '').startsWith('ศษ') || x.department === 'โรงเรียน';
-          if (activeProjFilter.includes('ส่วนกลาง')) return x.department === 'ส่วนกลาง';
-          return x.department === activeProjFilter;
-        });
-      }
+      const allProjs = state.projects || [];
+      const filteredProjs = allProjs.filter(x => matchesDeptFilter(x.department, activeProjFilter));
       if (proCountEl) {
-        proCountEl.textContent = `(${filteredProjs.length} จาก ${state.projects.length} โครงการ)`;
+        proCountEl.textContent = `(${filteredProjs.length} จาก ${allProjs.length} โครงการ)`;
       }
 
+      const emptyMsg = !state.loaded ? 'กำลังโหลดข้อมูล...' : 'ยังไม่มีข้อมูลโครงการ';
       proEl.innerHTML = filteredProjs.map(x =>
         `<div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 text-slate-800 border border-slate-100 hover:bg-slate-100/60 transition">
           <div>
             <div class="font-medium text-sm">${sanitize(x.name)}</div>
             <small class="text-xs text-slate-400">${sanitize(x.department || '')}</small>
           </div>
-          <button onclick="MasterData.deleteItem('project','${sanitize(x.id)}')" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+          <button type="button" data-id="${sanitize(x.id)}" data-name="${sanitize(x.name)}" onclick="deleteMaster('project', this.dataset.id, this.dataset.name)" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
         </div>`
-      ).join('') || '<p class="text-slate-400 text-sm p-4 text-center">ไม่พบโครงการในสังกัดนี้</p>';
+      ).join('') || `<p class="text-slate-400 text-sm p-4 text-center">${emptyMsg}</p>`;
     }
 
     if (mecEl) {
-      mecEl.innerHTML = (state.mechanics || []).map(x =>
+      const allMechs = state.mechanics || [];
+      if (mecCountEl) {
+        mecCountEl.textContent = `(${allMechs.length} คน)`;
+      }
+      const emptyMsg = !state.loaded ? 'กำลังโหลดข้อมูล...' : 'ยังไม่มีข้อมูล';
+      mecEl.innerHTML = allMechs.map(x =>
         `<div class="p-2.5 rounded-xl bg-slate-50 text-slate-800 border border-slate-100 hover:bg-slate-100/60 transition">
           <div class="flex justify-between items-start">
             <b class="text-sm text-slate-800">${sanitize(x.name)}</b>
-            <button onclick="MasterData.deleteItem('mechanic','${sanitize(x.id)}')" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+            <button type="button" data-id="${sanitize(x.id)}" data-name="${sanitize(x.name)}" onclick="deleteMaster('mechanic', this.dataset.id, this.dataset.name)" class="text-rose-500 hover:text-rose-700 p-1" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
           </div>
           <div class="text-xs text-slate-500 mt-1 flex flex-wrap gap-2">
             <span><i class="fa-solid fa-phone text-slate-400 mr-1"></i>${sanitize(x.phone || '-')}</span>
             <span><i class="fa-solid fa-wrench text-slate-400 mr-1"></i>${sanitize(x.skills || '-')}</span>
           </div>
         </div>`
-      ).join('') || '<p class="text-slate-400 text-sm p-4 text-center">ยังไม่มีข้อมูล</p>';
+      ).join('') || `<p class="text-slate-400 text-sm p-4 text-center">${emptyMsg}</p>`;
     }
 
     const overdueInput = document.getElementById('md-overdue-days');
@@ -724,6 +808,7 @@ const MasterData = (() => {
     load,
     addItem,
     deleteItem,
+    clearCategory,
     saveSettings,
     seedInitialData,
     initFormDropdowns,
@@ -733,6 +818,8 @@ const MasterData = (() => {
     updateProjectSelect,
     filterLocations,
     filterProjects,
+    matchesDeptFilter,
+    getActiveFilters: () => ({ location: activeLocFilter, project: activeProjFilter }),
     getValue,
     getState: () => state,
     DEFAULT_DATA
@@ -814,17 +901,17 @@ window.addMaster = async function (type) {
     if (skillEl) skillEl.value = '';
   }
 
-  await MasterData.addItem(type, item);
-  if (typeof alertBox === 'function') {
+  const ok = await MasterData.addItem(type, item);
+  if (ok && typeof alertBox === 'function') {
     alertBox('success', 'เพิ่มข้อมูลสำเร็จ', '', { timer: 1200, showConfirmButton: false });
   }
 };
 
-window.deleteMaster = async function (type, id) {
+window.deleteMaster = async function (type, id, label = '') {
   if (typeof Swal !== 'undefined') {
     const confirm = await Swal.fire({
-      title: 'ยืนยันการลบ?',
-      text: 'ข้อมูลที่ลบจะไม่สามารถกู้คืนได้',
+      title: 'ยืนยันการลบข้อมูล?',
+      text: label ? `ต้องการลบ "${label}" ออกจากระบบใช่หรือไม่ (ไม่สามารถกู้คืนได้)` : 'ข้อมูลที่ลบจะไม่สามารถกู้คืนได้',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
@@ -832,16 +919,76 @@ window.deleteMaster = async function (type, id) {
       confirmButtonText: 'ใช่, ลบเลย',
       cancelButtonText: 'ยกเลิก'
     });
-    if (!confirm.isConfirmed) return;
+    if (!confirm.isConfirmed) return false;
   }
-  await MasterData.deleteItem(type, id);
+  const ok = await MasterData.deleteItem(type, id);
+  if (ok && typeof alertBox === 'function') {
+    alertBox('success', 'ลบข้อมูลสำเร็จ', '', { timer: 1000, showConfirmButton: false });
+  }
+  return ok;
+};
+
+window.clearMaster = async function (type) {
+  const mdState = MasterData.getState();
+  const filters = MasterData.getActiveFilters();
+  const labels = {
+    location: 'สถานที่ / ห้อง',
+    department: 'แผนก / ฝ่าย',
+    project: 'โครงการ',
+    mechanic: 'ช่าง / ผู้รับผิดชอบ'
+  };
+  const keyMap = {
+    location: 'locations',
+    department: 'departments',
+    project: 'projects',
+    mechanic: 'mechanics'
+  };
+  const key = keyMap[type];
+  if (!key) return false;
+
+  const currentItems = mdState[key] || [];
+  const activeFilter = (type === 'location') ? filters.location
+                     : (type === 'project') ? filters.project
+                     : 'ทั้งหมด';
+  const targetItems = (activeFilter && activeFilter !== 'ทั้งหมด')
+    ? currentItems.filter(x => MasterData.matchesDeptFilter(x.department, activeFilter))
+    : currentItems;
+
+  if (!targetItems.length) {
+    if (typeof alertBox === 'function') alertBox('info', 'ไม่มีข้อมูลให้ล้าง', `ไม่มีรายการในหมวด${labels[type] || ''}`);
+    return false;
+  }
+
+  const scopeText = (activeFilter && activeFilter !== 'ทั้งหมด')
+    ? `สังกัด "${activeFilter}" (${targetItems.length} รายการ)`
+    : `ทั้งหมด (${targetItems.length} รายการ)`;
+
+  if (typeof Swal !== 'undefined') {
+    const confirm = await Swal.fire({
+      title: `ล้างข้อมูล${labels[type] || ''}?`,
+      html: `ระบบจะลบรายการ${scopeText} ออกจากฐานข้อมูลถาวร<br><span class="text-xs text-slate-500">หากต้องการนำค่ามาตรฐานกลับมา สามารถกดปุ่ม "ข้อมูลเริ่มต้นมาตรฐาน" ด้านบนได้</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'ยืนยันล้างข้อมูล',
+      cancelButtonText: 'ยกเลิก'
+    });
+    if (!confirm.isConfirmed) return false;
+  }
+
+  const ok = await MasterData.clearCategory(type, activeFilter);
+  if (ok && typeof alertBox === 'function') {
+    alertBox('success', 'ล้างข้อมูลเรียบร้อย', `ลบ ${targetItems.length} รายการแล้ว`, { timer: 1400, showConfirmButton: false });
+  }
+  return ok;
 };
 
 window.saveOverdueSettings = async function () {
   const daysEl = document.getElementById('md-overdue-days');
   const days = daysEl ? Number(daysEl.value) || 3 : 3;
-  await MasterData.saveSettings({ overdueDays: days });
-  if (typeof alertBox === 'function') {
+  const ok = await MasterData.saveSettings({ overdueDays: days });
+  if (ok && typeof alertBox === 'function') {
     alertBox('success', 'บันทึกสำเร็จ', 'อัปเดตการตั้งค่าแจ้งเตือนแล้ว');
   }
 };

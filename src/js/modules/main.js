@@ -2321,29 +2321,7 @@ async function updateBugStatus(index, oldStatus) {
     .catch(() => alertBox('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถอัปเดตข้อมูลได้'));
 }
 
-async function loadMasterData(force = true) {
-  if (window.MasterData && typeof window.MasterData.load === 'function') {
-    return window.MasterData.load(force);
-  }
-}
-
-function renderMasterData() {
-  if (window.MasterData && typeof window.MasterData.load === 'function') {
-    window.MasterData.load(false);
-  }
-}
-
-async function addMaster(type) {
-  if (window.MasterData && typeof window.addMaster === 'function') {
-    return window.addMaster(type);
-  }
-}
-
-async function deleteMaster(type, id) {
-  if (window.MasterData && typeof window.deleteMaster === 'function') {
-    return window.deleteMaster(type, id);
-  }
-}
+// Master Data global handlers (loadMasterData, addMaster, deleteMaster, clearMaster) are provided by master-data.js
 
 function filterTable(tbodyId, searchText) {
   const tbody = document.getElementById(tbodyId);
