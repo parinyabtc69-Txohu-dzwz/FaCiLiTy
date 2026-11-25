@@ -8405,6 +8405,25 @@ const TrackUI = (() => {
     return { group: 'pending', step: 0 };
   }
 
+  function isFinishedForNotif(job) {
+    if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.isFinishedTicketStatus === 'function') {
+      return NotificationHub.isFinishedTicketStatus(job);
+    }
+    if (!job) return false;
+    return job.isArchived === true || job.group === 'done' || job.group === 'cancel';
+  }
+
+  function publishCompletionNotifAndCleanOld(jobId, payload) {
+    if (typeof NotificationHub === 'undefined' || typeof NotificationHub.publish !== 'function') return;
+    NotificationHub.publish({ notifKind: 'completed', ...payload })
+      .then(notifId => {
+        if (typeof NotificationHub.clearByTicketId === 'function') {
+          return NotificationHub.clearByTicketId(jobId, { includeCompletion: false, excludeId: notifId || '' });
+        }
+      })
+      .catch(() => { });
+  }
+
   // แปลงวันที่จาก Sheet ("dd/MM/yyyy HH:mm[:ss]" หรือ ISO) เป็น Date
   function parseDate(v) {
     const s = str(v);
@@ -8594,6 +8613,9 @@ const TrackUI = (() => {
         });
       }
       job.isArchived = newArchived;
+      if (newArchived && typeof NotificationHub !== 'undefined' && typeof NotificationHub.clearByTicketId === 'function') {
+        NotificationHub.clearByTicketId(job.id, { includeCompletion: true }).catch(() => { });
+      }
       render();
       Swal.fire({
         toast: true,
@@ -8678,6 +8700,9 @@ const TrackUI = (() => {
         if (window.firestoreDb) {
           const targetDocId = job.docId || job.id;
           await window.firestoreDb.collection('tickets').doc(targetDocId).delete();
+          if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.clearByTicketId === 'function') {
+            NotificationHub.clearByTicketId(job.id, { includeCompletion: true }).catch(() => { });
+          }
           // ล้างห้องแชทของงานนี้ด้วย เพื่อไม่ให้ข้อความตกค้างไปโผล่ในงานใหม่ที่ใช้รหัสซ้ำ
           try {
             const chatSnap = await window.firestoreDb.collection('chats').doc(job.chatId || targetDocId).collection('messages').get();
@@ -8995,7 +9020,7 @@ const TrackUI = (() => {
           // ถ้าเปิดหน้ารายละเอียดค้างไว้ ให้ดึงข้อมูลมาอัปเดตแบบเนียนๆ
           const detailPage = $('page-track-detail');
           if (detailPage && detailPage.classList.contains('active') && state.currentJobId) {
-            open(state.currentJobId);
+            open(state.currentJobId, true);
           }
 
           // ตรวจจับและปรับรหัสคิวงานเก่าให้เป็นรหัสสั้นใหม่อัตโนมัติ (BLD-01)
@@ -9615,7 +9640,7 @@ const TrackUI = (() => {
 
   let currentDocUnsubscribe = null;
 
-  async function open(rawId) {
+  async function open(rawId, isBackgroundRefresh = false) {
     const id = String(rawId || '').replace(/^#/, '').trim();
     if (!id) return;
     state.currentJobId = id;
@@ -9664,6 +9689,11 @@ const TrackUI = (() => {
 
     if (!job) return alertBox('warning', 'ไม่พบงาน', 'อาจถูกลบหรือย้ายไปแล้ว กรุณารีเฟรชรายการ');
     renderDetailBody(job);
+
+    // หากงานเสร็จสิ้นแล้วและผู้ใช้กดเปิดดูรายละเอียด ให้เอาแจ้งเตือนของงานนี้ออกจากกระดิ่ง
+    if (!isBackgroundRefresh && isFinishedForNotif(job) && typeof NotificationHub !== 'undefined' && typeof NotificationHub.markTicketAsViewed === 'function') {
+      NotificationHub.markTicketAsViewed(job.id);
+    }
 
     // สมัคร Real-time listener ประจำตัว Ticket นี้ ให้หน้าจอเปลี่ยนสถานะสดทันทีถ้ามีการอัปเดตจากเครื่องอื่น
     if (currentDocUnsubscribe) {
@@ -9976,9 +10006,19 @@ const TrackUI = (() => {
       showConfirmButton: false
     });
 
-    // 🚀 4. เบื้องหลัง: ย่อขนาดรูปภาพ + อัปโหลด Google Drive + ซิงค์ Sheets (Background Task ไม่บล็อกจอ)
+    // 🚀 4. เบื้องหลัง: ยิงแจ้งเตือนปิดงาน + ล้างแจ้งเตือนระหว่างทาง และอัปโหลด/ซิงค์ Google Drive & Sheets
     (async () => {
       try {
+        publishCompletionNotifAndCleanOld(jobId, {
+          ticketId: jobId,
+          taskType: job.type || 'building',
+          category: job.category || 'งานซ่อม',
+          title: '✅ งานซ่อมเสร็จสิ้นแล้ว #' + jobId,
+          body: (job.subject || job.title || 'งานซ่อม') + ' ดำเนินการซ่อมเสร็จสิ้น โดย ' + (x.value.techName || 'ช่าง'),
+          reporterName: x.value.techName,
+          targetUserEmail: job.reporterEmail || ''
+        });
+
         let file = null;
         if (x.value.file && typeof readFile === 'function') {
           file = await readFile(x.value.file, 1280, 0.75);
@@ -10011,19 +10051,6 @@ const TrackUI = (() => {
               proofUrl: res.proofUrl,
               receiptUrl: (res.receiptUrl && res.receiptUrl !== '-') ? res.receiptUrl : ''
             }).catch(e => console.warn('Update proofUrl to Firestore error:', e));
-          }
-
-          // ยิง Real-time In-App Notification แจ้งเตือนผู้แจ้งว่างานซ่อมเสร็จเรียบร้อยแล้ว
-          if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
-            NotificationHub.publish({
-              ticketId: jobId,
-              taskType: job.type || 'building',
-              category: job.category || 'งานซ่อม',
-              title: '✅ งานซ่อมเสร็จสิ้นแล้ว #' + jobId,
-              body: (job.subject || job.title || 'งานซ่อม') + ' ดำเนินการซ่อมเสร็จสิ้น โดย ' + (x.value.techName || 'ช่าง'),
-              reporterName: x.value.techName,
-              targetUserEmail: job.reporterEmail || ''
-            });
           }
         }
       } catch (bgErr) {
@@ -10462,17 +10489,15 @@ const TrackUI = (() => {
       );
     }
 
-    if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
-      NotificationHub.publish({
-        ticketId: jobId,
-        taskType: 'project',
-        category: 'โครงการ',
-        title: '✅ โครงการได้รับการอนุมัติแล้ว #' + jobId,
-        body: (job.subject || 'โครงการ') + ' — อนุมัติโดย ' + approverName,
-        reporterName: job.reporter || job.reporterName || '',
-        targetUserEmail: job.reporterEmail || ''
-      }).catch(() => { });
-    }
+    publishCompletionNotifAndCleanOld(jobId, {
+      ticketId: jobId,
+      taskType: 'project',
+      category: 'โครงการ',
+      title: '✅ โครงการได้รับการอนุมัติแล้ว #' + jobId,
+      body: (job.subject || 'โครงการ') + ' — อนุมัติโดย ' + approverName,
+      reporterName: job.reporter || job.reporterName || '',
+      targetUserEmail: job.reporterEmail || ''
+    });
 
     approveTasks.push(
       ResourceHubCore.api.post({
@@ -10564,17 +10589,15 @@ const TrackUI = (() => {
       );
     }
 
-    if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
-      NotificationHub.publish({
-        ticketId: jobId,
-        taskType: 'project',
-        category: 'โครงการ',
-        title: '⚠️ แจ้งผลการพิจารณาโครงการ #' + jobId,
-        body: (job.subject || 'โครงการ') + ' — ' + formValues.note,
-        reporterName: job.reporter || job.reporterName || '',
-        targetUserEmail: job.reporterEmail || ''
-      }).catch(() => { });
-    }
+    publishCompletionNotifAndCleanOld(jobId, {
+      ticketId: jobId,
+      taskType: 'project',
+      category: 'โครงการ',
+      title: '⚠️ แจ้งผลการพิจารณาโครงการ #' + jobId,
+      body: (job.subject || 'โครงการ') + ' — ' + formValues.note,
+      reporterName: job.reporter || job.reporterName || '',
+      targetUserEmail: job.reporterEmail || ''
+    });
 
     rejectTasks.push(
       ResourceHubCore.api.post({
@@ -11598,6 +11621,14 @@ const NotificationHub = (function () {
   let notifications = [];
   let pendingTickets = [];
   let startedOrClosedTicketIds = new Set();
+  let closedTicketIds = new Set();
+  let archivedTicketIds = new Set();
+  let allTicketIds = new Set();
+  let hasTicketsLoaded = false;
+  let pendingCatchupDocs = [];
+  const viewedTicketTimestamps = new Map();
+  const prunedDocIds = new Set();
+  let pruneRunning = false;
   let currentTab = 'all'; // 'all' | 'unread' | 'my'
   let isListenerActive = false;
   let audioContextInstance = null;
@@ -11614,6 +11645,15 @@ const NotificationHub = (function () {
   let currentFcmToken = null;
 
   // ── 1. ระบบจำสถานะการอ่านและรายการที่ถูกลบ (Read / Deleted) ────────────────
+  function getCurrentUserEmail() {
+    return (
+      (typeof currentEmail !== 'undefined' && currentEmail) ||
+      window.currentEmail ||
+      localStorage.getItem('logged_email') ||
+      ''
+    ).toLowerCase().trim();
+  }
+
   function getReadIds() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_READ_KEY) || '[]');
@@ -11633,6 +11673,39 @@ const NotificationHub = (function () {
         localStorage.setItem(STORAGE_READ_KEY, JSON.stringify(ids));
       } catch (e) { }
     }
+  }
+
+  function markReadInFirestore(ids) {
+    const email = getCurrentUserEmail();
+    if (!email || !Array.isArray(ids) || ids.length === 0) return;
+
+    const cleanIds = ids.filter(id => id && !String(id).startsWith('pending_') && !String(id).startsWith('local_') && !String(id).startsWith('fcm_'));
+    if (cleanIds.length === 0) return;
+
+    // อัปเดตในหน่วยความจำทันที
+    const idSet = new Set(cleanIds);
+    notifications.forEach(n => {
+      if (idSet.has(n.id)) {
+        if (!Array.isArray(n.readBy)) n.readBy = [];
+        if (!n.readBy.some(e => String(e || '').toLowerCase().trim() === email)) {
+          n.readBy.push(email);
+        }
+      }
+    });
+
+    if (!window.firestoreDb || typeof firebase === 'undefined' || !firebase.firestore || !firebase.firestore.FieldValue) return;
+    try {
+      const val = firebase.firestore.FieldValue.arrayUnion(email);
+      Promise.all(
+        cleanIds.map(id => {
+          try {
+            return Promise.resolve(window.firestoreDb.collection('notifications').doc(id).update({ readBy: val })).catch(() => { });
+          } catch (_) {
+            return Promise.resolve();
+          }
+        })
+      ).catch(() => { });
+    } catch (_) { }
   }
 
   function getDeletedIds() {
@@ -11882,15 +11955,86 @@ const NotificationHub = (function () {
     }, 320);
   }
 
-  // ── 5.5 แปลงและรวมรายการงานค้าง (เฉพาะ รอรับเรื่อง / รอมอบหมาย ที่ยังไม่ได้ระบุช่าง ตรงกับหน้าติดตามงาน 100%) ───
+  // ── 5.5 แปลงและรวมรายการงานค้าง / คัดกรองงานที่เสร็จสิ้นแล้ว ────────────────────────
+  function normalizeTicketId(id) {
+    return String(id || '').replace(/^#/, '').trim();
+  }
+
+  function isTestTicketId(ticketId) {
+    const tid = normalizeTicketId(ticketId);
+    return Boolean(tid && (tid.startsWith('FAC-TEST-') || tid.startsWith('TEST-')));
+  }
+
+  function isFinishedTicketStatus(t) {
+    if (!t) return false;
+    if (t.isArchived === true || t.archived === true) return true;
+    const s = String(t.status || '').trim();
+    const type = String(t.type || '').toLowerCase().trim();
+    const tid = normalizeTicketId(t.ticketId || t.id);
+    const isProject = type === 'project' || tid.startsWith('PRJ-') || tid.startsWith('PROJ-');
+
+    if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return true;
+    if (/เสร็จ|เรียบร้อย|ปิดงาน|คืนเรียบร้อย|คืนอุปกรณ์/.test(s)) return true;
+    if (isProject && /อนุมัติ/.test(s) && !/^รอ/.test(s)) return true;
+    return false;
+  }
+
+  function isChatNotification(n) {
+    if (!n) return false;
+    const type = String(n.taskType || '').toLowerCase();
+    const cat = String(n.category || '').toLowerCase();
+    const title = String(n.title || '');
+    return type === 'chat' || cat.includes('แชท') || title.includes('ข้อความใหม่ในงาน');
+  }
+
+  function isNewTicketNotification(n) {
+    if (!n) return false;
+    if (n.notifKind === 'new') return true;
+    const title = String(n.title || '');
+    return title.includes('งานแจ้งซ่อมใหม่') ||
+      title.includes('แจ้งซ่อมไอทีใหม่') ||
+      title.includes('งานโสตทัศนูปกรณ์ใหม่') ||
+      title.includes('เสนอโครงการใหม่');
+  }
+
+  function isCompletionNotification(n) {
+    if (!n || isChatNotification(n)) return false;
+    if (n.notifKind === 'completed') return true;
+    const title = String(n.title || '');
+    return title.includes('งานซ่อมเสร็จสิ้นแล้ว') ||
+      title.includes('โครงการได้รับการอนุมัติแล้ว') ||
+      title.includes('แจ้งผลการพิจารณาโครงการ') ||
+      title.includes('เสร็จสิ้น') ||
+      title.includes('ปิดงาน');
+  }
+
+  function isNotificationRead(n, readIds = getReadIds()) {
+    if (!n || n.isPendingTask) return false;
+    if (readIds.includes(n.id)) return true;
+
+    const myEmail = getCurrentUserEmail();
+    if (myEmail && Array.isArray(n.readBy)) {
+      if (n.readBy.some(e => String(e || '').toLowerCase().trim() === myEmail)) {
+        return true;
+      }
+    }
+
+    const tid = normalizeTicketId(n.ticketId);
+    if (tid && viewedTicketTimestamps.has(tid)) {
+      const viewedAt = viewedTicketTimestamps.get(tid) || 0;
+      const itemMs = getItemTimestampMs(n);
+      if (!itemMs || itemMs <= viewedAt) return true;
+    }
+
+    return false;
+  }
+
   function isPendingTicketStatus(t) {
-    if (!t || t.isArchived === true || t.archived === true) return false;
+    if (!t || isFinishedTicketStatus(t)) return false;
     const s = String(t.status || 'รอดำเนินการ').trim();
     const tech = String(t.techName || t.tech || t.technician || '').trim();
     const hasTech = Boolean(tech && tech !== '-');
 
-    if (/ยกเลิก|ไม่อนุมัติ|ปฏิเสธ/.test(s)) return false;
-    if (/เสร็จ|เรียบร้อยแล้ว|ปิดงาน|คืนเรียบร้อย/.test(s)) return false;
     if (/กำลัง|รอตรวจรับ|แก้ไข/.test(s)) return false;
     if (/มอบหมาย|อนุมัติ|รับเรื่องแล้ว|รับงาน|ใช้งานอยู่/.test(s) && !/^รอ/.test(s)) return false;
     // หากมอบหมายช่างแล้ว (มี techName) ในระบบติดตามงานจะจัดอยู่ในหมวด "กำลังดำเนินการ" จึงไม่นับเป็นงานรอมอบหมาย
@@ -11956,27 +12100,52 @@ const NotificationHub = (function () {
     };
   }
 
-  function getCombinedItems() {
+  function shouldHideNotification(n, readIds, pendingTicketIds) {
+    if (!n) return true;
     const deletedIds = getDeletedIds();
+    if (deletedIds.includes(n.id)) return true;
+    if (n.title === 'Test Auth Write') return true;
+    if (!isTargetRecipient(n)) return true;
+
+    const tid = normalizeTicketId(n.ticketId);
+    const isChat = isChatNotification(n);
+    const isTest = n.isTest === true || isTestTicketId(tid);
+
+    if (tid && pendingTicketIds.has(tid) && !isChat) {
+      return true; // แสดงผ่านรายการงานค้างที่มีสถานะสดแล้ว ไม่ให้ซ้ำซ้อน
+    }
+    if (tid && startedOrClosedTicketIds.has(tid) && !isChat && isNewTicketNotification(n)) {
+      return true; // หากงานนั้นเริ่มทำแล้วหรือเสร็จสิ้นแล้ว ไม่ต้องค้างแจ้งเตือนงานใหม่เดิม
+    }
+
+    if (tid && !isTest && hasTicketsLoaded) {
+      // งานถูกลบออกจากระบบหรือถูกจัดเก็บเข้าคลังแล้ว -> นำออกจากการแจ้งเตือนทันที
+      if (!allTicketIds.has(tid) || archivedTicketIds.has(tid)) {
+        return true;
+      }
+      // งานเสร็จสิ้นแล้ว: ลบแจ้งเตือนระหว่างทางทันที ส่วนแจ้งเตือนผล "เสร็จสิ้น/อนุมัติ" ซ่อนเมื่อกดเข้าไปดูแล้ว/อ่านแล้ว
+      if (closedTicketIds.has(tid)) {
+        if (!isCompletionNotification(n)) {
+          return true;
+        }
+        if (isNotificationRead(n, readIds)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  function getCombinedItems() {
+    const readIds = getReadIds();
 
     // 1. งานค้างทั้งหมดที่ยังไม่ได้ดำเนินการ/ยังไม่เสร็จสิ้น (ค้างไว้เสมอตามสิทธิ์บทบาท)
     const activePending = pendingTickets.filter(p => isTargetRecipient(p));
-    const pendingTicketIds = new Set(activePending.map(p => p.ticketId));
+    const pendingTicketIds = new Set(activePending.map(p => normalizeTicketId(p.ticketId)));
 
-    // 2. รายการแจ้งเตือนอื่นๆ จากคอลเลกชัน notifications (ที่ไม่ซ้ำกับงานค้าง และซ่อนแจ้งเตือนสร้างงานเดิมเมื่อเริ่มซ่อม/เสร็จแล้ว)
-    const extraNotifs = notifications.filter(n => {
-      if (deletedIds.includes(n.id)) return false;
-      if (n.title === 'Test Auth Write') return false;
-      if (!isTargetRecipient(n)) return false;
-      const isChat = (n.taskType === 'chat' || n.category === 'แชทงาน');
-      if (n.ticketId && pendingTicketIds.has(n.ticketId) && !isChat) {
-        return false; // แสดงผ่านรายการงานค้างที่มีสถานะสดแล้ว ไม่ให้ซ้ำซ้อน
-      }
-      if (n.ticketId && startedOrClosedTicketIds.has(n.ticketId) && !isChat && String(n.title || '').includes('งานแจ้งซ่อมใหม่')) {
-        return false; // หากงานนั้นเริ่มซ่อม (กำลังดำเนินการ) หรือเสร็จสิ้นแล้ว ไม่ต้องค้างแจ้งเตือนงานใหม่เดิม
-      }
-      return true;
-    });
+    // 2. รายการแจ้งเตือนอื่นๆ จากคอลเลกชัน notifications
+    const extraNotifs = notifications.filter(n => !shouldHideNotification(n, readIds, pendingTicketIds));
 
     const combined = [...activePending, ...extraNotifs];
 
@@ -12001,7 +12170,7 @@ const NotificationHub = (function () {
     const readIds = getReadIds();
     const allItems = getCombinedItems();
     const pendingCount = allItems.filter(n => n.isPendingTask).length;
-    const unreadExtraCount = allItems.filter(n => !n.isPendingTask && !readIds.includes(n.id)).length;
+    const unreadExtraCount = allItems.filter(n => !n.isPendingTask && !isNotificationRead(n, readIds)).length;
     const totalAlertCount = pendingCount + unreadExtraCount;
 
     const globalBadge = document.getElementById('global-overdue-badge');
@@ -12039,7 +12208,7 @@ const NotificationHub = (function () {
     let filtered = activeNotifications;
     if (currentTab === 'unread') {
       // แท็บยังไม่อ่าน/งานค้าง: แสดงงานค้างทั้งหมดที่ยังทำไม่เสร็จ + แจ้งเตือนที่ยังไม่อ่าน
-      filtered = activeNotifications.filter(n => n.isPendingTask || !readIds.includes(n.id));
+      filtered = activeNotifications.filter(n => n.isPendingTask || !isNotificationRead(n, readIds));
     } else if (currentTab === 'my') {
       filtered = activeNotifications.filter(n => {
         const rName = (n.reporterName || '').toLowerCase();
@@ -12062,7 +12231,7 @@ const NotificationHub = (function () {
 
     let html = '';
     filtered.forEach(item => {
-      const isRead = !item.isPendingTask && readIds.includes(item.id);
+      const isRead = !item.isPendingTask && isNotificationRead(item, readIds);
       const visuals = getCategoryVisuals(item.category, item.taskType);
       const timeStr = formatRelativeTime(item.createdAt);
 
@@ -12140,9 +12309,133 @@ const NotificationHub = (function () {
 
   // ── 9. ทำเครื่องหมายว่าอ่านแล้วทั้งหมด (Mark all as read) ──────────────────
   function markAllAsRead() {
-    notifications.forEach(n => saveReadId(n.id));
+    const visibleNonPending = getCombinedItems().filter(n => !n.isPendingTask);
+    const idsToMark = Array.from(new Set([
+      ...notifications.map(n => n.id),
+      ...visibleNonPending.map(n => n.id)
+    ].filter(Boolean)));
+    idsToMark.forEach(id => saveReadId(id));
+    markReadInFirestore(idsToMark);
     updateBadge();
     renderList();
+  }
+
+  // ── 9.5 ลบเอกสารในคอลเลกชัน notifications เป็นชุด และเคลียร์แจ้งเตือนตามรหัสงาน ──
+  async function deleteNotificationDocs(docIds) {
+    if (!window.firestoreDb || !Array.isArray(docIds) || docIds.length === 0) return;
+    try {
+      const uniqueIds = Array.from(new Set(docIds.filter(Boolean)));
+      for (let i = 0; i < uniqueIds.length; i += 400) {
+        const batch = window.firestoreDb.batch();
+        uniqueIds.slice(i, i + 400).forEach(id => {
+          batch.delete(window.firestoreDb.collection('notifications').doc(id));
+        });
+        await batch.commit();
+      }
+    } catch (err) {
+      console.warn('[NotificationHub] Batch delete error:', err);
+    }
+  }
+
+  function markTicketAsViewed(rawTicketId) {
+    const cleanId = normalizeTicketId(rawTicketId);
+    if (!cleanId) return;
+    viewedTicketTimestamps.set(cleanId, Date.now());
+
+    const matchingIds = notifications
+      .filter(n => normalizeTicketId(n.ticketId) === cleanId)
+      .map(n => n.id);
+
+    if (matchingIds.length > 0) {
+      matchingIds.forEach(id => saveReadId(id));
+      markReadInFirestore(matchingIds);
+    }
+    updateBadge();
+    renderList();
+  }
+
+  async function clearByTicketId(rawTicketId, options = {}) {
+    const cleanId = normalizeTicketId(rawTicketId);
+    if (!cleanId) return;
+    const excludeId = options.excludeId || '';
+    const includeCompletion = options.includeCompletion !== false;
+
+    const matchingLocal = notifications.filter(n => {
+      if (!n || n.id === excludeId) return false;
+      if (normalizeTicketId(n.ticketId) !== cleanId) return false;
+      if (!includeCompletion && isCompletionNotification(n)) return false;
+      return true;
+    });
+
+    if (matchingLocal.length > 0) {
+      const removeSet = new Set(matchingLocal.map(n => n.id));
+      matchingLocal.forEach(n => saveDeletedId(n.id));
+      notifications = notifications.filter(n => !removeSet.has(n.id));
+      updateBadge();
+      renderList();
+    }
+
+    if (!window.firestoreDb) return;
+    try {
+      const docsToDelete = new Set(matchingLocal.map(n => n.id));
+      const snap = await window.firestoreDb.collection('notifications')
+        .where('ticketId', '==', cleanId)
+        .get();
+      snap.forEach(doc => {
+        if (doc.id === excludeId) return;
+        const data = { id: doc.id, ...(doc.data() || {}) };
+        if (!includeCompletion && isCompletionNotification(data)) return;
+        docsToDelete.add(doc.id);
+      });
+      await deleteNotificationDocs(Array.from(docsToDelete));
+    } catch (err) {
+      console.warn('[NotificationHub] clearByTicketId Firestore cleanup note:', err);
+    }
+  }
+
+  async function pruneStaleFinishedNotifs() {
+    if (pruneRunning || !hasTicketsLoaded || !window.firestoreDb) return;
+    const MAX_COMPLETION_AGE_MS = 14 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const candidates = [];
+
+    notifications.forEach(n => {
+      if (!n || !n.id || prunedDocIds.has(n.id)) return;
+      const tid = normalizeTicketId(n.ticketId);
+      if (!tid || n.isTest === true || isTestTicketId(tid)) return;
+
+      const isDeletedTicket = !allTicketIds.has(tid);
+      const isArchivedTicket = archivedTicketIds.has(tid);
+      const isClosedTicket = closedTicketIds.has(tid);
+
+      let shouldPrune = false;
+      if (isDeletedTicket || isArchivedTicket) {
+        shouldPrune = true;
+      } else if (isClosedTicket) {
+        if (!isCompletionNotification(n)) {
+          shouldPrune = true;
+        } else {
+          const itemMs = getItemTimestampMs(n);
+          if (itemMs && (now - itemMs > MAX_COMPLETION_AGE_MS)) {
+            shouldPrune = true;
+          }
+        }
+      }
+
+      if (shouldPrune) {
+        candidates.push(n.id);
+      }
+    });
+
+    if (candidates.length === 0) return;
+    pruneRunning = true;
+    candidates.forEach(id => prunedDocIds.add(id));
+    try {
+      await deleteNotificationDocs(candidates);
+      console.log(`[NotificationHub] 🧹 Pruned ${candidates.length} stale notification(s) for finished/deleted tickets`);
+    } finally {
+      pruneRunning = false;
+    }
   }
 
   // ── 10. ลบการแจ้งเตือนรายข้อ (Delete Single Notification) ───────────────────
@@ -12163,8 +12456,7 @@ const NotificationHub = (function () {
 
   // ── 11. ลบการแจ้งเตือนทั้งหมด (Clear All Notifications - คงงานค้างที่ยังไม่เสร็จไว้เสมอ) ────
   async function clearAll() {
-    const deletedIds = getDeletedIds();
-    const activeItems = notifications.filter(n => !deletedIds.includes(n.id));
+    const activeItems = getCombinedItems().filter(n => !n.isPendingTask);
     const activePendingCount = pendingTickets.filter(p => isTargetRecipient(p)).length;
 
     if (activeItems.length === 0) {
@@ -12201,24 +12493,13 @@ const NotificationHub = (function () {
 
     if (!confirm) return;
 
-    const idsToDelete = activeItems.map(n => n.id);
+    const idsToDelete = activeItems.map(n => n.id).filter(Boolean);
+    const deleteSet = new Set(idsToDelete);
     idsToDelete.forEach(id => saveDeletedId(id));
 
-    // ลบออกจาก Firestore
-    if (window.firestoreDb) {
-      try {
-        const batch = window.firestoreDb.batch();
-        idsToDelete.forEach(id => {
-          const docRef = window.firestoreDb.collection('notifications').doc(id);
-          batch.delete(docRef);
-        });
-        await batch.commit();
-      } catch (err) {
-        console.warn('[NotificationHub] Batch delete error:', err);
-      }
-    }
+    await deleteNotificationDocs(idsToDelete);
 
-    notifications = [];
+    notifications = notifications.filter(n => !deleteSet.has(n.id));
     updateBadge();
     renderList();
 
@@ -12235,11 +12516,18 @@ const NotificationHub = (function () {
     }
   }
 
-  // ── 12. เปิดดูงานและทำเครื่องหมายว่าอ่านแล้ว (งานค้างจะยังคงอยู่ในกระดิ่งจนกว่าจะเสร็จสิ้น) ──
+  // ── 12. เปิดดูงานและทำเครื่องหมายว่าอ่านแล้ว (งานที่เสร็จสิ้นแล้วเมื่อกดเข้าไปดูจะหายออกจากกระดิ่ง) ──
   function openTicketAndDismiss(ticketId, toastId, notifId) {
     if (toastId) dismissToast(toastId);
+    const cleanId = normalizeTicketId(ticketId);
+
     if (notifId && !String(notifId).startsWith('pending_')) {
       saveReadId(notifId);
+      markReadInFirestore([notifId]);
+    }
+
+    if (cleanId && closedTicketIds.has(cleanId)) {
+      markTicketAsViewed(cleanId);
     }
 
     // ปิด dropdown หากเปิดอยู่
@@ -12251,8 +12539,7 @@ const NotificationHub = (function () {
     updateBadge();
     renderList();
 
-    const cleanId = String(ticketId || '').replace(/^#/, '').trim();
-    if (!cleanId || cleanId.startsWith('FAC-TEST-') || cleanId.startsWith('TEST-')) return;
+    if (!cleanId || isTestTicketId(cleanId)) return;
 
     // เปิดดูรายละเอียดงานในระบบ TrackUI ทันที
     if (window.TrackUI && typeof window.TrackUI.open === 'function') {
@@ -12875,6 +13162,36 @@ const NotificationHub = (function () {
   }
 
   // ── 13. เชื่อมต่อ Firebase Firestore Real-Time Listener ───────────────────
+  function isStaleForAlert(data) {
+    if (!data || !hasTicketsLoaded) return false;
+    const tid = normalizeTicketId(data.ticketId);
+    if (!tid || data.isTest === true || isTestTicketId(tid)) return false;
+    if (!allTicketIds.has(tid) || archivedTicketIds.has(tid)) return true;
+    if (closedTicketIds.has(tid) && !isCompletionNotification(data)) return true;
+    return false;
+  }
+
+  function flushCatchupAlerts() {
+    if (!hasTicketsLoaded || pendingCatchupDocs.length === 0) return;
+    const readIds = getReadIds();
+    const deletedIds = getDeletedIds();
+    const queue = pendingCatchupDocs.splice(0, pendingCatchupDocs.length);
+
+    queue.forEach(data => {
+      if (!data || deletedIds.includes(data.id)) return;
+      if (isNotificationRead(data, readIds)) return;
+      if (isStaleForAlert(data)) return;
+      if (!isTargetRecipient(data)) return;
+
+      console.log('[NotificationHub] 🔔 Catch-up alert triggered upon device wake-up:', data.title);
+      setTimeout(() => {
+        showToast(data);
+        playChime();
+        showWebPush(data);
+      }, 600);
+    });
+  }
+
   function initListener() {
     if (isListenerActive) return;
     if (!window.firestoreDb) {
@@ -12889,7 +13206,7 @@ const NotificationHub = (function () {
 
       window.firestoreDb.collection('notifications')
         .orderBy('createdAt', 'desc')
-        .limit(30)
+        .limit(60)
         .onSnapshot(snapshot => {
           snapshot.docChanges().forEach(change => {
             const docId = change.doc.id;
@@ -12908,8 +13225,8 @@ const NotificationHub = (function () {
                   return;
                 }
 
-                // แจ้งเตือนเมื่อเป็นผู้รับเป้าหมาย (การทดสอบระบบส่งถึงทุกเครื่องเสมอ 100%)
-                if (isTargetRecipient(data)) {
+                // แจ้งเตือนเมื่อเป็นผู้รับเป้าหมาย (ข้ามแจ้งเตือนระหว่างทางของงานที่เสร็จสิ้น/ถูกลบแล้ว)
+                if (!isStaleForAlert(data) && isTargetRecipient(data)) {
                   console.log('[NotificationHub] 🔔 Real-time alert triggered on this device from remote:', data.title, data.ticketId);
                   showToast(data);
                   playChime();
@@ -12918,23 +13235,14 @@ const NotificationHub = (function () {
               } else if (isFirstLoad && !isAlreadyKnown) {
                 // ถ้าเป็นการโหลดครั้งแรก (เช่น โทรศัพท์เพิ่งถูกปลดล็อกหน้าจอ หรือเปิดเข้ามาใหม่)
                 // ตรวจสอบว่ามีรายการสดใหม่ที่เพิ่งส่งเข้ามาไม่เกิน 5 นาที ที่ยังไม่ได้อ่านหรือไม่
-                let itemTime = data.createdAtMs || data.clientTimestamp || 0;
-                if (!itemTime && data.createdAt && data.createdAt.toMillis) itemTime = data.createdAt.toMillis();
-                else if (!itemTime && data.createdAt && data.createdAt.seconds) itemTime = data.createdAt.seconds * 1000;
-                else if (!itemTime && data.createdAt instanceof Date) itemTime = data.createdAt.getTime();
-
+                const itemTime = getItemTimestampMs(data);
                 const isRecent = itemTime && (Date.now() - itemTime < 300000);
                 const deletedIds = getDeletedIds();
-                const isUnread = !getReadIds().includes(docId) && !deletedIds.includes(docId);
+                const isUnread = !isNotificationRead(data) && !deletedIds.includes(docId);
                 const isNotSelf = !data.senderSessionId || data.senderSessionId !== CURRENT_SESSION_ID;
 
                 if (isRecent && isUnread && isNotSelf && isTargetRecipient(data)) {
-                  console.log('[NotificationHub] 🔔 Catch-up alert triggered upon device wake-up:', data.title);
-                  setTimeout(() => {
-                    showToast(data);
-                    playChime();
-                    showWebPush(data);
-                  }, 600);
+                  pendingCatchupDocs.push(data);
                 }
               }
             }
@@ -12950,6 +13258,28 @@ const NotificationHub = (function () {
             })
             .filter(n => !deletedIds.includes(n.id));
 
+          // ซิงก์สถานะอ่านแล้วสำหรับงานเสร็จสิ้นที่ผู้ใช้เปิดดูในเซสชันนี้แบบ cold-start
+          if (viewedTicketTimestamps.size > 0) {
+            const coldViewedIds = [];
+            notifications.forEach(n => {
+              const tid = normalizeTicketId(n.ticketId);
+              if (!tid || !viewedTicketTimestamps.has(tid)) return;
+              const viewedAt = viewedTicketTimestamps.get(tid) || 0;
+              const itemMs = getItemTimestampMs(n);
+              if (!itemMs || itemMs <= viewedAt) {
+                saveReadId(n.id);
+                coldViewedIds.push(n.id);
+              }
+            });
+            if (coldViewedIds.length > 0) {
+              markReadInFirestore(coldViewedIds);
+            }
+          }
+
+          if (hasTicketsLoaded) {
+            flushCatchupAlerts();
+            pruneStaleFinishedNotifs();
+          }
           updateBadge();
           renderList();
           isFirstLoad = false;
@@ -12959,28 +13289,54 @@ const NotificationHub = (function () {
           setTimeout(initListener, 2000);
         });
 
-      // ดักฟังรายการงานทั้งหมดในตาราง tickets แบบ Real-time เพื่อดึงเฉพาะงานที่รอมอบหมาย/รอดำเนินการ มาแสดงที่กระดิ่งเสมอ
+      // ดักฟังรายการงานทั้งหมดในตาราง tickets แบบ Real-time เพื่อแยกรายการงานค้างและงานที่เสร็จสิ้นแล้ว
       let isTicketsFirstLoad = true;
       window.firestoreDb.collection('tickets')
         .onSnapshot(snap => {
           const currentPending = [];
           const currentStartedOrClosed = new Set();
+          const currentClosed = new Set();
+          const currentArchived = new Set();
+          const currentAll = new Set();
 
           snap.docs.forEach(doc => {
             const t = doc.data() || {};
-            const tid = t.ticketId || doc.id;
-            if (isTicketsFirstLoad && tid) {
-              knownDocIds.add('ticket_' + tid);
+            const docId = normalizeTicketId(doc.id);
+            const tid = normalizeTicketId(t.ticketId || doc.id);
+            if (docId) currentAll.add(docId);
+            if (tid) currentAll.add(tid);
+
+            const ticketKey = tid || docId;
+            if (isTicketsFirstLoad && ticketKey) {
+              knownDocIds.add('ticket_' + ticketKey);
             }
-            if (isPendingTicketStatus(t)) {
+
+            if (t.isArchived === true || t.archived === true) {
+              if (docId) { currentArchived.add(docId); currentClosed.add(docId); currentStartedOrClosed.add(docId); }
+              if (tid) { currentArchived.add(tid); currentClosed.add(tid); currentStartedOrClosed.add(tid); }
+              return;
+            }
+
+            if (isFinishedTicketStatus({ ...t, id: doc.id })) {
+              if (docId) { currentClosed.add(docId); currentStartedOrClosed.add(docId); }
+              if (tid) { currentClosed.add(tid); currentStartedOrClosed.add(tid); }
+            } else if (isPendingTicketStatus(t)) {
               currentPending.push(ticketToPendingNotif(doc.id, t));
-            } else if (tid) {
-              currentStartedOrClosed.add(tid);
+            } else {
+              if (docId) currentStartedOrClosed.add(docId);
+              if (tid) currentStartedOrClosed.add(tid);
             }
           });
 
           pendingTickets = currentPending;
           startedOrClosedTicketIds = currentStartedOrClosed;
+          closedTicketIds = currentClosed;
+          archivedTicketIds = currentArchived;
+          allTicketIds = currentAll;
+          hasTicketsLoaded = true;
+
+          flushCatchupAlerts();
+          pruneStaleFinishedNotifs();
           updateBadge();
           renderList();
 
@@ -12992,22 +13348,22 @@ const NotificationHub = (function () {
           snap.docChanges().forEach(change => {
             if (change.type === 'added') {
               const ticket = change.doc.data() || {};
-              const ticketId = ticket.ticketId || change.doc.id;
+              const ticketId = normalizeTicketId(ticket.ticketId || change.doc.id);
               if (!ticketId || knownDocIds.has('ticket_' + ticketId)) return;
               knownDocIds.add('ticket_' + ticketId);
 
-              // ตรวจสอบอายุของ ticket (ต้องสร้างไม่เกิน 3 นาที เพื่อป้องกันงานเก่าเด้งซ้ำ)
-              let ticketTime = 0;
-              if (ticket.createdAt && ticket.createdAt.toMillis) ticketTime = ticket.createdAt.toMillis();
-              else if (ticket.createdAt && ticket.createdAt.seconds) ticketTime = ticket.createdAt.seconds * 1000;
-              else if (ticket.createdAt instanceof Date) ticketTime = ticket.createdAt.getTime();
+              if (isFinishedTicketStatus({ ...ticket, id: change.doc.id })) {
+                return;
+              }
 
+              // ตรวจสอบอายุของ ticket (ต้องสร้างไม่เกิน 3 นาที เพื่อป้องกันงานเก่าเด้งซ้ำ)
+              const ticketTime = getItemTimestampMs(ticket);
               if (ticketTime && (Date.now() - ticketTime > 180000)) {
                 return; // งานเก่า ไม่ต้องแจ้งเตือนซ้ำ
               }
 
               // ตรวจสอบว่ามี notification ในคอลเลกชัน notifications แล้วหรือยัง หากยังไม่มีให้เด้ง Toast
-              const exists = notifications.some(n => n.ticketId === ticketId);
+              const exists = notifications.some(n => normalizeTicketId(n.ticketId) === ticketId);
               if (!exists && ticketId) {
                 const notifObj = {
                   id: 'local_' + ticketId,
@@ -13073,23 +13429,24 @@ const NotificationHub = (function () {
       return false;
     }
     try {
-      const notifId = 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      const notifId = (dataObj && dataObj.id) || ('notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
       // จดจำ ID นี้ไว้ล่วงหน้าทันที เพื่อไม่ให้ snapshot บนเครื่องตัวเองเด้งซ้ำ
       knownDocIds.add(notifId);
       if (dataObj && dataObj.ticketId) {
-        knownDocIds.add(dataObj.ticketId);
-        knownDocIds.add('ticket_' + dataObj.ticketId);
+        const cleanTid = normalizeTicketId(dataObj.ticketId);
+        knownDocIds.add(cleanTid);
+        knownDocIds.add('ticket_' + cleanTid);
       }
 
       const payload = {
-        id: notifId,
         senderSessionId: CURRENT_SESSION_ID,
         clientTimestamp: Date.now(),
         createdAtMs: Date.now(),
         createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
           ? firebase.firestore.FieldValue.serverTimestamp()
           : new Date(),
-        ...dataObj
+        ...dataObj,
+        id: notifId
       };
       await window.firestoreDb.collection('notifications').doc(notifId).set(payload);
       console.log('[NotificationHub] 🚀 Real-time notification published to Firestore successfully:', notifId, payload.title);
@@ -13097,7 +13454,7 @@ const NotificationHub = (function () {
       // ส่ง FCM v1 Web Push ปลุกหน้าจออุปกรณ์ที่ปิดแอปหรือล็อกหน้าจออยู่ทันที
       dispatchFCMWebPush(payload).catch(() => { });
 
-      return true;
+      return notifId;
     } catch (e) {
       console.warn('[NotificationHub] publish error:', e);
       return false;
@@ -13180,6 +13537,9 @@ const NotificationHub = (function () {
     dismissToast,
     setTab,
     markAllAsRead,
+    markTicketAsViewed,
+    clearByTicketId,
+    isFinishedTicketStatus,
     deleteItem,
     clearAll,
     openTicketAndDismiss,

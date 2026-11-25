@@ -57,6 +57,25 @@ const TrackUI = (() => {
     return { group: 'pending', step: 0 };
   }
 
+  function isFinishedForNotif(job) {
+    if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.isFinishedTicketStatus === 'function') {
+      return NotificationHub.isFinishedTicketStatus(job);
+    }
+    if (!job) return false;
+    return job.isArchived === true || job.group === 'done' || job.group === 'cancel';
+  }
+
+  function publishCompletionNotifAndCleanOld(jobId, payload) {
+    if (typeof NotificationHub === 'undefined' || typeof NotificationHub.publish !== 'function') return;
+    NotificationHub.publish({ notifKind: 'completed', ...payload })
+      .then(notifId => {
+        if (typeof NotificationHub.clearByTicketId === 'function') {
+          return NotificationHub.clearByTicketId(jobId, { includeCompletion: false, excludeId: notifId || '' });
+        }
+      })
+      .catch(() => { });
+  }
+
   // แปลงวันที่จาก Sheet ("dd/MM/yyyy HH:mm[:ss]" หรือ ISO) เป็น Date
   function parseDate(v) {
     const s = str(v);
@@ -246,6 +265,9 @@ const TrackUI = (() => {
         });
       }
       job.isArchived = newArchived;
+      if (newArchived && typeof NotificationHub !== 'undefined' && typeof NotificationHub.clearByTicketId === 'function') {
+        NotificationHub.clearByTicketId(job.id, { includeCompletion: true }).catch(() => { });
+      }
       render();
       Swal.fire({
         toast: true,
@@ -330,6 +352,9 @@ const TrackUI = (() => {
         if (window.firestoreDb) {
           const targetDocId = job.docId || job.id;
           await window.firestoreDb.collection('tickets').doc(targetDocId).delete();
+          if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.clearByTicketId === 'function') {
+            NotificationHub.clearByTicketId(job.id, { includeCompletion: true }).catch(() => { });
+          }
           // ล้างห้องแชทของงานนี้ด้วย เพื่อไม่ให้ข้อความตกค้างไปโผล่ในงานใหม่ที่ใช้รหัสซ้ำ
           try {
             const chatSnap = await window.firestoreDb.collection('chats').doc(job.chatId || targetDocId).collection('messages').get();
@@ -647,7 +672,7 @@ const TrackUI = (() => {
           // ถ้าเปิดหน้ารายละเอียดค้างไว้ ให้ดึงข้อมูลมาอัปเดตแบบเนียนๆ
           const detailPage = $('page-track-detail');
           if (detailPage && detailPage.classList.contains('active') && state.currentJobId) {
-            open(state.currentJobId);
+            open(state.currentJobId, true);
           }
 
           // ตรวจจับและปรับรหัสคิวงานเก่าให้เป็นรหัสสั้นใหม่อัตโนมัติ (BLD-01)
@@ -1267,7 +1292,7 @@ const TrackUI = (() => {
 
   let currentDocUnsubscribe = null;
 
-  async function open(rawId) {
+  async function open(rawId, isBackgroundRefresh = false) {
     const id = String(rawId || '').replace(/^#/, '').trim();
     if (!id) return;
     state.currentJobId = id;
@@ -1316,6 +1341,11 @@ const TrackUI = (() => {
 
     if (!job) return alertBox('warning', 'ไม่พบงาน', 'อาจถูกลบหรือย้ายไปแล้ว กรุณารีเฟรชรายการ');
     renderDetailBody(job);
+
+    // หากงานเสร็จสิ้นแล้วและผู้ใช้กดเปิดดูรายละเอียด ให้เอาแจ้งเตือนของงานนี้ออกจากกระดิ่ง
+    if (!isBackgroundRefresh && isFinishedForNotif(job) && typeof NotificationHub !== 'undefined' && typeof NotificationHub.markTicketAsViewed === 'function') {
+      NotificationHub.markTicketAsViewed(job.id);
+    }
 
     // สมัคร Real-time listener ประจำตัว Ticket นี้ ให้หน้าจอเปลี่ยนสถานะสดทันทีถ้ามีการอัปเดตจากเครื่องอื่น
     if (currentDocUnsubscribe) {
@@ -1628,9 +1658,19 @@ const TrackUI = (() => {
       showConfirmButton: false
     });
 
-    // 🚀 4. เบื้องหลัง: ย่อขนาดรูปภาพ + อัปโหลด Google Drive + ซิงค์ Sheets (Background Task ไม่บล็อกจอ)
+    // 🚀 4. เบื้องหลัง: ยิงแจ้งเตือนปิดงาน + ล้างแจ้งเตือนระหว่างทาง และอัปโหลด/ซิงค์ Google Drive & Sheets
     (async () => {
       try {
+        publishCompletionNotifAndCleanOld(jobId, {
+          ticketId: jobId,
+          taskType: job.type || 'building',
+          category: job.category || 'งานซ่อม',
+          title: '✅ งานซ่อมเสร็จสิ้นแล้ว #' + jobId,
+          body: (job.subject || job.title || 'งานซ่อม') + ' ดำเนินการซ่อมเสร็จสิ้น โดย ' + (x.value.techName || 'ช่าง'),
+          reporterName: x.value.techName,
+          targetUserEmail: job.reporterEmail || ''
+        });
+
         let file = null;
         if (x.value.file && typeof readFile === 'function') {
           file = await readFile(x.value.file, 1280, 0.75);
@@ -1663,19 +1703,6 @@ const TrackUI = (() => {
               proofUrl: res.proofUrl,
               receiptUrl: (res.receiptUrl && res.receiptUrl !== '-') ? res.receiptUrl : ''
             }).catch(e => console.warn('Update proofUrl to Firestore error:', e));
-          }
-
-          // ยิง Real-time In-App Notification แจ้งเตือนผู้แจ้งว่างานซ่อมเสร็จเรียบร้อยแล้ว
-          if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
-            NotificationHub.publish({
-              ticketId: jobId,
-              taskType: job.type || 'building',
-              category: job.category || 'งานซ่อม',
-              title: '✅ งานซ่อมเสร็จสิ้นแล้ว #' + jobId,
-              body: (job.subject || job.title || 'งานซ่อม') + ' ดำเนินการซ่อมเสร็จสิ้น โดย ' + (x.value.techName || 'ช่าง'),
-              reporterName: x.value.techName,
-              targetUserEmail: job.reporterEmail || ''
-            });
           }
         }
       } catch (bgErr) {
@@ -2114,17 +2141,15 @@ const TrackUI = (() => {
       );
     }
 
-    if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
-      NotificationHub.publish({
-        ticketId: jobId,
-        taskType: 'project',
-        category: 'โครงการ',
-        title: '✅ โครงการได้รับการอนุมัติแล้ว #' + jobId,
-        body: (job.subject || 'โครงการ') + ' — อนุมัติโดย ' + approverName,
-        reporterName: job.reporter || job.reporterName || '',
-        targetUserEmail: job.reporterEmail || ''
-      }).catch(() => { });
-    }
+    publishCompletionNotifAndCleanOld(jobId, {
+      ticketId: jobId,
+      taskType: 'project',
+      category: 'โครงการ',
+      title: '✅ โครงการได้รับการอนุมัติแล้ว #' + jobId,
+      body: (job.subject || 'โครงการ') + ' — อนุมัติโดย ' + approverName,
+      reporterName: job.reporter || job.reporterName || '',
+      targetUserEmail: job.reporterEmail || ''
+    });
 
     approveTasks.push(
       ResourceHubCore.api.post({
@@ -2216,17 +2241,15 @@ const TrackUI = (() => {
       );
     }
 
-    if (typeof NotificationHub !== 'undefined' && typeof NotificationHub.publish === 'function') {
-      NotificationHub.publish({
-        ticketId: jobId,
-        taskType: 'project',
-        category: 'โครงการ',
-        title: '⚠️ แจ้งผลการพิจารณาโครงการ #' + jobId,
-        body: (job.subject || 'โครงการ') + ' — ' + formValues.note,
-        reporterName: job.reporter || job.reporterName || '',
-        targetUserEmail: job.reporterEmail || ''
-      }).catch(() => { });
-    }
+    publishCompletionNotifAndCleanOld(jobId, {
+      ticketId: jobId,
+      taskType: 'project',
+      category: 'โครงการ',
+      title: '⚠️ แจ้งผลการพิจารณาโครงการ #' + jobId,
+      body: (job.subject || 'โครงการ') + ' — ' + formValues.note,
+      reporterName: job.reporter || job.reporterName || '',
+      targetUserEmail: job.reporterEmail || ''
+    });
 
     rejectTasks.push(
       ResourceHubCore.api.post({
