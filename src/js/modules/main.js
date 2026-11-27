@@ -1612,7 +1612,11 @@ async function syncSessionUserFromFirestore() {
     if (isAdminLoggedIn) localStorage.setItem('logged_admin', 'true');
     else localStorage.removeItem('logged_admin');
 
-    if (changed) updateSessionUI();
+    if (changed) {
+      updateSessionUI();
+    } else if (window.NotificationHub && typeof window.NotificationHub.updatePermissionUI === 'function') {
+      window.NotificationHub.updatePermissionUI();
+    }
     return { email: savedEmail, role: freshRole, status: freshStatus };
   } catch (err) {
     const code = err && err.code ? String(err.code) : '';

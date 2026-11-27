@@ -46,6 +46,7 @@ function runStaticChecks() {
 
   assert(indexHtml.includes('id="gnav-document"'), 'Sidebar must include #gnav-document for Document Hub');
   assert(indexHtml.includes('id="page-document"'), 'page-document must be compiled');
+  assert(indexHtml.includes('openRoleTestModal()'), 'Compiled HTML must expose Admin role-test button');
   assert(!indexHtml.includes('submitTrackModal') && !indexHtml.includes('closeTrackModal'), 'Orphan trackTicketModal must be removed');
 
   // 3. build.js has no non-existent loadOrder entries
@@ -315,10 +316,178 @@ async function runServerGuardTest() {
   });
 }
 
+async function runRoleTestNotificationChecks() {
+  const hubSrc = read('src/js/modules/notification-hub.js');
+  const buildContext = ({ role = 'Teacher', loggedAdmin = 'false', legacyUserRole = '' } = {}) => {
+    const storage = new Map([
+      ['logged_role', role],
+      ['logged_admin', loggedAdmin],
+      ['logged_teacher', `User(${role})`],
+      ['logged_email', `${role.toLowerCase()}@school.ac.th`]
+    ]);
+    if (legacyUserRole) storage.set('user_role', legacyUserRole);
+    const els = new Map();
+    const mk = (id) => {
+      const cls = new Set(id === 'notif-admin-actions' ? ['hidden'] : []);
+      return {
+        id, innerHTML: '', textContent: '', value: '', children: [], dataset: {},
+        classList: {
+          add: (...c) => c.forEach(x => cls.add(x)),
+          remove: (...c) => c.forEach(x => cls.delete(x)),
+          contains: c => cls.has(c)
+        },
+        appendChild(ch) { this.children.push(ch); },
+        querySelectorAll: () => [],
+        remove() {}
+      };
+    };
+    const getEl = id => { if (!els.has(id)) els.set(id, mk(id)); return els.get(id); };
+    ['notif-permission-status', 'notif-admin-actions', 'toast-notification-container', 'notification-list', 'global-overdue-badge', 'dropdown-unread-count'].forEach(getEl);
+
+    const publishedDocs = {};
+    const pushRequests = [];
+    const swalCalls = [];
+
+    const notifCollection = {
+      orderBy() { return this; },
+      limit() { return this; },
+      where(_f, _op, val) {
+        return {
+          async get() {
+            const matched = Object.entries(publishedDocs)
+              .filter(([, d]) => d.isTest === val)
+              .map(([id, d]) => ({ id, data: () => d }));
+            return { empty: matched.length === 0, forEach: fn => matched.forEach(fn) };
+          }
+        };
+      },
+      onSnapshot() { return () => {}; },
+      doc(id) {
+        return {
+          async set(data) { publishedDocs[id] = { ...data }; },
+          async update(data) { if (publishedDocs[id]) Object.assign(publishedDocs[id], data); },
+          async delete() { delete publishedDocs[id]; }
+        };
+      }
+    };
+
+    const ctx = {
+      console, setTimeout, clearTimeout, Date, Math, JSON, Array, Object, Promise, Error, Map, Set, RegExp, encodeURIComponent,
+      localStorage: {
+        getItem: k => (storage.has(k) ? storage.get(k) : null),
+        setItem: (k, v) => storage.set(k, String(v)),
+        removeItem: k => storage.delete(k)
+      },
+      navigator: { userAgent: 'Mozilla/5.0' },
+      document: {
+        visibilityState: 'visible',
+        getElementById: getEl,
+        querySelectorAll: () => [],
+        createElement: () => mk('div'),
+        addEventListener() {}
+      },
+      window: null,
+      Notification: { permission: 'granted' },
+      AudioContext: undefined,
+      webkitAudioContext: undefined,
+      Swal: {
+        fire: o => { swalCalls.push(o); return Promise.resolve({ isConfirmed: true }); },
+        close() {}
+      },
+      firebase: { firestore: { FieldValue: { serverTimestamp: () => 'TS' } } },
+      firestoreDb: {
+        collection: (c) => (c === 'notifications' ? notifCollection : { orderBy() { return this; }, limit() { return this; }, onSnapshot() { return () => {}; } }),
+        batch: () => {
+          const dels = [];
+          return {
+            delete(ref) { dels.push(ref); },
+            async commit() { await Promise.all(dels.map(r => r.delete())); }
+          };
+        }
+      },
+      ResourceHubCore: { api: { async post(body) { pushRequests.push(body); return { status: 'success' }; } } },
+      currentRole: role,
+      currentEmail: `${role.toLowerCase()}@school.ac.th`,
+      currentTeacher: `User(${role})`,
+      isAdminLoggedIn: role === 'Admin' || role === 'Supervisor'
+    };
+    ctx.window = ctx;
+    vm.createContext(ctx);
+    vm.runInContext(hubSrc, ctx, { filename: 'notification-hub.js' });
+    ctx.NotificationHub.updatePermissionUI();
+    return { ctx, getEl, publishedDocs, pushRequests, swalCalls };
+  };
+
+  // 1. Visibility: ONLY strict Admin sees test buttons (Supervisor with logged_admin='true', Tech, Teacher MUST NOT)
+  for (const nonAdmin of [
+    { role: 'Teacher' },
+    { role: 'Tech' },
+    { role: 'Supervisor', loggedAdmin: 'true', legacyUserRole: 'admin' },
+    { role: 'Executive' },
+    { role: 'AV' },
+    { role: 'Staff' }
+  ]) {
+    const env = buildContext(nonAdmin);
+    assert.strictEqual(env.ctx.NotificationHub.isStrictAdmin(), false, `${nonAdmin.role} must NOT satisfy isStrictAdmin()`);
+    assert(env.getEl('notif-admin-actions').classList.contains('hidden'), `${nonAdmin.role} must keep #notif-admin-actions hidden`);
+    assert(!env.getEl('notif-permission-status').innerHTML.includes('ยิงทดสอบเตือน'), `${nonAdmin.role} must NOT render ยิงทดสอบเตือน button`);
+    assert.strictEqual(env.ctx.NotificationHub.testDeviceNotification(), false, `${nonAdmin.role} blocked from testDeviceNotification`);
+    assert.strictEqual(env.ctx.NotificationHub.testRoleNotification('tech'), false, `${nonAdmin.role} blocked from testRoleNotification`);
+  }
+
+  // 2. Admin sees all test buttons & can fire role-targeted test (Tech)
+  const adminEnv = buildContext({ role: 'Admin', loggedAdmin: 'true' });
+  assert.strictEqual(adminEnv.ctx.NotificationHub.isStrictAdmin(), true, 'Admin satisfies isStrictAdmin()');
+  assert(!adminEnv.getEl('notif-admin-actions').classList.contains('hidden'), 'Admin sees #notif-admin-actions');
+  assert(adminEnv.getEl('notif-permission-status').innerHTML.includes('ยิงทดสอบเตือน'), 'Admin sees ยิงทดสอบเตือน button');
+
+  const tid = adminEnv.ctx.NotificationHub.testRoleNotification('tech', { message: 'ทดสอบช่างเฉพาะจุด' });
+  assert(tid && tid.startsWith('FAC-TEST-TECH-'), 'Role-targeted test ID includes role tag');
+  await new Promise(r => setTimeout(r, 20));
+
+  const pubValues = Object.values(adminEnv.publishedDocs);
+  assert.strictEqual(pubValues.length, 1);
+  assert.deepStrictEqual(Array.from(pubValues[0].targetRoles), ['tech'], 'Published test notification carries targetRoles=["tech"]');
+  assert.strictEqual(pubValues[0].isTest, true);
+  assert.strictEqual(pubValues[0].body, 'ทดสอบช่างเฉพาะจุด');
+
+  const pushReq = adminEnv.pushRequests.find(p => p.action === 'send_fcm_push');
+  assert(pushReq, 'Role test triggers send_fcm_push');
+  assert.strictEqual(pushReq.filterOptions.isTest, true);
+  assert.deepStrictEqual(Array.from(pushReq.filterOptions.targetRoles), ['tech']);
+
+  // Verify skipWebPush option suppresses FCM call
+  const prevPushCount = adminEnv.pushRequests.length;
+  adminEnv.ctx.NotificationHub.testRoleNotification('av', { skipWebPush: true });
+  await new Promise(r => setTimeout(r, 15));
+  assert.strictEqual(adminEnv.pushRequests.length, prevPushCount, 'skipWebPush=true must NOT trigger send_fcm_push');
+
+  // 3. Recipient filtering on receiving clients: Tech accepts tech test, Teacher & Supervisor do NOT
+  const techEnv = buildContext({ role: 'Tech' });
+  const teacherEnv = buildContext({ role: 'Teacher' });
+  const supEnv = buildContext({ role: 'Supervisor', loggedAdmin: 'true' });
+  assert.strictEqual(techEnv.ctx.NotificationHub.isTargetRecipient(pubValues[0]), true, 'Tech client receives Tech role test');
+  assert.strictEqual(teacherEnv.ctx.NotificationHub.isTargetRecipient(pubValues[0]), false, 'Teacher client ignores Tech role test');
+  assert.strictEqual(supEnv.ctx.NotificationHub.isTargetRecipient(pubValues[0]), false, 'Supervisor client ignores Tech role test');
+
+  // Default admin-only test without targetRoles ONLY reaches Admin
+  const adminOnlyNotif = { ticketId: 'FAC-TEST-9999', isTest: true };
+  assert.strictEqual(adminEnv.ctx.NotificationHub.isTargetRecipient(adminOnlyNotif), true);
+  assert.strictEqual(supEnv.ctx.NotificationHub.isTargetRecipient(adminOnlyNotif), false);
+  assert.strictEqual(teacherEnv.ctx.NotificationHub.isTargetRecipient(adminOnlyNotif), false);
+
+  // 4. clearTestNotifications cleans up all isTest docs
+  const cleared = await adminEnv.ctx.NotificationHub.clearTestNotifications();
+  assert(cleared >= 2 && Object.keys(adminEnv.publishedDocs).length === 0, 'clearTestNotifications removes test docs from Firestore');
+
+  console.log('PASS Role Test Controls: strict Admin-only visibility, role-targeted Firestore+FCM routing & cleanup');
+}
+
 (async () => {
   runStaticChecks();
   await runFirebaseAuthAndSessionTests();
   await runServerGuardTest();
+  await runRoleTestNotificationChecks();
   console.log('\nALL V6 PHASE 4 REGRESSION TESTS PASSED!');
   process.exit(0);
 })().catch(err => {

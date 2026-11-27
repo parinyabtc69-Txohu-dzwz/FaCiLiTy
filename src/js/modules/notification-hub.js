@@ -980,13 +980,46 @@ const NotificationHub = (function () {
   }
 
   // ── 11. ตรวจสอบสิทธิ์ผู้รับตามบทบาทหน้าที่ (Role-Based Notification Filtering) ─
+  const ROLE_TEST_TARGETS = [
+    { key: 'admin', label: 'Admin (ผู้ดูแลระบบ)', shortLabel: 'Admin', roles: ['admin'], icon: 'fa-shield-halved', badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
+    { key: 'supervisor', label: 'Supervisor (หัวหน้างาน)', shortLabel: 'Supervisor', roles: ['supervisor'], icon: 'fa-user-tie', badgeBg: 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100' },
+    { key: 'staff', label: 'Staff (เจ้าหน้าที่ส่วนกลาง)', shortLabel: 'Staff', roles: ['staff'], icon: 'fa-headset', badgeBg: 'bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100' },
+    { key: 'tech', label: 'Tech (ช่างซ่อมบำรุง / ไอที)', shortLabel: 'Tech', roles: ['tech'], icon: 'fa-wrench', badgeBg: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' },
+    { key: 'av', label: 'AV (เจ้าหน้าที่โสตฯ)', shortLabel: 'AV', roles: ['av'], icon: 'fa-microphone-lines', badgeBg: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
+    { key: 'executive', label: 'Executive (ผู้บริหาร)', shortLabel: 'Executive', roles: ['executive'], icon: 'fa-crown', badgeBg: 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100' },
+    { key: 'teacher', label: 'Teacher (คุณครู / ผู้แจ้งทั่วไป)', shortLabel: 'Teacher', roles: ['teacher'], icon: 'fa-chalkboard-user', badgeBg: 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' },
+    { key: 'all', label: 'ทุกบทบาท (All Roles)', shortLabel: 'ALL', roles: ['admin', 'supervisor', 'staff', 'tech', 'av', 'executive', 'teacher'], icon: 'fa-bullhorn', badgeBg: 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100' }
+  ];
+
+  function getCurrentRoleNormalized() {
+    const role = (
+      (typeof currentRole !== 'undefined' && currentRole) ||
+      window.currentRole ||
+      localStorage.getItem('logged_role') ||
+      ''
+    );
+    return String(role || '').trim().toLowerCase();
+  }
+
+  // เฉพาะบทบาท Admin เท่านั้น (ไม่รวม Supervisor/Staff/Teacher เพื่อจำกัดปุ่มยิงทดสอบอย่างเข้มงวด)
+  function isStrictAdmin() {
+    return getCurrentRoleNormalized() === 'admin';
+  }
+
   function isTargetRecipient(item) {
     if (!item) return false;
 
-    // 1. การแจ้งเตือนทดสอบระบบ (Test Ping) -> จำกัดให้เฉพาะ Admin / Supervisor เท่านั้น ไม่ส่งรบกวนครู
-    const isTestItem = item.isTest === true || (item.ticketId && item.ticketId.startsWith('FAC-TEST-'));
+    // 1. การแจ้งเตือนทดสอบระบบ: ถ้ามี targetRoles ชัดเจน ให้ส่งเฉพาะโรลเป้าหมาย; ถ้าไม่มี ให้เห็นเฉพาะ Admin
+    const isTestItem = item.isTest === true || isTestTicketId(item.ticketId);
     if (isTestItem) {
-      return checkIsAdminUser();
+      const tRoles = Array.isArray(item.targetRoles)
+        ? item.targetRoles.map(r => String(r || '').trim().toLowerCase()).filter(Boolean)
+        : [];
+      if (tRoles.length === 0) {
+        return isStrictAdmin();
+      }
+      const myRole = getCurrentRoleNormalized() || 'teacher';
+      return tRoles.some(r => myRole === r || (r === 'admin' && myRole.includes('admin')));
     }
 
     const userRole = (
@@ -1056,15 +1089,7 @@ const NotificationHub = (function () {
 
   // ── 12. ระบบจัดการสิทธิ์การแจ้งเตือนบนอุปกรณ์ (Device Push & Native Permission) ───
   function checkIsAdminUser() {
-    const role = (
-      (typeof currentRole !== 'undefined' && currentRole) ||
-      window.currentRole ||
-      localStorage.getItem('logged_role') ||
-      localStorage.getItem('user_role') ||
-      ''
-    ).toLowerCase();
-    const isAdmin = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) || (localStorage.getItem('logged_admin') === 'true');
-    return isAdmin || role.includes('admin') || role.includes('supervisor') || role.includes('ผู้ดูแล');
+    return isStrictAdmin();
   }
 
   function checkNotificationPermission() {
@@ -1078,7 +1103,7 @@ const NotificationHub = (function () {
     const perm = checkNotificationPermission();
     const dropdownBanner = document.getElementById('notif-permission-status');
     const homeBanners = document.querySelectorAll('.notif-permission-prompt-card');
-    const isAdmin = checkIsAdminUser();
+    const isAdmin = isStrictAdmin();
 
     if (perm === 'granted') {
       // ✅ ได้รับอนุญาตแล้ว: ปิดซ่อนการ์ดขอสิทธิ์
@@ -1177,7 +1202,19 @@ const NotificationHub = (function () {
     // 1. ตรวจสอบว่าอนุญาตไปแล้วหรือยัง เพื่อป้องกันการแจ้งเตือนซ้ำซ้อน
     if ('Notification' in window && Notification.permission === 'granted') {
       updatePermissionUI();
-      testDeviceNotification();
+      requestFCMToken();
+      if (isStrictAdmin()) {
+        testDeviceNotification();
+      } else if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'เปิดใช้งานการแจ้งเตือนเรียบร้อยแล้ว',
+          showConfirmButton: false,
+          timer: 2000
+        });
+      }
       return;
     }
 
@@ -1354,7 +1391,7 @@ const NotificationHub = (function () {
       const currentUser = (typeof currentTeacher !== 'undefined' && currentTeacher) || window.currentTeacher || localStorage.getItem('logged_teacher') || 'ผู้ใช้งาน';
       const currentUserEmail = (typeof currentEmail !== 'undefined' && currentEmail) || window.currentEmail || localStorage.getItem('logged_email') || '';
       let userRole = (typeof currentRole !== 'undefined' && currentRole) || window.currentRole || localStorage.getItem('logged_role') || 'Teacher';
-      if (checkIsAdminUser() && (!userRole || userRole === 'Teacher' || userRole === 'user')) {
+      if (isStrictAdmin() && (!userRole || userRole === 'Teacher' || userRole === 'user')) {
         userRole = 'Admin';
       }
 
@@ -1456,61 +1493,81 @@ const NotificationHub = (function () {
     }
   }
 
-  function testDeviceNotification() {
-    if (!checkIsAdminUser()) {
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          icon: 'info',
-          title: 'เฉพาะแอดมินเท่านั้น',
-          text: 'ปุ่มทดสอบการแจ้งเตือนเปิดให้ใช้งานเฉพาะผู้ดูแลระบบ (Admin) เท่านั้นครับ',
-          timer: 2000,
-          showConfirmButton: false
-        });
-      }
-      return;
+  function requireStrictAdminAlert_() {
+    if (isStrictAdmin()) return true;
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'info',
+        title: 'เฉพาะแอดมินเท่านั้น',
+        text: 'ปุ่มทดสอบการแจ้งเตือนเปิดให้ใช้งานเฉพาะผู้ดูแลระบบ (Admin) เท่านั้นครับ',
+        timer: 2000,
+        showConfirmButton: false
+      });
     }
+    return false;
+  }
+
+  function resolveRoleTestConfig_(roleKey) {
+    if (Array.isArray(roleKey)) {
+      const normalized = roleKey.map(r => String(r || '').trim().toLowerCase()).filter(Boolean);
+      const labels = normalized.map(k => {
+        const match = ROLE_TEST_TARGETS.find(t => t.key === k);
+        return match ? match.shortLabel : k;
+      });
+      return {
+        key: normalized.join('_') || 'admin',
+        shortLabel: labels.join(', ') || 'Custom',
+        label: labels.join(', ') || 'Custom',
+        roles: normalized.length ? normalized : ['admin']
+      };
+    }
+    const cleanKey = String(roleKey || 'admin').trim().toLowerCase();
+    return ROLE_TEST_TARGETS.find(t => t.key === cleanKey) || {
+      key: cleanKey,
+      shortLabel: cleanKey,
+      label: cleanKey,
+      roles: [cleanKey]
+    };
+  }
+
+  function dispatchTestNotification_({ testId, title, body, targetRoles, targetLabel, skipWebPush = false, triggerOS = false, allowSelfPushFallback = false }) {
     unlockAudioContext();
     playChime();
 
-    const testId = 'FAC-TEST-' + Math.floor(1000 + Math.random() * 9000);
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const deviceLabel = isMobile ? 'โทรศัพท์มือถือ' : 'คอมพิวเตอร์';
-    const testTitle = '🔔 ทดสอบการแจ้งเตือนแบบเรียลไทม์';
-    const testBody = `ยิงทดสอบจาก ${deviceLabel} — เสียงเตือนและป้าย In-App เด้งเฉพาะผู้ดูแลระบบ (Admin) 100%`;
-
-    // 1. เด้งป้าย Toast บนหน้าจอเครื่องนี้ทันที
+    // แสดงป้าย Toast บนหน้าจอผู้กดทันที เพื่อยืนยันผลการยิงทดสอบ
     showToast({
       id: 'local_test_' + Date.now(),
       ticketId: testId,
-      title: testTitle,
-      body: testBody,
-      category: 'ทดสอบ',
+      title,
+      body,
+      category: targetLabel ? `ทดสอบ (${targetLabel})` : 'ทดสอบ',
       taskType: 'test',
       isTest: true,
+      targetRoles,
       location: 'ศูนย์ FaCiLiTy',
       createdAt: new Date()
     });
 
-    // 2. แจ้งเตือนระดับระบบปฏิบัติการ (OS / PWA Home Screen Notification) บนเครื่องนี้
-    if ('Notification' in window && Notification.permission === 'granted') {
-      showDeviceNotification(testTitle, {
-        body: `[ทดสอบ ${testId}] ${testBody}`,
+    if (triggerOS && 'Notification' in window && Notification.permission === 'granted') {
+      showDeviceNotification(title, {
+        body: `[ทดสอบ ${testId}] ${body}`,
         tag: 'facility-test-' + Date.now(),
         ticketId: testId
       });
     }
 
-    // 3. บันทึกทดสอบลง Firestore ทันที และยิง FCM Web Push ปลุกหน้าจอล็อก (จำกัดเฉพาะ Admin ด้วย isTest: true)
     const testPayload = {
       ticketId: testId,
-      title: testTitle,
-      body: testBody,
+      title,
+      body,
       category: 'ทดสอบ',
       taskType: 'test',
       isTest: true,
-      targetRoles: ['admin', 'supervisor'],
+      targetRoles,
+      targetRoleLabel: targetLabel || '',
       location: 'ศูนย์ FaCiLiTy',
-      reporterName: window.currentTeacher || localStorage.getItem('logged_teacher') || 'ครูเต้าหู้ (Admin)'
+      reporterName: window.currentTeacher || localStorage.getItem('logged_teacher') || 'Admin',
+      skipWebPush: Boolean(skipWebPush)
     };
 
     if (window.firestoreDb) {
@@ -1518,31 +1575,189 @@ const NotificationHub = (function () {
         console.warn('[NotificationHub] test broadcast error:', err);
       });
 
-      // กรณีทดสอบด้วยเครื่องเดียว (กดปุ่มยิงทดสอบแล้วกดล็อกหน้าจอ/สลับออกนอกแอปทันที) ให้ส่ง Push ซ้ำเมื่อพับจอ
-      setTimeout(() => {
-        if (document.visibilityState === 'hidden' && currentFcmToken) {
-          dispatchFCMWebPush(testPayload, true).catch(() => { });
-        }
-      }, 3000);
+      if (!skipWebPush && allowSelfPushFallback) {
+        setTimeout(() => {
+          if (document.visibilityState === 'hidden' && currentFcmToken) {
+            dispatchFCMWebPush(testPayload, true).catch(() => { });
+          }
+        }, 3000);
+      }
     } else {
       console.warn('[NotificationHub] firestoreDb not ready for test broadcast');
     }
+
+    return testId;
+  }
+
+  function testDeviceNotification() {
+    if (!requireStrictAdminAlert_()) return false;
+
+    const testId = 'FAC-TEST-' + Math.floor(1000 + Math.random() * 9000);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const deviceLabel = isMobile ? 'โทรศัพท์มือถือ' : 'คอมพิวเตอร์';
+
+    return dispatchTestNotification_({
+      testId,
+      title: '🔔 ทดสอบการแจ้งเตือนแบบเรียลไทม์',
+      body: `ยิงทดสอบจาก ${deviceLabel} — เสียงเตือนและป้าย In-App เด้งเฉพาะผู้ดูแลระบบ (Admin) 100%`,
+      targetRoles: ['admin'],
+      targetLabel: 'Admin',
+      skipWebPush: false,
+      triggerOS: true,
+      allowSelfPushFallback: true
+    });
+  }
+
+  // ยิงทดสอบแจ้งเตือนเจาะจงตามบทบาท (Role-Targeted Test Notification)
+  function testRoleNotification(roleKey = 'admin', options = {}) {
+    if (!requireStrictAdminAlert_()) return false;
+
+    const cfg = resolveRoleTestConfig_(roleKey);
+    const roleTag = String(cfg.shortLabel || 'ROLE').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || 'ROLE';
+    const testId = `FAC-TEST-${roleTag}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const customMsg = options && options.message ? String(options.message).trim() : '';
+    const skipWebPush = Boolean(options && options.skipWebPush);
+    const sender = window.currentTeacher || localStorage.getItem('logged_teacher') || 'Admin';
+
+    const title = `🎯 [ทดสอบโรล: ${cfg.shortLabel}] ทดสอบแจ้งเตือน`;
+    const body = customMsg || `ยิงทดสอบจาก ${sender} ถึงบทบาท ${cfg.label} (ตรวจสอบการกรองสิทธิ์ In-App & Web Push)`;
+
+    return dispatchTestNotification_({
+      testId,
+      title,
+      body,
+      targetRoles: cfg.roles,
+      targetLabel: cfg.shortLabel,
+      skipWebPush,
+      triggerOS: cfg.roles.includes('admin') && (isStrictAdmin()),
+      allowSelfPushFallback: false
+    });
+  }
+
+  // ล้างเอกสารแจ้งเตือนทดสอบทั้งหมด (isTest: true หรือ FAC-TEST-*) จาก Firestore
+  async function clearTestNotifications() {
+    if (!requireStrictAdminAlert_()) return 0;
+
+    let deletedCount = 0;
+    const localTestIds = notifications
+      .filter(n => n && (n.isTest === true || isTestTicketId(n.ticketId)))
+      .map(n => n.id);
+    if (localTestIds.length > 0) {
+      const localSet = new Set(localTestIds);
+      localTestIds.forEach(id => saveDeletedId(id));
+      notifications = notifications.filter(n => !localSet.has(n.id));
+      updateBadge();
+      renderList();
+    }
+
+    if (window.firestoreDb) {
+      try {
+        const snap = await window.firestoreDb.collection('notifications').where('isTest', '==', true).get();
+        const docIds = [];
+        if (snap) snap.forEach(doc => docIds.push(doc.id));
+        const allIds = Array.from(new Set([...localTestIds, ...docIds]));
+        deletedCount = allIds.length;
+        if (allIds.length > 0) {
+          await deleteNotificationDocs(allIds);
+        }
+      } catch (err) {
+        console.warn('[NotificationHub] clearTestNotifications error:', err);
+      }
+    }
+
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: deletedCount > 0 ? `ล้างแจ้งเตือนทดสอบแล้ว ${deletedCount} รายการ` : 'ไม่มีแจ้งเตือนทดสอบค้างอยู่',
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
+    return deletedCount;
+  }
+
+  // หน้าต่างเลือกยิงทดสอบตามโรล (แสดงเฉพาะ Admin เท่านั้น)
+  function openRoleTestModal() {
+    if (!requireStrictAdminAlert_()) return;
+    if (typeof Swal === 'undefined') return;
+
+    const buttonsHtml = ROLE_TEST_TARGETS.map(t => `
+      <button type="button" data-role-key="${escHtml(t.key)}"
+        class="role-test-target-btn flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-bold transition-all active:scale-95 ${t.badgeBg}">
+        <i class="fa-solid ${t.icon} w-4 text-center shrink-0"></i>
+        <span class="truncate">${escHtml(t.label)}</span>
+      </button>
+    `).join('');
+
+    Swal.fire({
+      title: '🎯 ยิงทดสอบแจ้งเตือนตามโรล',
+      html: `
+        <div class="text-left space-y-3 mt-1">
+          <p class="text-xs text-slate-500">เลือกบทบาทเป้าหมายที่ต้องการทดสอบ (แจ้งเตือนจะเด้งเฉพาะอุปกรณ์ที่ล็อกอินด้วยโรลนั้นจริง)</p>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">ข้อความทดสอบเพิ่มเติม (ไม่บังคับ)</label>
+            <input type="text" id="role-test-custom-msg" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="เช่น ทดสอบระบบแจ้งเตือนรอบเช้า...">
+          </div>
+          <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer select-none">
+            <input type="checkbox" id="role-test-send-push" checked class="w-4 h-4 accent-indigo-600 rounded">
+            <span>ส่ง Web Push ปลุกหน้าจอล็อกมือถือด้วย (FCM)</span>
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1" id="role-test-btn-grid">
+            ${buttonsHtml}
+          </div>
+          <div class="pt-2 border-t border-slate-200 flex items-center justify-between gap-2">
+            <span class="text-[10px] text-slate-400">สิทธิเฉพาะ Role: Admin เท่านั้น</span>
+            <button type="button" id="btn-clear-all-test-notifs" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors">
+              <i class="fa-solid fa-broom mr-1"></i> ล้างแจ้งเตือนทดสอบทั้งหมด
+            </button>
+          </div>
+        </div>
+      `,
+      showConfirmButton: false,
+      showCloseButton: true,
+      width: '500px',
+      didOpen: () => {
+        const container = document.getElementById('role-test-btn-grid');
+        if (container) {
+          container.querySelectorAll('.role-test-target-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const roleKey = btn.dataset.roleKey;
+              const msgEl = document.getElementById('role-test-custom-msg');
+              const pushEl = document.getElementById('role-test-send-push');
+              const customMsg = msgEl ? msgEl.value.trim() : '';
+              const skipWebPush = pushEl ? !pushEl.checked : false;
+              Swal.close();
+              const tid = testRoleNotification(roleKey, { message: customMsg, skipWebPush });
+              if (tid) {
+                const cfg = resolveRoleTestConfig_(roleKey);
+                Swal.fire({
+                  toast: true,
+                  position: 'top-end',
+                  icon: 'success',
+                  title: `ส่งทดสอบไปที่ ${cfg.shortLabel} (${tid})`,
+                  showConfirmButton: false,
+                  timer: 2500
+                });
+              }
+            });
+          });
+        }
+        const clearBtn = document.getElementById('btn-clear-all-test-notifs');
+        if (clearBtn) {
+          clearBtn.addEventListener('click', async () => {
+            Swal.close();
+            await clearTestNotifications();
+          });
+        }
+      }
+    });
   }
 
   // ── 12.1 ทดสอบส่งแจ้งเตือนเข้า LINE กลุ่ม (มีเสียงเตือนบนหน้าจอล็อกโทรศัพท์ 100%) ───
   async function testLineNotification() {
-    if (!checkIsAdminUser()) {
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          icon: 'info',
-          title: 'เฉพาะแอดมินเท่านั้น',
-          text: 'ปุ่มทดสอบส่ง LINE เปิดให้ใช้งานเฉพาะผู้ดูแลระบบ (Admin) เท่านั้นครับ',
-          timer: 2000,
-          showConfirmButton: false
-        });
-      }
-      return;
-    }
+    if (!requireStrictAdminAlert_()) return;
     if (typeof Swal !== 'undefined') {
       Swal.fire({
         title: 'กำลังส่งแจ้งเตือนเข้า LINE กลุ่ม...',
@@ -1904,6 +2119,10 @@ const NotificationHub = (function () {
         knownDocIds.add('ticket_' + cleanTid);
       }
 
+      const skipPush = Boolean(dataObj && dataObj.skipWebPush);
+      const cleanData = { ...(dataObj || {}) };
+      delete cleanData.skipWebPush;
+
       const payload = {
         senderSessionId: CURRENT_SESSION_ID,
         clientTimestamp: Date.now(),
@@ -1911,14 +2130,16 @@ const NotificationHub = (function () {
         createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
           ? firebase.firestore.FieldValue.serverTimestamp()
           : new Date(),
-        ...dataObj,
+        ...cleanData,
         id: notifId
       };
       await window.firestoreDb.collection('notifications').doc(notifId).set(payload);
       console.log('[NotificationHub] 🚀 Real-time notification published to Firestore successfully:', notifId, payload.title);
 
       // ส่ง FCM v1 Web Push ปลุกหน้าจออุปกรณ์ที่ปิดแอปหรือล็อกหน้าจออยู่ทันที
-      dispatchFCMWebPush(payload).catch(() => { });
+      if (!skipPush) {
+        dispatchFCMWebPush(payload).catch(() => { });
+      }
 
       return notifId;
     } catch (e) {
@@ -2035,6 +2256,7 @@ const NotificationHub = (function () {
     markTicketAsViewed,
     clearByTicketId,
     isFinishedTicketStatus,
+    isTargetRecipient,
     deleteItem,
     clearAll,
     openTicketAndDismiss,
@@ -2044,8 +2266,12 @@ const NotificationHub = (function () {
     getFCMToken: () => currentFcmToken,
     checkNotificationPermission,
     updatePermissionUI,
+    isStrictAdmin,
     showDeviceNotification,
     testDeviceNotification,
+    testRoleNotification,
+    openRoleTestModal,
+    clearTestNotifications,
     testLineNotification,
     forceUpdateApp,
     publish,

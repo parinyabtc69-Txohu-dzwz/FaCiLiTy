@@ -56,7 +56,7 @@ try {
   console.warn('[sw.js] Firebase Messaging in SW note:', e);
 }
 
-const CACHE_NAME = 'facility-v1.0.13';
+const CACHE_NAME = 'facility-v1.0.14';
 const STATIC_ASSETS = [
   './',
   './index.html',
